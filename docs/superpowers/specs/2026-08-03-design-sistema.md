@@ -1019,7 +1019,7 @@ Isso é deliberadamente o oposto do iClinic (cartões coloridos, azul-turquesa d
   --grafite-700: oklch(38% 0.012 265);  --grafite-800: oklch(30% 0.012 265);
   --grafite-900: oklch(23% 0.012 265);  --grafite-950: oklch(17% 0.012 265);
   --verde-500:  oklch(53% 0.130 155);   --verde-100: oklch(94% 0.040 155);
-  --ambar-500:  oklch(72% 0.150 75);    --ambar-100: oklch(95% 0.055 75);
+  --ambar-500:  oklch(52% 0.140 75);    --ambar-100: oklch(95% 0.055 75);
   --rubi-500:   oklch(53% 0.190 25);    --rubi-100:  oklch(94% 0.045 25);
   --violeta-500:oklch(52% 0.150 300);   --violeta-100:oklch(95% 0.040 300);
 
@@ -1171,6 +1171,25 @@ Doutrina: **animação só comunica mudança de estado; nunca anuncia chegada de
 Meta: **WCAG 2.2 AA**, verificada em CI (axe no Playwright) e por revisão manual de teclado a cada release.
 
 - Contraste ≥ 4.5:1 texto, ≥ 3:1 elementos de UI e foco — os tokens acima foram escolhidos em OKLCH justamente para manter a razão em ambos os temas.
+
+  **Verificação medida (não declarada).** Conversão OKLCH → sRGB → luminância relativa, contra `--surface` em cada tema:
+
+  | Token | Claro | Escuro |
+  |---|---|---|
+  | `--text` | 16,51:1 ✓ AAA | 14,61:1 ✓ AAA |
+  | `--text-muted` | 6,39:1 ✓ AA | 6,81:1 ✓ AA |
+  | `--text-faint` | 3,56:1 ✓ AA grande/UI | 3,94:1 ✓ AA grande/UI |
+  | `--accent` | 7,39:1 ✓ AAA | 6,79:1 ✓ AA |
+  | `--ok` | 4,85:1 ✓ | 7,19:1 ✓ AAA |
+  | `--warn` | **5,49:1 ✓** *(corrigido)* | 8,89:1 ✓ AAA |
+  | `--danger` | 5,69:1 ✓ | 5,92:1 ✓ |
+  | `--ai` | 5,76:1 ✓ | 6,54:1 ✓ |
+
+  `--text-faint` é reservado a texto ≥ 18px ou não essencial (símbolo monetário, metadado); nunca a rótulo ou valor. `--line` fica em ~1,3:1 por projeto — é divisória decorativa, fora do escopo do 1.4.11, que rege elementos necessários para *identificar* um controle. Fronteira de controle usa `--line-strong`.
+
+  > **Defeito encontrado e corrigido nesta revisão:** `--ambar-500` estava em `oklch(72% 0.150 75)`, que dá **2,48:1** sobre `--surface` no tema claro — reprovado até para elemento de UI. Como é a cor do status *Aguardando*, que a recepção lê o dia inteiro, o valor foi corrigido para `oklch(52% 0.140 75)`, verificado em 5,49:1 sobre `--surface`, 5,24:1 sobre `--bg` e 4,77:1 sobre `--ambar-100` (fundo do chip). O tema escuro já passava e não mudou.
+  >
+  > Lição registrada para a implementação: **razão de contraste é medida, nunca inferida do valor de luminosidade do OKLCH.** `L=72%` parece claro o suficiente para passar e não passa em hue amarelo, porque a luminosidade perceptual do OKLCH não é a luminância relativa da WCAG. O CI precisa calcular, não confiar.
 - Foco visível em **tudo**, com anel duplo (halo da superfície + anel de acento) que funciona sobre qualquer fundo.
 - Alvo mínimo 24×24 px (2.2 AA); 44×44 no modo toque.
 - Ordem de tabulação segue a ordem visual; painel lateral e modal fazem *focus trap* e devolvem o foco à origem.
