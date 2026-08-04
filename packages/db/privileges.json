@@ -398,6 +398,14 @@
       }
     }
   },
+  "clin.record_export": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "clin.record_share": {
     "table": {
       "app_rw": [

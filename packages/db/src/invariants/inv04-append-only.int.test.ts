@@ -109,6 +109,7 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
       'clin.observation',
       'clin.patient_identifier',
       'clin.procedure',
+      'clin.record_export',
       'clin.record_share',
     ]);
   });

@@ -477,6 +477,32 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // clin.record_export nasceu na Task 48 da Fase 1: a exportacao do prontuario
+  // e uma ENTIDADE (ECF.18), nao um efeito colateral. version_ids, attachment_ids
+  // e document_ids congelam o CONJUNTO exportado. receipt_json guarda o recibo
+  // indissociavel. Como toda tabela multi-tenant, precisa de linha do tenant B.
+  await admin.query(
+    `INSERT INTO clin.record_export
+       (tenant_id, id, patient_id, requested_by, requester_kind, version_ids,
+        attachment_ids, document_ids, page_count, pdf_key, pdf_sha256,
+        receipt_json) VALUES
+       ($1, $3, $5, $7, 'titular',
+        ARRAY[$9]::uuid[], ARRAY[$11]::uuid[], ARRAY[$13]::uuid[],
+        3, gen_random_uuid(), sha256('export tenant A'::bytea),
+        '{"paciente":"Joana","emitido_por":"Ana","paginas":3}'::jsonb),
+       ($2, $4, $6, $8, 'profissional',
+        ARRAY[$10]::uuid[], ARRAY[$12]::uuid[], ARRAY[$14]::uuid[],
+        2, gen_random_uuid(), sha256('export tenant B'::bytea),
+        '{"paciente":"Marcos","emitido_por":"Diego","paginas":2}'::jsonb)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECORD_EXPORT_A_JOANA, F.RECORD_EXPORT_B_MARCOS,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.USER_A_ANA, F.USER_B_DIEGO,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ATTACHMENT_A_JOANA, F.ATTACHMENT_B_MARCOS,
+     F.DOCUMENT_A_JOANA, F.DOCUMENT_B_MARCOS],
+  );
+
   // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
   // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
   // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em

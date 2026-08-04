@@ -108,6 +108,10 @@ export const DOCUMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000dd';
 export const ATTACHMENT_A_JOANA = '01930000-0000-7000-8000-0000000000de';
 export const ATTACHMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000df';
 
+/** Exportacao de prontuario: uma linha em cada tenant. */
+export const RECORD_EXPORT_A_JOANA = '01930000-0000-7000-8000-0000000000e0';
+export const RECORD_EXPORT_B_MARCOS = '01930000-0000-7000-8000-0000000000e1';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
