@@ -101,4 +101,56 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($1, $2, $3, $4, $4, 'acompanhamento proprio na unidade de Rio Branco')`,
     [F.TENANT_B, F.SHARE_B_MARCOS_PARA_DIEGO, F.PATIENT_B_MARCOS, F.PROF_B_DIEGO],
   );
+
+  // ── Trilha de auditoria ────────────────────────────────────────────────────
+  //
+  // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
+  // linha do tenant B aqui, o teste meta ("o seed realmente criou linha do tenant B
+  // em toda tabela multi-tenant") reprova — e reprova com razao: sem linha de B, o
+  // T1 passaria a toa nessas tabelas, porque nao havia o que vazar.
+  //
+  // A insercao vai direto, como superusuario. A policy `writer` de audit.event so
+  // permite INSERT ao audit_owner, e a RLS e FORCADA — mas FORCE sujeita o DONO da
+  // tabela, nao o superusuario, que continua com bypass. O trigger no_mutate recusa
+  // UPDATE e DELETE para todo mundo, e nao interfere no INSERT.
+
+  await admin.query(
+    `INSERT INTO audit.event
+       (tenant_id, clinic_id, actor_user_id, actor_kind, event_type,
+        entity_schema, entity_table, entity_id, outcome, meta) VALUES
+       ($1, $3, $5, 'user', 'PATIENT_RECORD_READ',
+        'clin', 'encounter', $7, 'sucesso', '{"use_case":"linha_do_tempo"}'::jsonb),
+       ($2, $4, $6, 'user', 'PATIENT_RECORD_READ',
+        'clin', 'encounter', $8, 'sucesso', '{"use_case":"linha_do_tempo"}'::jsonb)`,
+    [F.TENANT_A, F.TENANT_B, F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO, F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS],
+  );
+
+  await admin.query(
+    `INSERT INTO audit.read_dedup
+       (tenant_id, actor_user_id, entity_id, use_case, last_logged_at) VALUES
+       ($1, $3, $5, 'linha_do_tempo', clock_timestamp()),
+       ($2, $4, $6, 'linha_do_tempo', clock_timestamp())`,
+    [F.TENANT_A, F.TENANT_B, F.USER_A_ANA, F.USER_B_DIEGO,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS],
+  );
+
+  // Selo de um dia ja fechado. chain_hash e prev_chain_hash sao bytea arbitrarios:
+  // a verificacao de cadeia tem teste proprio; aqui a linha existe para o T1 ter o
+  // que tentar ler do tenant alheio.
+  await admin.query(
+    `INSERT INTO audit.seal
+       (tenant_id, seal_date, first_id, last_id, row_count,
+        chain_hash, prev_chain_hash, snapshot_xmin) VALUES
+       ($1, DATE '2026-08-01', 1, 1, 1, '\\x01'::bytea, NULL, 100),
+       ($2, DATE '2026-08-01', 2, 2, 1, '\\x02'::bytea, NULL, 100)`,
+    [F.TENANT_A, F.TENANT_B],
+  );
+
+  await admin.query(
+    `INSERT INTO audit.seal_run (tenant_id, seal_date, finished_at, outcome) VALUES
+       ($1, DATE '2026-08-01', clock_timestamp(), 'sucesso'),
+       ($2, DATE '2026-08-01', clock_timestamp(), 'sucesso')`,
+    [F.TENANT_A, F.TENANT_B],
+  );
 }

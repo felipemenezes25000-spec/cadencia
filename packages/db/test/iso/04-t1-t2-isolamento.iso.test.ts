@@ -14,6 +14,7 @@ const ANA: IsoActor = {
 interface Tabela {
   nsp: string;
   rel: string;
+  particao: boolean;
 }
 
 describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
@@ -28,7 +29,7 @@ describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
     // T1 nao usa lista manual: as tabelas sao DESCOBERTAS do catalogo do Postgres.
     // Uma tabela nova criada em Fase 1 sem isolamento reprova aqui sozinha.
     const { rows } = await admin.query<Tabela>(
-      `SELECT n.nspname AS nsp, c.relname AS rel
+      `SELECT n.nspname AS nsp, c.relname AS rel, c.relispartition AS particao
          FROM pg_class c
          JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname IN ('app','clin','fin','tiss','audit')
@@ -60,7 +61,11 @@ describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
   });
 
   it('o seed realmente criou linha do tenant B em toda tabela multi-tenant, senao T1 passaria a toa', async () => {
-    for (const { nsp, rel } of tabelas) {
+    // Particoes ficam de fora: uma linha inserida no pai aterrissa em UMA particao,
+    // e audit.event tem uma por mes. Exigir linha do tenant B em todas obrigaria o
+    // seed a escrever em todo mes do calendario. O que precisa ter linha e a tabela
+    // logica; a particao e armazenamento dela.
+    for (const { nsp, rel } of tabelas.filter((t) => !t.particao)) {
       const { rows } = await admin.query<{ n: number }>(
         `SELECT count(*)::int AS n FROM "${nsp}"."${rel}" WHERE tenant_id = $1`,
         [F.TENANT_B],
@@ -71,15 +76,63 @@ describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
   });
 
   it('T1 — o tenant A nao le nenhuma linha do tenant B, tabela a tabela', async () => {
+    // Aqui a varredura inclui as PARTICOES de proposito: consultar a particao direto
+    // e o caminho que escaparia da policy do pai, e e exatamente contra isso que a
+    // app.secure_partition existe.
+    //
+    // Dois desfechos contam como isolado, e a distincao importa:
+    //   • zero linhas      — a RLS filtrou (o caminho normal, pelo pai)
+    //   • privilegio negado — nao ha GRANT na particao, entao nem chega na RLS
+    // O segundo e MAIS forte que o primeiro, nao mais fraco: a leitura para antes.
+    // Qualquer outra coisa e vazamento. Esta e a mesma classificacao tripla que o
+    // invariante 10 (matriz CRUD cruzada) usa — zero linhas / negado / VAZOU.
+    const desfechos: string[] = [];
+
     await comoAtor(api, ANA, async (c) => {
       for (const { nsp, rel } of tabelas) {
-        const { rows } = await c.query<{ n: number }>(
-          `SELECT count(*)::int AS n FROM "${nsp}"."${rel}" WHERE tenant_id = $1`,
-          [F.TENANT_B],
-        );
-        expect(rows[0]!.n, `${nsp}.${rel} VAZOU linha do tenant B`).toBe(0);
+        // SAVEPOINT por tabela: um erro de privilegio aborta a transacao inteira no
+        // PostgreSQL, e sem isto a primeira particao negada derrubaria todas as
+        // consultas seguintes com "current transaction is aborted".
+        await c.query('SAVEPOINT t1_probe');
+        try {
+          const { rows } = await c.query<{ n: number }>(
+            `SELECT count(*)::int AS n FROM "${nsp}"."${rel}" WHERE tenant_id = $1`,
+            [F.TENANT_B],
+          );
+          await c.query('RELEASE SAVEPOINT t1_probe');
+          expect(rows[0]!.n, `${nsp}.${rel} VAZOU linha do tenant B`).toBe(0);
+          desfechos.push(`${nsp}.${rel}=zero`);
+        } catch (err) {
+          await c.query('ROLLBACK TO SAVEPOINT t1_probe');
+          // 42501 = insufficient_privilege. Qualquer outro erro e falha de verdade.
+          const code = (err as { code?: string }).code;
+          if (code !== '42501') throw err;
+          desfechos.push(`${nsp}.${rel}=negado`);
+        }
       }
     });
+
+    // Guarda contra a suite virar tautologia. Se um dia TUDO passar a dar negado, o
+    // teste deixa de exercitar a RLS e vira so um teste de GRANT — continuaria verde
+    // enquanto o isolamento por linha estivesse quebrado.
+    //
+    // A guarda nao pode ser "toda tabela nao-particionada", porque nem toda tabela e
+    // legivel pela aplicacao: audit.read_dedup e audit.seal_run sao bookkeeping do
+    // papel `jobs` e nao tem GRANT para app_rw de proposito. Negado nelas e o certo.
+    //
+    // A lista abaixo e o nucleo que a aplicacao REALMENTE le e onde um vazamento
+    // seria catastrofico. Nessas, o desfecho tem de ser `zero` — ou seja, a consulta
+    // chegou a rodar e a RLS filtrou. Se alguma virar `negado`, o teste avisa: ou o
+    // GRANT caiu (a recepcao vai ver 500 as 8h) ou a tabela saiu do caminho de
+    // leitura da aplicacao sem ninguem atualizar esta lista.
+    const NUCLEO_LIDO_PELA_APP = [
+      'app.clinic', 'app.membership', 'app.professional',
+      'clin.patient', 'clin.patient_identifier', 'clin.record_share',
+    ];
+    for (const alvo of NUCLEO_LIDO_PELA_APP) {
+      expect(desfechos, `${alvo} deveria ser filtrada pela RLS, e nao negada por privilegio`)
+        .toContain(`${alvo}=zero`);
+    }
   });
 
   it('T1 — e continua lendo normalmente as linhas do proprio tenant', async () => {
