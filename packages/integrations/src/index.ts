@@ -11,3 +11,10 @@ export {
 export {
   createFakeSignatureProvider, type FakeSignatureOptions, type ModoFake,
 } from './fakes/signature-fake';
+export {
+  type PrescriberSession, type PrescriptionItem, type PrescriptionProvider,
+  type PrescriptionRecord,
+} from './contracts/prescription';
+export {
+  createFakePrescriptionProvider, type FakePrescriptionOptions,
+} from './fakes/prescription-fake';
