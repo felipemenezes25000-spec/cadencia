@@ -73,6 +73,44 @@ describe('T6 — contexto forjado', () => {
     expect(erro.message).toContain('row-level security policy');
   });
 
+  it('o contexto forjado nao consegue ABRIR atendimento no tenant alheio', async () => {
+    // Esta sonda e mais afiada que a de clin.patient de proposito. O INSERT usa o
+    // paciente, o profissional e a clinica DO PROPRIO tenant B, entao toda FK
+    // composta fecha e a integridade referencial nao tem o que reclamar. A
+    // RESTRICTIVE `clinical_scope` tambem nao ajuda aqui: ela e FOR SELECT.
+    // Sobra uma unica linha de defesa — o `AND app.is_member()` do WITH CHECK de
+    // `tenant_isolation`. Tire aquele predicado da 0030 e este teste fica
+    // vermelho sozinho; todo o resto da suite continuaria verde, porque na
+    // LEITURA a `clinical_scope` absorve a perda e esconde o buraco de ESCRITA.
+    const erro = await erroPg(() =>
+      comContextoForjado(
+        api,
+        {
+          tenantId: F.TENANT_B,
+          userId: F.USER_A_ANA,
+          clinicId: F.CLINIC_B_RIO_BRANCO,
+        },
+        (c) =>
+          c.query(
+            `INSERT INTO clin.encounter
+               (tenant_id, id, patient_id, professional_id, clinic_id,
+                occurred_at, occurred_date)
+             VALUES ($1, $2, $3, $4, $5, clock_timestamp(),
+                     app.local_date(clock_timestamp(), 'America/Rio_Branco'))`,
+            [
+              F.TENANT_B,
+              '01930000-0000-7000-8000-00000000f802',
+              F.PATIENT_B_MARCOS,
+              F.PROF_B_DIEGO,
+              F.CLINIC_B_RIO_BRANCO,
+            ],
+          ),
+      ),
+    );
+    expect(erro.code).toBe('42501');
+    expect(erro.message).toContain('row-level security policy');
+  });
+
   it('o contexto forjado nao enxerga nem o vinculo do usuario legitimo do outro tenant', async () => {
     await comContextoForjado(
       api,
