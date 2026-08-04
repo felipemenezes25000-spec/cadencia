@@ -3,4 +3,5 @@ export {
   type AppointmentStatus, type CreateAppointmentInput, type CreatedAppointment,
   type MoveInput, type SchedulingFailure, type SetStatusInput,
 } from './appointments';
+export { checkIn, type CheckInResult } from './check-in';
 export { dayCounters, dayQueue, type DayCounters, type DayQuery, type QueueRow } from './day';
