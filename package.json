@@ -13,6 +13,8 @@
     "test:iso": "vitest run --config vitest.iso.config.ts",
     "typecheck": "tsc -p tsconfig.json",
     "lint:session-guc": "tsx tools/check-session-guc.ts",
+    "authz:seed": "tsx tools/authz-seed.ts",
+    "authz:check": "tsx tools/authz-seed.ts --check",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait db",

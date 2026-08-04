@@ -1,0 +1,93 @@
+{
+  "checksum": "48dbe8937a630e127ef3f5731029266c81c71d017e9ca32d628183d1e49f6b51",
+  "rows": [
+    {
+      "key": "audit.read",
+      "description": "Ler a trilha de auditoria do tenant",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "catalog.read",
+      "description": "Consultar terminologia (CID-10, TUSS)",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "clinic.read",
+      "description": "Ler dados da unidade",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "clinic.write",
+      "description": "Editar dados da unidade",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "membership.grant",
+      "description": "Conceder vinculo a um usuario",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "membership.read",
+      "description": "Listar vinculos da unidade",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "membership.revoke",
+      "description": "Revogar vinculo de um usuario",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "patient.read",
+      "description": "Ler cadastro de paciente",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "patient.write",
+      "description": "Criar ou editar cadastro de paciente",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    }
+  ]
+}
