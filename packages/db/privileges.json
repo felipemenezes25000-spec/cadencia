@@ -316,5 +316,12 @@
         "UPDATE"
       ]
     }
+  },
+  "clin.v_version_status": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ]
+    }
   }
 }
