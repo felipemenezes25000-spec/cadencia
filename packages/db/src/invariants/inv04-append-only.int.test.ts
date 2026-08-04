@@ -42,8 +42,37 @@ describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao',
       return appendOnlyViolations(c);
     });
     expect(violacoes).toContain(
-      'clin.__diagnostico: clin_writer tem UPDATE da tabela inteira — so UPDATE (live) e permitido',
+      'clin.__diagnostico: clin_writer tem UPDATE da tabela inteira — a excecao e por coluna, nunca por tabela',
     );
+  });
+
+  it('a excecao declarada por COMMENT amplia as colunas, e so as declaradas', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        decidido_em timestamptz(3), intruso text, live boolean NOT NULL DEFAULT true)`);
+      await c.query(
+        'GRANT UPDATE (live, decidido_em, intruso) ON clin.__diagnostico TO clin_writer',
+      );
+      await c.query(
+        "COMMENT ON TABLE clin.__diagnostico IS 'append-only-except: decidido_em'",
+      );
+      return appendOnlyViolations(c);
+    });
+    // `decidido_em` foi declarada e passa; `intruso` nao foi e continua reprovando.
+    expect(violacoes.join('\n')).toContain('clin_writer tem UPDATE das colunas intruso');
+    expect(violacoes.join('\n')).not.toContain('decidido_em —');
+  });
+
+  it('sem a declaracao por COMMENT, a mesma coluna extra reprova', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        decidido_em timestamptz(3), live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT UPDATE (live, decidido_em) ON clin.__diagnostico TO clin_writer');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes.join('\n')).toContain('clin_writer tem UPDATE das colunas decidido_em');
   });
 
   it('aceita o unico UPDATE legitimo: clin_writer sobre a coluna live', async () => {

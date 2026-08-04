@@ -12,3 +12,7 @@ export {
   type FindingSnapshot, type ObservationSnapshot, type ProcedureSnapshot,
   type VersionSnapshot,
 } from './canonical-version';
+export {
+  finalizeEncounter, amendEncounter, verifyVersionHash,
+  type AmendInput, type FinalizeFailure, type FinalizeInput, type VersionKind,
+} from './finalize';

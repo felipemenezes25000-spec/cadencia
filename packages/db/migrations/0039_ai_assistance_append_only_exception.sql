@@ -1,0 +1,42 @@
+-- 0039_ai_assistance_append_only_exception.sql
+-- Forward-only: nao existe down migration. Para desfazer, escreva a proxima.
+-- Este arquivo roda dentro de UMA transacao. Nada de CREATE INDEX CONCURRENTLY.
+--
+-- Declara a excecao do invariante 4 para clin.ai_assistance.
+--
+-- CONTRADICAO NO DESIGN, resolvida aqui. A §3.13 invariante 4 diz que toda tabela
+-- de clin.* com version_id e append-only, "exceto UPDATE (live) para clin_writer".
+-- Mas a §4.6 exige duas escritas que nao cabem nessa regra:
+--
+--   • clinician_decision / decided_by_user_id / decided_at — o medico aceita ou
+--     rejeita a saida da IA, e isso acontece ANTES da finalizacao, na tela;
+--   • version_id — a §4.6 item 3 diz literalmente que ele "vira NOT NULL na
+--     finalizacao e a linha e selada no mesmo instante". Selar exige escrever.
+--
+-- A regra da §3.13 foi escrita na Fase 0, quando a unica coluna mutavel do
+-- dominio clinico era `live`. A §4.6 e mais especifica e descreve o
+-- comportamento real. A §4.6 vence, e a excecao fica registrada aqui em vez de
+-- virar um `filter` frouxo no codigo do invariante.
+--
+-- POR QUE ISSO NAO ENFRAQUECE A GARANTIA. O conteudo produzido pela IA continua
+-- imutavel, e por gatilho, nao por convencao. A migration 0036 instalou:
+--
+--   no_mutate_update BEFORE UPDATE OF tenant_id, id, encounter_id, patient_id,
+--     purpose, risk_class, provider, model_id, model_version, residency,
+--     input_key, input_hash, output, output_hash
+--
+-- Ou seja: modelo, versao, entrada, saida e os dois hashes sao intocaveis para
+-- qualquer papel, inclusive superusuario. O que esta excepcionado sao metadados
+-- de DECISAO — quem avaliou, quando, e a qual versao a linha pertence. Nenhum
+-- deles altera o que a IA produziu, e o output_hash entra na serializacao
+-- canonica da versao, entao qualquer divergencia continua detectavel para sempre.
+--
+-- FORMATO DA DECLARACAO. O comentario e lido pelo invariante 4 no formato
+-- `append-only-except: col1, col2, ...`. Acrescentar coluna a esse conjunto exige
+-- uma migration nova, revisada — que e exatamente a intencao. A alternativa que
+-- recusamos foi um Set editavel dentro do arquivo de teste, que a §3.13 proibe
+-- explicitamente no invariante 1 pelo mesmo motivo: excecao que se altera sem
+-- revisao deixa de ser excecao e vira porta.
+
+COMMENT ON TABLE clin.ai_assistance IS
+  'append-only-except: clinician_decision, decided_at, decided_by_user_id, version_id';
