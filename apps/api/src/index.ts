@@ -1,1 +1,1 @@
-export {};
+export { buildApp } from './app';
