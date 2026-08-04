@@ -8,6 +8,7 @@
   "dependencies": {
     "@cadencia/db": "workspace:*",
     "@cadencia/kernel": "workspace:*",
-    "@cadencia/documents": "workspace:*"
+    "@cadencia/documents": "workspace:*",
+    "pdf-lib": "^1.17.1"
   }
 }
