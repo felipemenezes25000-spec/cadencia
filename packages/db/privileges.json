@@ -341,5 +341,14 @@
         "SELECT"
       ]
     }
+  },
+  "sched.procedure": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }

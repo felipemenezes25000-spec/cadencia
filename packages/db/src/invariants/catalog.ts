@@ -3,11 +3,13 @@ import { Client, Pool, type PoolClient } from 'pg';
 export type { Queryable } from '../queryable';
 
 /**
- * Os cinco schemas sujeitos ao regime multi-tenant (§3.13 item 1).
+ * Os schemas sujeitos ao regime multi-tenant (§3.13 item 1).
  * `ref`, `id`, `rpt` e `pgboss` ficam de fora por construcao: referencia global,
  * identidade global, relatorio (exposto so por view) e fila de jobs.
+ * `sched` entrou na Fase 1 junto com a agenda: schema fora desta lista e schema
+ * sem RLS obrigatoria, sem FK composta exigida e fora da matriz CRUD.
  */
-export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit'] as const;
+export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'sched'] as const;
 
 let pool: Pool | undefined;
 
