@@ -60,8 +60,9 @@ describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao',
 });
 
 describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornavel trocando de tabela', () => {
-  it('a varredura enxerga as duas tabelas clinicas da Fase 0 — nao passa por vacuo', async () => {
+  it('a varredura enxerga as tabelas clinicas com patient_id — nao passa por vacuo', async () => {
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
+      'clin.encounter',
       'clin.patient_identifier',
       'clin.record_share',
     ]);

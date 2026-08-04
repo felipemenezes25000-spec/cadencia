@@ -55,6 +55,10 @@ export const COMPONENT_B_PA_DIA = '01930000-0000-7000-8000-0000000000bd';
 export const LAYOUT_A_ANA_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000be';
 export const LAYOUT_B_DIEGO_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000bf';
 
+/** Atendimento: o agregado clinico, um em cada tenant. */
+export const ENCOUNTER_A_JOANA = '01930000-0000-7000-8000-0000000000c6';
+export const ENCOUNTER_B_MARCOS = '01930000-0000-7000-8000-0000000000c7';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

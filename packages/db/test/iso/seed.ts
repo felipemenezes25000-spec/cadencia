@@ -163,6 +163,24 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
   );
 
+  // clin.encounter nasceu na Task 9 da Fase 1. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B: sem ela o teste meta ("o seed realmente criou
+  // linha do tenant B em toda tabela multi-tenant") reprova, e o T1 passaria a toa.
+  // occurred_date vem de app.local_date com o fuso da CLINICA, nunca de um cast.
+  await admin.query(
+    `INSERT INTO clin.encounter
+       (tenant_id, id, patient_id, professional_id, clinic_id, occurred_at, occurred_date)
+     VALUES ($1, $3, $5, $7, $9,  TIMESTAMPTZ '2026-08-01T14:00:00Z',
+             app.local_date(TIMESTAMPTZ '2026-08-01T14:00:00Z',
+                            (SELECT timezone FROM app.clinic WHERE id = $9))),
+            ($2, $4, $6, $8, $10, TIMESTAMPTZ '2026-08-01T14:00:00Z',
+             app.local_date(TIMESTAMPTZ '2026-08-01T14:00:00Z',
+                            (SELECT timezone FROM app.clinic WHERE id = $10)))`,
+    [F.TENANT_A, F.TENANT_B, F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS, F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

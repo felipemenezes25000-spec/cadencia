@@ -83,6 +83,31 @@
       ]
     }
   },
+  "clin.encounter": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "head_version_id": [
+          "UPDATE"
+        ],
+        "status": [
+          "UPDATE"
+        ],
+        "version_count": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.patient": {
     "table": {
       "app_rw": [
