@@ -117,7 +117,17 @@ importers:
 
   packages/events: {}
 
-  packages/export: {}
+  packages/export:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/documents':
+        specifier: workspace:*
+        version: link:../documents
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
   packages/identity: {}
 
