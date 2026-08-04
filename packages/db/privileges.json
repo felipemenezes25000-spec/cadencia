@@ -351,6 +351,16 @@
       ]
     }
   },
+  "sched.block": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "sched.procedure": {
     "table": {
       "app_rw": [
