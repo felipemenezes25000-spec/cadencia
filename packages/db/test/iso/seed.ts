@@ -80,4 +80,25 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PID_B_MARCOS_CPF, F.PATIENT_A_JOANA, F.PATIENT_A_RECEM_NASCIDO,
      F.PATIENT_B_MARCOS, F.CPF_VALIDO],
   );
+
+  // Bruno nao e admin: so enxerga identificador de paciente compartilhado com ele.
+  await admin.query(
+    `INSERT INTO clin.record_share
+       (tenant_id, id, patient_id, grantee_professional_id,
+        granted_by_professional_id, reason) VALUES
+       ($1, $2, $3, $4, $5, 'segunda opiniao solicitada pela paciente')`,
+    [F.TENANT_A, F.SHARE_A_JOANA_PARA_BRUNO, F.PATIENT_A_JOANA,
+     F.PROF_A_BRUNO, F.PROF_A_ANA],
+  );
+
+  // O tenant B PRECISA de linha aqui tambem: o teste "o seed realmente criou linha do
+  // tenant B em toda tabela multi-tenant" descobre as tabelas do catalogo, e sem esta
+  // linha o T1 passaria a toa em clin.record_share — nao ha o que vazar.
+  await admin.query(
+    `INSERT INTO clin.record_share
+       (tenant_id, id, patient_id, grantee_professional_id,
+        granted_by_professional_id, reason) VALUES
+       ($1, $2, $3, $4, $4, 'acompanhamento proprio na unidade de Rio Branco')`,
+    [F.TENANT_B, F.SHARE_B_MARCOS_PARA_DIEGO, F.PATIENT_B_MARCOS, F.PROF_B_DIEGO],
+  );
 }
