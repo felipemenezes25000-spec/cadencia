@@ -100,6 +100,7 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
     // por IA e parte do prontuario, nao um log paralelo.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
       'clin.ai_assistance',
+      'clin.attachment',
       'clin.diagnosis',
       'clin.document',
       'clin.encounter',

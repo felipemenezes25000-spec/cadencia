@@ -447,6 +447,36 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SIGNATURE_A_JOANA, F.SIGNATURE_B_MARCOS],
   );
 
+  // clin.attachment nasceu na Task 47 da Fase 1: o anexo clinico com chave opaca
+  // e referencia de chave de dados para crypto-shredding. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senao o teste meta ("o seed
+  // realmente criou linha do tenant B em toda tabela multi-tenant") reprova e o
+  // T1 passaria a toa. A insercao vai como superusuario.
+  //
+  // storage_key e um UUID opaco (NGS1.06.01): o caminho no objeto NAO revela o
+  // conteudo. original_name mora no banco, sob RLS. sha256 e 32 bytes de verdade
+  // porque o CHECK exige octet_length = 32.
+  await admin.query(
+    `INSERT INTO clin.attachment
+       (tenant_id, id, patient_id, encounter_id, version_id, kind, storage_key,
+        original_name, content_type, size_bytes, sha256, dek_ref, occurred_date,
+        created_by) VALUES
+       ($1, $3, $5, $7, $9,  'resultado_exame', gen_random_uuid(),
+        'hemograma_20260801.pdf', 'application/pdf', 204800,
+        sha256('attachment tenant A'::bytea), 'dek:tenant-a:2026-08',
+        DATE '2026-07-28', $11),
+       ($2, $4, $6, $8, $10, 'imagem', gen_random_uuid(),
+        'rx_torax.dcm', 'application/dicom', 1048576,
+        sha256('attachment tenant B'::bytea), 'dek:tenant-b:2026-08',
+        DATE '2026-07-30', $12)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.ATTACHMENT_A_JOANA, F.ATTACHMENT_B_MARCOS,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
   // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
   // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
   // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em

@@ -104,6 +104,10 @@ export const SIGNATURE_PENDING_B = '01930000-0000-7000-8000-0000000000db';
 export const DOCUMENT_A_JOANA = '01930000-0000-7000-8000-0000000000dc';
 export const DOCUMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000dd';
 
+/** Anexo clinico: uma linha em cada tenant. */
+export const ATTACHMENT_A_JOANA = '01930000-0000-7000-8000-0000000000de';
+export const ATTACHMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000df';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

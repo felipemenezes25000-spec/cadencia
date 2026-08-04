@@ -374,6 +374,30 @@
       }
     }
   },
+  "clin.attachment": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "encounter_id": [
+          "UPDATE"
+        ],
+        "kind": [
+          "UPDATE"
+        ],
+        "occurred_date": [
+          "UPDATE"
+        ],
+        "version_id": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.record_share": {
     "table": {
       "app_rw": [

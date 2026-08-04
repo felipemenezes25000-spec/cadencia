@@ -33,7 +33,13 @@ export async function needsYou(
                                AND clock_timestamp() + interval '48 hours'
            AND ($2::uuid IS NULL OR a.professional_id = $2::uuid)) AS confirmacoes,
        0 AS prescricoes,
-       0 AS resultados,
+       (SELECT count(*) FROM clin.attachment att
+         WHERE att.kind = 'resultado_exame'
+           AND att.version_id IS NULL
+           AND EXISTS (SELECT 1 FROM clin.encounter e
+                        WHERE (e.tenant_id, e.id) = (att.tenant_id, att.encounter_id)
+                          AND e.clinic_id = $1
+                          AND ($2::uuid IS NULL OR e.professional_id = $2::uuid))) AS resultados,
        (SELECT count(*) FROM clin.encounter_draft d
           JOIN clin.encounter e ON (e.tenant_id, e.id) = (d.tenant_id, d.encounter_id)
          WHERE e.clinic_id = $1 AND e.status = 'rascunho'
