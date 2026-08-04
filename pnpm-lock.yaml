@@ -45,7 +45,15 @@ importers:
 
   apps/worker: {}
 
-  packages/audit: {}
+  packages/audit:
+    dependencies:
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.20.3
+        version: 8.20.3
 
   packages/authn: {}
 

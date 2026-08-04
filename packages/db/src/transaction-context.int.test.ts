@@ -113,7 +113,7 @@ describe('leitura de GUC com nullif (§3.2)', () => {
 });
 
 describe('schemas e extensoes', () => {
-  it('cria os sete schemas do desenho com o dono correto, e nao cria audit (que nasce na 0008)', async () => {
+  it('cria os schemas do desenho com o dono correto, e audit pertence a audit_owner', async () => {
     const result = await admin.query<{ nspname: string; owner: string }>(
       `SELECT n.nspname, r.rolname AS owner
          FROM pg_namespace n JOIN pg_roles r ON r.oid = n.nspowner
@@ -124,6 +124,8 @@ describe('schemas e extensoes', () => {
     expect(owners).toEqual({
       app: 'app_owner', clin: 'app_owner', fin: 'app_owner', id: 'app_owner',
       ref: 'app_owner', rpt: 'rpt_owner', tiss: 'app_owner',
+      // A trilha nasce na 0009 e o schema e de audit_owner: nem app_owner o possui.
+      audit: 'audit_owner',
     });
   });
 
