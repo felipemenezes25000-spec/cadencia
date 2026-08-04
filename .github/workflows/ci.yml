@@ -1,0 +1,120 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
+jobs:
+  estatico:
+    name: tipos, unidade, lint estrutural e grafo de modulos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # `pnpm test` inclui tools/arch/arch-check.test.ts, que prova que a config
+      # do dependency-cruiser realmente reprova cada violacao que ela promete pegar.
+      - run: pnpm test
+      - name: 'lint:session-guc — `SET app.` so em packages/db/src/tx.ts'
+        run: pnpm lint:session-guc
+      - name: 'arch:check — setas so descem, irmao nunca importa irmao, sem ciclo'
+        run: pnpm arch:check
+
+  integracao:
+    name: integracao e os 10 invariantes contra PostgreSQL 18
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cadencia
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cadencia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: .env do CI
+        run: |
+          {
+            echo "DATABASE_URL_ADMIN=postgres://postgres:postgres@localhost:5433/cadencia"
+            echo "DATABASE_URL=postgres://api:api@localhost:5433/cadencia"
+            echo "DATABASE_URL_JOBS=postgres://jobs:jobs@localhost:5433/cadencia"
+          } > .env
+
+      - name: cluster em UTC, como o compose local
+        run: psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1
+             -c "ALTER DATABASE cadencia SET timezone TO 'UTC'"
+
+      - name: db:migrate — as migrations reais, em ordem
+        run: pnpm db:migrate
+
+      - name: senha para os papeis de login
+        # O compose local usa `trust` e a URL nao tem senha; o service container do
+        # Actions exige senha. Os papeis nascem sem senha na migration 0001.
+        run: psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1
+             -c "ALTER ROLE api LOGIN PASSWORD 'api'; ALTER ROLE jobs LOGIN PASSWORD 'jobs'"
+
+      - name: 'test:int — integracao contra PostgreSQL real'
+        run: pnpm test:int
+
+      - name: 'db:invariants — o runner unico dos 10 invariantes da §3.13'
+        run: pnpm db:invariants --with-crud
+
+  isolamento:
+    name: isolamento multi-tenant
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # test:iso sobe o proprio PostgreSQL 18 por Testcontainers e aplica as migrations
+      # reais: o canario T7 exige um banco em estado conhecido byte a byte.
+      - name: 'test:iso — a suite que existe desde antes da primeira tela'
+        run: pnpm test:iso
+
+  merge-gate:
+    name: pronto para merge
+    runs-on: ubuntu-latest
+    needs: [estatico, integracao, isolamento]
+    steps:
+      - run: echo "estatico, integracao com os 10 invariantes e isolamento verdes"

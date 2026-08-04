@@ -3,3 +3,4 @@ export { businessPool, auditPool, jobsPool, appPool, closePools } from './pool';
 export { withTenantTx, preambleParams, type Actor, type TxClient } from './tx';
 export type { Queryable } from './queryable';
 export { runAllInvariants, type InvariantResult, type RunInvariantsOptions } from './invariants/index';
+export { verifyRestore, type CheckResult, type VerifyRestoreOptions } from './verify-restore';

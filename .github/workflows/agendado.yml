@@ -1,0 +1,52 @@
+name: agendado
+
+on:
+  schedule:
+    # Ensaio de restauracao no dia 1 de cada mes, 06:00 UTC (03:00 BRT).
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
+jobs:
+  restore-drill:
+    name: ensaio de restauracao em VPC isolada
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: restore-drill
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_RESTORE_DRILL_ROLE_ARN }}
+          aws-region: sa-east-1
+      - name: 'restore:drill'
+        env:
+          DRILL_SOURCE_DB_INSTANCE: ${{ secrets.DRILL_SOURCE_DB_INSTANCE }}
+          DRILL_SUBNET_GROUP: ${{ secrets.DRILL_SUBNET_GROUP }}
+          DRILL_SECURITY_GROUP: ${{ secrets.DRILL_SECURITY_GROUP }}
+          DRILL_DB_USER: ${{ secrets.DRILL_DB_USER }}
+          DRILL_DB_PASSWORD: ${{ secrets.DRILL_DB_PASSWORD }}
+          DRILL_RTO_BUDGET_MINUTES: '120'
+          DRILL_RPO_BUDGET_MINUTES: '15'
+        run: pnpm restore:drill
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: restore-drill-report
+          path: .artifacts/restore-drill-*.json
+          retention-days: 400
