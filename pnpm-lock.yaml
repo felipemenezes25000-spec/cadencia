@@ -136,7 +136,21 @@ importers:
 
   packages/retention: {}
 
-  packages/scheduling: {}
+  packages/scheduling:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.20.3
+        version: 8.20.3
 
   packages/storage: {}
 
