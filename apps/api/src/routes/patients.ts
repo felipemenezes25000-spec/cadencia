@@ -102,7 +102,21 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
     schema: {
       params: z.object({ id: z.string().uuid() }),
     },
-  }, rota('encounter.read', async (_tx, _ctx, _req) => {
-    return { stub: true };
+  }, rota('encounter.read', async (tx, _ctx, req) => {
+    const p = req.params as { id: string };
+    const { rows } = await tx.query<{
+      encounterId: string; occurredDate: string; status: string;
+      professionalId: string; clinicId: string;
+      headVersionId: string | null; versionCount: number;
+    }>(
+      `SELECT id AS "encounterId", occurred_date::text AS "occurredDate",
+              status::text AS status, professional_id AS "professionalId",
+              clinic_id AS "clinicId", head_version_id AS "headVersionId",
+              version_count AS "versionCount"
+         FROM clin.encounter
+        WHERE patient_id = $1
+        ORDER BY occurred_date DESC, created_at DESC
+        LIMIT 200`, [p.id]);
+    return { itens: rows };
   }));
 }

@@ -59,6 +59,9 @@ importers:
       '@cadencia/documents':
         specifier: workspace:*
         version: link:../../packages/documents
+      '@cadencia/emr':
+        specifier: workspace:*
+        version: link:../../packages/emr
       '@cadencia/export':
         specifier: workspace:*
         version: link:../../packages/export

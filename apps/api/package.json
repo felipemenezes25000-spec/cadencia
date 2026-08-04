@@ -18,6 +18,7 @@
     "@cadencia/prescriptions": "workspace:*",
     "@cadencia/export": "workspace:*",
     "@cadencia/documents": "workspace:*",
+    "@cadencia/emr": "workspace:*",
     "@cadencia/scheduling": "workspace:*",
     "@fastify/cookie": "^11.1.2",
     "@fastify/swagger": "^9.8.1",

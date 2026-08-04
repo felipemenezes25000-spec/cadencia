@@ -8,7 +8,9 @@ export interface SementeSessao {
   userId: string;
   professionalId: string;
   patientId: string;
+  patientPreliminarId: string;
   procedureId: string;
+  appointmentId: string;
   token: string;
   csrf: string;
   clinicIdDeOutroTenant: string;
@@ -36,7 +38,9 @@ export async function semearSessao(
   const userId = uuidv7();
   const professionalId = uuidv7();
   const patientId = uuidv7();
+  const patientPreliminarId = uuidv7();
   const procedureId = uuidv7();
+  const appointmentId = uuidv7();
   const tenantB = uuidv7();
   const clinicB = uuidv7();
   const csrf = newCsrfToken();
@@ -67,13 +71,24 @@ export async function semearSessao(
        VALUES ($1, $2, $3, '06', '999888', 'SP', '225125')`,
       [tenantId, professionalId, userId]);
     await c.query(
-      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
-       VALUES ($1, $2, 'Paciente Sessao', 'completo')`,
+      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
+       VALUES ($1, $2, 'Paciente Sessao', 'completo', '1990-01-15')`,
       [tenantId, patientId]);
     await c.query(
       `INSERT INTO sched.procedure (tenant_id, id, code, nome, cor, duracao_min)
        VALUES ($1, $2, 'CONS01', 'Consulta Padrao', '#3b82f6', 30)`,
       [tenantId, procedureId]);
+    await c.query(
+      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
+       VALUES ($1, $2, 'Paciente Preliminar', 'preliminar')`,
+      [tenantId, patientPreliminarId]);
+    await c.query(
+      `INSERT INTO sched.appointment
+         (tenant_id, id, patient_id, professional_id, clinic_id, procedure_id,
+          starts_at, ends_at, appointment_date, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6,
+               '2026-12-15T10:00:00Z', '2026-12-15T10:30:00Z', '2026-12-15', $7)`,
+      [tenantId, appointmentId, patientId, professionalId, clinicId, procedureId, userId]);
 
     // Tenant B — para testar vinculo cruzado
     await c.query(
@@ -100,7 +115,7 @@ export async function semearSessao(
   await admin.end();
 
   return {
-    tenantId, clinicId, userId, professionalId, patientId, procedureId,
-    token, csrf, clinicIdDeOutroTenant: clinicB,
+    tenantId, clinicId, userId, professionalId, patientId, patientPreliminarId,
+    procedureId, appointmentId, token, csrf, clinicIdDeOutroTenant: clinicB,
   };
 }

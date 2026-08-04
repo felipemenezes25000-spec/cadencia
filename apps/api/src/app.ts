@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { comTransacao } from './context';
 import { patientRoutes } from './routes/patients';
 import { scheduleRoutes } from './routes/schedule';
+import { encounterRoutes } from './routes/encounters';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -73,6 +74,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(patientRoutes);
   await app.register(scheduleRoutes);
+  await app.register(encounterRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
