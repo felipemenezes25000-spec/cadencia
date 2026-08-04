@@ -353,6 +353,27 @@
       ]
     }
   },
+  "clin.document": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "pdf_key": [
+          "UPDATE"
+        ],
+        "pdf_sha256": [
+          "UPDATE"
+        ],
+        "signature_id": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.record_share": {
     "table": {
       "app_rw": [

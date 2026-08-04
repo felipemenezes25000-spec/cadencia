@@ -101,6 +101,7 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
       'clin.ai_assistance',
       'clin.diagnosis',
+      'clin.document',
       'clin.encounter',
       'clin.encounter_field_value',
       'clin.encounter_finding',

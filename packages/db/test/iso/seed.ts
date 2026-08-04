@@ -419,6 +419,34 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // clin.document nasceu na Task 44 da Fase 1: o documento nato-digital. Como
+  // toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
+  // reprova e o T1 passaria a toa. A insercao vai como superusuario.
+  //
+  // encounter_id e version_id sao opcionais (um documento pode existir fora de
+  // atendimento), mas no seed preenchemos para cobrir o FK composite.
+  await admin.query(
+    `INSERT INTO clin.document
+       (tenant_id, id, kind, patient_id, professional_id, clinic_id,
+        encounter_id, version_id, issued_date, payload, content_hash,
+        canonical_version, signature_id, created_by) VALUES
+       ($1, $3, 'atestado', $5, $7, $9,
+        $11, $13, DATE '2026-08-01', '{"texto":"Atesto para fins"}'::jsonb,
+        sha256('documento tenant A'::bytea), 'jcs-1', $15, $7::uuid),
+       ($2, $4, 'pedido_exame', $6, $8, $10,
+        $12, $14, DATE '2026-08-01', '{"itens":["hemograma"]}'::jsonb,
+        sha256('documento tenant B'::bytea), 'jcs-1', $16, $8::uuid)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.DOCUMENT_A_JOANA, F.DOCUMENT_B_MARCOS,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.SIGNATURE_A_JOANA, F.SIGNATURE_B_MARCOS],
+  );
+
   // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
   // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
   // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
