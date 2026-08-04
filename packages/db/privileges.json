@@ -1,0 +1,114 @@
+{
+  "app.clinic": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.membership": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.professional": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.tenant": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "audit.event": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "audit.read_dedup": {
+    "table": {}
+  },
+  "audit.seal": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "audit.seal_run": {
+    "table": {
+      "jobs": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "clin.patient": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "clin.patient_identifier": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "clin.record_share": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  }
+}
