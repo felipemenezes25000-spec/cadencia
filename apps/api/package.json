@@ -13,6 +13,7 @@
     "@cadencia/authz": "workspace:*",
     "@cadencia/db": "workspace:*",
     "@cadencia/kernel": "workspace:*",
+    "@cadencia/patients": "workspace:*",
     "@cadencia/integrations": "workspace:*",
     "@cadencia/prescriptions": "workspace:*",
     "@cadencia/export": "workspace:*",

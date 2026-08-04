@@ -5,7 +5,7 @@ import { comTransacao, type RequestContext } from './context';
 
 export function rota<T>(
   acao: string,
-  handler: (tx: TxClient, ctx: RequestContext, req: FastifyRequest) => Promise<T>,
+  handler: (tx: TxClient, ctx: RequestContext, req: FastifyRequest, reply: FastifyReply) => Promise<T>,
 ) {
   return async (req: FastifyRequest, reply: FastifyReply): Promise<T | FastifyReply> => {
     const r = await comTransacao(req, reply, async (tx, ctx) => {
@@ -23,7 +23,7 @@ export function rota<T>(
         await reply.code(403).send({ erro: 'sem_permissao', acao, motivo: d.reason });
         return undefined;
       }
-      return handler(tx, ctx, req);
+      return handler(tx, ctx, req, reply);
     });
     if (r === undefined) return reply;
     return r;

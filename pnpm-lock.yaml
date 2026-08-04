@@ -68,6 +68,9 @@ importers:
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@cadencia/patients':
+        specifier: workspace:*
+        version: link:../../packages/patients
       '@cadencia/prescriptions':
         specifier: workspace:*
         version: link:../../packages/prescriptions

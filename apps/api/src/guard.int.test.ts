@@ -29,7 +29,7 @@ describe('RBAC na borda', () => {
       headers: { 'x-clinic-id': s.clinicId },
     });
     await app.close();
-    const { rows } = await (await import('@cadencia/db')).appPool().query<{ n: string }>(
+    const { rows } = await (await import('@cadencia/db')).jobsPool().query<{ n: string }>(
       `SELECT count(*) AS n FROM audit.event
         WHERE outcome = 'negado' AND event_type = 'AUTHZ_DENY'`);
     expect(Number(rows[0]?.n)).toBeGreaterThanOrEqual(1);
