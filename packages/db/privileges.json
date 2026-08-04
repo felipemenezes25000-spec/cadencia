@@ -329,6 +329,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "clin_writer": [
+        "INSERT"
       ]
     }
   },
