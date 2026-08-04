@@ -15,6 +15,15 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
       TZ: UTC
       PGTZ: UTC
+      # C.UTF-8 e deliberado, nao esquecimento: e determinístico e imune ao
+      # versionamento de collation do glibc, que corrompe indices silenciosamente
+      # em upgrade de imagem ou de SO. O preco: ORDER BY direto em texto NAO ordena
+      # portugues corretamente (ex.: "Alvaro" depois de "Zeca" em vez de entre "A" e
+      # "B"). A busca (unaccent(lower(...)) no design) e imune a isso. Onde ordenacao
+      # alfabetica importar de verdade — ex.: listagem de pacientes por nome — a
+      # coluna exige COLLATE "pt-BR-x-icu" explicito (PostgreSQL 18 traz ICU
+      # embutido). O locale do CLUSTER so muda com initdb, ou seja, recriando o
+      # volume (`pnpm db:reset`) — nao e algo que se ajusta depois.
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
     command:
       - postgres
@@ -22,10 +31,17 @@ services:
       - timezone=UTC
       - -c
       - log_timezone=UTC
+      # -c SOBRESCREVE a lista inteira de shared_preload_libraries, nao soma. Se
+      # outra lib precisar entrar aqui no futuro, as duas vao juntas nesta mesma
+      # linha, separadas por virgula (ex.: "pg_stat_statements,outra_lib").
       - -c
       - shared_preload_libraries=pg_stat_statements
     ports:
-      - "5433:5432"
+      # Bind explicito em loopback: o Docker publica em 0.0.0.0 por padrao, e
+      # combinado com POSTGRES_HOST_AUTH_METHOD=trust isso deixaria um Postgres sem
+      # senha alcancavel por qualquer maquina da rede local. 127.0.0.1 restringe
+      # a conexao a propria maquina — correto para um banco de desenvolvimento.
+      - "127.0.0.1:5433:5432"
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d:ro
       # postgres:18 mudou o PGDATA para /var/lib/postgresql/18/docker e declara o
