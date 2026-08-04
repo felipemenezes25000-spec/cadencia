@@ -94,6 +94,54 @@ export class SecurityAuditChannel {
     }
   }
 
+  /**
+   * Leitura de prontuario. A deduplicacao (1 evento por usuario × paciente ×
+   * caso de uso, janela de 5 min) acontece no banco: dois processos api nao
+   * compartilham cache de memoria.
+   */
+  async recordRead(read: {
+    readonly useCase: string;
+    readonly patientId: string;
+    readonly tenantId: string;
+    readonly actorUserId: string;
+    readonly clinicId?: string | null;
+    readonly sessionId?: string | null;
+    readonly requestId?: string | null;
+  }): Promise<'gravado' | 'deduplicado' | 'bufferizado'> {
+    try {
+      const res = await this.pool.query<{ id: string | null }>(
+        'SELECT audit.log_read($1,$2,$3,$4,$5,$6,$7) AS id',
+        [
+          read.useCase,
+          read.patientId,
+          read.tenantId,
+          read.actorUserId,
+          read.clinicId ?? null,
+          read.sessionId ?? null,
+          read.requestId ?? null,
+        ],
+      );
+      return res.rows[0]?.id == null ? 'deduplicado' : 'gravado';
+    } catch (err) {
+      if (!isTransient(err)) throw err;
+      this.buffer({
+        eventType: 'PATIENT_RECORD_READ',
+        outcome: 'sucesso',
+        entitySchema: 'clin',
+        entityTable: 'patient',
+        entityId: read.patientId,
+        tenantId: read.tenantId,
+        actorUserId: read.actorUserId,
+        actorKind: 'user',
+        clinicId: read.clinicId ?? null,
+        sessionId: read.sessionId ?? null,
+        requestId: read.requestId ?? null,
+        meta: { use_case: read.useCase },
+      });
+      return 'bufferizado';
+    }
+  }
+
   /** Reenvia o buffer de disco. Para no primeiro erro e preserva o restante. */
   async drain(): Promise<number> {
     if (!existsSync(this.bufferPath)) {
