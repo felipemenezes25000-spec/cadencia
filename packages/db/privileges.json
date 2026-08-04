@@ -159,6 +159,15 @@
       }
     }
   },
+  "clin.encounter_billing": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "clin.encounter_draft": {
     "table": {
       "app_rw": [

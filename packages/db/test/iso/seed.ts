@@ -352,6 +352,46 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
   );
 
+  // clin.encounter_billing nasceu na Task 24 da Fase 1: os campos da guia de
+  // consulta sao capturados NO atendimento, com o modulo tiss ainda inexistente.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste
+  // meta ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
+  // reprova e o T1 passaria a toa.
+  //
+  // cnes vem da CLINICA e conselho/numero/uf/cbos vem do PROFISSIONAL do proprio
+  // atendimento, nunca repetidos como literal: sao exatamente os tipos de origem,
+  // e copiar da origem e o que prova que a projecao nao precisa converter nada.
+  // data_atendimento vem de e.occurred_date — a data do evento no fuso da clinica,
+  // nunca um cast de occurred_at.
+  //
+  // Aurora atende por convenio: tem registro_ans, carteirinha e EXATAMENTE um
+  // identificador de prestador. Boreal atende particular: sem registro_ans e sem
+  // carteirinha, que e o que o CHECK amarra um ao outro.
+  await admin.query(
+    `INSERT INTO clin.encounter_billing
+       (tenant_id, id, encounter_id, operadora_nome, registro_ans, numero_carteira,
+        codigo_prestador_na_operadora, cnes, conselho_profissional, numero_conselho,
+        uf_conselho, cbos, tipo_consulta, data_atendimento, codigo_tabela,
+        codigo_procedimento, valor_centavos, created_by)
+     SELECT $1::uuid, $3::uuid, e.id, 'Operadora Meridiano Saude', '326305', '00998877665544',
+            '900123', c.cnes, p.conselho_profissional, p.numero_conselho, p.uf_conselho,
+            p.cbos, '1', e.occurred_date, '22', '10101012', 25000, $7::uuid
+       FROM clin.encounter e
+       JOIN app.clinic c       ON (c.tenant_id, c.id) = (e.tenant_id, e.clinic_id)
+       JOIN app.professional p ON (p.tenant_id, p.id) = (e.tenant_id, e.professional_id)
+      WHERE e.id = $5::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, NULL, NULL, NULL,
+            NULL, c.cnes, p.conselho_profissional, p.numero_conselho, p.uf_conselho,
+            p.cbos, '2', e.occurred_date, '22', '10101012', 30000, $8::uuid
+       FROM clin.encounter e
+       JOIN app.clinic c       ON (c.tenant_id, c.id) = (e.tenant_id, e.clinic_id)
+       JOIN app.professional p ON (p.tenant_id, p.id) = (e.tenant_id, e.professional_id)
+      WHERE e.id = $6::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.BILLING_A_JOANA, F.BILLING_B_MARCOS,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS, F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
