@@ -4,10 +4,14 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
     "@cadencia/db": "workspace:*",
+    "@cadencia/integrations": "workspace:*",
     "@cadencia/kernel": "workspace:*",
-    "@cadencia/integrations": "workspace:*"
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.62.1"
   }
 }
