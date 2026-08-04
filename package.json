@@ -22,6 +22,7 @@
     "db:new": "tsx packages/db/src/new-migration.ts",
     "db:migrate": "tsx packages/db/src/migrate-cli.ts",
     "db:privileges": "tsx packages/db/src/invariants/write-privileges.ts",
+    "db:invariants": "tsx packages/db/src/invariants-cli.ts",
     "prepush": "pnpm lint:session-guc && pnpm test:iso",
     "prepare": "husky"
   },
