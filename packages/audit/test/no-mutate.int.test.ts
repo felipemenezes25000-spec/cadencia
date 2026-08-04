@@ -1,8 +1,19 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
 import { connectAs, connectSuperuser } from './helpers/pg';
 
-const TENANT = '0192f8a0-0000-7000-8000-00000000020a';
+// Tenant NOVO a cada execucao, e nao uma constante.
+//
+// Este teste prova que audit.event e append-only — o que significa que ele nao
+// pode limpar o que escreve: o proprio trigger que ele verifica recusa o DELETE
+// do afterAll. Com tenant_id fixo, a linha da execucao anterior sobrevive, a
+// contagem cresce a cada rodada (1, 2, 3...) e o teste passa exatamente UMA vez,
+// num banco recem-criado, falhando para sempre depois.
+//
+// A saida nao e limpar, e sim isolar: cada rodada escreve sob um tenant que so
+// ela conhece. As linhas antigas continuam la, como devem, e nao interferem.
+const TENANT = randomUUID();
 
 describe('audit.event e append-only por trigger, nao por convencao', () => {
   let owner: Client;
