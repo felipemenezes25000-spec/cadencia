@@ -7,6 +7,7 @@ import {
   type StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
 import { seedDoisTenants } from './seed';
+import { impressaoDigitalDoTenantB } from './impressao-digital';
 // O Vitest 4 removeu `GlobalSetupContext`: o global setup recebe o proprio
 // TestProject, que expoe o mesmo `provide` usado abaixo.
 import type { TestProject } from 'vitest/node';
@@ -19,6 +20,7 @@ declare module 'vitest' {
 }
 
 let container: StartedPostgreSqlContainer | undefined;
+let impressaoAntes = '';
 
 // packages/db/test/iso/ -> packages/db/migrations/
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../migrations/', import.meta.url));
@@ -57,6 +59,7 @@ export default async function setup({ provide }: TestProject) {
   console.log(`[test:iso] migrations aplicadas: ${aplicadas.join(', ')}`);
 
   await seedDoisTenants(admin);
+  impressaoAntes = await impressaoDigitalDoTenantB(admin);
 
   // O papel `api` nasce LOGIN sem senha na migration 0001; o container precisa de uma.
   await admin.query(`ALTER ROLE api LOGIN PASSWORD 'api'`);
@@ -76,6 +79,28 @@ export default async function setup({ provide }: TestProject) {
   provide('isoApiUrl', apiUrl);
 
   return async () => {
+    // T7 — canario. A suite inteira rodou como tenant A. Nada do tenant B pode
+    // ter mudado: nem linha nova, nem coluna alterada, nem linha removida.
+    const conferencia = new Client({ connectionString: adminUrl });
+    await conferencia.connect();
+    let depois: string;
+    try {
+      depois = await impressaoDigitalDoTenantB(conferencia);
+    } finally {
+      await conferencia.end();
+    }
     await container?.stop();
+
+    if (depois !== impressaoAntes) {
+      // O Vitest 4 apenas LOGA o erro do teardown ('error during close') e ainda
+      // sai com codigo 0. Sem esta linha o canario viraria decoracao: o pre-push
+      // imprimiria o alarme e deixaria o push passar assim mesmo.
+      process.exitCode = 1;
+      throw new Error(
+        'T7 CANARIO REPROVADO: a suite rodou inteira como tenant A e o estado do ' +
+          `tenant B mudou (antes=${impressaoAntes.slice(0, 16)} ` +
+          `depois=${depois.slice(0, 16)}). Isto e um vazamento entre clinicas.`,
+      );
+    }
   };
 }

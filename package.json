@@ -17,12 +17,15 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait db",
     "db:new": "tsx packages/db/src/new-migration.ts",
-    "db:migrate": "tsx packages/db/src/migrate-cli.ts"
+    "db:migrate": "tsx packages/db/src/migrate-cli.ts",
+    "prepush": "pnpm lint:session-guc && pnpm test:iso",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.0.4",
     "@types/node": "^24.13.3",
     "@types/pg": "^8.20.3",
+    "husky": "^9.1.7",
     "pg": "^8.22.0",
     "testcontainers": "^12.0.4",
     "tsx": "^4.23.5",
