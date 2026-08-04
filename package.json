@@ -16,7 +16,7 @@
     "db:reset": "docker compose down -v && docker compose up -d --wait db"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^24.13.3",
     "typescript": "~5.9.3",
     "vitest": "^4.1.10",
     "yaml": "^2.9.0"

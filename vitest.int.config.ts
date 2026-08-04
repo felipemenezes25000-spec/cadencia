@@ -1,15 +1,8 @@
-import { existsSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
-
-const alias = Object.fromEntries(
-  (existsSync('packages') ? readdirSync('packages', { withFileTypes: true }) : [])
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => [`@cadencia/${entry.name}`, resolve('packages', entry.name, 'src', 'index.ts')]),
-);
+import { buildWorkspaceAlias } from './tools/test/workspace-alias.js';
 
 export default defineConfig({
-  resolve: { alias },
+  resolve: { alias: buildWorkspaceAlias() },
   test: {
     include: [
       'packages/*/src/**/*.int.test.ts',

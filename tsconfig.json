@@ -1,8 +1,4 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@cadencia/*": ["packages/*/src"] }
-  },
+  "extends": ["./tsconfig.base.json", "./tsconfig.paths.json"],
   "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "apps/*/src/**/*.ts", "tools/**/*.ts", "*.config.ts"]
 }
