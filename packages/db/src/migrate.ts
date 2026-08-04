@@ -29,6 +29,12 @@ export async function runMigrations(opts: MigrateOptions = {}): Promise<MigrateR
   const applied: string[] = [];
 
   try {
+    // O lock vem ANTES do CREATE TABLE: advisory lock e de sessao e nao depende da
+    // tabela existir. `CREATE TABLE IF NOT EXISTS` concorrente nao e atomico no
+    // PostgreSQL — dois migrates partindo juntos contra um banco virgem falhariam com
+    // duplicate key em pg_type_typname_nsp_index em vez do no-op silencioso.
+    await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.schema_migration (
         version     text PRIMARY KEY,
@@ -36,8 +42,6 @@ export async function runMigrations(opts: MigrateOptions = {}): Promise<MigrateR
         checksum    text NOT NULL,
         applied_at  timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
         duration_ms integer NOT NULL)`);
-
-    await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
 
     const state = await client.query<{ version: string; checksum: string }>(
       'SELECT version, checksum FROM public.schema_migration',

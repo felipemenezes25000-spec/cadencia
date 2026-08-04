@@ -117,4 +117,16 @@ describe('pnpm db:migrate', () => {
     );
     expect(applied).toEqual([]);
   });
+
+  it('grava o DDL e o registro em schema_migration na MESMA transacao', async () => {
+    writeFileSync(join(dir, '0001_probe.sql'), 'CREATE TABLE public.probe (id int PRIMARY KEY);');
+
+    await runMigrations({ connectionString: testDbUrl(), dir });
+
+    const rows = await queryTestDb<{ mesma_transacao: boolean }>(
+      `SELECT (SELECT xmin FROM pg_class WHERE relname = 'probe')
+            = (SELECT xmin FROM public.schema_migration WHERE version = '0001') AS mesma_transacao`,
+    );
+    expect(rows[0]?.mesma_transacao).toBe(true);
+  });
 });
