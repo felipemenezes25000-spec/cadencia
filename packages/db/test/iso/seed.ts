@@ -503,6 +503,38 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.DOCUMENT_A_JOANA, F.DOCUMENT_B_MARCOS],
   );
 
+  // clin.prescription nasceu na Task 53 da Fase 1: persistimos do NOSSO lado
+  // id, link, codigo, PDF e bytes assinados desde a primeira prescricao. Itens
+  // normalizados em tabela propria, nao um blob do parceiro.
+  await admin.query(
+    `INSERT INTO clin.prescription
+       (tenant_id, id, patient_id, professional_id, clinic_id, encounter_id,
+        issued_date, provider, provider_prescription_id, patient_link_url,
+        validation_code, created_by) VALUES
+       ($1, $3, $5, $7, $9, $11,
+        CURRENT_DATE, 'memed', 'memed-rx-a', 'https://parceiro.fake/r/a',
+        '123456', $7),
+       ($2, $4, $6, $8, $10, $12,
+        CURRENT_DATE, 'memed', 'memed-rx-b', 'https://parceiro.fake/r/b',
+        '654321', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.PRESCRIPTION_A_JOANA, F.PRESCRIPTION_B_MARCOS,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.prescription_item
+       (tenant_id, id, prescription_id, ordinal, nome, posologia) VALUES
+       ($1, $3, $5, 1, 'Losartana 50mg', '1 cp manha'),
+       ($2, $4, $6, 1, 'Metformina 850mg', '1 cp almoco e jantar')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.PRESCRIPTION_ITEM_A, F.PRESCRIPTION_ITEM_B,
+     F.PRESCRIPTION_A_JOANA, F.PRESCRIPTION_B_MARCOS],
+  );
+
   // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
   // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
   // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em

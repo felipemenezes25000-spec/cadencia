@@ -108,6 +108,7 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
       'clin.encounter_finding',
       'clin.observation',
       'clin.patient_identifier',
+      'clin.prescription',
       'clin.procedure',
       'clin.record_export',
       'clin.record_share',

@@ -32,7 +32,10 @@ export async function needsYou(
            AND a.starts_at BETWEEN clock_timestamp()
                                AND clock_timestamp() + interval '48 hours'
            AND ($2::uuid IS NULL OR a.professional_id = $2::uuid)) AS confirmacoes,
-       0 AS prescricoes,
+       (SELECT count(*) FROM clin.prescription rx
+         WHERE rx.clinic_id = $1 AND rx.signature_id IS NULL
+           AND rx.cancelled_at IS NULL
+           AND ($2::uuid IS NULL OR rx.professional_id = $2::uuid)) AS prescricoes,
        (SELECT count(*) FROM clin.attachment att
          WHERE att.kind = 'resultado_exame'
            AND att.version_id IS NULL
