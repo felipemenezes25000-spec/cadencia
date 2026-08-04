@@ -342,6 +342,15 @@
       ]
     }
   },
+  "sched.appointment": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "sched.procedure": {
     "table": {
       "app_rw": [
