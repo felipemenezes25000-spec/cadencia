@@ -1,0 +1,43 @@
+name: cadencia
+
+services:
+  db:
+    # postgres:18 oficial. Traz pgcrypto, btree_gist, btree_gin, pg_trgm, unaccent,
+    # citext e pg_stat_statements. NAO traz pg_partman — ver db/init/00-extensions.sql.
+    image: postgres:18
+    container_name: cadencia-db
+    environment:
+      # SOMENTE DESENVOLVIMENTO LOCAL. Em producao os papeis api/jobs/support
+      # autenticam com credencial do Secrets Manager. `trust` aqui existe para que
+      # o teste consiga conectar como `api` e como `jobs` sem inventar senha.
+      POSTGRES_USER: postgres
+      POSTGRES_DB: cadencia
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: UTC
+      PGTZ: UTC
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    command:
+      - postgres
+      - -c
+      - timezone=UTC
+      - -c
+      - log_timezone=UTC
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      # postgres:18 mudou o PGDATA para /var/lib/postgresql/18/docker e declara o
+      # VOLUME em /var/lib/postgresql. Montar em /var/lib/postgresql/data (caminho
+      # das imagens ate a 17) deixaria o volume vazio e o banco morreria no primeiro
+      # `docker compose down`.
+      - cadencia-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cadencia"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+volumes:
+  cadencia-pgdata:
