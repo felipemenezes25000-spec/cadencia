@@ -8,3 +8,6 @@ export {
   type CertificateInfo, type SignDocumentInput, type SignatureProvider,
   type SignaturePolicy, type SignedDocument, type VerifyResult,
 } from './contracts/signature';
+export {
+  createFakeSignatureProvider, type FakeSignatureOptions, type ModoFake,
+} from './fakes/signature-fake';
