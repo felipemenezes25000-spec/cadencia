@@ -1458,6 +1458,20 @@ Precisa estar certo no dia 1 porque depois é migração de dezenas de milhões 
 
 18. **Separação Paciente × Prontuário na navegação, espelhando a policy `RESTRICTIVE`.** É irreversível porque a partir do momento em que existe uma tela única com campos ocultos por permissão, a exportação, a impressão e a URL direta vazam — e a correção é reescrever toda a camada de leitura clínica.
 
+19. **Locale do cluster em `C.UTF-8`, com `COLLATE "pt-BR-x-icu"` por coluna onde ordem alfabética importa.** *(Acrescentado durante a execução da Task 2, a partir de medição no cluster real.)*
+
+    O locale do cluster é fixado pelo `initdb` e só muda recriando o volume — em produção, dump e reload de todo o acervo. Escolhemos `C.UTF-8` deliberadamente: é determinístico e imune ao **versionamento de collation do glibc**, que altera a ordem de comparação entre versões de sistema operacional e corrompe índices `btree` de texto silenciosamente num upgrade de imagem. Num sistema com guarda de 20 anos, atravessar várias gerações de SO é certeza, não hipótese.
+
+    O preço é que a ordenação nativa fica errada para português:
+
+    ```
+    ORDER BY nome sob C.UTF-8 →  Ana · Bruno · Zeca · Álvaro
+    ```
+
+    Isso **não** afeta a busca: `clin.patient.search_name` é `unaccent(lower(...))`, imune ao locale. Afeta qualquer `ORDER BY` direto sobre nome — ou seja, a listagem de pacientes da Fase 1.
+
+    **Regra vinculante:** toda coluna cuja ordenação seja apresentada a um humano recebe `COLLATE "pt-BR-x-icu"` explícito na definição, e o índice que a serve carrega o mesmo `COLLATE`. O PostgreSQL 18 traz ICU embutido, e a collation ICU é versionada pelo próprio ICU — o que a torna estável de forma verificável, ao contrário do glibc. Ordenar sem collation explícita não é um bug que aparece em teste: aparece como um paciente "sumido" da lista para a recepcionista que procura por ele na letra certa.
+
 ---
 
 ## Apêndice A — Alvos de latência publicados (requisito, não aspiração)
