@@ -8260,6 +8260,8605 @@ git commit -m "feat(audit): no_mutate trigger makes audit.event append-only for 
 
 ---
 
+## Parte IV (continuação) — Trilha de auditoria
+
+> **Onde esta parte continua.** As Tasks 25 a 27 já entregaram o esqueleto da trilha: o schema `audit` com dono próprio, a whitelist de chaves de `meta`, a tabela particionada `audit.event`, os GRANTs, a RLS **forçada** com as policies `tenant_read` e `writer`, e o trigger `no_mutate`. O que falta é o que **escreve** na trilha e o que a torna verificável: os dois canais de gravação (§3.7), a auditoria de leitura deduplicada e o selo diário.
+>
+> **Convenções que valem para as quatro tarefas seguintes.**
+>
+> - Migrations continuam em `packages/db/migrations/`, criadas com `pnpm db:new <nome>` e aplicadas com `pnpm db:migrate`. As faixas `0001`–`0010` já foram usadas; esta parte usa `0011`–`0014`.
+> - Os testes ficam em `packages/audit/test/`, terminam em `.int.test.ts`, rodam com `pnpm test:int <caminho>` e usam o helper `packages/audit/test/helpers/pg.ts` criado na Task 25 (`connectAs`, `connectSuperuser`, `setContext`). Eles **não** chamam `runMigrations()`: `packages/audit` e `packages/db` são irmãos em L0 e não se importam (§2.2). Cada tarefa manda rodar `pnpm db:migrate` explicitamente.
+> - `pnpm test:int` roda com `fileParallelism: false` (já configurado em `vitest.int.config.ts`, Task 1). Isso **não é detalhe**: os arquivos deste pacote mantêm transações abertas de propósito e, com arquivos em paralelo, a marca d'água do selo (Task 31) enxerga a transação de outro arquivo e adia o selo, deixando a suíte vermelha de forma intermitente.
+> - Imports sem extensão `.js` (o projeto usa `moduleResolution: Bundler`).
+
+---
+
+### Task 28: Canal A — evento de domínio, dentro da transação de negócio
+
+São **dois canais de gravação**, por razões diferentes. Este é o A.
+
+| Canal | O quê | Como | Por quê |
+|---|---|---|---|
+| **A — domínio** | Finalização, retificação, exportação, envio de lote | Dentro da transação de negócio | **O evento só é verdade se a escrita commitou** |
+| B — segurança e acesso | Login, acesso negado, leitura de prontuário, break-glass, tentativa sem contexto | Pool dedicado, fora da transação | Evento de negação é o que o auditor procura (Task 29) |
+
+O Canal A é gravado **dentro** da transação de propósito. Se `clin.finalize_encounter()` der `ROLLBACK`, o evento `ENCOUNTER_FINALIZE` tem que sumir junto: uma trilha que afirma que um atendimento foi finalizado quando ele não foi é pior que não ter trilha, porque é prova documental de um fato falso. O teste do Passo 1 verifica exatamente isso, nas duas direções.
+
+`audit.log` é `SECURITY DEFINER`: roda como `audit_owner` e portanto casa com a policy `writer` da Task 26. A aplicação (`app_rw`) recebe apenas `EXECUTE` — nunca `INSERT`.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0011_audit_log.sql`
+- Criar: `packages/audit/src/domain.ts`
+- Modificar: `packages/audit/src/index.ts`
+- Teste: `packages/audit/test/channel-a.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/audit/test/channel-a.int.test.ts`:
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Client } from 'pg';
+import { connectAs, connectSuperuser, setContext } from './helpers/pg';
+import { logDomainEvent } from '../src/domain';
+
+// Os quatro UUIDs sao DISTINTOS de proposito: se `audit.log` trocar duas colunas
+// de lugar, o teste do mapeamento abaixo tem que ficar vermelho.
+const TENANT = '0192f8a0-0000-7000-8000-00000000030a';
+const USER = '0192f8a0-0000-7000-8000-000000000301';
+const VERSION = '0192f8a0-0000-7000-8000-000000000302';
+const REQUEST = '0192f8a0-0000-7000-8000-000000000303';
+
+async function countEvents(root: Client, eventType: string): Promise<number> {
+  const res = await root.query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM audit.event
+      WHERE tenant_id = $1 AND event_type = $2`,
+    [TENANT, eventType],
+  );
+  return Number(res.rows[0]?.n);
+}
+
+describe('Canal A: o evento de dominio so e verdade se a escrita commitou', () => {
+  let root: Client;
+
+  beforeAll(async () => {
+    root = await connectSuperuser();
+  });
+
+  afterAll(async () => {
+    await root.end();
+  });
+
+  it('grava o evento na mesma transacao do negocio e ele sobrevive ao commit', async () => {
+    const app = await connectAs('app_rw');
+    try {
+      await app.query('BEGIN');
+      await setContext(app, {
+        tenantId: TENANT,
+        userId: USER,
+        actorKind: 'system',
+        requestId: REQUEST,
+      });
+      const id = await logDomainEvent(app, {
+        eventType: 'ENCOUNTER_FINALIZE',
+        entitySchema: 'clin',
+        entityTable: 'encounter_version',
+        entityId: VERSION,
+        meta: { version_no: 1, kind: 'original' },
+      });
+      expect(id).toBeGreaterThan(0n);
+      await app.query('COMMIT');
+    } finally {
+      await app.end();
+    }
+
+    const res = await root.query<{
+      tenant_id: string;
+      entity_id: string;
+      actor_user_id: string;
+      outcome: string;
+      request_id: string;
+      entity_schema: string;
+      entity_table: string;
+      meta: Record<string, unknown>;
+    }>(
+      `SELECT tenant_id, entity_id, actor_user_id, outcome, request_id,
+              entity_schema, entity_table, meta
+         FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'ENCOUNTER_FINALIZE'`,
+      [TENANT],
+    );
+    expect(res.rows).toHaveLength(1);
+    expect(res.rows[0]).toEqual({
+      tenant_id: TENANT,
+      entity_id: VERSION,
+      actor_user_id: USER,
+      request_id: REQUEST,
+      outcome: 'sucesso',
+      entity_schema: 'clin',
+      entity_table: 'encounter_version',
+      meta: { version_no: 1, kind: 'original' },
+    });
+  });
+
+  it('o evento de dominio desaparece se a transacao de negocio faz rollback', async () => {
+    const antes = await countEvents(root, 'ENCOUNTER_AMEND');
+
+    const app = await connectAs('app_rw');
+    try {
+      await app.query('BEGIN');
+      await setContext(app, { tenantId: TENANT, userId: USER, actorKind: 'system' });
+      await logDomainEvent(app, {
+        eventType: 'ENCOUNTER_AMEND',
+        entitySchema: 'clin',
+        entityTable: 'encounter_version',
+        entityId: VERSION,
+        meta: { version_no: 2, kind: 'retificacao' },
+      });
+      await app.query('ROLLBACK');
+    } finally {
+      await app.end();
+    }
+
+    // Trilha que afirma uma retificacao que nao aconteceu e prova documental
+    // de um fato falso: pior que nao ter trilha.
+    expect(await countEvents(root, 'ENCOUNTER_AMEND')).toBe(antes);
+  });
+
+  it('o ator de sistema (worker, sem user_id) grava sem estourar em uuid vazio', async () => {
+    const app = await connectAs('app_rw');
+    try {
+      await app.query('BEGIN');
+      await setContext(app, { tenantId: TENANT, actorKind: 'system' });
+      await logDomainEvent(app, {
+        eventType: 'TISS_BATCH_SUBMIT',
+        entitySchema: 'tiss',
+        entityTable: 'lote',
+        meta: { batch_id: 'lote-2026-08', record_count: 42 },
+      });
+      await app.query('COMMIT');
+    } finally {
+      await app.end();
+    }
+
+    const res = await root.query<{ actor_user_id: string | null; actor_kind: string }>(
+      `SELECT actor_user_id, actor_kind FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'TISS_BATCH_SUBMIT'`,
+      [TENANT],
+    );
+    expect(res.rows[0]).toEqual({ actor_user_id: null, actor_kind: 'system' });
+  });
+
+  it('a whitelist de meta vale tambem pelo Canal A', async () => {
+    const app = await connectAs('app_rw');
+    try {
+      await app.query('BEGIN');
+      await setContext(app, { tenantId: TENANT, userId: USER, actorKind: 'system' });
+      await expect(
+        logDomainEvent(app, {
+          eventType: 'ENCOUNTER_FINALIZE',
+          entitySchema: 'clin',
+          entityTable: 'encounter_version',
+          entityId: VERSION,
+          meta: { diagnostico: 'I10' } as unknown as Record<string, string>,
+        }),
+      ).rejects.toMatchObject({ code: '23514', constraint: 'meta_sem_pii' });
+      await app.query('ROLLBACK');
+    } finally {
+      await app.end();
+    }
+  });
+
+  it('app_rw tem EXECUTE em audit.log e continua sem INSERT na tabela', async () => {
+    const res = await root.query<{ exec: boolean; ins: boolean; writer: boolean }>(
+      `SELECT has_function_privilege('app_rw',
+                'audit.log(text,text,text,uuid,text,jsonb,uuid)', 'EXECUTE') AS exec,
+              has_table_privilege('app_rw', 'audit.event', 'INSERT') AS ins,
+              has_schema_privilege('clin_writer', 'audit', 'USAGE') AS writer`,
+    );
+    // Sem `writer`, clin.finalize_encounter (que roda como clin_writer) morre com
+    // 42501 "permission denied for schema audit" no primeiro deploy — o EXECUTE
+    // concedido abaixo seria inutil.
+    expect(res.rows[0]).toEqual({ exec: true, ins: false, writer: true });
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/audit/test/channel-a.int.test.ts`
+Esperado: FALHA já na resolução do import — `Failed to resolve import "../src/domain" from "packages/audit/test/channel-a.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Escrever a migration**
+
+Rodar: `pnpm db:new audit_log` — cria `packages/db/migrations/0011_audit_log.sql`. Preencher com exatamente:
+
+```sql
+-- 0011_audit_log.sql
+-- Canal A: evento de dominio, DENTRO da transacao de negocio.
+-- SECURITY DEFINER porque roda como audit_owner e so assim casa com a
+-- policy `writer` da 0009. A aplicacao recebe EXECUTE; nunca INSERT.
+
+SET ROLE audit_owner;
+
+-- clin_writer e o papel das funcoes SECURITY DEFINER do nucleo clinico
+-- (clin.finalize_encounter), que chamam audit.log. A 0009 concedeu USAGE no
+-- schema audit apenas a app_rw. Sem esta linha o EXECUTE abaixo e inutil:
+-- a finalizacao de atendimento falha com 42501 "permission denied for schema
+-- audit" no primeiro deploy, e nenhum atendimento pode ser finalizado.
+GRANT USAGE ON SCHEMA audit TO clin_writer;
+
+CREATE FUNCTION audit.log(
+  p_event_type    text,
+  p_entity_schema text,
+  p_entity_table  text,
+  p_entity_id     uuid  DEFAULT NULL,
+  p_outcome       text  DEFAULT 'sucesso',
+  p_meta          jsonb DEFAULT '{}'::jsonb,
+  p_clinic_id     uuid  DEFAULT NULL
+) RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = audit, app, pg_catalog AS $$
+DECLARE v_id bigint;
+BEGIN
+  INSERT INTO audit.event (
+      tenant_id, clinic_id, actor_user_id, actor_kind, event_type,
+      entity_schema, entity_table, entity_id, outcome,
+      session_id, request_id, meta)
+  VALUES (
+      app.current_tenant_id(),
+      p_clinic_id,
+      app.current_user_id(),
+      -- nullif em TODA leitura de GUC: worker e agendamento online nao tem
+      -- user_id, e ''::uuid explode com 22P02 e aborta a transacao inteira.
+      coalesce(nullif(current_setting('app.actor_kind', true), ''), 'system'),
+      p_event_type, p_entity_schema, p_entity_table, p_entity_id, p_outcome,
+      nullif(current_setting('app.session_id', true), '')::uuid,
+      nullif(current_setting('app.request_id', true), '')::uuid,
+      p_meta)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END $$;
+
+REVOKE ALL ON FUNCTION audit.log(text,text,text,uuid,text,jsonb,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.log(text,text,text,uuid,text,jsonb,uuid)
+  TO app_rw, clin_writer;
+
+RESET ROLE;
+```
+
+- [ ] **Passo 4: Escrever o Canal A em TypeScript**
+
+Criar `packages/audit/src/domain.ts`:
+
+```ts
+import type { Client, PoolClient } from 'pg';
+
+/** Conexao ja dentro de uma transacao de negocio. */
+export type Tx = Client | PoolClient;
+
+export type AuditOutcome = 'sucesso' | 'negado' | 'erro';
+
+/** Valores aceitos em `meta`. Chaves fora da whitelist do banco sao recusadas. */
+export type AuditMeta = Readonly<Record<string, string | number | boolean | null>>;
+
+export interface DomainAuditEvent {
+  readonly eventType: string;
+  readonly entitySchema: string;
+  readonly entityTable: string;
+  readonly entityId?: string | null;
+  readonly outcome?: AuditOutcome;
+  readonly meta?: AuditMeta;
+  readonly clinicId?: string | null;
+}
+
+/**
+ * Canal A. Grava DENTRO da transacao de negocio recebida em `tx`.
+ * Se a transacao fizer rollback, o evento some junto — de proposito:
+ * o evento so e verdade se a escrita commitou.
+ */
+export async function logDomainEvent(tx: Tx, event: DomainAuditEvent): Promise<bigint> {
+  const res = await tx.query<{ id: string }>(
+    'SELECT audit.log($1, $2, $3, $4, $5, $6::jsonb, $7) AS id',
+    [
+      event.eventType,
+      event.entitySchema,
+      event.entityTable,
+      event.entityId ?? null,
+      event.outcome ?? 'sucesso',
+      JSON.stringify(event.meta ?? {}),
+      event.clinicId ?? null,
+    ],
+  );
+  const row = res.rows[0];
+  if (!row) {
+    throw new Error('audit.log returned no row');
+  }
+  return BigInt(row.id);
+}
+```
+
+Substituir o conteúdo de `packages/audit/src/index.ts` por:
+
+```ts
+export type { AuditMeta, AuditOutcome, DomainAuditEvent, Tx } from './domain';
+export { logDomainEvent } from './domain';
+```
+
+- [ ] **Passo 5: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/audit/test/channel-a.int.test.ts
+```
+
+Esperado: `aplicada: 0011_audit_log.sql` e PASSA, 5 testes verdes.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/migrations/0011_audit_log.sql \
+        packages/audit/src/domain.ts \
+        packages/audit/src/index.ts \
+        packages/audit/test/channel-a.int.test.ts
+git commit -m "feat(audit): channel A logs domain events inside the business transaction"
+```
+
+---
+
+### Task 29: Canal B — segurança e acesso, em pool dedicado, fora da transação
+
+> **A razão de existir deste canal, escrita para quem vai implementá-lo.**
+>
+> Evento de negação é **o que o auditor procura**. Ninguém abre a trilha para ver o que deu certo; abre para ver quem tentou o que não podia. E o desenho ingênuo — gravar tudo pela mesma conexão da transação de negócio — apaga justamente esses eventos: a tentativa negada faz a transação de negócio abortar, o `ROLLBACK` leva embora o registro da negação, e a trilha fica com um buraco exatamente onde deveria ter a evidência.
+>
+> Por isso o Canal B usa um **pool dedicado, de 2 conexões, que nunca participa da transação de negócio**. O `ROLLBACK` do domínio não alcança um `INSERT` que já commitou em outra conexão. É o mesmo raciocínio que já produziu o `auditPool()` da Task 14.
+>
+> E se o banco recusar (indisponível, saturado, em failover)? O evento vai para um **buffer em disco** (arquivo NDJSON), drenado depois. Perder um evento de segurança porque o banco piscou é o mesmo furo, com outro nome. **Mas buffer é só para banco indisponível** — erro de constraint, de dado ou de privilégio é bug nosso e tem que falhar alto, senão um `meta` recusado pela whitelist grava queixa e CID em texto claro num arquivo, que é precisamente o que a NGS1.07.06 proíbe.
+
+O pool conecta com o papel de login `api`, que é `NOINHERIT` — ele **não** herda os privilégios de `app_rw` automaticamente. Por isso o pool executa `SET ROLE app_rw` em cada conexão nova.
+
+`audit.log_security` recebe tenant e ator **explicitamente**, e não pelo GUC: o evento típico deste canal é exatamente aquele em que o contexto está ausente ou é inválido. Por isso `tenant_id` é nullable na tabela.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0012_audit_log_security.sql`
+- Criar: `packages/audit/src/security.ts`
+- Modificar: `packages/audit/src/index.ts`
+- Teste: `packages/audit/test/channel-b.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/audit/test/channel-b.int.test.ts`:
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Client } from 'pg';
+import { connectAs, connectSuperuser, setContext } from './helpers/pg';
+import { logDomainEvent } from '../src/domain';
+import { SecurityAuditChannel } from '../src/security';
+
+const TENANT = '0192f8a0-0000-7000-8000-00000000040a';
+const USER = '0192f8a0-0000-7000-8000-000000000401';
+const PATIENT = '0192f8a0-0000-7000-8000-000000000402';
+
+/** DATABASE_URL e o papel `api`, NOINHERIT: e o mesmo caminho de producao. */
+function urlDaAplicacao(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL ausente: rode `cp .env.example .env` e `pnpm db:up`');
+  return url;
+}
+
+describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', () => {
+  let root: Client;
+  let dir: string;
+  let channel: SecurityAuditChannel;
+
+  beforeAll(async () => {
+    root = await connectSuperuser();
+    dir = mkdtempSync(join(tmpdir(), 'cadencia-audit-'));
+    channel = new SecurityAuditChannel({
+      connectionString: urlDaAplicacao(),
+      bufferPath: join(dir, 'security-audit.ndjson'),
+    });
+  });
+
+  afterAll(async () => {
+    await channel.close();
+    await root.end();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('a negacao gravada pelo canal B sobrevive ao ROLLBACK da transacao de negocio', async () => {
+    const app = await connectAs('app_rw');
+    try {
+      await app.query('BEGIN');
+      await setContext(app, { tenantId: TENANT, userId: USER, actorKind: 'user' });
+
+      // Canal A, na MESMA transacao que vai abortar.
+      await logDomainEvent(app, {
+        eventType: 'ENCOUNTER_FINALIZE',
+        entitySchema: 'clin',
+        entityTable: 'encounter_version',
+        entityId: PATIENT,
+        meta: { version_no: 1, kind: 'original' },
+      });
+
+      // Canal B, em conexao propria, fora da transacao.
+      const resultado = await channel.record({
+        eventType: 'RECORD_ACCESS_DENIED',
+        outcome: 'negado',
+        entitySchema: 'clin',
+        entityTable: 'encounter',
+        entityId: PATIENT,
+        tenantId: TENANT,
+        actorUserId: USER,
+        actorKind: 'user',
+        meta: { reason: 'sem_compartilhamento', route: '/v1/atendimentos/:id' },
+      });
+      expect(resultado).toBe('gravado');
+
+      await app.query('ROLLBACK');
+    } finally {
+      await app.end();
+    }
+
+    const negados = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'RECORD_ACCESS_DENIED'`,
+      [TENANT],
+    );
+    const dominio = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'ENCOUNTER_FINALIZE'`,
+      [TENANT],
+    );
+
+    // A negacao — que e o que o auditor procura — ficou.
+    expect(Number(negados.rows[0]?.n)).toBe(1);
+    // O evento de dominio da transacao abortada, nao.
+    expect(Number(dominio.rows[0]?.n)).toBe(0);
+  });
+
+  it('tentativa sem contexto de tenant tambem vira evento, com tenant_id nulo', async () => {
+    const resultado = await channel.record({
+      eventType: 'SESSION_LOGIN',
+      outcome: 'negado',
+      entitySchema: 'id',
+      entityTable: 'user',
+      actorKind: 'anon',
+      ip: '187.60.10.7',
+      meta: { reason: 'tenant_ausente', route: '/v1/sessoes' },
+    });
+    expect(resultado).toBe('gravado');
+
+    const res = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id IS NULL AND event_type = 'SESSION_LOGIN' AND outcome = 'negado'`,
+    );
+    expect(Number(res.rows[0]?.n)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('quando o banco recusa, o evento vai para o buffer em disco e nao se perde', async () => {
+    const bufferPath = join(dir, 'offline.ndjson');
+    const offline = new SecurityAuditChannel({
+      // porta 1: nao existe servidor. Simula banco indisponivel.
+      connectionString: 'postgres://ninguem@127.0.0.1:1/cadencia',
+      bufferPath,
+    });
+
+    const resultado = await offline.record({
+      eventType: 'BREAK_GLASS_OPEN',
+      outcome: 'sucesso',
+      entitySchema: 'clin',
+      entityTable: 'patient',
+      entityId: PATIENT,
+      tenantId: TENANT,
+      actorUserId: USER,
+      actorKind: 'user',
+      meta: { reason: 'paciente_inconsciente', ticket: 'CH-2026-0001' },
+    });
+
+    expect(resultado).toBe('bufferizado');
+    expect(existsSync(bufferPath)).toBe(true);
+
+    const linhas = readFileSync(bufferPath, 'utf8').trim().split('\n');
+    expect(linhas).toHaveLength(1);
+    expect(JSON.parse(linhas[0] ?? '{}')).toMatchObject({
+      eventType: 'BREAK_GLASS_OPEN',
+      tenantId: TENANT,
+    });
+
+    await offline.close();
+  });
+
+  it('meta fora da whitelist falha alto e NAO vai parar em arquivo no disco', async () => {
+    const bufferPath = join(dir, 'pii.ndjson');
+    const canal = new SecurityAuditChannel({
+      connectionString: urlDaAplicacao(),
+      bufferPath,
+    });
+    try {
+      await expect(
+        canal.record({
+          eventType: 'RECORD_ACCESS_DENIED',
+          outcome: 'negado',
+          entitySchema: 'clin',
+          entityTable: 'encounter',
+          entityId: PATIENT,
+          tenantId: TENANT,
+          actorUserId: USER,
+          actorKind: 'user',
+          meta: { queixa_principal: 'cefaleia ha 3 dias' } as unknown as Record<string, string>,
+        }),
+      ).rejects.toMatchObject({ code: '23514', constraint: 'meta_sem_pii' });
+
+      // O ponto do teste: o conteudo clinico recusado pelo banco nao pode ter
+      // sido gravado em texto claro no volume da task.
+      expect(existsSync(bufferPath)).toBe(false);
+    } finally {
+      await canal.close();
+    }
+  });
+
+  it('drain envia o buffer para o banco e esvazia o arquivo', async () => {
+    const bufferPath = join(dir, 'drenar.ndjson');
+    const offline = new SecurityAuditChannel({
+      connectionString: 'postgres://ninguem@127.0.0.1:1/cadencia',
+      bufferPath,
+    });
+    await offline.record({
+      eventType: 'BREAK_GLASS_CLOSE',
+      outcome: 'sucesso',
+      entitySchema: 'clin',
+      entityTable: 'patient',
+      entityId: PATIENT,
+      tenantId: TENANT,
+      actorUserId: USER,
+      actorKind: 'user',
+      meta: { ticket: 'CH-2026-0001' },
+    });
+    await offline.close();
+
+    const online = new SecurityAuditChannel({
+      connectionString: urlDaAplicacao(),
+      bufferPath,
+    });
+    const drenados = await online.drain();
+    await online.close();
+
+    expect(drenados).toBe(1);
+    expect(readFileSync(bufferPath, 'utf8')).toBe('');
+
+    const res = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'BREAK_GLASS_CLOSE'`,
+      [TENANT],
+    );
+    expect(Number(res.rows[0]?.n)).toBe(1);
+  });
+
+  it('o pool do canal B nao abre mais que 2 conexoes, nem com 6 eventos simultaneos', async () => {
+    const resultados = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        channel.record({
+          eventType: 'SESSION_LOGIN',
+          outcome: 'negado',
+          entitySchema: 'id',
+          entityTable: 'user',
+          actorKind: 'anon',
+          ip: '187.60.10.7',
+          meta: { reason: 'senha_invalida', route: `/v1/sessoes/${i}` },
+        }),
+      ),
+    );
+
+    // Todos gravaram: o limite serializa, nao descarta.
+    expect(resultados).toEqual(Array.from({ length: 6 }, () => 'gravado'));
+    // E o teto de 2 conexoes da §2.1 vale de verdade, nao so no campo do objeto.
+    expect(channel.openConnections).toBeLessThanOrEqual(2);
+    expect(channel.maxConnections).toBe(2);
+
+    const res = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id IS NULL AND event_type = 'SESSION_LOGIN' AND outcome = 'negado'`,
+    );
+    expect(Number(res.rows[0]?.n)).toBeGreaterThanOrEqual(6);
+  });
+
+  it('app_rw tem EXECUTE em audit.log_security e continua sem INSERT na tabela', async () => {
+    const res = await root.query<{ exec: boolean; ins: boolean }>(
+      `SELECT has_function_privilege('app_rw',
+                'audit.log_security(text,text,text,text,uuid,uuid,uuid,uuid,text,uuid,uuid,inet,jsonb)',
+                'EXECUTE') AS exec,
+              has_table_privilege('app_rw', 'audit.event', 'INSERT') AS ins`,
+    );
+    expect(res.rows[0]).toEqual({ exec: true, ins: false });
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/audit/test/channel-b.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "../src/security" from "packages/audit/test/channel-b.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Escrever a migration**
+
+Rodar: `pnpm db:new audit_log_security` — cria `packages/db/migrations/0012_audit_log_security.sql`. Preencher com exatamente:
+
+```sql
+-- 0012_audit_log_security.sql
+-- Canal B: seguranca e acesso. Recebe tenant e ator EXPLICITAMENTE, porque o
+-- evento tipico deste canal e justamente aquele em que o contexto esta ausente
+-- ou e invalido. Chamado por um pool dedicado, fora da transacao de negocio.
+
+SET ROLE audit_owner;
+
+CREATE FUNCTION audit.log_security(
+  p_event_type    text,
+  p_outcome       text,
+  p_entity_schema text,
+  p_entity_table  text,
+  p_entity_id     uuid  DEFAULT NULL,
+  p_tenant_id     uuid  DEFAULT NULL,
+  p_clinic_id     uuid  DEFAULT NULL,
+  p_actor_user_id uuid  DEFAULT NULL,
+  p_actor_kind    text  DEFAULT 'anon',
+  p_session_id    uuid  DEFAULT NULL,
+  p_request_id    uuid  DEFAULT NULL,
+  p_ip            inet  DEFAULT NULL,
+  p_meta          jsonb DEFAULT '{}'::jsonb
+) RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = audit, pg_catalog AS $$
+DECLARE v_id bigint;
+BEGIN
+  INSERT INTO audit.event (
+      tenant_id, clinic_id, actor_user_id, actor_kind, event_type,
+      entity_schema, entity_table, entity_id, outcome,
+      ip, session_id, request_id, meta)
+  VALUES (
+      p_tenant_id, p_clinic_id, p_actor_user_id, p_actor_kind, p_event_type,
+      p_entity_schema, p_entity_table, p_entity_id, p_outcome,
+      p_ip, p_session_id, p_request_id, p_meta)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END $$;
+
+REVOKE ALL ON FUNCTION audit.log_security(
+  text,text,text,text,uuid,uuid,uuid,uuid,text,uuid,uuid,inet,jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.log_security(
+  text,text,text,text,uuid,uuid,uuid,uuid,text,uuid,uuid,inet,jsonb) TO app_rw;
+
+RESET ROLE;
+```
+
+- [ ] **Passo 4: Escrever o Canal B em TypeScript**
+
+Criar `packages/audit/src/security.ts`:
+
+```ts
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { Pool } from 'pg';
+import type { AuditMeta, AuditOutcome } from './domain';
+
+export interface SecurityAuditEvent {
+  readonly eventType: string;
+  readonly outcome: AuditOutcome;
+  readonly entitySchema: string;
+  readonly entityTable: string;
+  readonly entityId?: string | null;
+  readonly tenantId?: string | null;
+  readonly clinicId?: string | null;
+  readonly actorUserId?: string | null;
+  readonly actorKind: 'user' | 'system' | 'anon';
+  readonly sessionId?: string | null;
+  readonly requestId?: string | null;
+  readonly ip?: string | null;
+  readonly meta?: AuditMeta;
+}
+
+export interface SecurityAuditChannelOptions {
+  /** Conexao do pool DEDICADO. Nunca a mesma do pool de negocio. */
+  readonly connectionString: string;
+  /** Arquivo NDJSON de contingencia, em volume persistente da task. */
+  readonly bufferPath: string;
+  /** §2.1: 2 conexoes. */
+  readonly max?: number;
+}
+
+const SQL_LOG_SECURITY = `
+  SELECT audit.log_security($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb) AS id`;
+
+/**
+ * Buffer em disco existe para banco indisponivel — e so para isso.
+ * SQLSTATE de constraint (23*), de dado (22*) ou de privilegio (42*) e bug nosso
+ * e tem que falhar alto: bufferizar um `meta` recusado pela whitelist gravaria
+ * queixa, CID ou nome de paciente em texto claro num arquivo NDJSON, que e
+ * precisamente o que a NGS1.07.06 proibe.
+ */
+function isTransient(err: unknown): boolean {
+  const code = (err as { code?: unknown }).code;
+  // Erro de rede/socket do Node (ECONNREFUSED, ETIMEDOUT) ou timeout do pool:
+  // nao tem SQLSTATE de 5 caracteres.
+  if (typeof code !== 'string' || !/^[0-9A-Z]{5}$/.test(code)) return true;
+  // 08 conexao · 53 recursos esgotados · 57 intervencao do operador ·
+  // 58 erro de sistema · XX corrupcao interna.
+  return /^(08|53|57|58|XX)/.test(code);
+}
+
+/**
+ * Canal B: seguranca e acesso, FORA da transacao de negocio.
+ *
+ * Evento de negacao e o que o auditor procura, e a negacao acontece exatamente
+ * quando a transacao de negocio vai abortar. Gravar pela mesma conexao faria o
+ * ROLLBACK apagar a evidencia. Se o banco recusar, o evento vai para disco.
+ */
+export class SecurityAuditChannel {
+  private readonly pool: Pool;
+  private readonly bufferPath: string;
+  readonly maxConnections: number;
+
+  constructor(options: SecurityAuditChannelOptions) {
+    this.maxConnections = options.max ?? 2;
+    this.bufferPath = options.bufferPath;
+    this.pool = new Pool({
+      connectionString: options.connectionString,
+      max: this.maxConnections,
+      connectionTimeoutMillis: 2_000,
+      application_name: 'cadencia-audit-channel',
+    });
+    // O papel de login `api` e NOINHERIT: nao herda app_rw sozinho. A query e
+    // enfileirada na conexao antes de qualquer outra, porque o `pg` mantem uma
+    // fila FIFO por cliente.
+    this.pool.on('connect', (client) => {
+      void client.query('SET ROLE app_rw').catch(() => undefined);
+    });
+    this.pool.on('error', () => undefined);
+  }
+
+  /** Conexoes fisicas efetivamente abertas agora por este pool. */
+  get openConnections(): number {
+    return this.pool.totalCount;
+  }
+
+  async record(event: SecurityAuditEvent): Promise<'gravado' | 'bufferizado'> {
+    try {
+      await this.insert(event);
+      return 'gravado';
+    } catch (err) {
+      if (!isTransient(err)) throw err;
+      this.buffer(event);
+      return 'bufferizado';
+    }
+  }
+
+  /** Reenvia o buffer de disco. Para no primeiro erro e preserva o restante. */
+  async drain(): Promise<number> {
+    if (!existsSync(this.bufferPath)) {
+      return 0;
+    }
+    const linhas = readFileSync(this.bufferPath, 'utf8')
+      .split('\n')
+      .filter((l) => l.trim() !== '');
+    let enviados = 0;
+    try {
+      for (; enviados < linhas.length; enviados += 1) {
+        await this.insert(JSON.parse(linhas[enviados] ?? '{}') as SecurityAuditEvent);
+      }
+    } finally {
+      writeFileSync(
+        this.bufferPath,
+        linhas
+          .slice(enviados)
+          .map((l) => `${l}\n`)
+          .join(''),
+        'utf8',
+      );
+    }
+    return enviados;
+  }
+
+  async close(): Promise<void> {
+    await this.pool.end();
+  }
+
+  private async insert(event: SecurityAuditEvent): Promise<void> {
+    await this.pool.query(SQL_LOG_SECURITY, [
+      event.eventType,
+      event.outcome,
+      event.entitySchema,
+      event.entityTable,
+      event.entityId ?? null,
+      event.tenantId ?? null,
+      event.clinicId ?? null,
+      event.actorUserId ?? null,
+      event.actorKind,
+      event.sessionId ?? null,
+      event.requestId ?? null,
+      event.ip ?? null,
+      JSON.stringify(event.meta ?? {}),
+    ]);
+  }
+
+  private buffer(event: SecurityAuditEvent): void {
+    mkdirSync(dirname(this.bufferPath), { recursive: true });
+    appendFileSync(this.bufferPath, `${JSON.stringify(event)}\n`, 'utf8');
+  }
+}
+```
+
+- [ ] **Passo 5: Publicar no barril do pacote**
+
+Substituir o conteúdo de `packages/audit/src/index.ts` por:
+
+```ts
+export type { AuditMeta, AuditOutcome, DomainAuditEvent, Tx } from './domain';
+export { logDomainEvent } from './domain';
+export type { SecurityAuditChannelOptions, SecurityAuditEvent } from './security';
+export { SecurityAuditChannel } from './security';
+```
+
+- [ ] **Passo 6: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/audit/test/channel-b.int.test.ts
+```
+
+Esperado: `aplicada: 0012_audit_log_security.sql` e PASSA, 7 testes verdes.
+
+- [ ] **Passo 7: Commitar**
+
+```bash
+git add packages/db/migrations/0012_audit_log_security.sql \
+        packages/audit/src/security.ts \
+        packages/audit/src/index.ts \
+        packages/audit/test/channel-b.int.test.ts
+git commit -m "feat(audit): channel B writes security events outside the business transaction"
+```
+
+---
+
+### Task 30: Deduplicação da auditoria de leitura — 1 evento por (usuário, paciente, caso de uso) em 5 minutos
+
+Toda leitura de prontuário é evento de auditoria: é obrigação (NGS1.07) e é o que sustenta a tela "Auditoria › Trilha". Mas registrar **por linha** ou **por componente de tela** é inviável: a lista virtualizada de 50 pacientes gera 50 INSERTs por scroll, o médico que abre e fecha a mesma aba três vezes gera três eventos, e a trilha passa a crescer mais rápido que o domínio inteiro — o que degrada exatamente a exportação da trilha que ela existe para permitir.
+
+Granularidade decidida: **um evento por (usuário, paciente, caso de uso), deduplicado em janela de 5 minutos**.
+
+A deduplicação vive **no banco**, não na aplicação: dois processos `api` atrás do balanceador não compartilham cache de memória, e um `INSERT ... ON CONFLICT DO UPDATE ... WHERE` resolve a corrida atomicamente. `audit.read_dedup` é tabela de controle, sem GRANT para a aplicação, com RLS forçada e policy só para o dono.
+
+Sobre `entity_id` guardar o `patient_id`: é referência interna (UUID), não identificador de pessoa. CPF, CNS, nome e nome social **nunca** entram na trilha.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0013_audit_log_read.sql`
+- Modificar: `packages/audit/src/security.ts` (acrescentar o método `recordRead`)
+- Teste: `packages/audit/test/read-dedup.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/audit/test/read-dedup.int.test.ts`:
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Client } from 'pg';
+import { connectAs, connectSuperuser } from './helpers/pg';
+import { SecurityAuditChannel } from '../src/security';
+
+const TENANT = '0192f8a0-0000-7000-8000-00000000050a';
+const MEDICO = '0192f8a0-0000-7000-8000-000000000501';
+const OUTRO_MEDICO = '0192f8a0-0000-7000-8000-000000000502';
+const PACIENTE = '0192f8a0-0000-7000-8000-000000000511';
+const OUTRO_PACIENTE = '0192f8a0-0000-7000-8000-000000000512';
+
+function urlDaAplicacao(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL ausente: rode `cp .env.example .env` e `pnpm db:up`');
+  return url;
+}
+
+async function contarLeituras(root: Client, paciente: string, usuario: string): Promise<number> {
+  const res = await root.query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM audit.event
+      WHERE tenant_id = $1 AND event_type = 'PATIENT_RECORD_READ'
+        AND entity_id = $2 AND actor_user_id = $3`,
+    [TENANT, paciente, usuario],
+  );
+  return Number(res.rows[0]?.n);
+}
+
+describe('auditoria de leitura: um evento por (usuario, paciente, caso de uso) em 5 minutos', () => {
+  let root: Client;
+  let app: Client;
+
+  beforeAll(async () => {
+    root = await connectSuperuser();
+    app = await connectAs('app_rw');
+  });
+
+  afterAll(async () => {
+    await app.end();
+    await root.end();
+  });
+
+  it('50 leituras do mesmo paciente na mesma janela geram 1 evento, nao 50', async () => {
+    for (let i = 0; i < 50; i += 1) {
+      await app.query('SELECT audit.log_read($1, $2, $3, $4)', [
+        'emr.open_record',
+        PACIENTE,
+        TENANT,
+        MEDICO,
+      ]);
+    }
+
+    expect(await contarLeituras(root, PACIENTE, MEDICO)).toBe(1);
+  });
+
+  it('a primeira chamada devolve o id do evento e as seguintes devolvem NULL', async () => {
+    const primeira = await app.query<{ id: string | null }>(
+      'SELECT audit.log_read($1, $2, $3, $4) AS id',
+      ['emr.print_record', PACIENTE, TENANT, MEDICO],
+    );
+    const segunda = await app.query<{ id: string | null }>(
+      'SELECT audit.log_read($1, $2, $3, $4) AS id',
+      ['emr.print_record', PACIENTE, TENANT, MEDICO],
+    );
+
+    expect(primeira.rows[0]?.id).not.toBeNull();
+    expect(segunda.rows[0]?.id).toBeNull();
+  });
+
+  it('outro caso de uso do mesmo paciente e outro evento', async () => {
+    const antes = await contarLeituras(root, PACIENTE, MEDICO);
+    await app.query('SELECT audit.log_read($1, $2, $3, $4)', [
+      'emr.export_record',
+      PACIENTE,
+      TENANT,
+      MEDICO,
+    ]);
+    expect(await contarLeituras(root, PACIENTE, MEDICO)).toBe(antes + 1);
+  });
+
+  it('outro usuario lendo o mesmo paciente gera evento proprio', async () => {
+    await app.query('SELECT audit.log_read($1, $2, $3, $4)', [
+      'emr.open_record',
+      PACIENTE,
+      TENANT,
+      OUTRO_MEDICO,
+    ]);
+    expect(await contarLeituras(root, PACIENTE, OUTRO_MEDICO)).toBe(1);
+  });
+
+  it('outro paciente do mesmo usuario gera evento proprio', async () => {
+    await app.query('SELECT audit.log_read($1, $2, $3, $4)', [
+      'emr.open_record',
+      OUTRO_PACIENTE,
+      TENANT,
+      MEDICO,
+    ]);
+    expect(await contarLeituras(root, OUTRO_PACIENTE, MEDICO)).toBe(1);
+  });
+
+  it('passados os 5 minutos da janela, a leitura volta a gerar evento', async () => {
+    const antes = await contarLeituras(root, PACIENTE, MEDICO);
+
+    // Envelhece a marca da deduplicacao em 6 minutos: e o equivalente
+    // deterministico de esperar a janela expirar.
+    const marca = await root.query(
+      `UPDATE audit.read_dedup
+          SET last_logged_at = last_logged_at - interval '6 minutes'
+        WHERE tenant_id = $1 AND actor_user_id = $2 AND entity_id = $3
+          AND use_case = 'emr.open_record'`,
+      [TENANT, MEDICO, PACIENTE],
+    );
+    // Garante que o teste esta de fato envelhecendo a marca certa, e nao
+    // passando por acidente porque o UPDATE nao pegou nenhuma linha.
+    expect(marca.rowCount).toBe(1);
+
+    const res = await app.query<{ id: string | null }>(
+      'SELECT audit.log_read($1, $2, $3, $4) AS id',
+      ['emr.open_record', PACIENTE, TENANT, MEDICO],
+    );
+
+    expect(res.rows[0]?.id).not.toBeNull();
+    expect(await contarLeituras(root, PACIENTE, MEDICO)).toBe(antes + 1);
+  });
+
+  it('a tabela de deduplicacao nao e visivel para a aplicacao', async () => {
+    const res = await root.query<{ sel: boolean; ins: boolean }>(
+      `SELECT has_table_privilege('app_rw', 'audit.read_dedup', 'SELECT') AS sel,
+              has_table_privilege('app_rw', 'audit.read_dedup', 'INSERT') AS ins`,
+    );
+    expect(res.rows[0]).toEqual({ sel: false, ins: false });
+  });
+
+  it('o canal B expoe recordRead e distingue gravado de deduplicado', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cadencia-read-'));
+    const channel = new SecurityAuditChannel({
+      connectionString: urlDaAplicacao(),
+      bufferPath: join(dir, 'buffer.ndjson'),
+    });
+    try {
+      const primeira = await channel.recordRead({
+        useCase: 'emr.timeline',
+        patientId: OUTRO_PACIENTE,
+        tenantId: TENANT,
+        actorUserId: OUTRO_MEDICO,
+      });
+      const segunda = await channel.recordRead({
+        useCase: 'emr.timeline',
+        patientId: OUTRO_PACIENTE,
+        tenantId: TENANT,
+        actorUserId: OUTRO_MEDICO,
+      });
+      expect([primeira, segunda]).toEqual(['gravado', 'deduplicado']);
+    } finally {
+      await channel.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/audit/test/read-dedup.int.test.ts`
+Esperado: FALHA com `error: function audit.log_read(unknown, unknown, unknown, unknown) does not exist` (SQLSTATE `42883`).
+
+- [ ] **Passo 3: Escrever a migration**
+
+Rodar: `pnpm db:new audit_log_read` — cria `packages/db/migrations/0013_audit_log_read.sql`. Preencher com exatamente:
+
+```sql
+-- 0013_audit_log_read.sql
+-- Auditoria de leitura clinica, deduplicada por (usuario, paciente, caso de uso)
+-- em janela de 5 minutos. Sem isso, a lista virtualizada de 50 pacientes gera
+-- 50 INSERTs por scroll e a trilha cresce mais rapido que o dominio.
+-- A deduplicacao vive no banco: dois processos api nao compartilham cache.
+
+SET ROLE audit_owner;
+
+CREATE TABLE audit.read_dedup (
+  tenant_id      uuid NOT NULL,
+  actor_user_id  uuid NOT NULL,
+  entity_id      uuid NOT NULL,          -- patient_id: REFERENCIA, nunca CPF/CNS/nome
+  use_case       text NOT NULL,
+  last_logged_at timestamptz(3) NOT NULL,
+  PRIMARY KEY (tenant_id, actor_user_id, entity_id, use_case));
+
+ALTER TABLE audit.read_dedup ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit.read_dedup FORCE  ROW LEVEL SECURITY;
+CREATE POLICY owner_all ON audit.read_dedup AS PERMISSIVE FOR ALL TO audit_owner
+  USING (true) WITH CHECK (true);
+REVOKE ALL ON audit.read_dedup FROM PUBLIC, app_rw, app_owner;
+
+CREATE FUNCTION audit.log_read(
+  p_use_case      text,
+  p_patient_id    uuid,
+  p_tenant_id     uuid DEFAULT NULL,
+  p_actor_user_id uuid DEFAULT NULL,
+  p_clinic_id     uuid DEFAULT NULL,
+  p_session_id    uuid DEFAULT NULL,
+  p_request_id    uuid DEFAULT NULL
+) RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = audit, app, pg_catalog AS $$
+DECLARE
+  -- Aceita os valores explicitos (pool dedicado do canal B) e cai para o GUC
+  -- quando chamada de dentro de clin.read_encounter()/clin.read_patient_record().
+  v_tenant uuid    := coalesce(p_tenant_id,     app.current_tenant_id());
+  v_user   uuid    := coalesce(p_actor_user_id, app.current_user_id());
+  v_nova   boolean;
+  v_id     bigint;
+BEGIN
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    -- Leitura sem contexto nao e deduplicavel: e tentativa, e vira evento
+    -- de negacao sempre, sem janela.
+    INSERT INTO audit.event (
+        tenant_id, clinic_id, actor_user_id, actor_kind, event_type,
+        entity_schema, entity_table, entity_id, outcome,
+        session_id, request_id, meta)
+    VALUES (
+        v_tenant, p_clinic_id, v_user, 'anon', 'PATIENT_RECORD_READ',
+        'clin', 'patient', p_patient_id, 'negado',
+        p_session_id, p_request_id, jsonb_build_object('use_case', p_use_case))
+    RETURNING id INTO v_id;
+    RETURN v_id;
+  END IF;
+
+  -- Atomico entre processos: se a marca ainda esta dentro da janela, o
+  -- DO UPDATE nao acontece e o RETURNING nao devolve linha.
+  INSERT INTO audit.read_dedup AS d
+         (tenant_id, actor_user_id, entity_id, use_case, last_logged_at)
+  VALUES (v_tenant, v_user, p_patient_id, p_use_case, clock_timestamp())
+  ON CONFLICT (tenant_id, actor_user_id, entity_id, use_case) DO UPDATE
+     SET last_logged_at = clock_timestamp()
+   WHERE d.last_logged_at < clock_timestamp() - interval '5 minutes'
+  RETURNING true INTO v_nova;
+
+  IF v_nova IS NULL THEN
+    RETURN NULL;                 -- dentro da janela: nada a registrar
+  END IF;
+
+  INSERT INTO audit.event (
+      tenant_id, clinic_id, actor_user_id, actor_kind, event_type,
+      entity_schema, entity_table, entity_id, outcome,
+      session_id, request_id, meta)
+  VALUES (
+      v_tenant, p_clinic_id, v_user, 'user', 'PATIENT_RECORD_READ',
+      'clin', 'patient', p_patient_id, 'sucesso',
+      p_session_id, p_request_id, jsonb_build_object('use_case', p_use_case))
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
+END $$;
+
+REVOKE ALL ON FUNCTION audit.log_read(text,uuid,uuid,uuid,uuid,uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.log_read(text,uuid,uuid,uuid,uuid,uuid,uuid)
+  TO app_rw, clin_writer;
+
+RESET ROLE;
+```
+
+- [ ] **Passo 4: Acrescentar `recordRead` ao canal B**
+
+Modificar `packages/audit/src/security.ts` — inserir o método abaixo dentro da classe `SecurityAuditChannel`, logo depois de `record`:
+
+```ts
+  /**
+   * Leitura de prontuario. A deduplicacao (1 evento por usuario × paciente ×
+   * caso de uso, janela de 5 min) acontece no banco: dois processos api nao
+   * compartilham cache de memoria.
+   */
+  async recordRead(read: {
+    readonly useCase: string;
+    readonly patientId: string;
+    readonly tenantId: string;
+    readonly actorUserId: string;
+    readonly clinicId?: string | null;
+    readonly sessionId?: string | null;
+    readonly requestId?: string | null;
+  }): Promise<'gravado' | 'deduplicado' | 'bufferizado'> {
+    try {
+      const res = await this.pool.query<{ id: string | null }>(
+        'SELECT audit.log_read($1,$2,$3,$4,$5,$6,$7) AS id',
+        [
+          read.useCase,
+          read.patientId,
+          read.tenantId,
+          read.actorUserId,
+          read.clinicId ?? null,
+          read.sessionId ?? null,
+          read.requestId ?? null,
+        ],
+      );
+      return res.rows[0]?.id == null ? 'deduplicado' : 'gravado';
+    } catch (err) {
+      if (!isTransient(err)) throw err;
+      this.buffer({
+        eventType: 'PATIENT_RECORD_READ',
+        outcome: 'sucesso',
+        entitySchema: 'clin',
+        entityTable: 'patient',
+        entityId: read.patientId,
+        tenantId: read.tenantId,
+        actorUserId: read.actorUserId,
+        actorKind: 'user',
+        clinicId: read.clinicId ?? null,
+        sessionId: read.sessionId ?? null,
+        requestId: read.requestId ?? null,
+        meta: { use_case: read.useCase },
+      });
+      return 'bufferizado';
+    }
+  }
+```
+
+- [ ] **Passo 5: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/audit/test/read-dedup.int.test.ts
+```
+
+Esperado: `aplicada: 0013_audit_log_read.sql` e PASSA, 8 testes verdes.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/migrations/0013_audit_log_read.sql \
+        packages/audit/src/security.ts \
+        packages/audit/test/read-dedup.int.test.ts
+git commit -m "feat(audit): deduplicate record-read events per user, patient and use case"
+```
+
+---
+
+### Task 31: Selo diário com marca d'água de visibilidade, e o *dead man's switch*
+
+> **A promessa honesta não é "trilha imutável", é "adulteração detectável".** Dentro do banco, superusuário sempre vence `REVOKE`. O que torna a adulteração detectável é o **selo diário**: uma linha por (tenant, dia) com o intervalo de ids, a contagem e um hash encadeado com o selo do dia anterior, assinado e exportado para bucket com Object Lock **em conta separada**. Adulterar passa a exigir mexer no Postgres **e** num objeto travado em outra conta — e ainda assim quebra a cadeia de forma verificável.
+
+**A marca d'água de visibilidade (`snapshot_xmin`) e o cenário que ela resolve.**
+
+Um lote TISS começa às 23h58 do dia 12 e commita às 00h03 do dia 13. Os eventos que ele gravou têm `occurred_at` do dia 12 — o `clock_timestamp()` foi avaliado quando o `INSERT` rodou — mas **só ficam visíveis** para outras transações depois do commit, já no dia 13. Se o job de selo rodar às 00h01 e selar o dia 12, ele conta as linhas visíveis naquele instante: as do lote não estão lá. Às 00h03 elas aparecem, dentro de um dia **já selado**. Meses depois, a verificação da cadeia recalcula o hash do dia 12, encontra linhas a mais e **acusa adulteração** — de um sistema que funcionou perfeitamente.
+
+A correção: o dia D só é selado quando não existe transação **que já escreveu** aberta desde antes do fim de D. O selo grava o `xmin` do snapshot em que foi calculado (`snapshot_xmin`), de modo que a verificação futura sabe exatamente qual horizonte de visibilidade produziu aquele hash. Se ainda houver transação antiga em curso, o selo é **adiado**, não aproximado. Repare que a condição olha `backend_xid IS NOT NULL`: só transação que já adquiriu XID pode ter linha dentro do dia fechado. Transação ociosa ou somente-leitura não adia nada — se adiasse, qualquer conexão aberta no banco travaria o selo para sempre.
+
+**O *dead man's switch*.** O selo é a única garantia real de imutabilidade, e job que para não faz barulho: ele simplesmente deixa de existir. O alarme não pode ser só por erro — tem que ser por **ausência de execução**. `audit.seal_watchdog()` responde `nunca_executou` quando não há nenhuma execução bem-sucedida registrada, `ausente` quando a última passou do limite, e `ok` só quando houve sucesso dentro da janela. Uma execução que terminou em `erro` ou em `adiado` **não** conta como sinal de vida. E quem produz esse sinal é `audit.run_seal` — o envelope que grava `audit.seal_run` e o evento `SEAL_RUN` na trilha. **O agendamento diário chama `audit.run_seal`, nunca `audit.seal_day` direto**: sem o envelope, o watchdog responde `nunca_executou` para sempre, o alarme vira ruído permanente e é desligado na primeira semana.
+
+O selo roda como `jobs`, o único papel do cluster com `BYPASSRLS` — é o que permite ler todos os tenants. Sem esse papel, o selo rodaria vendo zero linhas e reportando sucesso para sempre.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0014_audit_seal.sql`
+- Teste: `packages/audit/test/seal.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/audit/test/seal.int.test.ts`:
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Client } from 'pg';
+import { connectAs, connectSuperuser } from './helpers/pg';
+
+const TENANT = '0192f8a0-0000-7000-8000-00000000060a';
+const TENANT_RUN_OK = '0192f8a0-0000-7000-8000-00000000060b';
+const TENANT_RUN_ADIADO = '0192f8a0-0000-7000-8000-00000000060c';
+
+async function inserirEvento(owner: Client, tipo: string): Promise<void> {
+  await owner.query(
+    `INSERT INTO audit.event
+       (tenant_id, actor_kind, event_type, entity_schema, entity_table, outcome, meta)
+     VALUES ($1, 'system', $2, 'clin', 'encounter_version', 'sucesso', '{}'::jsonb)`,
+    [TENANT, tipo],
+  );
+}
+
+describe('audit.seal: selo diario, marca d agua de visibilidade e dead man switch', () => {
+  let root: Client;
+  let jobs: Client;
+  let owner: Client;
+
+  beforeAll(async () => {
+    root = await connectSuperuser();
+    jobs = await connectAs('jobs');
+    owner = await connectAs('audit_owner');
+    await inserirEvento(owner, 'ENCOUNTER_FINALIZE');
+    await inserirEvento(owner, 'ENCOUNTER_AMEND');
+  });
+
+  afterAll(async () => {
+    await owner.end();
+    await jobs.end();
+    await root.end();
+  });
+
+  it('o papel jobs e o unico do cluster com BYPASSRLS', async () => {
+    const res = await root.query<{ rolname: string }>(
+      'SELECT rolname FROM pg_roles WHERE rolbypassrls AND NOT rolsuper ORDER BY rolname',
+    );
+    expect(res.rows.map((r) => r.rolname)).toEqual(['jobs']);
+  });
+
+  it('a marca d agua exige pg_read_all_stats em jobs, senao o selo cega em silencio', async () => {
+    const res = await root.query<{ ok: boolean }>(
+      `SELECT pg_has_role('jobs', 'pg_read_all_stats', 'MEMBER') AS ok`,
+    );
+    expect(res.rows[0]?.ok).toBe(true);
+  });
+
+  it('adia o selo enquanto existe transacao COM ESCRITA aberta antes do fim do dia', async () => {
+    const lote = await connectAs('audit_owner');
+    try {
+      // O "lote das 23h58": abriu antes do corte, ja escreveu e ainda nao commitou.
+      await lote.query('BEGIN');
+      await inserirEvento(lote, 'TISS_BATCH_SUBMIT');
+
+      // Selar hoje com esse lote aberto entraria num dia que ainda pode receber
+      // linhas: a verificacao futura acusaria adulteracao.
+      await expect(
+        jobs.query('SELECT audit.seal_day($1, CURRENT_DATE)', [TENANT]),
+      ).rejects.toMatchObject({
+        code: '55006',
+        message: expect.stringContaining('selo adiado'),
+      });
+
+      await lote.query('COMMIT');
+    } finally {
+      await lote.end();
+    }
+  });
+
+  it('depois do commit do lote, o selo fecha o dia contando as linhas do lote', async () => {
+    const res = await jobs.query<{
+      row_count: string;
+      snapshot_xmin: string;
+      chain_hash: Buffer;
+      prev_chain_hash: Buffer | null;
+    }>(
+      `SELECT row_count::text, snapshot_xmin::text, chain_hash, prev_chain_hash
+         FROM audit.seal_day($1, CURRENT_DATE)`,
+      [TENANT],
+    );
+
+    const selo = res.rows[0];
+    expect(selo).toBeDefined();
+    expect(Number(selo?.row_count)).toBe(3);          // 2 do beforeAll + 1 do lote
+    expect(Number(selo?.snapshot_xmin)).toBeGreaterThan(0);
+    expect(selo?.chain_hash?.length).toBe(32);
+    expect(selo?.prev_chain_hash).toBeNull();          // primeiro selo do tenant
+  });
+
+  it('nao sela o mesmo dia duas vezes', async () => {
+    await expect(
+      jobs.query('SELECT audit.seal_day($1, CURRENT_DATE)', [TENANT]),
+    ).rejects.toMatchObject({ code: '23505' });
+  });
+
+  it('a aplicacao le o selo mas nao escreve nele', async () => {
+    const res = await root.query<{ sel: boolean; ins: boolean; upd: boolean }>(
+      `SELECT has_table_privilege('app_rw', 'audit.seal', 'SELECT') AS sel,
+              has_table_privilege('app_rw', 'audit.seal', 'INSERT') AS ins,
+              has_table_privilege('app_rw', 'audit.seal', 'UPDATE') AS upd`,
+    );
+    expect(res.rows[0]).toEqual({ sel: true, ins: false, upd: false });
+  });
+
+  it('run_seal e o batimento do dead man switch: registra sucesso e o proprio evento', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+
+    const res = await jobs.query<{ run_seal: string }>(
+      'SELECT audit.run_seal($1, CURRENT_DATE) AS run_seal',
+      [TENANT_RUN_OK],
+    );
+    expect(res.rows[0]?.run_seal).toBe('sucesso');
+
+    const run = await root.query<{ outcome: string; finished: boolean }>(
+      `SELECT outcome, finished_at IS NOT NULL AS finished FROM audit.seal_run`,
+    );
+    expect(run.rows).toEqual([{ outcome: 'sucesso', finished: true }]);
+
+    // Sem esta linha o watchdog nunca sai de 'nunca_executou' em producao.
+    const wd = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
+    expect(wd.rows[0]?.status).toBe('ok');
+
+    // §3.1: toda execucao de `jobs` grava evento proprio na trilha.
+    const ev = await root.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM audit.event
+        WHERE tenant_id = $1 AND event_type = 'SEAL_RUN' AND meta ->> 'job_name' = 'seal'`,
+      [TENANT_RUN_OK],
+    );
+    expect(Number(ev.rows[0]?.n)).toBe(1);
+  });
+
+  it('run_seal registra adiado sem contar como sinal de vida', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+    const lote = await connectAs('audit_owner');
+    try {
+      await lote.query('BEGIN');
+      await inserirEvento(lote, 'TISS_BATCH_SUBMIT');
+
+      const res = await jobs.query<{ run_seal: string }>(
+        'SELECT audit.run_seal($1, CURRENT_DATE) AS run_seal',
+        [TENANT_RUN_ADIADO],
+      );
+      expect(res.rows[0]?.run_seal).toBe('adiado');
+
+      await lote.query('ROLLBACK');
+    } finally {
+      await lote.end();
+    }
+
+    const wd = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
+    expect(wd.rows[0]?.status).toBe('nunca_executou');
+  });
+
+  it('sem nenhuma execucao registrada, o watchdog acusa ausencia, nao ok', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+    const res = await jobs.query<{ status: string; ultima_execucao: Date | null }>(
+      'SELECT * FROM audit.seal_watchdog()',
+    );
+    expect(res.rows[0]?.status).toBe('nunca_executou');
+    expect(res.rows[0]?.ultima_execucao).toBeNull();
+  });
+
+  it('execucao que terminou em erro nao conta como sinal de vida', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+    await root.query(
+      `INSERT INTO audit.seal_run (tenant_id, seal_date, outcome, detail)
+       VALUES ($1, CURRENT_DATE - 1, 'erro', 'conexao recusada')`,
+      [TENANT],
+    );
+    const res = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
+    expect(res.rows[0]?.status).toBe('nunca_executou');
+  });
+
+  it('ultima execucao bem-sucedida ha 30 horas dispara o alarme de ausencia', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+    await root.query(
+      `INSERT INTO audit.seal_run (tenant_id, seal_date, started_at, finished_at, outcome)
+       VALUES ($1, CURRENT_DATE - 2, clock_timestamp() - interval '30 hours',
+               clock_timestamp() - interval '30 hours', 'sucesso')`,
+      [TENANT],
+    );
+    const res = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
+    expect(res.rows[0]?.status).toBe('ausente');
+  });
+
+  it('execucao bem-sucedida ha 2 horas mantem o watchdog em ok', async () => {
+    await root.query('TRUNCATE audit.seal_run');
+    await root.query(
+      `INSERT INTO audit.seal_run (tenant_id, seal_date, started_at, finished_at, outcome)
+       VALUES ($1, CURRENT_DATE - 1, clock_timestamp() - interval '2 hours',
+               clock_timestamp() - interval '2 hours', 'sucesso')`,
+      [TENANT],
+    );
+    const res = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
+    expect(res.rows[0]?.status).toBe('ok');
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/audit/test/seal.int.test.ts`
+Esperado: FALHA com `error: relation "audit.seal_run" does not exist` (`42P01`) e `error: function audit.seal_day(unknown, date) does not exist` (`42883`).
+
+- [ ] **Passo 3: Escrever a migration**
+
+Rodar: `pnpm db:new audit_seal` — cria `packages/db/migrations/0014_audit_seal.sql`. Preencher com exatamente:
+
+```sql
+-- 0014_audit_seal.sql
+-- Selo diario: a unica garantia real de imutabilidade. Dentro do banco,
+-- superusuario sempre vence REVOKE; o que resta e adulteracao DETECTAVEL.
+-- Roda como `jobs`, unico papel com BYPASSRLS: sem ele o selo leria zero
+-- linhas e reportaria sucesso para sempre.
+
+-- pg_read_all_stats e necessario para a marca d'agua de visibilidade. Em
+-- producao o GRANT pertence ao bootstrap (superusuario); aqui ele e tentado e,
+-- se faltar privilegio, o teste de CI reprova alto em vez de o selo cegar.
+DO $$
+BEGIN
+  EXECUTE 'GRANT pg_read_all_stats TO jobs';
+EXCEPTION WHEN insufficient_privilege THEN
+  RAISE NOTICE 'GRANT pg_read_all_stats TO jobs precisa ser feito pelo superusuario de bootstrap';
+END $$;
+
+SET ROLE audit_owner;
+
+GRANT USAGE ON SCHEMA audit TO jobs;
+GRANT SELECT ON audit.event TO jobs;
+
+CREATE TABLE audit.seal (
+  tenant_id uuid NOT NULL, seal_date date NOT NULL,
+  first_id bigint NOT NULL, last_id bigint NOT NULL, row_count bigint NOT NULL,
+  chain_hash bytea NOT NULL, prev_chain_hash bytea,
+  -- Marca d'agua de visibilidade: o dia D so e selado quando nao ha transacao
+  -- com escrita mais antiga que o inicio de D+1. Sem isso, um lote TISS que
+  -- comeca 23h58 e commita 00h03 entra num dia ja selado e a verificacao futura
+  -- acusa adulteracao de um sistema que funcionou perfeitamente.
+  snapshot_xmin bigint NOT NULL,
+  signed_pkcs7 bytea, sealed_at timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  PRIMARY KEY (tenant_id, seal_date));
+
+ALTER TABLE audit.seal ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit.seal FORCE  ROW LEVEL SECURITY;
+REVOKE ALL ON audit.seal FROM PUBLIC, app_rw, app_owner;
+GRANT SELECT ON audit.seal TO app_rw;
+GRANT SELECT, INSERT ON audit.seal TO jobs;
+CREATE POLICY tenant_read ON audit.seal AS PERMISSIVE FOR SELECT TO app_rw
+  USING (tenant_id = app.current_tenant_id() AND app.is_member());
+CREATE POLICY owner_all ON audit.seal AS PERMISSIVE FOR ALL TO audit_owner
+  USING (true) WITH CHECK (true);
+
+-- Registro de EXECUCAO do job. E sobre esta tabela que o dead man's switch
+-- opera: o alarme e por AUSENCIA de execucao, nao so por erro.
+CREATE TABLE audit.seal_run (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  tenant_id uuid,                       -- NULL = execucao global do job
+  seal_date date NOT NULL,
+  started_at timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  finished_at timestamptz(3),
+  outcome text NOT NULL CHECK (outcome IN ('sucesso','adiado','erro')),
+  detail text);
+
+ALTER TABLE audit.seal_run ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit.seal_run FORCE  ROW LEVEL SECURITY;
+REVOKE ALL ON audit.seal_run FROM PUBLIC, app_rw, app_owner;
+GRANT SELECT, INSERT ON audit.seal_run TO jobs;
+CREATE POLICY owner_all ON audit.seal_run AS PERMISSIVE FOR ALL TO audit_owner
+  USING (true) WITH CHECK (true);
+
+-- SECURITY INVOKER de proposito: roda como `jobs` e usa o BYPASSRLS dele para
+-- enxergar todos os tenants. Como SECURITY DEFINER (audit_owner) a RLS forcada
+-- devolveria zero linhas e o selo seria de um dia vazio.
+CREATE FUNCTION audit.seal_day(p_tenant uuid, p_date date) RETURNS audit.seal
+LANGUAGE plpgsql
+SET search_path = audit, pg_catalog AS $$
+DECLARE
+  v_cut  timestamptz := (p_date + 1)::timestamptz;   -- inicio de D+1
+  v_xmin bigint;
+  v_prev bytea;
+  v_row  audit.seal;
+BEGIN
+  v_xmin := pg_snapshot_xmin(pg_current_snapshot())::text::bigint;
+
+  -- So bloqueia transacao que JA ESCREVEU (isto e, que ja adquiriu XID): e a
+  -- unica que pode ter linhas com occurred_at dentro do dia fechado e ainda
+  -- invisiveis. O lote TISS que comeca 23h58, INSERE antes da meia-noite e
+  -- commita 00h03 cai aqui — que e o caso que o selo existe para cobrir.
+  -- Transacao aberta e ociosa, ou somente-leitura, nao adia nada.
+  IF EXISTS (
+      SELECT 1 FROM pg_stat_activity a
+       WHERE a.datname = current_database()
+         AND a.pid <> pg_backend_pid()
+         AND a.xact_start IS NOT NULL
+         AND a.xact_start < v_cut
+         AND a.backend_xid IS NOT NULL)
+  THEN
+    RAISE EXCEPTION 'selo adiado: transacao com escrita aberta desde antes de % ainda em curso', v_cut
+      USING ERRCODE = '55006',
+            HINT = 'Rode o selo de novo quando a transacao antiga terminar.';
+  END IF;
+
+  SELECT s.chain_hash INTO v_prev
+    FROM audit.seal s
+   WHERE s.tenant_id = p_tenant AND s.seal_date < p_date
+   ORDER BY s.seal_date DESC
+   LIMIT 1;
+
+  INSERT INTO audit.seal (tenant_id, seal_date, first_id, last_id, row_count,
+                          chain_hash, prev_chain_hash, snapshot_xmin)
+  SELECT p_tenant, p_date,
+         coalesce(min(e.id), 0), coalesce(max(e.id), 0), count(*),
+         -- sha256() e do pg_catalog: nao depende do pgcrypto nem de USAGE em
+         -- `public`, que a §3.1 revoga de PUBLIC. Com digest(), o selo falharia
+         -- com 42883 na primeira execucao noturna, em silencio.
+         sha256(
+           coalesce(v_prev, ''::bytea) ||
+           convert_to(coalesce(string_agg(
+               e.id || '|' ||
+               to_char(e.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS') || '|' ||
+               e.event_type || '|' || e.outcome || '|' ||
+               coalesce(e.entity_id::text, ''),
+             E'\n' ORDER BY e.id), ''), 'UTF8')),
+         v_prev, v_xmin
+    FROM audit.event e
+   WHERE e.tenant_id = p_tenant
+     AND e.occurred_at >= p_date::timestamptz
+     AND e.occurred_at <  v_cut
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END $$;
+
+REVOKE ALL ON FUNCTION audit.seal_day(uuid, date) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.seal_day(uuid, date) TO jobs;
+
+-- O selo precisa gravar a PROPRIA execucao, senao o dead man's switch abaixo
+-- responde 'nunca_executou' para sempre e o alarme e desligado na primeira
+-- semana. 'adiado' (55006) nao e erro e nao e sinal de vida: e um estado.
+GRANT EXECUTE ON FUNCTION audit.log_security(
+  text,text,text,text,uuid,uuid,uuid,uuid,text,uuid,uuid,inet,jsonb) TO jobs;
+
+CREATE FUNCTION audit.run_seal(p_tenant uuid, p_date date) RETURNS text
+LANGUAGE plpgsql
+SET search_path = audit, pg_catalog AS $$
+DECLARE
+  v_started timestamptz := clock_timestamp();
+  v_outcome text;
+  v_detail  text;
+BEGIN
+  BEGIN
+    PERFORM audit.seal_day(p_tenant, p_date);
+    v_outcome := 'sucesso';
+  EXCEPTION
+    WHEN sqlstate '55006' THEN
+      v_outcome := 'adiado';  v_detail := SQLERRM;
+    WHEN OTHERS THEN
+      v_outcome := 'erro';    v_detail := SQLERRM;
+  END;
+
+  INSERT INTO audit.seal_run
+         (tenant_id, seal_date, started_at, finished_at, outcome, detail)
+  VALUES (p_tenant, p_date, v_started, clock_timestamp(), v_outcome, v_detail);
+
+  PERFORM audit.log_security(
+    'SEAL_RUN',
+    CASE WHEN v_outcome = 'erro' THEN 'erro' ELSE 'sucesso' END,
+    'audit', 'seal', NULL, p_tenant, NULL, NULL, 'system', NULL, NULL, NULL,
+    jsonb_build_object('seal_date', p_date::text, 'job_name', 'seal',
+                       'reason', v_outcome));
+
+  RETURN v_outcome;
+END $$;
+
+REVOKE ALL ON FUNCTION audit.run_seal(uuid, date) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.run_seal(uuid, date) TO jobs;
+
+-- DEAD MAN'S SWITCH. O selo e a unica garantia real de imutabilidade, e job que
+-- para nao faz barulho. Alarme por AUSENCIA de execucao, nao so por erro:
+-- execucao que terminou em 'erro' ou 'adiado' NAO conta como sinal de vida.
+CREATE FUNCTION audit.seal_watchdog(p_max_atraso interval DEFAULT interval '26 hours')
+RETURNS TABLE (status text, ultima_execucao timestamptz, atraso interval)
+LANGUAGE sql STABLE
+SET search_path = audit, pg_catalog AS $$
+  SELECT CASE
+           WHEN max(r.started_at) IS NULL                          THEN 'nunca_executou'
+           WHEN clock_timestamp() - max(r.started_at) > p_max_atraso THEN 'ausente'
+           ELSE 'ok'
+         END,
+         max(r.started_at),
+         clock_timestamp() - max(r.started_at)
+    FROM audit.seal_run r
+   WHERE r.outcome = 'sucesso';
+$$;
+
+REVOKE ALL ON FUNCTION audit.seal_watchdog(interval) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit.seal_watchdog(interval) TO jobs, app_rw;
+
+RESET ROLE;
+```
+
+- [ ] **Passo 4: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/audit/test/seal.int.test.ts
+```
+
+Esperado: `aplicada: 0014_audit_seal.sql` e PASSA, 12 testes verdes.
+
+Se o caso `a marca d agua exige pg_read_all_stats em jobs` falhar, o `GRANT` do bloco `DO` não teve privilégio: acrescentar `GRANT pg_read_all_stats TO jobs;` ao script de bootstrap de papéis, que roda como superusuário, e rodar `pnpm db:reset && pnpm db:migrate`.
+
+- [ ] **Passo 5: Rodar a suíte inteira do pacote e a suíte de isolamento**
+
+Rodar:
+
+```bash
+pnpm test:int packages/audit
+pnpm test:iso
+```
+
+Esperado: PASSA nas duas. As três tabelas novas (`audit.read_dedup`, `audit.seal`, `audit.seal_run`) já nascem com `tenant_id`, RLS habilitada, forçada e policy — que é o que a varredura de catálogo da suíte de isolamento exige de toda tabela em `app clin fin tiss audit`.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/migrations/0014_audit_seal.sql \
+        packages/audit/test/seal.int.test.ts
+git commit -m "feat(audit): daily seal with visibility watermark and dead man's switch"
+```
+
+---
+
+## Parte V — Autenticação, autorização e catálogos
+
+> **Contexto que o engenheiro precisa antes de começar.** Esta parte constrói três coisas que não têm tela e não podem ser retrofitadas: (1) a separação entre **identidade global** e **vínculo por tenant**, (2) a autenticação com **sessão opaca** (token aleatório no banco, nunca JWT com claim de tenant), e (3) o catálogo de terminologia **versionado por data do evento**. O entregável continua sendo o teste verde.
+>
+> **Três convenções que valem para todas as tarefas abaixo e que, se ignoradas, produzem código que o CI derruba depois.**
+>
+> 1. **Irmão não importa irmão, e a regra vale para `packages/kernel` também.** `authn`, `authz`, `db`, `audit` e `kernel` são todos L0 (§2.2 regra 2, proibição absoluta). Por isso `packages/authn/src/*` **não** importa `@cadencia/db`, `@cadencia/kernel` nem `@cadencia/audit`: as funções recebem a conexão, o gerador de id e o canal de auditoria **por parâmetro**, e quem compõe é L3 (`apps/api`). Onde há duplicação (o `Result` de `authn`, a lista de papéis de `membership.ts`), ela é **intencional** e vem acompanhada de um teste que impede as duas cópias de divergirem. **Arquivos de teste podem importar irmãos** — eles não são código de produção e não entram no grafo de módulos.
+> 2. **Nenhum arquivo fora de `packages/kernel/src/clock.ts` e `uuid.ts` lê o relógio do sistema.** O guarda `tools/repo/time-source.ts` (Task 21) reprova `Date.now(` e `new Date(` em todo `packages/**` e `apps/**` que não seja teste, e a instrução dele é explícita: a correção nunca é acrescentar o arquivo à allowlist. É por isso que `verifyTotpForUser` recebe o `Clock` como parâmetro **obrigatório** e que toda janela de sessão é calculada com `clock_timestamp()` dentro do SQL.
+> 3. **Migrations continuam em `packages/db/migrations/`**, criadas com `pnpm db:new <nome>`. Esta parte usa `0015`–`0020`. Testes de unidade terminam em `.test.ts` e rodam com `pnpm test <caminho>`; testes que precisam de PostgreSQL terminam em `.int.test.ts` e rodam com `pnpm test:int <caminho>`.
+>
+> **Atenção ao que já existe:** `id."user"`, `app.membership` e `app.professional` foram criados na **migration 0004** (Task 9), junto com `app.is_member()`, `app.has_role_in()` e `app.current_professional_id()`. A migration 0006 já lhes deu GRANTs e a policy `tenant_isolation`. A Task 32 **estende** essas tabelas; não as recria.
+
+---
+
+### Task 32: Credencial da identidade global e o pool do papel `jobs`
+
+**Por que esta tarefa existe (§10 item 2).** O médico tem **um** certificado ICP-Brasil, logo **uma** identidade. Se a credencial nascer dentro do tenant, o mesmo CPF vira N usuários, a assinatura de um não vale para o outro, e a trilha de auditoria — que é append-only — passa a apontar para atores duplicados. Separar depois significa reescrever `authn`, reescrever `authz` e **reindexar uma trilha que não pode ser reescrita**. `id."user"` já nasceu global e sem `tenant_id` na 0004; falta a credencial (`id.user_credential`), faltam as colunas que `authn` precisa (`cpf`, `status`) e faltam as colunas de proveniência do vínculo (`granted_by`, `revoked_reason`).
+
+E falta um pool: os *fixtures* de teste de tudo o que vem daqui em diante montam cenário com o papel `jobs`, o único do cluster com `BYPASSRLS`. `BYPASSRLS` ignora **POLICY**, **não** ignora **GRANT** — por isso a migration também concede privilégio de tabela a `jobs`, senão toda suíte `.int.test.ts` desta parte falha com `permission denied for table` (42501).
+
+**Arquivos:**
+- Modificar: `packages/db/src/pool.ts` (acrescentar `jobsPool`)
+- Modificar: `packages/db/src/index.ts`
+- Criar: `packages/db/migrations/0015_identity_credentials.sql`
+- Teste: `packages/authn/src/identity-global.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authn/src/identity-global.int.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { uuidv7 } from '@cadencia/kernel';
+import { jobsPool, withTenantTx } from '@cadencia/db';
+
+// jobsPool usa o papel `jobs`, o unico do cluster com BYPASSRLS. Serve APENAS
+// para montar cenario; toda asserticao roda por withTenantTx, sujeita a RLS.
+async function seedTenant(nome: string): Promise<{ tenantId: string; clinicId: string }> {
+  const tenantId = uuidv7();
+  const clinicId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO app.tenant (id, slug, razao_social, cnpj) VALUES ($1, $2, $3, $4)`,
+    [tenantId, `t-${tenantId.slice(0, 8)}`, nome, '12ABC34501DE35'],
+  );
+  await jobsPool().query(
+    `INSERT INTO app.clinic (tenant_id, id, nome, timezone) VALUES ($1, $2, $3, $4)`,
+    [tenantId, clinicId, `${nome} - Unidade Centro`, 'America/Sao_Paulo'],
+  );
+  return { tenantId, clinicId };
+}
+
+async function seedUser(fullName: string): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, fullName],
+  );
+  return userId;
+}
+
+async function grant(
+  tenantId: string, clinicId: string, userId: string, role: string,
+): Promise<string> {
+  const id = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [tenantId, id, userId, clinicId, role],
+  );
+  return id;
+}
+
+describe('identidade global x vinculo por tenant', () => {
+  it('id.user nao tem coluna tenant_id: a credencial do medico e unica, nao por clinica', async () => {
+    const { rows } = await jobsPool().query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'id' AND table_name = 'user'`,
+    );
+    const colunas = rows.map((r) => r.column_name as string);
+    expect(colunas).toContain('id');
+    expect(colunas).toContain('email');
+    expect(colunas).toContain('cpf');
+    expect(colunas).toContain('status');
+    expect(colunas).not.toContain('tenant_id');
+  });
+
+  it('a credencial mora fora do tenant: id.user_credential tambem nao tem tenant_id', async () => {
+    const { rows } = await jobsPool().query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'id' AND table_name = 'user_credential'`,
+    );
+    const colunas = rows.map((r) => r.column_name as string);
+    expect(colunas).toContain('password_hash');
+    expect(colunas).toContain('locked_until');
+    expect(colunas).not.toContain('tenant_id');
+  });
+
+  it('o mesmo medico e admin em uma rede e recepcao em outra, sem duplicar identidade', async () => {
+    const sp = await seedTenant('Clinica Sao Paulo');
+    const manaus = await seedTenant('Clinica Manaus');
+    const userId = await seedUser('Dra. Ana Ribeiro');
+    await grant(sp.tenantId, sp.clinicId, userId, 'admin_clinico');
+    await grant(manaus.tenantId, manaus.clinicId, userId, 'recepcao');
+
+    const emSp = await withTenantTx(
+      { kind: 'user', tenantId: sp.tenantId, userId, clinicId: sp.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ pode: boolean }>(
+        `SELECT app.has_role_in($1, ARRAY['admin_clinico']) AS pode`, [sp.clinicId],
+      ),
+    );
+    expect(emSp.rows[0]?.pode).toBe(true);
+
+    const emManaus = await withTenantTx(
+      { kind: 'user', tenantId: manaus.tenantId, userId, clinicId: manaus.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ pode: boolean }>(
+        `SELECT app.has_role_in($1, ARRAY['admin_clinico']) AS pode`, [manaus.clinicId],
+      ),
+    );
+    expect(emManaus.rows[0]?.pode).toBe(false);
+  });
+
+  it('vinculo revogado para de valer imediatamente, e o motivo fica registrado', async () => {
+    const t = await seedTenant('Clinica do Vale');
+    const userId = await seedUser('Dr. Bruno Camargo');
+    const membershipId = await grant(t.tenantId, t.clinicId, userId, 'profissional');
+
+    const antes = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ membro: boolean }>(`SELECT app.is_member() AS membro`),
+    );
+    expect(antes.rows[0]?.membro).toBe(true);
+
+    await jobsPool().query(
+      `UPDATE app.membership
+          SET revoked_at = clock_timestamp(), revoked_reason = $2
+        WHERE id = $1`,
+      [membershipId, 'desligamento'],
+    );
+
+    const depois = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ membro: boolean }>(`SELECT app.is_member() AS membro`),
+    );
+    expect(depois.rows[0]?.membro).toBe(false);
+  });
+
+  it('o vinculo do tenant A e invisivel dentro do contexto do tenant B', async () => {
+    const a = await seedTenant('Clinica A');
+    const b = await seedTenant('Clinica B');
+    const userId = await seedUser('Dra. Carla Nunes');
+    await grant(a.tenantId, a.clinicId, userId, 'admin_clinico');
+    await grant(b.tenantId, b.clinicId, userId, 'admin_clinico');
+
+    const vistoDeB = await withTenantTx(
+      { kind: 'user', tenantId: b.tenantId, userId, clinicId: b.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM app.membership WHERE tenant_id = $1`, [a.tenantId],
+      ),
+    );
+    expect(vistoDeB.rows[0]?.n).toBe(0);
+
+    // E o pool de jobs, que e o unico com BYPASSRLS, enxerga os dois. E por isso
+    // que ele monta cenario e NUNCA serve caminho de requisicao.
+    const doJobs = await jobsPool().query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM app.membership WHERE user_id = $1`, [userId],
+    );
+    expect(Number(doJobs.rows[0]?.n)).toBe(2);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/authn/src/identity-global.int.test.ts`
+Esperado: FALHA já na importação — `SyntaxError: The requested module '@cadencia/db' does not provide an export named 'jobsPool'`.
+
+- [ ] **Passo 3: Acrescentar o pool do papel `jobs`**
+
+Modificar `packages/db/src/pool.ts` — acrescentar a variável de módulo, a função e a nova versão de `closePools`.
+
+Logo abaixo de `let audit: Pool | undefined;`, acrescentar:
+
+```ts
+let jobs: Pool | undefined;
+```
+
+Logo depois da função `auditPool()`, acrescentar:
+
+```ts
+/**
+ * Pool do papel `jobs` — o UNICO do cluster com BYPASSRLS (§3.1). Existe para
+ * selo diario, detector de divergencia do financeiro, carga bimestral da TUSS e
+ * montagem de cenario nos testes. NUNCA serve caminho de requisicao: aqui a RLS
+ * nao filtra nada, e o isolamento entre clinicas deixa de existir.
+ *
+ * BYPASSRLS ignora POLICY, nao ignora GRANT: cada migration que cria tabela usada
+ * por job ou por fixture precisa conceder privilegio a `jobs` explicitamente.
+ */
+export function jobsPool(): Pool {
+  jobs ??= new Pool({
+    connectionString: requireEnv('DATABASE_URL_JOBS'),
+    max: 4,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+    application_name: 'cadencia-jobs',
+  });
+  return jobs;
+}
+```
+
+Substituir a função `closePools` inteira por:
+
+```ts
+/** Fecha todos os pools. Usado no shutdown do processo e entre arquivos de teste. */
+export async function closePools(): Promise<void> {
+  const pools = [business, audit, jobs].filter((p): p is Pool => p !== undefined);
+  business = undefined;
+  audit = undefined;
+  jobs = undefined;
+  await Promise.all(pools.map((p) => p.end()));
+}
+```
+
+Substituir o conteúdo de `packages/db/src/index.ts` por:
+
+```ts
+export { runMigrations, type MigrateOptions, type MigrateResult } from './migrate';
+export { businessPool, auditPool, jobsPool, closePools } from './pool';
+export { withTenantTx, preambleParams, type Actor, type TxClient } from './tx';
+```
+
+- [ ] **Passo 4: Rodar de novo e confirmar que a falha mudou**
+
+Rodar: `pnpm test:int packages/authn/src/identity-global.int.test.ts`
+Esperado: FALHA com `error: permission denied for schema app` (SQLSTATE `42501`) no primeiro `INSERT INTO app.tenant`. É o `BYPASSRLS` ignorando POLICY e **não** ignorando GRANT, exatamente como descrito acima.
+
+- [ ] **Passo 5: Escrever a migration**
+
+Rodar: `pnpm db:new identity_credentials` — cria `packages/db/migrations/0015_identity_credentials.sql`. Preencher com exatamente:
+
+```sql
+-- 0015_identity_credentials.sql
+-- Identidade GLOBAL (§10 item 2). id."user" e app.membership ja existem desde a
+-- 0004: esta migration ESTENDE, nunca recria. O medico tem UM certificado
+-- ICP-Brasil, logo UMA identidade; nada aqui tem tenant_id.
+
+-- Colunas que `authn` precisa e que a 0004 nao tinha.
+ALTER TABLE id."user"
+  ADD COLUMN cpf    varchar(11) CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$'),
+  ADD COLUMN status text NOT NULL DEFAULT 'ativo'
+             CHECK (status IN ('ativo','suspenso','desativado'));
+
+-- Proveniencia do vinculo: quem concedeu e por que foi revogado. Sem
+-- revoked_reason, "o vinculo sumiu" nao tem explicacao em auditoria.
+ALTER TABLE app.membership
+  ADD COLUMN granted_by     uuid,
+  ADD COLUMN revoked_reason text;
+
+CREATE TABLE id.user_credential (
+  user_id             uuid PRIMARY KEY REFERENCES id."user"(id),
+  password_hash       text NOT NULL,
+  password_updated_at timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  failed_attempts     int NOT NULL DEFAULT 0,
+  locked_until        timestamptz(3)
+);
+ALTER TABLE id.user_credential OWNER TO app_owner;
+COMMENT ON TABLE id.user_credential IS 'global-reference';
+
+-- A aplicacao le e grava a credencial, mas nunca o id do dono: trocar user_id
+-- seria transferir a senha de uma pessoa para outra.
+GRANT SELECT, INSERT ON id.user_credential TO app_rw;
+GRANT UPDATE (password_hash, password_updated_at, failed_attempts, locked_until)
+  ON id.user_credential TO app_rw;
+
+-- O papel `jobs` (unico do cluster com BYPASSRLS) monta cenario de teste e roda
+-- carga. BYPASSRLS ignora POLICY, NAO ignora GRANT: sem estas linhas toda suite
+-- .int.test.ts do repositorio falha com "permission denied for table" (42501).
+GRANT USAGE ON SCHEMA app, id TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON app.tenant            TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON app.clinic            TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON app.membership        TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON id."user"             TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON id.user_credential    TO jobs;
+```
+
+- [ ] **Passo 6: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/authn/src/identity-global.int.test.ts
+```
+
+Esperado: `aplicada: 0015_identity_credentials.sql` e PASSA, 5 testes verdes.
+
+- [ ] **Passo 7: Commitar**
+
+```bash
+git add packages/db/migrations/0015_identity_credentials.sql \
+        packages/db/src/pool.ts packages/db/src/index.ts \
+        packages/authn/src/identity-global.int.test.ts
+git commit -m "feat(identity): global user credentials and the BYPASSRLS jobs pool"
+```
+
+---
+
+### Task 33: Hash de senha com Argon2id
+
+A senha da recepcionista é digitada num Windows (que compõe o acento, NFC) e conferida num macOS (que às vezes entrega a forma decomposta, NFD). São dois strings diferentes para o mesmo que o usuário digitou. Normalizar para NFC no cadastro **e** na verificação é o que impede o chamado "minha senha parou de funcionar quando troquei de computador".
+
+**Arquivos:**
+- Criar: `packages/authn/src/password.ts`
+- Modificar: `packages/authn/package.json` (dependência `@node-rs/argon2`)
+- Teste: `packages/authn/src/password.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authn/src/password.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { hashPassword, verifyPassword, needsRehash } from './password';
+
+describe('hash de senha com Argon2id', () => {
+  it('aceita a senha correta e recusa a errada', async () => {
+    const hash = await hashPassword('Consultorio#2026');
+    await expect(verifyPassword(hash, 'Consultorio#2026')).resolves.toBe(true);
+    await expect(verifyPassword(hash, 'consultorio#2026')).resolves.toBe(false);
+    await expect(verifyPassword(hash, '')).resolves.toBe(false);
+  });
+
+  it('grava um hash Argon2id parametrizado e nunca a senha em claro', async () => {
+    const hash = await hashPassword('Consultorio#2026');
+    expect(hash).not.toContain('Consultorio');
+    expect(hash.startsWith('$argon2id$v=19$m=19456,t=2,p=1$')).toBe(true);
+  });
+
+  it('duas gravacoes da mesma senha produzem hashes diferentes (salt por linha)', async () => {
+    const a = await hashPassword('Consultorio#2026');
+    const b = await hashPassword('Consultorio#2026');
+    expect(a).not.toEqual(b);
+    await expect(verifyPassword(a, 'Consultorio#2026')).resolves.toBe(true);
+    await expect(verifyPassword(b, 'Consultorio#2026')).resolves.toBe(true);
+  });
+
+  it('senha com acento digitada em teclado que compoe o acento (NFD) continua autenticando', async () => {
+    // Caso real: a recepcionista cadastra "Recepção@2026" no Windows (NFC) e
+    // entra pelo macOS, onde o navegador entrega a forma decomposta (NFD).
+    const nfc = 'Recep\u00e7\u00e3o@2026';
+    const nfd = 'Recepc\u0327a\u0303o@2026';
+    expect(nfc).not.toEqual(nfd);
+    const hash = await hashPassword(nfc);
+    await expect(verifyPassword(hash, nfd)).resolves.toBe(true);
+  });
+
+  it('hash corrompido no banco falha fechado, sem lancar excecao', async () => {
+    await expect(verifyPassword('$2y$10$hashDeOutroSistema', 'Consultorio#2026')).resolves.toBe(false);
+    await expect(verifyPassword('', 'Consultorio#2026')).resolves.toBe(false);
+  });
+
+  it('hash de outro algoritmo ou de parametros antigos e marcado para rehash no proximo login', async () => {
+    expect(needsRehash('$2y$10$hashDeOutroSistema')).toBe(true);
+    expect(needsRehash('$argon2id$v=19$m=4096,t=3,p=1$abc$def')).toBe(true);
+    expect(needsRehash(await hashPassword('Consultorio#2026'))).toBe(false);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test packages/authn/src/password.test.ts`
+Esperado: FALHA com `Failed to resolve import "./password" from "packages/authn/src/password.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Instalar a dependência e implementar**
+
+```bash
+pnpm add @node-rs/argon2 --filter @cadencia/authn
+```
+
+Criar `packages/authn/src/password.ts`:
+
+```ts
+import { Algorithm, hash, verify } from '@node-rs/argon2';
+
+/**
+ * Parametros minimos recomendados pela OWASP para Argon2id (19 MiB, 2 iteracoes,
+ * paralelismo 1). Mudar qualquer valor aqui obriga a mudar PREFIXO_ATUAL abaixo,
+ * senao needsRehash() para de detectar hashes antigos e ninguem nunca migra.
+ */
+export const ARGON2ID_PARAMS = {
+  algorithm: Algorithm.Argon2id,
+  memoryCost: 19456,
+  timeCost: 2,
+  parallelism: 1,
+} as const;
+
+const PREFIXO_ATUAL = '$argon2id$v=19$m=19456,t=2,p=1$';
+
+/**
+ * Unifica a forma Unicode: NFC no cadastro e no login. Sem isto, "Recepção@2026"
+ * digitado no Windows e no macOS sao dois strings diferentes.
+ */
+function normalizar(plain: string): string {
+  return plain.normalize('NFC');
+}
+
+export async function hashPassword(plain: string): Promise<string> {
+  return hash(normalizar(plain), ARGON2ID_PARAMS);
+}
+
+export async function verifyPassword(storedHash: string, plain: string): Promise<boolean> {
+  if (storedHash.length === 0) return false;
+  try {
+    return await verify(storedHash, normalizar(plain), ARGON2ID_PARAMS);
+  } catch {
+    // Hash corrompido, truncado ou de outro algoritmo: falha fechada.
+    return false;
+  }
+}
+
+export function needsRehash(storedHash: string): boolean {
+  return !storedHash.startsWith(PREFIXO_ATUAL);
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test packages/authn/src/password.test.ts`
+Esperado: PASSA — 6 testes verdes.
+
+- [ ] **Passo 5: Commitar**
+
+```bash
+git add packages/authn/src/password.ts packages/authn/src/password.test.ts \
+        packages/authn/package.json pnpm-lock.yaml
+git commit -m "feat(authn): Argon2id password hashing with NFC normalization and fail-closed verify"
+```
+
+---
+
+### Task 34: Sessão opaca — o token vive no banco, e revogar mata na hora
+
+**Por que não JWT.** Um JWT com claim de tenant é um cheque assinado que o servidor não consegue cancelar: enquanto não expira, ele vale. Neste produto isso é inaceitável por três motivos concretos — desligamento de funcionário, `revoked_at` no vínculo, e break-glass do suporte. A sessão é **opaca**: 32 bytes aleatórios entregues ao navegador, `sha256` do token guardado no banco. Toda requisição consulta a linha; revogar é um `UPDATE`, e o efeito é imediato. O teste `REVOGAR MATA NA HORA` do Passo 1 existe exatamente para provar isso.
+
+Repare também: `id.session` fica no schema `id`, que é global e **sem RLS** — e é por isso que a sessão pode ser resolvida **antes** de existir contexto de tenant. Se a sessão morasse em `app`, a resolução dependeria do tenant que ainda não foi escolhido.
+
+E é por isso que ela **não** pode passar por `withTenantTx`: aquela função exige tenant e abre transação de negócio. O caminho é um pool próprio, `appPool()`, que executa `SET ROLE app_rw` em cada conexão nova — porque `api` é `NOINHERIT` e sem o `SET ROLE` toda query retorna 42501.
+
+**Arquivos:**
+- Modificar: `packages/db/src/pool.ts` (acrescentar `appPool`)
+- Modificar: `packages/db/src/index.ts`
+- Criar: `packages/authn/src/result.ts`
+- Criar: `packages/authn/src/session.ts`
+- Criar: `packages/db/migrations/0016_session.sql`
+- Teste: `packages/authn/src/session.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authn/src/session.int.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { uuidv7 } from '@cadencia/kernel';
+import { appPool, jobsPool } from '@cadencia/db';
+import {
+  createSession, resolveSession, revokeSession, revokeAllSessionsOfUser, hashSessionToken,
+} from './session';
+
+async function seedUser(fullName: string): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, fullName],
+  );
+  return userId;
+}
+
+describe('sessao opaca', () => {
+  it('o pool de aplicacao assume app_rw sozinho: `api` e NOINHERIT', async () => {
+    const { rows } = await appPool().query<{ papel: string }>('SELECT current_user AS papel');
+    expect(rows[0]?.papel).toBe('app_rw');
+  });
+
+  it('resolve uma sessao recem-criada e devolve o usuario dono dela', async () => {
+    const userId = await seedUser('Dra. Ana Ribeiro');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+
+    const r = await resolveSession(appPool(), token);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.userId).toBe(userId);
+    expect(r.value.sessionId).toBe(sessionId);
+  });
+
+  it('REVOGAR MATA NA HORA: a requisicao seguinte ja e recusada', async () => {
+    // Esta e a razao de a sessao nao ser JWT. Com token assinado, este teste
+    // so poderia passar com uma lista de revogacao consultada no banco --
+    // ou seja, com o mesmo custo e sem nenhuma das vantagens.
+    const userId = await seedUser('Dr. Bruno Camargo');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+    expect((await resolveSession(appPool(), token)).ok).toBe(true);
+
+    await revokeSession(appPool(), sessionId, 'desligamento');
+
+    const depois = await resolveSession(appPool(), token);
+    expect(depois.ok).toBe(false);
+    if (depois.ok) return;
+    expect(depois.error).toBe('revogada');
+  });
+
+  it('o token nunca fica em claro no banco: so o sha256 dele', async () => {
+    const userId = await seedUser('Dra. Carla Nunes');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+
+    const { rows } = await jobsPool().query(
+      `SELECT token_hash FROM id.session WHERE id = $1`, [sessionId],
+    );
+    const guardado = rows[0].token_hash as Buffer;
+    expect(guardado.length).toBe(32);
+    expect(guardado.equals(Buffer.from(token, 'utf8'))).toBe(false);
+    expect(guardado.equals(hashSessionToken(token))).toBe(true);
+  });
+
+  it('token inexistente e recusado sem revelar se ja existiu', async () => {
+    const r = await resolveSession(appPool(), 'token-que-nunca-foi-emitido');
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('nao_encontrada');
+  });
+
+  it('sessao parada alem da janela de inatividade e recusada', async () => {
+    const userId = await seedUser('Dr. Diego Alves');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+    await jobsPool().query(
+      `UPDATE id.session SET idle_expires_at = clock_timestamp() - interval '1 second' WHERE id = $1`,
+      [sessionId],
+    );
+    const r = await resolveSession(appPool(), token);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('expirada_inatividade');
+  });
+
+  it('sessao alem do limite absoluto e recusada mesmo com uso continuo', async () => {
+    const userId = await seedUser('Dra. Elisa Prado');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+    await jobsPool().query(
+      `UPDATE id.session SET absolute_expires_at = clock_timestamp() - interval '1 second' WHERE id = $1`,
+      [sessionId],
+    );
+    const r = await resolveSession(appPool(), token);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('expirada_absoluta');
+  });
+
+  it('usar a sessao empurra a janela de inatividade para frente', async () => {
+    const userId = await seedUser('Dr. Fabio Lins');
+    const { token, sessionId } = await createSession(appPool(), { userId });
+    const antes = await jobsPool().query(
+      `SELECT idle_expires_at FROM id.session WHERE id = $1`, [sessionId],
+    );
+    await new Promise((r) => setTimeout(r, 30));
+    await resolveSession(appPool(), token);
+    const depois = await jobsPool().query(
+      `SELECT idle_expires_at FROM id.session WHERE id = $1`, [sessionId],
+    );
+    expect(new Date(depois.rows[0].idle_expires_at).getTime())
+      .toBeGreaterThan(new Date(antes.rows[0].idle_expires_at).getTime());
+  });
+
+  it('desligar o funcionario derruba todas as sessoes dele de uma vez', async () => {
+    const userId = await seedUser('Dra. Gabriela Souza');
+    const s1 = await createSession(appPool(), { userId });
+    const s2 = await createSession(appPool(), { userId });
+
+    const n = await revokeAllSessionsOfUser(appPool(), userId, 'desligamento');
+    expect(n).toBe(2);
+    expect((await resolveSession(appPool(), s1.token)).ok).toBe(false);
+    expect((await resolveSession(appPool(), s2.token)).ok).toBe(false);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/authn/src/session.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./session" from "packages/authn/src/session.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Acrescentar o pool da aplicação sem tenant**
+
+Modificar `packages/db/src/pool.ts`.
+
+Logo abaixo de `let jobs: Pool | undefined;`, acrescentar:
+
+```ts
+let app: Pool | undefined;
+```
+
+Logo depois da função `jobsPool()`, acrescentar:
+
+```ts
+/**
+ * Pool da aplicacao para o que acontece FORA de uma transacao de negocio:
+ * resolucao de sessao (que precisa rodar ANTES de existir tenant) e consulta de
+ * terminologia global (`ref.*`, sem RLS). Nunca substitui withTenantTx — nada
+ * que leia tabela com tenant_id passa por aqui.
+ *
+ * `api` foi criado NOINHERIT na 0001: sem o SET ROLE abaixo, toda query retorna
+ * 42501. A query e enfileirada na conexao antes de qualquer outra, porque o `pg`
+ * mantem uma fila FIFO por cliente.
+ */
+export function appPool(): Pool {
+  if (app === undefined) {
+    const created = new Pool({
+      connectionString: requireEnv('DATABASE_URL'),
+      max: 5,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+      application_name: 'cadencia-app',
+    });
+    created.on('connect', (client) => {
+      void client.query('SET ROLE app_rw').catch(() => undefined);
+    });
+    app = created;
+  }
+  return app;
+}
+```
+
+Substituir a função `closePools` inteira por:
+
+```ts
+/** Fecha todos os pools. Usado no shutdown do processo e entre arquivos de teste. */
+export async function closePools(): Promise<void> {
+  const pools = [business, audit, jobs, app].filter((p): p is Pool => p !== undefined);
+  business = undefined;
+  audit = undefined;
+  jobs = undefined;
+  app = undefined;
+  await Promise.all(pools.map((p) => p.end()));
+}
+```
+
+Substituir o conteúdo de `packages/db/src/index.ts` por:
+
+```ts
+export { runMigrations, type MigrateOptions, type MigrateResult } from './migrate';
+export { businessPool, auditPool, jobsPool, appPool, closePools } from './pool';
+export { withTenantTx, preambleParams, type Actor, type TxClient } from './tx';
+```
+
+- [ ] **Passo 4: Escrever o `Result` local e a sessão**
+
+Criar `packages/authn/src/result.ts`:
+
+```ts
+/**
+ * Result<T, E> local do pacote `authn`.
+ *
+ * A forma e IDENTICA a de `packages/kernel/src/result.ts` de proposito, e a
+ * duplicacao tambem: `authn` e `kernel` sao irmaos em L0 e import entre irmaos e
+ * proibido sem excecao (§2.2 regra 2). Como as duas formas sao estruturalmente
+ * iguais, L3 recebe o resultado de `authn` e o trata com as funcoes do kernel
+ * sem conversao nenhuma. Se alguem mudar o formato aqui, essa ponte quebra.
+ */
+export type Ok<T> = { readonly ok: true; readonly value: T };
+export type Err<E> = { readonly ok: false; readonly error: E };
+export type Result<T, E> = Ok<T> | Err<E>;
+
+export function ok<T>(value: T): Ok<T> {
+  return { ok: true, value };
+}
+
+export function err<E>(error: E): Err<E> {
+  return { ok: false, error };
+}
+```
+
+Criar `packages/authn/src/session.ts`:
+
+```ts
+import { createHash, randomBytes } from 'node:crypto';
+import { err, ok, type Result } from './result';
+
+/** Superficie minima de conexao. Quem passa o pool e L3 (§2.2 regra 3). */
+export interface Queryable {
+  query(sql: string, params?: unknown[]): Promise<{ rows: any[]; rowCount: number | null }>;
+}
+
+export const SESSION_TOKEN_BYTES = 32;
+export const SESSION_IDLE_MINUTES = 30;
+export const SESSION_ABSOLUTE_HOURS = 12;
+
+export type SessionFailure =
+  | 'nao_encontrada' | 'revogada' | 'expirada_inatividade' | 'expirada_absoluta';
+
+export interface ResolvedSession {
+  sessionId: string;
+  userId: string;
+  activeTenantId: string | null;
+  activeClinicId: string | null;
+  mfaAt: Date | null;
+}
+
+export function hashSessionToken(token: string): Buffer {
+  return createHash('sha256').update(token, 'utf8').digest();
+}
+
+/**
+ * O id da sessao e gerado pelo PostgreSQL 18 (`uuidv7()` nativo, DEFAULT da
+ * coluna) e nao pelo Node: `authn` nao pode importar o gerador do kernel
+ * (§2.2 regra 2) e duplicar o algoritmo seria pior. O efeito colateral e
+ * desejavel — o componente temporal do id vem do mesmo relogio que carimba
+ * created_at, que e a fonte de tempo persistido do sistema (§3).
+ */
+export async function createSession(
+  db: Queryable,
+  input: {
+    userId: string;
+    activeTenantId?: string | null;
+    activeClinicId?: string | null;
+    ip?: string | null;
+    userAgentHash?: Buffer | null;
+  },
+): Promise<{ sessionId: string; token: string }> {
+  const token = randomBytes(SESSION_TOKEN_BYTES).toString('base64url');
+  // As janelas sao calculadas com clock_timestamp(), nunca com o relogio do Node.
+  const { rows } = await db.query(
+    `INSERT INTO id.session
+       (user_id, token_hash, active_tenant_id, active_clinic_id,
+        idle_expires_at, absolute_expires_at, ip, user_agent_hash)
+     VALUES ($1, $2, $3, $4,
+             clock_timestamp() + make_interval(mins => $5::int),
+             clock_timestamp() + make_interval(hours => $6::int),
+             $7, $8)
+     RETURNING id`,
+    [
+      input.userId, hashSessionToken(token),
+      input.activeTenantId ?? null, input.activeClinicId ?? null,
+      SESSION_IDLE_MINUTES, SESSION_ABSOLUTE_HOURS,
+      input.ip ?? null, input.userAgentHash ?? null,
+    ],
+  );
+  const row = rows[0];
+  if (!row) throw new Error('id.session insert returned no row');
+  return { sessionId: row.id as string, token };
+}
+
+export async function resolveSession(
+  db: Queryable, token: string,
+): Promise<Result<ResolvedSession, SessionFailure>> {
+  const { rows } = await db.query(
+    `SELECT s.id, s.user_id, s.active_tenant_id, s.active_clinic_id, s.mfa_at,
+            s.revoked_at IS NOT NULL                       AS revogada,
+            s.idle_expires_at     < clock_timestamp()      AS idle_expirou,
+            s.absolute_expires_at < clock_timestamp()      AS absoluta_expirou
+       FROM id.session s
+      WHERE s.token_hash = $1`,
+    [hashSessionToken(token)],
+  );
+  const row = rows[0];
+  if (!row) return err('nao_encontrada');
+  if (row.revogada) return err('revogada');
+  if (row.absoluta_expirou) return err('expirada_absoluta');
+  if (row.idle_expirou) return err('expirada_inatividade');
+
+  await db.query(
+    `UPDATE id.session
+        SET last_seen_at = clock_timestamp(),
+            idle_expires_at = clock_timestamp() + make_interval(mins => $2::int)
+      WHERE id = $1`,
+    [row.id, SESSION_IDLE_MINUTES],
+  );
+
+  return ok({
+    sessionId: row.id as string,
+    userId: row.user_id as string,
+    activeTenantId: (row.active_tenant_id as string | null) ?? null,
+    activeClinicId: (row.active_clinic_id as string | null) ?? null,
+    mfaAt: (row.mfa_at as Date | null) ?? null,
+  });
+}
+
+export async function revokeSession(
+  db: Queryable, sessionId: string, reason: string,
+): Promise<void> {
+  await db.query(
+    `UPDATE id.session
+        SET revoked_at = clock_timestamp(), revoked_reason = $2
+      WHERE id = $1 AND revoked_at IS NULL`,
+    [sessionId, reason],
+  );
+}
+
+export async function revokeAllSessionsOfUser(
+  db: Queryable, userId: string, reason: string,
+): Promise<number> {
+  const { rowCount } = await db.query(
+    `UPDATE id.session
+        SET revoked_at = clock_timestamp(), revoked_reason = $2
+      WHERE user_id = $1 AND revoked_at IS NULL`,
+    [userId, reason],
+  );
+  return rowCount ?? 0;
+}
+```
+
+- [ ] **Passo 5: Rodar e confirmar que a falha mudou**
+
+Rodar: `pnpm test:int packages/authn/src/session.int.test.ts`
+Esperado: FALHA com `error: relation "id.session" does not exist` (SQLSTATE `42P01`).
+
+- [ ] **Passo 6: Escrever a migration**
+
+Rodar: `pnpm db:new session` — cria `packages/db/migrations/0016_session.sql`. Preencher com exatamente:
+
+```sql
+-- 0016_session.sql
+-- Sessao OPACA (§8 Fase 0). Token aleatorio de 32 bytes entregue ao navegador;
+-- no banco fica so o sha256. Nunca JWT com claim de tenant: claim assinada nao
+-- se revoga, e desligamento, revogacao de vinculo e break-glass exigem revogacao
+-- com efeito imediato.
+--
+-- Fica no schema `id`, que e global e sem RLS: e por isso que a sessao pode ser
+-- resolvida ANTES de existir contexto de tenant. Em `app` a resolucao dependeria
+-- do tenant que ainda nao foi escolhido.
+CREATE TABLE id.session (
+  -- uuidv7() nativo do PostgreSQL 18: `authn` nao pode importar o gerador do
+  -- kernel (irmaos em L0, §2.2) e duplicar o algoritmo seria pior.
+  id                  uuid PRIMARY KEY DEFAULT uuidv7(),
+  user_id             uuid NOT NULL REFERENCES id."user"(id),
+  token_hash          bytea NOT NULL UNIQUE CHECK (octet_length(token_hash) = 32),
+  -- Tenant ativo da sessao: e LINHA DE BANCO, revogavel, nao claim assinada.
+  active_tenant_id    uuid REFERENCES app.tenant(id),
+  active_clinic_id    uuid,
+  created_at          timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  last_seen_at        timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  idle_expires_at     timestamptz(3) NOT NULL,
+  absolute_expires_at timestamptz(3) NOT NULL,
+  revoked_at          timestamptz(3),
+  revoked_reason      text,
+  mfa_at              timestamptz(3),
+  ip                  inet,
+  user_agent_hash     bytea
+);
+ALTER TABLE id.session OWNER TO app_owner;
+COMMENT ON TABLE id.session IS 'global-reference';
+
+CREATE INDEX ix_session_user_vivo ON id.session (user_id) WHERE revoked_at IS NULL;
+
+GRANT SELECT, INSERT ON id.session TO app_rw;
+-- Sem UPDATE em user_id nem em token_hash: trocar qualquer um dos dois seria
+-- transferir a sessao de uma pessoa para outra.
+GRANT UPDATE (last_seen_at, idle_expires_at, revoked_at, revoked_reason,
+              active_tenant_id, active_clinic_id, mfa_at) ON id.session TO app_rw;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON id.session TO jobs;
+```
+
+- [ ] **Passo 7: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/authn/src/session.int.test.ts
+```
+
+Esperado: `aplicada: 0016_session.sql` e PASSA, 9 testes verdes.
+
+- [ ] **Passo 8: Commitar**
+
+```bash
+git add packages/db/migrations/0016_session.sql packages/db/src/pool.ts \
+        packages/db/src/index.ts packages/authn/src/result.ts \
+        packages/authn/src/session.ts packages/authn/src/session.int.test.ts
+git commit -m "feat(authn): opaque server-side sessions with immediate revocation"
+```
+
+---
+
+### Task 35: TOTP com `otpauth` — sem SMS, com segredo cifrado e sem replay
+
+SMS não entra: portabilidade de chip e SIM swap são vetor conhecido no Brasil, e o segundo fator que chega por SMS protege exatamente contra quem já conseguiu a senha. O segredo TOTP é cifrado com AES-256-GCM antes de ir para o banco, e o último passo de 30 segundos consumido fica gravado — sem isso, o código de 6 dígitos lido por cima do ombro vale por 90 segundos para quem o interceptou.
+
+**Repare no `Clock` obrigatório.** `verifyTotpForUser` não tem relógio padrão. Não é rigor gratuito: o guarda `tools/repo/time-source.ts` reprova `new Date(` em qualquer arquivo de `packages/**` que não seja `kernel/clock.ts` ou `kernel/uuid.ts`, e a instrução dele diz que a correção nunca é acrescentar o arquivo à allowlist. Quem escolhe o relógio é L3.
+
+**Arquivos:**
+- Criar: `packages/authn/src/totp.ts`
+- Modificar: `packages/authn/package.json` (dependência `otpauth`)
+- Criar: `packages/db/migrations/0017_totp.sql`
+- Teste: `packages/authn/src/totp.test.ts`
+- Teste: `packages/authn/src/totp.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste unitário que falha**
+
+Criar `packages/authn/src/totp.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { TOTP, Secret } from 'otpauth';
+import { randomBytes } from 'node:crypto';
+import {
+  newTotpSecret, totpUri, verifyTotpAgainstStep, encryptTotpSecret, decryptTotpSecret,
+  TOTP_PERIOD_SECONDS,
+} from './totp';
+
+function codigoEm(secretBase32: string, at: Date): string {
+  return new TOTP({
+    issuer: 'Cadencia', label: 'teste', algorithm: 'SHA1', digits: 6,
+    period: TOTP_PERIOD_SECONDS, secret: Secret.fromBase32(secretBase32),
+  }).generate({ timestamp: at.getTime() });
+}
+
+describe('TOTP', () => {
+  const agora = new Date('2026-08-03T14:00:00.000Z');
+
+  it('aceita o codigo do passo atual', () => {
+    const secret = newTotpSecret();
+    const r = verifyTotpAgainstStep(secret, codigoEm(secret, agora), agora, null);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value).toBe(Math.floor(agora.getTime() / 1000 / TOTP_PERIOD_SECONDS));
+  });
+
+  it('aceita o codigo do passo anterior: o celular do medico atrasa alguns segundos', () => {
+    const secret = newTotpSecret();
+    const trintaSegundosAntes = new Date(agora.getTime() - 30_000);
+    const r = verifyTotpAgainstStep(secret, codigoEm(secret, trintaSegundosAntes), agora, null);
+    expect(r.ok).toBe(true);
+  });
+
+  it('recusa codigo de dois minutos atras', () => {
+    const secret = newTotpSecret();
+    const doisMinutosAntes = new Date(agora.getTime() - 120_000);
+    const r = verifyTotpAgainstStep(secret, codigoEm(secret, doisMinutosAntes), agora, null);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('codigo_invalido');
+  });
+
+  it('recusa o mesmo codigo usado duas vezes: quem leu por cima do ombro nao entra', () => {
+    const secret = newTotpSecret();
+    const codigo = codigoEm(secret, agora);
+    const primeira = verifyTotpAgainstStep(secret, codigo, agora, null);
+    expect(primeira.ok).toBe(true);
+    if (!primeira.ok) return;
+
+    const segunda = verifyTotpAgainstStep(secret, codigo, agora, primeira.value);
+    expect(segunda.ok).toBe(false);
+    if (segunda.ok) return;
+    expect(segunda.error).toBe('codigo_reutilizado');
+  });
+
+  it('recusa codigo com formato invalido sem lancar excecao', () => {
+    const secret = newTotpSecret();
+    for (const lixo of ['', '12345', 'abcdef', '1234567']) {
+      const r = verifyTotpAgainstStep(secret, lixo, agora, null);
+      expect(r.ok).toBe(false);
+    }
+  });
+
+  it('a URI de cadastro identifica o emissor e a conta', () => {
+    const secret = newTotpSecret();
+    const uri = totpUri('ana.ribeiro@clinica.com.br', secret);
+    expect(uri.startsWith('otpauth://totp/')).toBe(true);
+    expect(uri).toContain('issuer=Cadencia');
+    expect(uri).toContain('period=30');
+  });
+
+  it('o segredo e cifrado antes de ir para o banco e volta identico', () => {
+    const key = randomBytes(32);
+    const secret = newTotpSecret();
+    const blob = encryptTotpSecret(secret, key);
+    expect(blob.toString('utf8')).not.toContain(secret);
+    expect(decryptTotpSecret(blob, key)).toBe(secret);
+  });
+
+  it('segredo cifrado com outra chave nao decifra', () => {
+    const blob = encryptTotpSecret(newTotpSecret(), randomBytes(32));
+    expect(() => decryptTotpSecret(blob, randomBytes(32))).toThrow();
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test packages/authn/src/totp.test.ts`
+Esperado: FALHA com `Failed to resolve import "./totp" from "packages/authn/src/totp.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Instalar a dependência e implementar o módulo**
+
+```bash
+pnpm add otpauth --filter @cadencia/authn
+```
+
+Criar `packages/authn/src/totp.ts`:
+
+```ts
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { Secret, TOTP } from 'otpauth';
+import { err, ok, type Result } from './result';
+import type { Queryable } from './session';
+
+export const TOTP_PERIOD_SECONDS = 30;
+export const TOTP_DIGITS = 6;
+/** Janela de 1 passo para cada lado: tolera ate 30 s de drift no celular. */
+export const TOTP_WINDOW = 1;
+const ISSUER = 'Cadencia';
+
+/**
+ * Relogio injetado. Declarado aqui e nao importado de @cadencia/kernel porque
+ * `authn` e `kernel` sao irmaos em L0 (§2.2 regra 2). NAO existe valor padrao:
+ * `new Date()` neste arquivo seria reprovado pelo guarda tools/repo/time-source.ts,
+ * cuja regra e explicita — a correcao nunca e acrescentar o arquivo a allowlist.
+ */
+export interface Clock {
+  now(): Date;
+}
+
+export type TotpFailure = 'codigo_invalido' | 'codigo_reutilizado' | 'nao_cadastrado';
+
+export function newTotpSecret(): string {
+  return new Secret({ size: 20 }).base32;
+}
+
+function totp(secretBase32: string, label: string): TOTP {
+  return new TOTP({
+    issuer: ISSUER, label, algorithm: 'SHA1', digits: TOTP_DIGITS,
+    period: TOTP_PERIOD_SECONDS, secret: Secret.fromBase32(secretBase32),
+  });
+}
+
+export function totpUri(email: string, secretBase32: string): string {
+  return totp(secretBase32, email).toString();
+}
+
+export function stepAt(at: Date): number {
+  return Math.floor(at.getTime() / 1000 / TOTP_PERIOD_SECONDS);
+}
+
+/**
+ * Valida o codigo e devolve o PASSO aceito. `lastAcceptedStep` e o ultimo passo
+ * ja consumido por este usuario: sem ele, o mesmo codigo de 6 digitos vale por
+ * 90 segundos para quem o interceptar.
+ */
+export function verifyTotpAgainstStep(
+  secretBase32: string, code: string, at: Date, lastAcceptedStep: number | null,
+): Result<number, TotpFailure> {
+  if (!/^[0-9]{6}$/.test(code)) return err('codigo_invalido');
+  let delta: number | null;
+  try {
+    delta = totp(secretBase32, 'x').validate({
+      token: code, timestamp: at.getTime(), window: TOTP_WINDOW,
+    });
+  } catch {
+    return err('codigo_invalido');
+  }
+  if (delta === null) return err('codigo_invalido');
+  const step = stepAt(at) + delta;
+  if (lastAcceptedStep !== null && step <= lastAcceptedStep) return err('codigo_reutilizado');
+  return ok(step);
+}
+
+/** AES-256-GCM: [12 bytes IV][16 bytes tag][ciphertext]. */
+export function encryptTotpSecret(secretBase32: string, key: Buffer): Buffer {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ct = Buffer.concat([cipher.update(secretBase32, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ct]);
+}
+
+export function decryptTotpSecret(blob: Buffer, key: Buffer): string {
+  const iv = blob.subarray(0, 12);
+  const tag = blob.subarray(12, 28);
+  const ct = blob.subarray(28);
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
+}
+
+export async function enrollTotp(
+  db: Queryable, userId: string, key: Buffer,
+): Promise<{ secretBase32: string; uri: string; email: string }> {
+  const secretBase32 = newTotpSecret();
+  const { rows } = await db.query(`SELECT email FROM id."user" WHERE id = $1`, [userId]);
+  const email = rows[0]?.email as string;
+  await db.query(
+    `INSERT INTO id.user_totp (user_id, secret_ciphertext)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id) DO UPDATE
+       SET secret_ciphertext = EXCLUDED.secret_ciphertext,
+           confirmed_at = NULL, last_accepted_step = NULL`,
+    [userId, encryptTotpSecret(secretBase32, key)],
+  );
+  return { secretBase32, uri: totpUri(email, secretBase32), email };
+}
+
+export async function verifyTotpForUser(
+  db: Queryable, userId: string, code: string, key: Buffer, clock: Clock,
+): Promise<Result<number, TotpFailure>> {
+  const { rows } = await db.query(
+    `SELECT secret_ciphertext, last_accepted_step FROM id.user_totp WHERE user_id = $1`,
+    [userId],
+  );
+  const row = rows[0];
+  if (!row) return err('nao_cadastrado');
+
+  const secret = decryptTotpSecret(row.secret_ciphertext as Buffer, key);
+  const last = row.last_accepted_step === null ? null : Number(row.last_accepted_step);
+  const r = verifyTotpAgainstStep(secret, code, clock.now(), last);
+  if (!r.ok) return r;
+
+  // Consome o passo. A condicao no WHERE fecha a corrida entre duas abas.
+  const upd = await db.query(
+    `UPDATE id.user_totp
+        SET last_accepted_step = $2, confirmed_at = coalesce(confirmed_at, clock_timestamp())
+      WHERE user_id = $1
+        AND (last_accepted_step IS NULL OR last_accepted_step < $2)`,
+    [userId, r.value],
+  );
+  if ((upd.rowCount ?? 0) === 0) return err('codigo_reutilizado');
+  return r;
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que o teste unitário passa**
+
+Rodar: `pnpm test packages/authn/src/totp.test.ts`
+Esperado: PASSA — 8 testes verdes.
+
+- [ ] **Passo 5: Escrever o teste de integração que falha**
+
+Criar `packages/authn/src/totp.int.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { randomBytes } from 'node:crypto';
+import { TOTP, Secret } from 'otpauth';
+import { uuidv7 } from '@cadencia/kernel';
+import { appPool, jobsPool } from '@cadencia/db';
+import { enrollTotp, verifyTotpForUser, TOTP_PERIOD_SECONDS } from './totp';
+
+const KEY = randomBytes(32);
+const AGORA = new Date('2026-08-03T14:00:00.000Z');
+const relogioFixo = { now: () => AGORA };
+
+async function seedUser(): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, 'Dra. Ana Ribeiro'],
+  );
+  return userId;
+}
+
+function codigoEm(secretBase32: string, at: Date): string {
+  return new TOTP({
+    issuer: 'Cadencia', label: 'teste', algorithm: 'SHA1', digits: 6,
+    period: TOTP_PERIOD_SECONDS, secret: Secret.fromBase32(secretBase32),
+  }).generate({ timestamp: at.getTime() });
+}
+
+describe('TOTP persistido', () => {
+  it('o segredo nao fica legivel no banco', async () => {
+    const userId = await seedUser();
+    const { secretBase32 } = await enrollTotp(appPool(), userId, KEY);
+    const { rows } = await jobsPool().query(
+      `SELECT secret_ciphertext FROM id.user_totp WHERE user_id = $1`, [userId],
+    );
+    expect((rows[0].secret_ciphertext as Buffer).toString('utf8')).not.toContain(secretBase32);
+  });
+
+  it('o mesmo codigo nao entra duas vezes, mesmo dentro dos 30 segundos', async () => {
+    const userId = await seedUser();
+    const { secretBase32 } = await enrollTotp(appPool(), userId, KEY);
+    const codigo = codigoEm(secretBase32, AGORA);
+
+    const primeira = await verifyTotpForUser(appPool(), userId, codigo, KEY, relogioFixo);
+    expect(primeira.ok).toBe(true);
+
+    const segunda = await verifyTotpForUser(appPool(), userId, codigo, KEY, relogioFixo);
+    expect(segunda.ok).toBe(false);
+    if (segunda.ok) return;
+    expect(segunda.error).toBe('codigo_reutilizado');
+  });
+
+  it('usuario sem TOTP cadastrado falha fechado', async () => {
+    const userId = await seedUser();
+    const r = await verifyTotpForUser(appPool(), userId, '123456', KEY, relogioFixo);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('nao_cadastrado');
+  });
+});
+```
+
+- [ ] **Passo 6: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/authn/src/totp.int.test.ts`
+Esperado: FALHA com `error: relation "id.user_totp" does not exist` (SQLSTATE `42P01`).
+
+- [ ] **Passo 7: Escrever a migration**
+
+Rodar: `pnpm db:new totp` — cria `packages/db/migrations/0017_totp.sql`. Preencher com exatamente:
+
+```sql
+-- 0017_totp.sql
+-- Segundo fator por TOTP (§2.3: `otpauth`, TOTP sem SMS). SMS nao entra:
+-- portabilidade de chip e SIM swap sao vetor conhecido no Brasil, e o fator
+-- que chega por SMS protege justamente contra quem ja tem a senha.
+CREATE TABLE id.user_totp (
+  user_id            uuid PRIMARY KEY REFERENCES id."user"(id),
+  secret_ciphertext  bytea NOT NULL,   -- AES-256-GCM, chave em Secrets Manager
+  created_at         timestamptz(3) NOT NULL DEFAULT clock_timestamp(),
+  confirmed_at       timestamptz(3),
+  -- Ultimo passo de 30 s ja consumido: e o que impede replay do codigo lido
+  -- por cima do ombro dentro da janela de validade.
+  last_accepted_step bigint
+);
+ALTER TABLE id.user_totp OWNER TO app_owner;
+COMMENT ON TABLE id.user_totp IS 'global-reference';
+
+GRANT SELECT, INSERT ON id.user_totp TO app_rw;
+GRANT UPDATE (secret_ciphertext, confirmed_at, last_accepted_step) ON id.user_totp TO app_rw;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON id.user_totp TO jobs;
+```
+
+- [ ] **Passo 8: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/authn/src/totp.int.test.ts
+```
+
+Esperado: `aplicada: 0017_totp.sql` e PASSA, 3 testes verdes.
+
+- [ ] **Passo 9: Commitar**
+
+```bash
+git add packages/db/migrations/0017_totp.sql packages/authn/src/totp.ts \
+        packages/authn/src/totp.test.ts packages/authn/src/totp.int.test.ts \
+        packages/authn/package.json pnpm-lock.yaml
+git commit -m "feat(authn): TOTP second factor with encrypted secret and replay protection"
+```
+
+---
+
+### Task 36: Cookie `SameSite` + proteção CSRF no plugin de sessão
+
+**Por que double-submit e não só `SameSite`.** `SameSite=Lax` bloqueia o envio do cookie em POST cross-site, mas não cobre subdomínio comprometido nem navegador antigo, e `SameSite=Strict` quebraria o caso legítimo de a clínica abrir `app.cadencia.med.br` a partir de um link no e-mail. Então: sessão em cookie `SameSite=Lax` + `HttpOnly` + prefixo `__Host-`, mais um token CSRF em cookie legível por JS que o front reenvia no header `x-csrf-token`. Método inseguro sem os dois batendo é 403 e vira evento de segurança.
+
+**E o caminho que quase todo mundo esquece:** o cookie de CSRF só é emitido no login, mas o próprio login é um `POST`. Sem um passo que emita o token CSRF ao **anônimo**, em método seguro, o primeiro `POST /v1/login` de todo navegador leva 403 e ninguém consegue entrar em produção — o front não tem como fabricar um cookie `__Host-` para reenviar no header. O primeiro teste do Passo 1 existe por causa disso.
+
+**Injeção de dependência, não import de irmão.** O plugin recebe o pool, o gerador de `requestId` e o canal de auditoria **como opções**. `authn` não importa `@cadencia/db`, `@cadencia/kernel` nem `@cadencia/audit` (§2.2 regra 2); quem compõe os três é `apps/api`, em L3.
+
+**Arquivos:**
+- Criar: `packages/authn/src/fastify/session-plugin.ts`
+- Modificar: `packages/authn/package.json` (dependências `fastify`, `fastify-plugin`, `@fastify/cookie`)
+- Teste: `packages/authn/src/fastify/session-plugin.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authn/src/fastify/session-plugin.int.test.ts`:
+
+```ts
+import { beforeAll, describe, expect, it } from 'vitest';
+import Fastify, { type FastifyInstance } from 'fastify';
+import { uuidv7 } from '@cadencia/kernel';
+import { appPool, jobsPool } from '@cadencia/db';
+import { createSession } from '../session';
+import {
+  sessionPlugin, SESSION_COOKIE, CSRF_COOKIE, CSRF_HEADER, issueSessionCookies,
+  type SecurityEventInput,
+} from './session-plugin';
+
+const eventos: SecurityEventInput[] = [];
+
+async function seedUser(): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, 'Dra. Ana Ribeiro'],
+  );
+  return userId;
+}
+
+function buildApp(): FastifyInstance {
+  const app = Fastify();
+  // L3 e quem compoe: o pool vem de @cadencia/db, o id vem de @cadencia/kernel
+  // e o canal de auditoria viria de @cadencia/audit. `authn` nao importa nenhum.
+  app.register(sessionPlugin, {
+    db: appPool(),
+    newRequestId: () => uuidv7(),
+    onSecurityEvent: async (e) => { eventos.push(e); },
+  });
+  app.get('/v1/ping', async (req) => ({ userId: req.session?.userId ?? null }));
+  app.post('/v1/echo', async (req) => ({ userId: req.session?.userId ?? null }));
+  app.post('/v1/login', async (_req, reply) => {
+    const userId = await seedUser();
+    const { token } = await createSession(appPool(), { userId });
+    issueSessionCookies(reply, token);
+    return { userId };
+  });
+  return app;
+}
+
+function setCookies(res: { headers: Record<string, unknown> }): string[] {
+  const bruto = res.headers['set-cookie'] as string[] | string | undefined;
+  if (bruto === undefined) return [];
+  return Array.isArray(bruto) ? bruto : [bruto];
+}
+
+describe('cookie de sessao e protecao CSRF', () => {
+  let app: FastifyInstance;
+  beforeAll(async () => { app = buildApp(); await app.ready(); });
+
+  it('GET anonimo ja recebe o cookie de CSRF: senao o primeiro login e impossivel', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/ping' });
+    expect(res.statusCode).toBe(200);
+    const csrf = setCookies(res).find((c) => c.startsWith(`${CSRF_COOKIE}=`));
+    expect(csrf).toBeDefined();
+    expect(csrf).toContain('Secure');
+    expect(csrf).toContain('Path=/');
+    expect(csrf).not.toContain('HttpOnly');   // o front precisa ler para reenviar
+  });
+
+  it('o cookie de sessao e HttpOnly, Secure, SameSite=Lax e usa o prefixo __Host-', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/v1/login',
+      headers: { [CSRF_HEADER]: 'x'.repeat(43) },
+      cookies: { [CSRF_COOKIE]: 'x'.repeat(43) },
+    });
+    expect(res.statusCode).toBe(200);
+    const sid = setCookies(res).find((c) => c.startsWith(`${SESSION_COOKIE}=`));
+    expect(sid).toContain('HttpOnly');
+    expect(sid).toContain('Secure');
+    expect(sid).toContain('SameSite=Lax');
+    expect(sid).toContain('Path=/');
+    expect(sid).not.toContain('Domain=');
+    const csrf = setCookies(res).find((c) => c.startsWith(`${CSRF_COOKIE}=`));
+    expect(csrf).not.toContain('HttpOnly');
+    expect(csrf).toContain('SameSite=Lax');
+  });
+
+  it('GET nao exige token CSRF e resolve a sessao do cookie', async () => {
+    const userId = await seedUser();
+    const { token } = await createSession(appPool(), { userId });
+    const res = await app.inject({
+      method: 'GET', url: '/v1/ping', cookies: { [SESSION_COOKIE]: token },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().userId).toBe(userId);
+  });
+
+  it('POST com cookie de sessao valido e SEM header CSRF e recusado com 403', async () => {
+    // E o formulario escondido num site de terceiro: o navegador manda o cookie,
+    // mas nao consegue ler o cookie de CSRF para montar o header.
+    eventos.length = 0;
+    const userId = await seedUser();
+    const { token } = await createSession(appPool(), { userId });
+    const res = await app.inject({
+      method: 'POST', url: '/v1/echo',
+      cookies: { [SESSION_COOKIE]: token, [CSRF_COOKIE]: 'a'.repeat(43) },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error).toBe('csrf_invalido');
+    // A recusa vira evento de seguranca: e o que o auditor procura.
+    expect(eventos.map((e) => e.eventType)).toContain('CSRF_REJECTED');
+  });
+
+  it('POST com header CSRF diferente do cookie e recusado com 403', async () => {
+    const userId = await seedUser();
+    const { token } = await createSession(appPool(), { userId });
+    const res = await app.inject({
+      method: 'POST', url: '/v1/echo',
+      cookies: { [SESSION_COOKIE]: token, [CSRF_COOKIE]: 'a'.repeat(43) },
+      headers: { [CSRF_HEADER]: 'b'.repeat(43) },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('POST com header CSRF igual ao cookie passa', async () => {
+    const userId = await seedUser();
+    const { token } = await createSession(appPool(), { userId });
+    const csrf = 'c'.repeat(43);
+    const res = await app.inject({
+      method: 'POST', url: '/v1/echo',
+      cookies: { [SESSION_COOKIE]: token, [CSRF_COOKIE]: csrf },
+      headers: { [CSRF_HEADER]: csrf },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().userId).toBe(userId);
+  });
+
+  it('sessao revogada nao chega na rota: request.session fica nulo', async () => {
+    const userId = await seedUser();
+    const { token, sessionId } = await createSession(appPool(), { userId });
+    await appPool().query(
+      `UPDATE id.session SET revoked_at = clock_timestamp(), revoked_reason = 'teste' WHERE id = $1`,
+      [sessionId],
+    );
+    const res = await app.inject({
+      method: 'GET', url: '/v1/ping', cookies: { [SESSION_COOKIE]: token },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().userId).toBeNull();
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/authn/src/fastify/session-plugin.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./session-plugin" from "packages/authn/src/fastify/session-plugin.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Instalar as dependências e implementar o plugin**
+
+```bash
+pnpm add fastify fastify-plugin @fastify/cookie --filter @cadencia/authn
+```
+
+Criar `packages/authn/src/fastify/session-plugin.ts`:
+
+```ts
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import cookie from '@fastify/cookie';
+import fp from 'fastify-plugin';
+import type { FastifyReply } from 'fastify';
+import {
+  resolveSession, SESSION_IDLE_MINUTES,
+  type Queryable, type ResolvedSession,
+} from '../session';
+
+/** Prefixo __Host-: o navegador so aceita com Secure, Path=/ e sem Domain. */
+export const SESSION_COOKIE = '__Host-cadencia_sid';
+export const CSRF_COOKIE = '__Host-cadencia_csrf';
+export const CSRF_HEADER = 'x-csrf-token';
+
+const METODOS_INSEGUROS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/**
+ * Forma do evento de seguranca entregue ao canal B. Declarada aqui porque
+ * `authn` nao importa `@cadencia/audit` (irmaos em L0, §2.2 regra 2): quem liga
+ * as duas pontas e `apps/api`, passando `onSecurityEvent`.
+ */
+export interface SecurityEventInput {
+  readonly eventType: string;
+  readonly outcome: 'sucesso' | 'negado' | 'erro';
+  readonly entitySchema: string;
+  readonly entityTable: string;
+  readonly actorKind: 'user' | 'system' | 'anon';
+  readonly requestId: string;
+  readonly ip?: string | null;
+  readonly meta?: Readonly<Record<string, string | number | boolean | null>>;
+}
+
+export interface SessionPluginOptions {
+  /** Pool que ja assume app_rw (appPool de @cadencia/db). */
+  readonly db: Queryable;
+  /** Gerador de id de requisicao (uuidv7 mora no kernel, que authn nao importa). */
+  readonly newRequestId: () => string;
+  /** Canal B da auditoria. Opcional para nao travar teste de rota isolada. */
+  readonly onSecurityEvent?: (event: SecurityEventInput) => Promise<void>;
+}
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    session: ResolvedSession | null;
+  }
+}
+
+export function newCsrfToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+export function csrfMatches(
+  cookieValue: string | undefined, headerValue: string | string[] | undefined,
+): boolean {
+  const header = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  if (!cookieValue || !header) return false;
+  const a = Buffer.from(cookieValue, 'utf8');
+  const b = Buffer.from(header, 'utf8');
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+export function issueSessionCookies(reply: FastifyReply, sessionToken: string): void {
+  const base = {
+    path: '/', secure: true, sameSite: 'lax' as const,
+    maxAge: SESSION_IDLE_MINUTES * 60,
+  };
+  reply.setCookie(SESSION_COOKIE, sessionToken, { ...base, httpOnly: true });
+  // Legivel por JS de proposito: o front le e reenvia no header (double-submit).
+  reply.setCookie(CSRF_COOKIE, newCsrfToken(), { ...base, httpOnly: false });
+}
+
+export function clearSessionCookies(reply: FastifyReply): void {
+  reply.clearCookie(SESSION_COOKIE, { path: '/' });
+  reply.clearCookie(CSRF_COOKIE, { path: '/' });
+}
+
+export const sessionPlugin = fp<SessionPluginOptions>(async (app, opts) => {
+  await app.register(cookie);
+
+  app.decorateRequest('session', null);
+
+  app.addHook('onRequest', async (req, reply) => {
+    if (METODOS_INSEGUROS.has(req.method)) {
+      if (!csrfMatches(req.cookies[CSRF_COOKIE], req.headers[CSRF_HEADER])) {
+        await opts.onSecurityEvent?.({
+          eventType: 'CSRF_REJECTED',
+          entitySchema: 'id', entityTable: 'session',
+          outcome: 'negado', actorKind: 'anon',
+          requestId: (req.headers['x-request-id'] as string | undefined) ?? opts.newRequestId(),
+          ip: req.ip, meta: { method: req.method, route: req.url },
+        });
+        return reply.code(403).send({ error: 'csrf_invalido' });
+      }
+    }
+
+    // Metodo seguro sem cookie de CSRF: emite um agora. Sem este caminho o
+    // primeiro POST /v1/login de todo navegador cai no 403 acima -- o front nao
+    // tem como fabricar um cookie __Host- para reenviar no header.
+    if (!METODIOS_INSEGUROS.has(req.method) && !req.cookies[CSRF_COOKIE]) {
+      reply.setCookie(CSRF_COOKIE, newCsrfToken(), {
+        path: '/', secure: true, sameSite: 'lax', httpOnly: false,
+        maxAge: SESSION_IDLE_MINUTES * 60,
+      });
+    }
+
+    const token = req.cookies[SESSION_COOKIE];
+    if (!token) return;
+
+    const r = await resolveSession(opts.db, token);
+    if (r.ok) {
+      req.session = r.value;
+      return;
+    }
+    // Sessao morta: limpa o cookie e segue como anonimo. Quem exige sessao e a
+    // rota, via authz -- este hook nao decide autorizacao.
+    clearSessionCookies(reply);
+    await opts.onSecurityEvent?.({
+      eventType: 'SESSION_REJECTED',
+      entitySchema: 'id', entityTable: 'session',
+      outcome: 'negado', actorKind: 'anon',
+      requestId: (req.headers['x-request-id'] as string | undefined) ?? opts.newRequestId(),
+      ip: req.ip, meta: { reason: r.error },
+    });
+  });
+});
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/authn/src/fastify/session-plugin.int.test.ts`
+Esperado: PASSA — 7 testes verdes.
+
+- [ ] **Passo 5: Commitar**
+
+```bash
+git add packages/authn/src/fastify/session-plugin.ts \
+        packages/authn/src/fastify/session-plugin.int.test.ts \
+        packages/authn/package.json pnpm-lock.yaml
+git commit -m "feat(authn): SameSite session cookie with double-submit CSRF protection"
+```
+
+---
+
+### Task 36B: `resolveMemberships` — o vínculo que vira sujeito de autorização
+
+**Por que esta tarefa existe (§10 item 3).** O papel nunca vem do cliente: é derivado do vínculo, por clínica, dentro do banco. `resolveMemberships` é o único caminho que lê esse vínculo e o entrega ao `can()` da Task 37. Repare que o tipo `Role` é declarado **aqui** e não importado de `@cadencia/authz`: `authn` e `authz` são irmãos em L0 e import entre irmãos é proibido sem exceção (§2.2), então a duplicação é intencional — e o último teste do Passo 1 é o que impede as duas listas de divergirem, comparando a lista do TypeScript com o `CHECK` da tabela.
+
+**Arquivos:**
+- Criar: `packages/authn/src/membership.ts`
+- Teste: `packages/authn/src/membership.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authn/src/membership.int.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { uuidv7 } from '@cadencia/kernel';
+import { jobsPool, withTenantTx } from '@cadencia/db';
+import { MEMBERSHIP_ROLES, resolveMemberships } from './membership';
+
+async function seedTenant(nome: string): Promise<{ tenantId: string; clinicId: string }> {
+  const tenantId = uuidv7();
+  const clinicId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO app.tenant (id, slug, razao_social, cnpj) VALUES ($1, $2, $3, $4)`,
+    [tenantId, `t-${tenantId.slice(0, 8)}`, nome, '12ABC34501DE35'],
+  );
+  await jobsPool().query(
+    `INSERT INTO app.clinic (tenant_id, id, nome, timezone) VALUES ($1, $2, $3, $4)`,
+    [tenantId, clinicId, `${nome} - Unidade Centro`, 'America/Sao_Paulo'],
+  );
+  return { tenantId, clinicId };
+}
+
+async function seedUser(fullName: string): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, fullName],
+  );
+  return userId;
+}
+
+async function grant(
+  tenantId: string, clinicId: string, userId: string, role: string,
+): Promise<string> {
+  const id = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [tenantId, id, userId, clinicId, role],
+  );
+  return id;
+}
+
+describe('resolveMemberships', () => {
+  it('dentro do tenant A o vinculo do mesmo medico no tenant B nao aparece', async () => {
+    const a = await seedTenant('Clinica Sao Paulo');
+    const b = await seedTenant('Clinica Manaus');
+    const userId = await seedUser('Dra. Ana Ribeiro');
+    await grant(a.tenantId, a.clinicId, userId, 'admin_clinico');
+    await grant(b.tenantId, b.clinicId, userId, 'recepcao');
+
+    const vinculos = await withTenantTx(
+      { kind: 'user', tenantId: a.tenantId, userId, clinicId: a.clinicId, requestId: uuidv7() },
+      (tx) => resolveMemberships(tx, userId),
+    );
+    expect(vinculos).toEqual([
+      { tenantId: a.tenantId, clinicId: a.clinicId, role: 'admin_clinico' },
+    ]);
+  });
+
+  it('vinculo revogado some da lista na requisicao seguinte', async () => {
+    const t = await seedTenant('Clinica do Vale');
+    const userId = await seedUser('Dr. Bruno Camargo');
+    const membershipId = await grant(t.tenantId, t.clinicId, userId, 'profissional');
+
+    const antes = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => resolveMemberships(tx, userId),
+    );
+    expect(antes).toHaveLength(1);
+
+    await jobsPool().query(
+      `UPDATE app.membership
+          SET revoked_at = clock_timestamp(), revoked_reason = $2
+        WHERE id = $1`,
+      [membershipId, 'desligamento'],
+    );
+
+    const depois = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => resolveMemberships(tx, userId),
+    );
+    expect(depois).toEqual([]);
+  });
+
+  it('dois papeis na mesma unidade devolvem duas linhas, nao um papel escalar', async () => {
+    const t = await seedTenant('Clinica Integrada');
+    const userId = await seedUser('Dra. Carla Nunes');
+    await grant(t.tenantId, t.clinicId, userId, 'profissional');
+    await grant(t.tenantId, t.clinicId, userId, 'financeiro');
+
+    const vinculos = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => resolveMemberships(tx, userId),
+    );
+    expect(vinculos.map((v) => v.role).sort()).toEqual(['financeiro', 'profissional']);
+  });
+
+  it('a lista de papeis do TypeScript e exatamente a do CHECK de app.membership', async () => {
+    const { rows } = await jobsPool().query(
+      `SELECT pg_get_constraintdef(c.oid) AS def
+         FROM pg_constraint c
+        WHERE c.conrelid = 'app.membership'::regclass
+          AND c.contype = 'c'
+          AND pg_get_constraintdef(c.oid) LIKE '%role%'`,
+    );
+    const def = rows.map((r) => r.def as string).join(' ');
+    const noBanco = (def.match(/'[a-z_]+'/g) ?? []).map((s) => s.slice(1, -1)).sort();
+    expect(noBanco).toEqual([...MEMBERSHIP_ROLES].sort());
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/authn/src/membership.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./membership" from "packages/authn/src/membership.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Implementar o mínimo**
+
+Criar `packages/authn/src/membership.ts`:
+
+```ts
+import type { Queryable } from './session';
+
+/**
+ * Declarado aqui, e nao importado de @cadencia/authz: authn e authz sao irmaos
+ * em L0 e import entre irmaos e proibido sem excecao (§2.2 regra 2). O teste
+ * `membership.int.test.ts` compara esta lista com o CHECK de app.membership,
+ * que e o que impede as duas divergirem em silencio.
+ */
+export const MEMBERSHIP_ROLES = [
+  'admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro',
+] as const;
+export type Role = (typeof MEMBERSHIP_ROLES)[number];
+
+export interface MembershipRow {
+  tenantId: string;
+  clinicId: string;
+  role: Role;
+}
+
+/**
+ * Le os vinculos VIGENTES do usuario. Precisa rodar dentro de withTenantTx: a
+ * policy de app.membership ja filtra por tenant e por dono do vinculo, e o
+ * parametro `tenantId` serve so para o chamador estreitar ainda mais.
+ */
+export async function resolveMemberships(
+  db: Queryable, userId: string, tenantId?: string,
+): Promise<MembershipRow[]> {
+  const { rows } = await db.query(
+    `SELECT m.tenant_id, m.clinic_id, m.role
+       FROM app.membership m
+      WHERE m.user_id = $1
+        AND m.revoked_at IS NULL
+        AND ($2::uuid IS NULL OR m.tenant_id = $2::uuid)
+      ORDER BY m.clinic_id, m.role`,
+    [userId, tenantId ?? null],
+  );
+  return rows.map((r) => ({
+    tenantId: r.tenant_id as string,
+    clinicId: r.clinic_id as string,
+    role: r.role as Role,
+  }));
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/authn/src/membership.int.test.ts`
+Esperado: PASSA — 4 testes verdes.
+
+- [ ] **Passo 5: Commitar**
+
+```bash
+git add packages/authn/src/membership.ts packages/authn/src/membership.int.test.ts
+git commit -m "feat(authn): resolve active per-clinic memberships from the tenant context"
+```
+
+---
+
+### Task 37: `authz` — catálogo de ações com fonte única e negação por padrão
+
+**A divisão de trabalho com o RLS, escrita para não ser reinventada em cada sprint.** O RLS decide **o que a linha permite**; o `authz` decide **o que a rota permite**. Não há regra duplicada: o `can()` nunca consulta paciente, atendimento ou qualquer dado clínico — ele só olha o par (papel no vínculo, ação da rota). Quem filtra linha é a policy no banco. Consequência prática: uma rota liberada pelo `authz` continua devolvendo zero linhas se o RLS não autorizar — e é isso que a Task 38 prova com teste.
+
+O tipo `Role` daqui é estruturalmente idêntico ao de `packages/authn/src/membership.ts`, de propósito e pelo mesmo motivo (§2.2 regra 2). Quem junta os dois é `apps/api`: passa o resultado de `resolveMemberships` direto para `can()`.
+
+**Arquivos:**
+- Criar: `packages/authz/src/actions.ts`
+- Criar: `packages/authz/src/can.ts`
+- Teste: `packages/authz/src/can.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/authz/src/can.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { ACTIONS, ACTION_BY_KEY } from './actions';
+import { can, assertCan, type AuthzSubject } from './can';
+
+const CLINICA_SP = '01890a5d-ac96-774b-bcce-b302099a8057';
+const CLINICA_MANAUS = '01890a5d-ac96-774b-bcce-b302099a8058';
+
+function sujeito(
+  memberships: AuthzSubject['memberships'], mfaAt: Date | null = new Date(),
+): AuthzSubject {
+  return {
+    userId: '01890a5d-ac96-774b-bcce-b302099a8000',
+    tenantId: '01890a5d-ac96-774b-bcce-b302099a8001',
+    memberships, mfaAt,
+  };
+}
+
+describe('catalogo de acoes', () => {
+  it('nao tem chave duplicada', () => {
+    expect(ACTION_BY_KEY.size).toBe(ACTIONS.length);
+  });
+
+  it('toda acao declara ao menos um papel: acao sem papel seria letra morta', () => {
+    for (const a of ACTIONS) expect(a.roles.length).toBeGreaterThan(0);
+  });
+
+  it('toda chave segue o formato dominio.verbo', () => {
+    for (const a of ACTIONS) expect(a.key).toMatch(/^[a-z_]+\.[a-z_]+$/);
+  });
+});
+
+describe('can', () => {
+  it('FAIL-CLOSED: acao que nao existe no catalogo e negada ate para o admin', () => {
+    // O caso real: alguem escreve requireAction('financeiro.exportar_tudo') numa
+    // rota nova e esquece de cadastrar a acao. Sem esta regra, a rota nasce aberta.
+    const admin = sujeito([{ clinicId: CLINICA_SP, role: 'admin_clinico' }]);
+    const d = can(admin, 'financeiro.exportar_tudo', { clinicId: CLINICA_SP });
+    expect(d.allowed).toBe(false);
+    if (d.allowed) return;
+    expect(d.reason).toBe('acao_desconhecida');
+  });
+
+  it('admin_clinico le paciente na clinica em que tem vinculo', () => {
+    const admin = sujeito([{ clinicId: CLINICA_SP, role: 'admin_clinico' }]);
+    expect(can(admin, 'patient.read', { clinicId: CLINICA_SP }).allowed).toBe(true);
+  });
+
+  it('papel de uma unidade nao vale na outra: admin em SP e recepcao em Manaus', () => {
+    const medica = sujeito([
+      { clinicId: CLINICA_SP, role: 'admin_clinico' },
+      { clinicId: CLINICA_MANAUS, role: 'recepcao' },
+    ]);
+    expect(can(medica, 'membership.grant', { clinicId: CLINICA_SP }).allowed).toBe(true);
+    const emManaus = can(medica, 'membership.grant', { clinicId: CLINICA_MANAUS });
+    expect(emManaus.allowed).toBe(false);
+    if (emManaus.allowed) return;
+    expect(emManaus.reason).toBe('papel_insuficiente');
+  });
+
+  it('sem vinculo na clinica alvo e negado antes de olhar papel', () => {
+    const medica = sujeito([{ clinicId: CLINICA_SP, role: 'admin_clinico' }]);
+    const d = can(medica, 'patient.read', { clinicId: CLINICA_MANAUS });
+    expect(d.allowed).toBe(false);
+    if (d.allowed) return;
+    expect(d.reason).toBe('sem_vinculo');
+  });
+
+  it('acao marcada com requiresMfa exige segundo fator na sessao', () => {
+    const semMfa = sujeito([{ clinicId: CLINICA_SP, role: 'admin_clinico' }], null);
+    const d = can(semMfa, 'membership.grant', { clinicId: CLINICA_SP });
+    expect(d.allowed).toBe(false);
+    if (d.allowed) return;
+    expect(d.reason).toBe('mfa_exigida');
+  });
+
+  it('sujeito sem nenhum vinculo e negado em tudo', () => {
+    const ninguem = sujeito([]);
+    for (const a of ACTIONS) {
+      expect(can(ninguem, a.key, { clinicId: CLINICA_SP }).allowed).toBe(false);
+    }
+  });
+
+  it('assertCan lanca com a chave e o motivo quando nega', () => {
+    const recepcao = sujeito([{ clinicId: CLINICA_SP, role: 'recepcao' }]);
+    expect(() => assertCan(recepcao, 'membership.grant', { clinicId: CLINICA_SP }))
+      .toThrow(/membership\.grant.*papel_insuficiente/);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test packages/authz/src/can.test.ts`
+Esperado: FALHA com `Failed to resolve import "./actions" from "packages/authz/src/can.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Escrever o catálogo**
+
+Criar `packages/authz/src/actions.ts`:
+
+```ts
+/**
+ * FONTE UNICA do catalogo de acoes. Este arquivo e o unico lugar onde uma acao
+ * nasce. O comando `pnpm authz:seed` regenera a tabela ref.action e o arquivo
+ * packages/authz/actions.lock.json a partir daqui -- nunca o contrario.
+ *
+ * O que este catalogo NAO faz: filtrar linha. Isso e do RLS (§3.3). Aqui so se
+ * decide o que a ROTA permite, olhando papel no vinculo.
+ */
+export const ROLES = [
+  'admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro',
+] as const;
+export type Role = (typeof ROLES)[number];
+
+export interface ActionDef {
+  readonly key: string;
+  readonly description: string;
+  readonly roles: readonly Role[];
+  readonly requiresMfa?: boolean;
+}
+
+export const ACTIONS = [
+  { key: 'patient.read', description: 'Ler cadastro de paciente',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'patient.write', description: 'Criar ou editar cadastro de paciente',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'clinic.read', description: 'Ler dados da unidade',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  { key: 'clinic.write', description: 'Editar dados da unidade',
+    roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'membership.read', description: 'Listar vinculos da unidade',
+    roles: ['admin_clinico', 'diretor_tecnico'] },
+  { key: 'membership.grant', description: 'Conceder vinculo a um usuario',
+    roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'membership.revoke', description: 'Revogar vinculo de um usuario',
+    roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'catalog.read', description: 'Consultar terminologia (CID-10, TUSS)',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  { key: 'audit.read', description: 'Ler a trilha de auditoria do tenant',
+    roles: ['admin_clinico', 'diretor_tecnico'], requiresMfa: true },
+] as const satisfies readonly ActionDef[];
+
+export type ActionKey = (typeof ACTIONS)[number]['key'];
+
+export const ACTION_BY_KEY: ReadonlyMap<string, ActionDef> =
+  new Map(ACTIONS.map((a) => [a.key, a as ActionDef] as const));
+```
+
+- [ ] **Passo 4: Escrever a decisão**
+
+Criar `packages/authz/src/can.ts`:
+
+```ts
+import { ACTION_BY_KEY, type ActionDef, type Role } from './actions';
+
+export type DenyReason = 'acao_desconhecida' | 'sem_vinculo' | 'papel_insuficiente' | 'mfa_exigida';
+
+/**
+ * O sujeito da autorizacao. `memberships` vem de resolveMemberships (Task 36B),
+ * que le o vinculo dentro do banco. Papel NUNCA vem do cliente (§10 item 3).
+ */
+export interface AuthzSubject {
+  userId: string;
+  tenantId: string;
+  memberships: readonly { clinicId: string; role: Role }[];
+  mfaAt: Date | null;
+}
+
+export type Decision =
+  | { allowed: true; action: ActionDef }
+  | { allowed: false; reason: DenyReason };
+
+export function can(
+  subject: AuthzSubject, actionKey: string, target: { clinicId: string },
+): Decision {
+  const action = ACTION_BY_KEY.get(actionKey);
+  // Fail-closed: chave fora do catalogo e negada. Rota nova nasce fechada.
+  if (!action) return { allowed: false, reason: 'acao_desconhecida' };
+
+  const naClinica = subject.memberships.filter((m) => m.clinicId === target.clinicId);
+  if (naClinica.length === 0) return { allowed: false, reason: 'sem_vinculo' };
+
+  const temPapel = naClinica.some((m) => action.roles.includes(m.role));
+  if (!temPapel) return { allowed: false, reason: 'papel_insuficiente' };
+
+  if (action.requiresMfa === true && subject.mfaAt === null) {
+    return { allowed: false, reason: 'mfa_exigida' };
+  }
+  return { allowed: true, action };
+}
+
+export function assertCan(
+  subject: AuthzSubject, actionKey: string, target: { clinicId: string },
+): ActionDef {
+  const d = can(subject, actionKey, target);
+  if (!d.allowed) throw new Error(`authz negou ${actionKey}: ${d.reason}`);
+  return d.action;
+}
+```
+
+- [ ] **Passo 5: Rodar e confirmar que passa**
+
+Rodar: `pnpm test packages/authz/src/can.test.ts`
+Esperado: PASSA — 10 testes verdes.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/authz/src/actions.ts packages/authz/src/can.ts packages/authz/src/can.test.ts
+git commit -m "feat(authz): single-source action catalog with fail-closed evaluation"
+```
+
+---
+
+### Task 38: `pnpm authz:seed` e a prova de que `authz` não substitui RLS
+
+A tabela `ref.action` existe para a tela de papéis e para consulta operacional. Ela **não** é fonte da verdade: `packages/authz/src/actions.ts` é. O `authz:seed` regenera a tabela e o `actions.lock.json` a partir do arquivo, e apaga do banco qualquer chave que não esteja mais no catálogo — porque duas fontes da verdade para permissão é como um usuário ganha acesso que ninguém concedeu.
+
+**Arquivos:**
+- Criar: `packages/authz/src/catalog.ts`
+- Teste: `packages/authz/src/catalog.test.ts`
+- Criar: `packages/db/migrations/0018_action_catalog.sql`
+- Criar: `tools/authz-seed.ts`
+- Modificar: `package.json` (raiz) — bloco `scripts`
+- Teste: `packages/authz/src/authz-e-rls.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste unitário que falha**
+
+Criar `packages/authz/src/catalog.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { ACTIONS, type ActionDef } from './actions';
+import { catalogRows, catalogChecksum } from './catalog';
+
+describe('catalogo derivado de actions.ts', () => {
+  it('gera uma linha por acao, com os papeis ordenados', () => {
+    const rows = catalogRows(ACTIONS);
+    expect(rows.length).toBe(ACTIONS.length);
+    const patientRead = rows.find((r) => r.key === 'patient.read')!;
+    expect(patientRead.roles).toEqual([...patientRead.roles].sort());
+    expect(patientRead.requiresMfa).toBe(false);
+    expect(rows.find((r) => r.key === 'membership.grant')!.requiresMfa).toBe(true);
+  });
+
+  it('as linhas saem ordenadas por chave, para o checksum nao depender da ordem do arquivo', () => {
+    const keys = catalogRows(ACTIONS).map((r) => r.key);
+    expect(keys).toEqual([...keys].sort());
+  });
+
+  it('o checksum muda quando uma acao muda de papel', () => {
+    const base = catalogChecksum(catalogRows(ACTIONS));
+    const alterado: readonly ActionDef[] = [
+      ...ACTIONS.filter((a) => a.key !== 'patient.read'),
+      { key: 'patient.read', description: 'Ler cadastro de paciente',
+        roles: ['admin_clinico'] as const },
+    ];
+    expect(catalogChecksum(catalogRows(alterado))).not.toBe(base);
+  });
+
+  it('o checksum NAO muda quando so a ordem das acoes no arquivo muda', () => {
+    const base = catalogChecksum(catalogRows(ACTIONS));
+    const invertido = catalogChecksum(catalogRows([...ACTIONS].reverse()));
+    expect(invertido).toBe(base);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test packages/authz/src/catalog.test.ts`
+Esperado: FALHA com `Failed to resolve import "./catalog" from "packages/authz/src/catalog.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Implementar o módulo puro**
+
+Criar `packages/authz/src/catalog.ts`:
+
+```ts
+import { createHash } from 'node:crypto';
+import type { ActionDef } from './actions';
+
+export interface ActionRow {
+  key: string;
+  description: string;
+  roles: string[];
+  requiresMfa: boolean;
+}
+
+export function catalogRows(actions: readonly ActionDef[]): ActionRow[] {
+  return actions
+    .map((a) => ({
+      key: a.key,
+      description: a.description,
+      roles: [...a.roles].sort(),
+      requiresMfa: a.requiresMfa === true,
+    }))
+    .sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+}
+
+export function catalogChecksum(rows: readonly ActionRow[]): string {
+  const canonical = rows
+    .map((r) => `${r.key}|${r.description}|${r.roles.join(',')}|${r.requiresMfa}`)
+    .join('\n');
+  return createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que o teste unitário passa**
+
+Rodar: `pnpm test packages/authz/src/catalog.test.ts`
+Esperado: PASSA — 4 testes verdes.
+
+- [ ] **Passo 5: Escrever o teste de integração que falha**
+
+Criar `packages/authz/src/authz-e-rls.int.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { uuidv7 } from '@cadencia/kernel';
+import { jobsPool, withTenantTx } from '@cadencia/db';
+import { ACTIONS } from './actions';
+import { can, type AuthzSubject } from './can';
+
+async function seedTenant(nome: string): Promise<{ tenantId: string; clinicId: string }> {
+  const tenantId = uuidv7();
+  const clinicId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO app.tenant (id, slug, razao_social, cnpj) VALUES ($1, $2, $3, $4)`,
+    [tenantId, `t-${tenantId.slice(0, 8)}`, nome, '12ABC34501DE35'],
+  );
+  await jobsPool().query(
+    `INSERT INTO app.clinic (tenant_id, id, nome, timezone) VALUES ($1, $2, $3, $4)`,
+    [tenantId, clinicId, `${nome} - Unidade Centro`, 'America/Sao_Paulo'],
+  );
+  return { tenantId, clinicId };
+}
+
+async function seedMember(tenantId: string, clinicId: string, role: string): Promise<string> {
+  const userId = uuidv7();
+  await jobsPool().query(
+    `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, $3)`,
+    [userId, `u-${userId.slice(0, 12)}@exemplo.com.br`, 'Dra. Ana Ribeiro'],
+  );
+  await jobsPool().query(
+    `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [tenantId, uuidv7(), userId, clinicId, role],
+  );
+  return userId;
+}
+
+describe('pnpm authz:seed', () => {
+  it('a tabela ref.action espelha exatamente actions.ts, sem sobra nem falta', async () => {
+    // Uma chave plantada a mao no banco tem que sumir no proximo seed: se o banco
+    // pudesse ganhar acao propria, existiriam duas fontes da verdade.
+    await jobsPool().query(
+      `INSERT INTO ref.action (key, description, roles) VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO NOTHING`,
+      ['fantasma.acao', 'inserida a mao', ['admin_clinico']],
+    );
+
+    execFileSync('pnpm', ['authz:seed'], { stdio: 'pipe', shell: process.platform === 'win32' });
+
+    const { rows } = await jobsPool().query(`SELECT key FROM ref.action ORDER BY key`);
+    const noBanco = rows.map((r) => r.key as string);
+    expect(noBanco).toEqual([...ACTIONS.map((a) => a.key)].sort());
+    expect(noBanco).not.toContain('fantasma.acao');
+  });
+
+  it('--check passa com o lock em dia', () => {
+    expect(() =>
+      execFileSync('pnpm', ['authz:seed', '--check'],
+        { stdio: 'pipe', shell: process.platform === 'win32' }),
+    ).not.toThrow();
+  });
+});
+
+describe('authz decide a rota, RLS decide a linha', () => {
+  it('rota permitida pelo authz continua devolvendo zero linhas do tenant alheio', async () => {
+    const a = await seedTenant('Clinica A');
+    const b = await seedTenant('Clinica B');
+    const userId = await seedMember(a.tenantId, a.clinicId, 'admin_clinico');
+
+    const sujeito: AuthzSubject = {
+      userId, tenantId: a.tenantId,
+      memberships: [{ clinicId: a.clinicId, role: 'admin_clinico' }],
+      mfaAt: new Date(),
+    };
+    // O authz libera a rota...
+    expect(can(sujeito, 'clinic.read', { clinicId: a.clinicId }).allowed).toBe(true);
+
+    // ...e o RLS continua sendo quem decide a linha.
+    const r = await withTenantTx(
+      { kind: 'user', tenantId: a.tenantId, userId, clinicId: a.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM app.clinic WHERE id = $1`, [b.clinicId],
+      ),
+    );
+    expect(r.rows[0]?.n).toBe(0);
+  });
+
+  it('linha visivel pelo RLS nao basta: recepcao segue sem a acao de conceder vinculo', async () => {
+    const t = await seedTenant('Clinica do Vale');
+    const userId = await seedMember(t.tenantId, t.clinicId, 'recepcao');
+
+    const r = await withTenantTx(
+      { kind: 'user', tenantId: t.tenantId, userId, clinicId: t.clinicId, requestId: uuidv7() },
+      (tx) => tx.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM app.clinic WHERE id = $1`, [t.clinicId],
+      ),
+    );
+    expect(r.rows[0]?.n).toBe(1);   // o RLS deixa ver
+
+    const d = can(
+      { userId, tenantId: t.tenantId,
+        memberships: [{ clinicId: t.clinicId, role: 'recepcao' }], mfaAt: new Date() },
+      'membership.grant', { clinicId: t.clinicId },
+    );
+    expect(d.allowed).toBe(false);  // e o authz recusa a rota
+    if (d.allowed) return;
+    expect(d.reason).toBe('papel_insuficiente');
+  });
+});
+```
+
+Rodar: `pnpm test:int packages/authz/src/authz-e-rls.int.test.ts`
+Esperado: FALHA com `error: relation "ref.action" does not exist` (SQLSTATE `42P01`).
+
+- [ ] **Passo 6: Criar a migration da tabela espelho**
+
+Rodar: `pnpm db:new action_catalog` — cria `packages/db/migrations/0018_action_catalog.sql`. Preencher com exatamente:
+
+```sql
+-- 0018_action_catalog.sql
+-- Espelho do catalogo de acoes no banco, para consulta operacional e para a
+-- tela de papeis. NAO e fonte da verdade: packages/authz/src/actions.ts e.
+-- Fica em `ref` (referencia global, sem tenant) e nao em `app`, porque o
+-- catalogo e igual para todos os tenants.
+CREATE TABLE ref.action (
+  key          text PRIMARY KEY,
+  description  text NOT NULL,
+  roles        text[] NOT NULL,
+  requires_mfa boolean NOT NULL DEFAULT false,
+  generated_at timestamptz(3) NOT NULL DEFAULT clock_timestamp()
+);
+ALTER TABLE ref.action OWNER TO app_owner;
+COMMENT ON TABLE ref.action IS 'global-reference';
+
+GRANT USAGE  ON SCHEMA ref TO app_rw;
+GRANT SELECT ON ref.action TO app_rw;
+-- `pnpm authz:seed` roda como `jobs`: BYPASSRLS ignora POLICY, nao ignora GRANT.
+GRANT USAGE ON SCHEMA ref TO jobs;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ref.action TO jobs;
+```
+
+Rodar: `pnpm db:migrate`
+Esperado: `aplicada: 0018_action_catalog.sql`.
+
+- [ ] **Passo 7: Escrever o script de seed**
+
+Criar `tools/authz-seed.ts`:
+
+```ts
+/**
+ * pnpm authz:seed         regenera ref.action e actions.lock.json a partir de actions.ts
+ * pnpm authz:seed --check falha se o lock estiver desatualizado (invariante de CI)
+ */
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ACTIONS } from '../packages/authz/src/actions';
+import { catalogRows, catalogChecksum } from '../packages/authz/src/catalog';
+import { closePools, jobsPool } from '../packages/db/src/pool';
+
+// Este script roda em processo proprio (o teste o invoca por execFileSync) e
+// nao passa pelo setupFiles do vitest: sem isto, DATABASE_URL_JOBS nao existe.
+const envPath = resolve(process.cwd(), '.env');
+if (existsSync(envPath)) {
+  process.loadEnvFile(envPath);
+}
+
+const LOCK = resolve(process.cwd(), 'packages/authz/actions.lock.json');
+
+async function main(): Promise<void> {
+  const rows = catalogRows(ACTIONS);
+  const checksum = catalogChecksum(rows);
+  const lockBody = `${JSON.stringify({ checksum, rows }, null, 2)}\n`;
+
+  if (process.argv.includes('--check')) {
+    const atual = existsSync(LOCK) ? readFileSync(LOCK, 'utf8') : '';
+    if (atual !== lockBody) {
+      console.error(
+        'actions.lock.json esta desatualizado. Rode `pnpm authz:seed` e commite o resultado.',
+      );
+      process.exit(1);
+    }
+    console.log(`catalogo em dia: ${rows.length} acoes, checksum ${checksum}`);
+    return;
+  }
+
+  writeFileSync(LOCK, lockBody, 'utf8');
+
+  const client = await jobsPool().connect();
+  try {
+    await client.query('BEGIN');
+    for (const r of rows) {
+      await client.query(
+        `INSERT INTO ref.action (key, description, roles, requires_mfa)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (key) DO UPDATE
+           SET description = EXCLUDED.description,
+               roles = EXCLUDED.roles,
+               requires_mfa = EXCLUDED.requires_mfa,
+               generated_at = clock_timestamp()`,
+        [r.key, r.description, r.roles, r.requiresMfa],
+      );
+    }
+    // Acao que saiu de actions.ts sai do banco: o banco nunca vira fonte paralela.
+    await client.query(`DELETE FROM ref.action WHERE key <> ALL($1::text[])`,
+      [rows.map((r) => r.key)]);
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+
+  console.log(`catalogo regenerado: ${rows.length} acoes, checksum ${checksum}`);
+}
+
+main()
+  .then(() => closePools())
+  .catch(async (e) => { console.error(e); await closePools(); process.exit(1); });
+```
+
+- [ ] **Passo 8: Registrar o comando no `package.json` da raiz**
+
+Modificar `package.json` (raiz), no bloco `"scripts"`, acrescentando as duas linhas:
+
+```json
+    "authz:seed": "tsx tools/authz-seed.ts",
+    "authz:check": "tsx tools/authz-seed.ts --check",
+```
+
+Rodar: `pnpm authz:seed --check`
+Esperado: FALHA com `actions.lock.json esta desatualizado. Rode \`pnpm authz:seed\` e commite o resultado.` e código de saída 1 — o lock ainda não existe.
+
+- [ ] **Passo 9: Rodar o seed e confirmar que os testes passam**
+
+Rodar:
+
+```bash
+pnpm authz:seed
+pnpm test:int packages/authz/src/authz-e-rls.int.test.ts
+```
+
+Esperado: `pnpm authz:seed` imprime `catalogo regenerado: 9 acoes, checksum <hex>` e cria `packages/authz/actions.lock.json`; o teste PASSA — 4 testes verdes.
+
+- [ ] **Passo 10: Commitar**
+
+```bash
+git add packages/db/migrations/0018_action_catalog.sql packages/authz/src/catalog.ts \
+        packages/authz/src/catalog.test.ts packages/authz/src/authz-e-rls.int.test.ts \
+        packages/authz/actions.lock.json tools/authz-seed.ts package.json
+git commit -m "feat(authz): authz:seed regenerates action catalog from single source"
+```
+
+---
+
+### Task 39: `catalogs` — CID-10 versionado por data, com lookup pela data do evento
+
+**O erro que esta tarefa existe para impedir.** Uma consulta de 2024 impressa ou faturada em 2026 tem que mostrar a descrição do código **vigente em 2024**. Quem resolve o código pelo relógio de quem executa produz um lote que a operadora rejeita meses depois, e o relatório de auditoria fica sem explicação. Por isso a tabela tem `daterange` com `EXCLUDE USING gist` (impossível carregar duas vigências sobrepostas do mesmo código) e a função de lookup **exige a data do evento como parâmetro obrigatório**.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0019_ref_cid10.sql`
+- Criar: `packages/catalogs/src/cid10.ts`
+- Teste: `packages/catalogs/src/cid10.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/catalogs/src/cid10.int.test.ts`:
+
+```ts
+import { beforeAll, describe, expect, it } from 'vitest';
+import { appPool, jobsPool } from '@cadencia/db';
+import { resolveCid10At, loadCid10Competencia, parseCid10Csv } from './cid10';
+
+// Cenario: a CID-10 e recarregada em 2025 e a descricao de J45 muda. Um
+// atendimento de 2024 tem que continuar resolvendo a descricao de 2024.
+beforeAll(async () => {
+  await jobsPool().query(`DELETE FROM ref.cid10_term WHERE codigo IN ('J45','I10','A00')`);
+  await loadCid10Competencia(jobsPool(), {
+    competencia: '200801',
+    vigenciaFrom: '2008-01-01',
+    vigenciaTo: '2025-01-01',
+    rows: [
+      { codigo: 'J45', descricao: 'Asma', capitulo: 10 },
+      { codigo: 'I10', descricao: 'Hipertensao essencial (primaria)', capitulo: 9 },
+    ],
+  });
+  await loadCid10Competencia(jobsPool(), {
+    competencia: '202501',
+    vigenciaFrom: '2025-01-01',
+    vigenciaTo: null,
+    rows: [
+      { codigo: 'J45', descricao: 'Asma (revisao 2025)', capitulo: 10 },
+      { codigo: 'I10', descricao: 'Hipertensao essencial (primaria)', capitulo: 9 },
+    ],
+  });
+});
+
+describe('CID-10 versionada por data', () => {
+  it('ATENDIMENTO DE 2024 RESOLVE PELA VIGENCIA DE 2024, nao pela de hoje', async () => {
+    const passado = await resolveCid10At(appPool(), 'J45', '2024-08-03');
+    const hoje = await resolveCid10At(appPool(), 'J45', '2026-08-03');
+    expect(passado.ok).toBe(true);
+    expect(hoje.ok).toBe(true);
+    if (!passado.ok || !hoje.ok) return;
+    expect(passado.value.display).toBe('Asma');
+    expect(hoje.value.display).toBe('Asma (revisao 2025)');
+    expect(passado.value.terminologyVersion).toBe('200801');
+    expect(hoje.value.terminologyVersion).toBe('202501');
+  });
+
+  it('codigo que nao existia na data do atendimento nao e inventado', async () => {
+    await loadCid10Competencia(jobsPool(), {
+      competencia: '202501',
+      vigenciaFrom: '2025-01-01',
+      vigenciaTo: null,
+      rows: [{ codigo: 'A00', descricao: 'Colera', capitulo: 1 }],
+    });
+    const r = await resolveCid10At(appPool(), 'A00', '2024-08-03');
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('codigo_inexistente_na_data');
+  });
+
+  it('a data do limite superior e exclusiva: 2025-01-01 ja e a vigencia nova', async () => {
+    const vespera = await resolveCid10At(appPool(), 'J45', '2024-12-31');
+    const virada = await resolveCid10At(appPool(), 'J45', '2025-01-01');
+    expect(vespera.ok && vespera.value.display).toBe('Asma');
+    expect(virada.ok && virada.value.display).toBe('Asma (revisao 2025)');
+  });
+
+  it('carregar competencia com vigencia sobreposta e impossivel: o banco recusa', async () => {
+    await expect(
+      loadCid10Competencia(jobsPool(), {
+        competencia: '202403',
+        vigenciaFrom: '2024-01-01',   // invade a faixa 2008-2025 de J45
+        vigenciaTo: '2026-01-01',
+        rows: [{ codigo: 'J45', descricao: 'Asma (carga errada)', capitulo: 10 }],
+      }),
+    ).rejects.toMatchObject({ code: '23P01' });   // exclusion_violation
+  });
+
+  it('a funcao SQL ref.cid10_at devolve o mesmo termo que a funcao TS', async () => {
+    const { rows } = await appPool().query(
+      `SELECT descricao, competencia FROM ref.cid10_at($1, $2::date)`, ['J45', '2024-08-03'],
+    );
+    expect(rows[0].descricao).toBe('Asma');
+    expect(rows[0].competencia).toBe('200801');
+  });
+
+  it('parseCid10Csv le o formato distribuido pelo DATASUS', () => {
+    const csv = [
+      'codigo;descricao;capitulo',
+      'J45;Asma;10',
+      'I10;Hipertensao essencial (primaria);9',
+      '',
+    ].join('\n');
+    expect(parseCid10Csv(csv)).toEqual([
+      { codigo: 'J45', descricao: 'Asma', capitulo: 10 },
+      { codigo: 'I10', descricao: 'Hipertensao essencial (primaria)', capitulo: 9 },
+    ]);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/catalogs/src/cid10.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./cid10" from "packages/catalogs/src/cid10.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Criar a migration**
+
+Rodar: `pnpm db:new ref_cid10` — cria `packages/db/migrations/0019_ref_cid10.sql`. Preencher com exatamente:
+
+```sql
+-- 0019_ref_cid10.sql
+-- Terminologia GLOBAL, versionada por data (§3.9, §10 item 11).
+-- Sem RLS e sem tenant_id: 15 mil codigos x N clinicas seria absurdo, e a CID
+-- e a mesma para todo mundo. Usa btree_gist (para o operador `=` participar do
+-- EXCLUDE ao lado do `&&` do daterange) e pg_trgm (gin_trgm_ops); as duas ja
+-- foram instaladas pela migration 0002.
+CREATE TABLE ref.cid10_term (
+  codigo      varchar(6) NOT NULL,
+  descricao   text NOT NULL,
+  capitulo    smallint,
+  vigencia    daterange NOT NULL,
+  competencia char(6) NOT NULL,          -- AAAAMM da publicacao carregada
+  PRIMARY KEY (codigo, vigencia),
+  -- Impossivel carregar uma competencia que sobreponha a vigencia do mesmo codigo.
+  -- Sem isto, duas linhas concorrentes fariam o lookup devolver a que o planejador
+  -- escolher -- e a descricao do prontuario mudaria entre duas impressoes.
+  EXCLUDE USING gist (codigo WITH =, vigencia WITH &&)
+);
+ALTER TABLE ref.cid10_term OWNER TO app_owner;
+COMMENT ON TABLE ref.cid10_term IS 'global-reference';
+
+CREATE INDEX ix_cid10_busca ON ref.cid10_term USING gin (descricao gin_trgm_ops);
+
+-- Lookup PELA DATA DO EVENTO. Repare que nao existe versao sem parametro de
+-- data: quem chama e obrigado a dizer de quando e o atendimento.
+CREATE FUNCTION ref.cid10_at(p_codigo varchar, p_data date)
+RETURNS ref.cid10_term LANGUAGE sql STABLE PARALLEL SAFE AS $$
+  SELECT * FROM ref.cid10_term
+   WHERE codigo = p_codigo AND vigencia @> p_data $$;
+ALTER FUNCTION ref.cid10_at(varchar, date) OWNER TO app_owner;
+
+GRANT USAGE  ON SCHEMA ref TO app_rw;
+GRANT SELECT ON ref.cid10_term TO app_rw;
+GRANT EXECUTE ON FUNCTION ref.cid10_at(varchar, date) TO app_rw;
+-- USAGE no schema e SELECT sao obrigatorios: sem USAGE nada em `ref` e alcancavel,
+-- e o `DELETE ... WHERE codigo IN (...)` do fixture le as colunas do predicado.
+-- A carga bimestral e job, nunca caminho de requisicao.
+GRANT USAGE ON SCHEMA ref TO jobs;
+GRANT SELECT, INSERT, DELETE ON ref.cid10_term TO jobs;
+```
+
+- [ ] **Passo 4: Implementar o módulo**
+
+Criar `packages/catalogs/src/cid10.ts`:
+
+```ts
+import { err, ok, type Result } from '@cadencia/kernel';
+
+export interface Queryable {
+  query(sql: string, params?: unknown[]): Promise<{ rows: any[]; rowCount: number | null }>;
+}
+
+/**
+ * Um pool capaz de RESERVAR uma conexao. BEGIN/INSERT/COMMIT por `Pool.query`
+ * nao caem necessariamente na mesma conexao: a carga deixaria de ser atomica e
+ * o ROLLBACK rodaria numa conexao sem transacao aberta.
+ */
+export interface TransactionalDb {
+  connect(): Promise<{
+    query(sql: string, params?: unknown[]): Promise<{ rows: any[]; rowCount: number | null }>;
+    release(): void;
+  }>;
+}
+
+export interface ResolvedTerm {
+  system: 'CID10';
+  code: string;
+  display: string;
+  terminologyVersion: string;   // competencia da publicacao consultada
+}
+
+export type Cid10Failure = 'codigo_inexistente_na_data';
+
+/**
+ * Resolve o codigo PELA DATA DO EVENTO. `eventDate` e obrigatorio e vem no
+ * formato AAAA-MM-DD: e a `occurred_date` do atendimento, ja no fuso da clinica.
+ * NAO existe default para hoje -- resolver pelo relogio de quem executa e o erro
+ * que so aparece meses depois, num lote rejeitado pela operadora (§10 item 11).
+ */
+export async function resolveCid10At(
+  db: Queryable, codigo: string, eventDate: string,
+): Promise<Result<ResolvedTerm, Cid10Failure>> {
+  const { rows } = await db.query(
+    `SELECT codigo, descricao, competencia
+       FROM ref.cid10_term
+      WHERE codigo = $1 AND vigencia @> $2::date`,
+    [codigo, eventDate],
+  );
+  const row = rows[0];
+  if (!row) return err('codigo_inexistente_na_data');
+  return ok({
+    system: 'CID10',
+    code: row.codigo as string,
+    display: row.descricao as string,
+    terminologyVersion: row.competencia as string,
+  });
+}
+
+export function parseCid10Csv(
+  csv: string,
+): Array<{ codigo: string; descricao: string; capitulo: number | null }> {
+  const linhas = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  return linhas.slice(1).map((linha) => {
+    const [codigo, descricao, capitulo] = linha.split(';');
+    return {
+      codigo: (codigo ?? '').trim(),
+      descricao: (descricao ?? '').trim(),
+      capitulo: capitulo && capitulo.trim().length > 0 ? Number(capitulo.trim()) : null,
+    };
+  });
+}
+
+/**
+ * Carga de uma competencia inteira, em UMA transacao, numa unica conexao.
+ * Roda com o papel `jobs`. Se qualquer codigo sobrepuser vigencia existente, o
+ * EXCLUDE derruba a carga inteira (SQLSTATE 23P01) -- que e o comportamento
+ * desejado: meia carga e pior que nenhuma.
+ */
+export async function loadCid10Competencia(
+  db: TransactionalDb,
+  input: {
+    competencia: string;
+    vigenciaFrom: string;
+    vigenciaTo: string | null;
+    rows: ReadonlyArray<{ codigo: string; descricao: string; capitulo: number | null }>;
+  },
+): Promise<number> {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    for (const r of input.rows) {
+      await client.query(
+        `INSERT INTO ref.cid10_term (codigo, descricao, capitulo, vigencia, competencia)
+         VALUES ($1, $2, $3, daterange($4::date, $5::date, '[)'), $6)`,
+        [r.codigo, r.descricao, r.capitulo, input.vigenciaFrom, input.vigenciaTo, input.competencia],
+      );
+    }
+    await client.query('COMMIT');
+    return input.rows.length;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+```
+
+> `packages/catalogs` é L1 e pode importar `@cadencia/kernel`, que é L0: setas só descem (§2.2 regra 1). É exatamente o import que `authn` e `authz`, por serem irmãos do kernel, não podem fazer.
+
+- [ ] **Passo 5: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/catalogs/src/cid10.int.test.ts
+```
+
+Esperado: `aplicada: 0019_ref_cid10.sql` e PASSA, 6 testes verdes.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/migrations/0019_ref_cid10.sql packages/catalogs/src/cid10.ts \
+        packages/catalogs/src/cid10.int.test.ts
+git commit -m "feat(catalogs): date-versioned CID-10 with event-date lookup"
+```
+
+---
+
+### Task 39B: `catalogs` — TUSS versionada por data (tabela da ANS)
+
+**Por que esta tarefa existe (§8 Fase 0, §3.9, §10 item 11).** A Fase 0 exige CID-10 **e TUSS** já versionadas por data. O item 211 do Componente Organizacional do TISS diz que vale a terminologia vigente **na data do atendimento**: uma guia de 2025 reapresentada em 2026 tem que carregar o termo de 2025. A ANS publica competência nova a cada dois meses (~97 mil termos), e o mesmo código muda de descrição. Carregar sem `daterange` + `EXCLUDE` significa sobrescrever o passado — e o lote volta glosado meses depois, sem explicação.
+
+**Arquivos:**
+- Criar: `packages/db/migrations/0020_ref_tuss.sql`
+- Criar: `packages/catalogs/src/tuss.ts`
+- Teste: `packages/catalogs/src/tuss.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/catalogs/src/tuss.int.test.ts`:
+
+```ts
+import { beforeAll, describe, expect, it } from 'vitest';
+import { appPool, jobsPool } from '@cadencia/db';
+import { loadTussCompetencia, resolveTussAt } from './tuss';
+
+// Tabela 22 = "Procedimentos e eventos em saude" da ANS. Tabela 20 = diarias.
+const TAB_PROCEDIMENTOS = 22;
+const TAB_DIARIAS = 20;
+
+beforeAll(async () => {
+  await jobsPool().query(
+    `DELETE FROM ref.tuss_term WHERE codigo IN ('10101012','10101047')`,
+  );
+  await loadTussCompetencia(jobsPool(), {
+    competencia: '202401',
+    vigenciaFrom: '2024-01-01',
+    vigenciaTo: '2026-01-01',
+    rows: [{
+      tabela: TAB_PROCEDIMENTOS, codigo: '10101012',
+      termo: 'Consulta em consultorio (no horario normal ou preestabelecido)',
+      acao: 'inclusao',
+    }],
+  });
+  await loadTussCompetencia(jobsPool(), {
+    competencia: '202601',
+    vigenciaFrom: '2026-01-01',
+    vigenciaTo: null,
+    rows: [
+      { tabela: TAB_PROCEDIMENTOS, codigo: '10101012',
+        termo: 'Consulta em consultorio', acao: 'alteracao' },
+      { tabela: TAB_PROCEDIMENTOS, codigo: '10101047',
+        termo: 'Teleconsulta em consultorio', acao: 'inclusao' },
+    ],
+  });
+});
+
+describe('TUSS versionada por data', () => {
+  it('GUIA DE 2025 REAPRESENTADA EM 2026 USA O TERMO DE 2025', async () => {
+    const guia2025 = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101012', '2025-06-10');
+    const guiaHoje = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101012', '2026-06-10');
+    expect(guia2025.ok).toBe(true);
+    expect(guiaHoje.ok).toBe(true);
+    if (!guia2025.ok || !guiaHoje.ok) return;
+    expect(guia2025.value.display)
+      .toBe('Consulta em consultorio (no horario normal ou preestabelecido)');
+    expect(guiaHoje.value.display).toBe('Consulta em consultorio');
+    expect(guia2025.value.terminologyVersion).toBe('202401');
+    expect(guiaHoje.value.terminologyVersion).toBe('202601');
+  });
+
+  it('codigo criado na competencia de 2026 nao e inventado para atendimento de 2025', async () => {
+    const r = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101047', '2025-06-10');
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toBe('codigo_inexistente_na_data');
+  });
+
+  it('o limite superior e exclusivo: 2026-01-01 ja e a competencia nova', async () => {
+    const vespera = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101012', '2025-12-31');
+    const virada = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101012', '2026-01-01');
+    expect(vespera.ok && vespera.value.terminologyVersion).toBe('202401');
+    expect(virada.ok && virada.value.terminologyVersion).toBe('202601');
+  });
+
+  it('recarregar competencia sobre vigencia existente e impossivel: o banco recusa', async () => {
+    await expect(
+      loadTussCompetencia(jobsPool(), {
+        competencia: '202503',
+        vigenciaFrom: '2025-01-01',   // invade a faixa 2024-2026 do mesmo codigo
+        vigenciaTo: '2027-01-01',
+        rows: [{ tabela: TAB_PROCEDIMENTOS, codigo: '10101012',
+                 termo: 'Consulta (carga errada)', acao: 'alteracao' }],
+      }),
+    ).rejects.toMatchObject({ code: '23P01' });   // exclusion_violation
+  });
+
+  it('o mesmo codigo em tabelas diferentes da ANS nao se confunde', async () => {
+    await loadTussCompetencia(jobsPool(), {
+      competencia: '202401', vigenciaFrom: '2024-01-01', vigenciaTo: null,
+      rows: [{ tabela: TAB_DIARIAS, codigo: '10101012',
+               termo: 'Diaria de apartamento', acao: 'inclusao' }],
+    });
+    const proc = await resolveTussAt(appPool(), TAB_PROCEDIMENTOS, '10101012', '2025-06-10');
+    const diaria = await resolveTussAt(appPool(), TAB_DIARIAS, '10101012', '2025-06-10');
+    expect(proc.ok && proc.value.display)
+      .toBe('Consulta em consultorio (no horario normal ou preestabelecido)');
+    expect(diaria.ok && diaria.value.display).toBe('Diaria de apartamento');
+  });
+
+  it('a funcao SQL ref.tuss_at devolve o mesmo termo que a funcao TS', async () => {
+    const { rows } = await appPool().query(
+      `SELECT termo, competencia FROM ref.tuss_at($1::smallint, $2, $3::date)`,
+      [TAB_PROCEDIMENTOS, '10101012', '2025-06-10'],
+    );
+    expect(rows[0].termo)
+      .toBe('Consulta em consultorio (no horario normal ou preestabelecido)');
+    expect(rows[0].competencia).toBe('202401');
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/catalogs/src/tuss.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./tuss" from "packages/catalogs/src/tuss.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Criar a migration**
+
+Rodar: `pnpm db:new ref_tuss` — cria `packages/db/migrations/0020_ref_tuss.sql`. Preencher com exatamente:
+
+```sql
+-- 0020_ref_tuss.sql
+-- Terminologia TUSS GLOBAL, versionada por data (§3.9, §8 Fase 0, §10 item 11).
+-- Sem RLS e sem tenant_id: 200 mil linhas x N clinicas seria absurdo, e a tabela
+-- da ANS e a mesma para todo mundo. O EXCLUDE exige btree_gist (instalada na
+-- 0002) para o operador `=` participar ao lado do `&&` do daterange.
+CREATE TABLE ref.tuss_term (
+  tabela      smallint NOT NULL,
+  codigo      varchar(10) NOT NULL,
+  termo       text NOT NULL,
+  vigencia    daterange NOT NULL,
+  competencia char(6) NOT NULL,     -- AAAAMM da publicacao da ANS
+  acao        text NOT NULL,        -- inclusao / alteracao / exclusao, como vem da ANS
+  PRIMARY KEY (tabela, codigo, vigencia),
+  -- Impossivel carregar competencia da ANS que sobreponha vigencias do mesmo codigo.
+  EXCLUDE USING gist (tabela WITH =, codigo WITH =, vigencia WITH &&)
+);
+ALTER TABLE ref.tuss_term OWNER TO app_owner;
+COMMENT ON TABLE ref.tuss_term IS 'global-reference';
+
+CREATE INDEX ix_tuss_busca ON ref.tuss_term USING gin (termo gin_trgm_ops);
+
+-- Lookup PELA DATA DO EVENTO: nao existe versao sem parametro de data.
+CREATE FUNCTION ref.tuss_at(p_tabela smallint, p_codigo varchar, p_data date)
+RETURNS ref.tuss_term LANGUAGE sql STABLE PARALLEL SAFE AS $$
+  SELECT * FROM ref.tuss_term
+   WHERE tabela = p_tabela AND codigo = p_codigo AND vigencia @> p_data $$;
+ALTER FUNCTION ref.tuss_at(smallint, varchar, date) OWNER TO app_owner;
+
+GRANT USAGE   ON SCHEMA ref TO app_rw;
+GRANT SELECT  ON ref.tuss_term TO app_rw;
+GRANT EXECUTE ON FUNCTION ref.tuss_at(smallint, varchar, date) TO app_rw;
+-- Carga bimestral e job, nunca caminho de requisicao.
+GRANT USAGE ON SCHEMA ref TO jobs;
+GRANT SELECT, INSERT, DELETE ON ref.tuss_term TO jobs;
+```
+
+- [ ] **Passo 4: Implementar o módulo**
+
+Criar `packages/catalogs/src/tuss.ts`:
+
+```ts
+import { err, ok, type Result } from '@cadencia/kernel';
+import type { Queryable, TransactionalDb } from './cid10';
+
+export interface ResolvedTussTerm {
+  system: 'TUSS';
+  tabela: number;
+  code: string;
+  display: string;
+  terminologyVersion: string;   // competencia da publicacao da ANS consultada
+}
+
+export type TussFailure = 'codigo_inexistente_na_data';
+
+/**
+ * Resolve o codigo TUSS PELA DATA DO EVENTO. `eventDate` e obrigatorio, no
+ * formato AAAA-MM-DD: e a `occurred_date` do atendimento, ja no fuso da clinica.
+ * Item 211 do Componente Organizacional: vale a terminologia vigente na data do
+ * atendimento, nao a da execucao do faturamento.
+ */
+export async function resolveTussAt(
+  db: Queryable, tabela: number, codigo: string, eventDate: string,
+): Promise<Result<ResolvedTussTerm, TussFailure>> {
+  const { rows } = await db.query(
+    `SELECT tabela, codigo, termo, competencia
+       FROM ref.tuss_term
+      WHERE tabela = $1::smallint AND codigo = $2 AND vigencia @> $3::date`,
+    [tabela, codigo, eventDate],
+  );
+  const row = rows[0];
+  if (!row) return err('codigo_inexistente_na_data');
+  return ok({
+    system: 'TUSS',
+    tabela: Number(row.tabela),
+    code: row.codigo as string,
+    display: row.termo as string,
+    terminologyVersion: row.competencia as string,
+  });
+}
+
+/**
+ * Carga de uma competencia inteira da ANS, em UMA transacao, numa unica conexao,
+ * com o papel `jobs`. Se qualquer codigo sobrepuser vigencia existente, o
+ * EXCLUDE derruba a carga inteira (SQLSTATE 23P01): meia carga e pior que nenhuma.
+ */
+export async function loadTussCompetencia(
+  db: TransactionalDb,
+  input: {
+    competencia: string;
+    vigenciaFrom: string;
+    vigenciaTo: string | null;
+    rows: ReadonlyArray<{ tabela: number; codigo: string; termo: string; acao: string }>;
+  },
+): Promise<number> {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    for (const r of input.rows) {
+      await client.query(
+        `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
+         VALUES ($1::smallint, $2, $3, daterange($4::date, $5::date, '[)'), $6, $7)`,
+        [r.tabela, r.codigo, r.termo, input.vigenciaFrom, input.vigenciaTo,
+         input.competencia, r.acao],
+      );
+    }
+    await client.query('COMMIT');
+    return input.rows.length;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+```
+
+- [ ] **Passo 5: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/catalogs/src/tuss.int.test.ts
+```
+
+Esperado: `aplicada: 0020_ref_tuss.sql` e PASSA, 6 testes verdes.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/migrations/0020_ref_tuss.sql packages/catalogs/src/tuss.ts \
+        packages/catalogs/src/tuss.int.test.ts
+git commit -m "feat(catalogs): date-versioned TUSS with event-date lookup"
+```
+
+---
+
+### Task 40: `display_snapshot` gravado no valor e o invariante de CI contra relógio
+
+**Duas metades do mesmo princípio.** O valor órfão sobrevive, o significado não: gravar só `J45` faz o prontuário de 2027, impresso em 2035, mostrar a descrição de 2035. Por isso toda escrita de código carrega quatro colunas juntas — `value_ref_source`, `value_ref_code`, `display_snapshot` e `terminology_version`. E o invariante de CI existe porque a disciplina sozinha não segura: basta um `JOIN` de terminologia resolvido pelo relógio de quem executa para o snapshot voltar a ser calculado com a data errada.
+
+**Arquivos:**
+- Criar: `packages/catalogs/src/snapshot.ts`
+- Teste: `packages/catalogs/src/snapshot.int.test.ts`
+- Criar: `tools/terminology-clock.ts`
+- Criar: `tools/check-terminology-clock.ts`
+- Teste: `tools/terminology-clock.test.ts`
+- Modificar: `package.json` (raiz) — bloco `scripts`
+
+- [ ] **Passo 1: Escrever o teste do snapshot que falha**
+
+Criar `packages/catalogs/src/snapshot.int.test.ts`:
+
+```ts
+import { beforeAll, describe, expect, it } from 'vitest';
+import { appPool, jobsPool } from '@cadencia/db';
+import { loadCid10Competencia, resolveCid10At } from './cid10';
+import { toTermSnapshot } from './snapshot';
+
+beforeAll(async () => {
+  await jobsPool().query(`DELETE FROM ref.cid10_term WHERE codigo = 'E11'`);
+  await loadCid10Competencia(jobsPool(), {
+    competencia: '200801', vigenciaFrom: '2008-01-01', vigenciaTo: '2025-01-01',
+    rows: [{ codigo: 'E11', descricao: 'Diabetes mellitus nao-insulino-dependente', capitulo: 4 }],
+  });
+});
+
+describe('display_snapshot', () => {
+  it('grava as quatro colunas juntas: sistema, codigo, descricao e competencia', async () => {
+    const r = await resolveCid10At(appPool(), 'E11', '2024-08-03');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(toTermSnapshot(r.value)).toEqual({
+      value_ref_source: 'CID10',
+      value_ref_code: 'E11',
+      display_snapshot: 'Diabetes mellitus nao-insulino-dependente',
+      terminology_version: '200801',
+    });
+  });
+
+  it('MUDAR A TERMINOLOGIA DEPOIS NAO REESCREVE O PASSADO: 2024 reaberto em 2026 da o mesmo snapshot', async () => {
+    const antes = await resolveCid10At(appPool(), 'E11', '2024-08-03');
+    if (!antes.ok) throw new Error('cenario invalido: E11 deveria existir em 2024');
+    const gravado = toTermSnapshot(antes.value);
+
+    await loadCid10Competencia(jobsPool(), {
+      competencia: '202501', vigenciaFrom: '2025-01-01', vigenciaTo: null,
+      rows: [{ codigo: 'E11', descricao: 'Diabetes mellitus tipo 2', capitulo: 4 }],
+    });
+
+    // A carga nova vale para o atendimento novo...
+    const atendimentoNovo = await resolveCid10At(appPool(), 'E11', '2026-08-03');
+    expect(atendimentoNovo.ok).toBe(true);
+    if (!atendimentoNovo.ok) return;
+    expect(toTermSnapshot(atendimentoNovo.value)).toEqual({
+      value_ref_source: 'CID10',
+      value_ref_code: 'E11',
+      display_snapshot: 'Diabetes mellitus tipo 2',
+      terminology_version: '202501',
+    });
+
+    // ...e o atendimento de 2024, resolvido DEPOIS da carga, devolve byte a byte
+    // o mesmo snapshot de antes. E isto que a impressao de 2035 tem que mostrar.
+    const reaberto = await resolveCid10At(appPool(), 'E11', '2024-08-03');
+    expect(reaberto.ok).toBe(true);
+    if (!reaberto.ok) return;
+    expect(toTermSnapshot(reaberto.value)).toEqual(gravado);
+    expect(reaberto.value.display).toBe('Diabetes mellitus nao-insulino-dependente');
+    expect(reaberto.value.terminologyVersion).toBe('200801');
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/catalogs/src/snapshot.int.test.ts`
+Esperado: FALHA com `Failed to resolve import "./snapshot" from "packages/catalogs/src/snapshot.int.test.ts". Does the file exist?`
+
+- [ ] **Passo 3: Implementar o snapshot**
+
+Criar `packages/catalogs/src/snapshot.ts`:
+
+```ts
+import type { ResolvedTerm } from './cid10';
+
+/**
+ * As quatro colunas que TODA gravacao de codigo carrega, em
+ * clin.encounter_field_value e nas tabelas de primeira classe (§3.5, §3.6):
+ * o valor orfao sobrevive, o significado nao. Gravar so o codigo faz o
+ * prontuario de 2027, impresso em 2035, mostrar a descricao de 2035.
+ */
+export interface TermSnapshot {
+  value_ref_source: 'CID10';
+  value_ref_code: string;
+  display_snapshot: string;
+  terminology_version: string;
+}
+
+export function toTermSnapshot(resolved: ResolvedTerm): TermSnapshot {
+  return {
+    value_ref_source: resolved.system,
+    value_ref_code: resolved.code,
+    display_snapshot: resolved.display,
+    terminology_version: resolved.terminologyVersion,
+  };
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/catalogs/src/snapshot.int.test.ts`
+Esperado: PASSA — 2 testes verdes.
+
+- [ ] **Passo 5: Escrever o teste do invariante de CI que falha**
+
+Criar `tools/terminology-clock.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { collectTerminologyFiles, findClockUsages, TERMINOLOGY_GLOBS } from './terminology-clock';
+
+describe('invariante: sem relogio em codigo de terminologia', () => {
+  it('acusa o token de data corrente em SQL de terminologia', () => {
+    const achados = findClockUsages([{
+      path: 'packages/db/migrations/9999_ruim_ref.sql',
+      content: `CREATE FUNCTION ref.cid10_hoje(p_codigo varchar)\n`
+             + `RETURNS ref.cid10_term LANGUAGE sql AS $$\n`
+             + `  SELECT * FROM ref.cid10_term WHERE codigo = p_codigo AND vigencia @> ${'current'}_date $$;\n`,
+    }]);
+    expect(achados).toHaveLength(1);
+    expect(achados[0]?.token).toBe('current_date');
+    expect(achados[0]?.line).toBe(3);
+  });
+
+  it('acusa now() e new Date() em codigo TypeScript de terminologia', () => {
+    const achados = findClockUsages([
+      { path: 'packages/catalogs/src/ruim.ts', content: `const hoje = new Date();\n` },
+      { path: 'packages/catalogs/src/ruim2.ts', content: `-- x\nSELECT now();\n` },
+    ]);
+    expect(achados.map((a) => a.token).sort()).toEqual(['new Date(', 'now(']);
+  });
+
+  it('nao acusa clock_timestamp(), que e a fonte de tempo legitima do banco', () => {
+    expect(findClockUsages([{
+      path: 'packages/db/migrations/0019_ref_cid10.sql',
+      content: `created_at timestamptz(3) NOT NULL DEFAULT clock_timestamp()\n`,
+    }])).toHaveLength(0);
+  });
+
+  it('nao acusa a data recebida por parametro, que e o caminho correto', () => {
+    expect(findClockUsages([{
+      path: 'packages/catalogs/src/cid10.ts',
+      content: `WHERE codigo = $1 AND vigencia @> $2::date\n`,
+    }])).toHaveLength(0);
+  });
+
+  it('a arvore real do repositorio esta limpa', () => {
+    const arquivos = collectTerminologyFiles();
+    // Se der zero, o glob esta errado e o invariante nao esta olhando para nada.
+    expect(TERMINOLOGY_GLOBS.length).toBeGreaterThan(0);
+    expect(arquivos.length).toBeGreaterThan(0);
+    expect(findClockUsages(arquivos)).toEqual([]);
+  });
+});
+```
+
+Rodar: `pnpm test tools/terminology-clock.test.ts`
+Esperado: FALHA com `Failed to resolve import "./terminology-clock" from "tools/terminology-clock.test.ts". Does the file exist?`
+
+- [ ] **Passo 6: Implementar o verificador**
+
+Criar `tools/terminology-clock.ts`:
+
+```ts
+/**
+ * Invariante de CI (§3.13 item 8, §3.9): terminologia se resolve pela DATA DO
+ * EVENTO. Nenhuma leitura de relogio pode aparecer em codigo de terminologia --
+ * nem no TypeScript de `catalogs`, nem no SQL das migrations de `ref`/`tiss`.
+ *
+ * clock_timestamp() continua permitido: e a fonte de tempo de created_at, que
+ * registra QUANDO a linha foi gravada, nao a competencia consultada.
+ *
+ * O verificador NAO distingue codigo de comentario, de proposito: mencionar o
+ * token em prosa dentro de packages/catalogs/** ou de migration de ref/tiss
+ * tambem reprova. Escreva "o relogio de quem executa", nunca o token literal.
+ */
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+export const TERMINOLOGY_GLOBS: RegExp[] = [
+  /^packages\/catalogs\/src\/.*\.ts$/,
+  /^packages\/db\/migrations\/.*(ref|tiss|cid10|tuss).*\.sql$/,
+];
+
+const TOKENS: { token: string; re: RegExp }[] = [
+  { token: 'current_date', re: /\bcurrent_date\b/i },
+  { token: 'current_timestamp', re: /\bcurrent_timestamp\b/i },
+  { token: 'now(', re: /(^|[^_a-z])now\s*\(/i },
+  { token: 'Date.now(', re: /\bDate\s*\.\s*now\s*\(/ },
+  { token: 'new Date(', re: /\bnew\s+Date\s*\(/ },
+];
+
+export interface ClockUsage { path: string; line: number; token: string }
+
+export function findClockUsages(
+  files: ReadonlyArray<{ path: string; content: string }>,
+): ClockUsage[] {
+  const achados: ClockUsage[] = [];
+  for (const f of files) {
+    const linhas = f.content.split(/\r?\n/);
+    for (let i = 0; i < linhas.length; i += 1) {
+      const linha = linhas[i] ?? '';
+      for (const t of TOKENS) {
+        if (t.re.test(linha)) achados.push({ path: f.path, line: i + 1, token: t.token });
+      }
+    }
+  }
+  return achados;
+}
+
+/** Varre a arvore a partir do diretorio corrente (o vitest roda na raiz). */
+export function collectTerminologyFiles(
+  raiz: string = process.cwd(),
+): { path: string; content: string }[] {
+  const out: { path: string; content: string }[] = [];
+  const visitar = (dir: string): void => {
+    for (const nome of readdirSync(dir)) {
+      if (['node_modules', '.git', 'dist', '.next', 'coverage'].includes(nome)) continue;
+      const p = join(dir, nome);
+      if (statSync(p).isDirectory()) { visitar(p); continue; }
+      const rel = p.slice(raiz.length + 1).split('\\').join('/');
+      if (rel.endsWith('.test.ts')) continue;
+      if (TERMINOLOGY_GLOBS.some((re) => re.test(rel))) {
+        out.push({ path: rel, content: readFileSync(p, 'utf8') });
+      }
+    }
+  };
+  visitar(raiz);
+  return out;
+}
+```
+
+Criar `tools/check-terminology-clock.ts`:
+
+```ts
+import { collectTerminologyFiles, findClockUsages } from './terminology-clock';
+
+const achados = findClockUsages(collectTerminologyFiles());
+if (achados.length > 0) {
+  for (const a of achados) {
+    console.error(`${a.path}:${a.line}  uso de relogio em terminologia: ${a.token}`);
+  }
+  console.error(
+    '\nTerminologia se resolve pela data do evento (occurred_date), nunca pela data de hoje.',
+  );
+  process.exit(1);
+}
+console.log('ok: nenhum uso de relogio em codigo de terminologia');
+```
+
+- [ ] **Passo 7: Registrar o comando no `package.json` da raiz**
+
+Modificar `package.json` (raiz), no bloco `"scripts"`, acrescentando a linha:
+
+```json
+    "lint:terminology-clock": "tsx tools/check-terminology-clock.ts",
+```
+
+> `prepush` continua sendo `pnpm lint:session-guc && pnpm test:iso`. Este lint entra no CI, não no gate de pré-push: ele varre a árvore inteira e não é sobre isolamento entre clínicas.
+
+- [ ] **Passo 8: Rodar e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm test tools/terminology-clock.test.ts
+pnpm lint:terminology-clock
+```
+
+Esperado: o vitest PASSA — 5 testes verdes; o comando imprime `ok: nenhum uso de relogio em codigo de terminologia` e sai com código 0.
+
+- [ ] **Passo 9: Rodar a suíte inteira e confirmar que nada regrediu**
+
+Rodar:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm test:int
+pnpm test:iso
+```
+
+Esperado: PASSA nos quatro.
+
+- [ ] **Passo 10: Commitar**
+
+```bash
+git add packages/catalogs/src/snapshot.ts packages/catalogs/src/snapshot.int.test.ts \
+        tools/terminology-clock.ts tools/check-terminology-clock.ts \
+        tools/terminology-clock.test.ts package.json
+git commit -m "feat(catalogs): term display snapshot and CI invariant against clock use in terminology"
+```
+
+---
+
+### Comandos que passaram a existir nesta parte
+
+Estes três não existiam ao final da Task 27 e agora existem — os demais itens daquela tabela (`pnpm dev`, `pnpm arch:check`, `pnpm test:perf`, `pnpm restore:drill`, `pnpm audit:export`) continuam fora do escopo destas tarefas:
+
+| Comando | Task | O que faz |
+|---|---|---|
+| `pnpm authz:seed` | 38 | Regenera `ref.action` e `packages/authz/actions.lock.json` a partir de `packages/authz/src/actions.ts` |
+| `pnpm authz:check` | 38 | Falha se o lock estiver desatualizado — invariante de CI |
+| `pnpm lint:terminology-clock` | 40 | Reprova leitura de relógio em `packages/catalogs/**` e nas migrations de `ref`/`tiss` |
+
+---
+
+## Parte VI — Pipeline de CI e ensaio de restauração
+
+> **Contexto para quem executa.** Esta parte entrega os **10 invariantes da §3.13 como código executável**, o comando `pnpm arch:check`, o workflow do GitHub Actions e o ensaio mensal de restauração. Nada aqui tem tela, e nada aqui é opcional: um vazamento entre clínicas é incidente P0 com notificação à ANPD em três dias úteis, e o único controle que o pega antes da produção é uma verificação mecânica que roda a cada merge.
+>
+> **A regra que decide o desenho todo: os invariantes descobrem o schema no catálogo do PostgreSQL** (`pg_class`, `pg_policy`, `pg_constraint`, `pg_attribute`, `pg_roles`, `pg_index`, `pg_inherits`), nunca numa lista mantida à mão. Uma lista à mão envelhece na primeira migration escrita com pressa, e o invariante que só conhece as tabelas de ontem aprova a tabela de hoje — que é exatamente a tabela nova, a que ninguém revisou.
+>
+> **Onde o código mora e por quê.** Os checks ficam em `packages/db/src/invariants/`, como **código de produção**, e não em arquivo de teste. O motivo é concreto: o mesmo runner precisa rodar contra o banco restaurado pelo ensaio da Task 48, contra o *staging* e contra a produção — lugares onde não há Vitest instalado nem repositório de teste. Os testes ficam ao lado, em `*.int.test.ts`, e rodam com `pnpm test:int` contra o PostgreSQL local (o `include` do `vitest.int.config.ts` já cobre `packages/*/src/**/*.int.test.ts`).
+>
+> **Três invariantes já têm prova parcial no plano, e aqui elas são unificadas, não recriadas:**
+> - **Invariante 3** já existe na **Task 5** (`packages/db/src/roles-invariants.int.test.ts`): `api` sem posse, `jobs` único com `BYPASSRLS`. A Task 43 **não recria** aquele teste — ela transforma a mesma regra em função do runner único, para que ela também rode onde o Vitest nunca roda.
+> - **Invariante 2** tem uma varredura de catálogo no teste T3/T4 da **Task 13**, restrita à suíte `test:iso`.
+> - **Invariante 5** tem uma varredura equivalente no fim da **Task 12**.
+>
+> **Três refinamentos mecânicos que a §3.13 exige mas o PostgreSQL não permite exprimir ao pé da letra.** Declarados aqui para o engenheiro não descobrir sozinho no meio da Task 41:
+>
+> 1. **View e matview não têm RLS.** `relrowsecurity` é sempre falso nelas. O invariante 1 vira quatro ramos: tabela/partição exige `tenant_id` + RLS habilitada + forçada + ≥1 policy; **view** exige `security_invoker = true` (senão ela roda com os privilégios do dono e a RLS de quem chama é ignorada — é o mesmo vazamento, por outra porta); **matview** em `app clin fin tiss audit` é violação por definição, porque matview mora em `rpt` e é exposta por view `security_barrier` (§3.8); **foreign table** também, porque RLS não se aplica a ela.
+> 2. **Partição não herda policy.** `CREATE TABLE ... PARTITION OF` não copia `relrowsecurity`, `relforcerowsecurity` nem `pg_policy`. Quem consultar a partição diretamente escapa. A Task 26 resolveu isso à mão para `audit.event` (`audit.ensure_partitions`); a Task 41 generaliza com `app.secure_partition(regclass)`, e o invariante 1 é justamente quem pega o dia em que alguém esquecer de chamá-la.
+> 3. **Marcas de exceção só por `COMMENT ON` em migration** (revisada com CODEOWNERS), nunca por `Set` editável em arquivo de teste. São três: `'global-reference'` (relação fora do regime multi-tenant — já usada em `id."user"` na migration 0004), `'tenant-root'` (a única relação cujo discriminador é `id` e não `tenant_id` — `app.tenant`, já marcada na migration 0003) e, para índice, `'tenant-scoped-by-parent'`. A Task 46 acrescenta a quarta, `'clock-derived-date'`, para o único caso legítimo de derivar `date` do relógio.
+>
+> **Numeração de migration.** As Tasks 28 a 31 ocupam `0011` a `0014` e as Tasks 32 a 40 ocupam `0015` a `0020`. Esta parte cria duas: `0021_secure_partition.sql` (Task 41) e `0022_clock_derived_date_marks.sql` (Task 46). Como o `pnpm db:new` numera a partir da maior existente, os nomes saem sozinhos — os passos abaixo dizem qual arquivo esperar.
+
+---
+
+### Task 41: Harness de conformidade e invariante 1 — RLS habilitada, forçada e com policy
+
+**Por que este é o primeiro.** É o item 1 da §3.13 e o único que, sozinho, transforma "isolamento" de disciplina de código em propriedade estrutural. Tabela sem `FORCE ROW LEVEL SECURITY` deixa o dono escapar da policy; tabela sem policy nenhuma com RLS habilitada devolve zero linhas para todo mundo (falha silenciosa que só aparece na clínica); tabela sem `tenant_id` não tem sequer o que filtrar.
+
+**Arquivos:**
+- Criar: `packages/db/src/queryable.ts`
+- Criar: `packages/db/src/invariants/catalog.ts`
+- Criar: `packages/db/src/invariants/inv01-rls.ts`
+- Criar: `packages/db/migrations/0021_secure_partition.sql`
+- Teste: `packages/db/src/invariants/inv01-rls.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/db/src/invariants/inv01-rls.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { readRelations, rlsViolations } from './inv01-rls';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina de codigo', () => {
+  it('toda relacao de app/clin/fin/tiss/audit tem discriminador de tenant, RLS habilitada, forcada e ao menos uma policy', async () => {
+    const relacoes = await readRelations(catalogPool());
+    // Se a descoberta vier vazia, o teste passaria sem verificar coisa nenhuma.
+    expect(relacoes.length).toBeGreaterThan(0);
+    expect(rlsViolations(relacoes)).toEqual([]);
+  });
+
+  it('reprova a tabela nova criada sem RLS — a migration escrita com pressa na sexta', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE clin.__violacao (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain('clin.__violacao: RLS nao habilitada');
+    expect(violacoes).toContain('clin.__violacao: RLS nao forcada — o dono da tabela escapa da policy');
+    expect(violacoes).toContain('clin.__violacao: nenhuma policy');
+  });
+
+  it('reprova a tabela multi-tenant sem coluna tenant_id', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE fin.__sem_tenant (id uuid NOT NULL)');
+      await c.query('ALTER TABLE fin.__sem_tenant ENABLE ROW LEVEL SECURITY');
+      await c.query('ALTER TABLE fin.__sem_tenant FORCE ROW LEVEL SECURITY');
+      await c.query('CREATE POLICY p ON fin.__sem_tenant AS PERMISSIVE FOR ALL TO app_rw USING (true)');
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain('fin.__sem_tenant: sem coluna tenant_id');
+  });
+
+  it("aceita a excecao declarada por COMMENT ON TABLE ... IS 'global-reference' e so por ela", async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE app.__tabela_global (code text PRIMARY KEY)');
+      await c.query("COMMENT ON TABLE app.__tabela_global IS 'global-reference'");
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes.filter((v) => v.startsWith('app.__tabela_global'))).toEqual([]);
+  });
+
+  it('app.tenant e a raiz do regime: o discriminador dela e id, e a marca vem da migration 0003', async () => {
+    const relacoes = await readRelations(catalogPool());
+    const tenant = relacoes.find((r) => r.schema === 'app' && r.relation === 'tenant');
+    expect(tenant, 'app.tenant nao existe: a migration 0003 nao foi aplicada').toBeDefined();
+    // Sem a marca, o invariante acusaria "sem coluna tenant_id" e a tentacao seria
+    // marca-la como 'global-reference' — o que a tiraria da matriz CRUD do invariante 10
+    // justamente na tabela que define a fronteira entre clinicas.
+    expect(tenant?.comment).toBe('tenant-root');
+    expect(tenant?.hasDiscriminator).toBe(true);
+  });
+
+  it('reprova view sem security_invoker — a view do dono ignora a RLS de quem chama', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE VIEW clin.__v_paciente AS SELECT id FROM clin.patient');
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain(
+      'clin.__v_paciente: view sem security_invoker=true — executa com os privilegios do dono e ignora a RLS de quem chama',
+    );
+  });
+
+  it('reprova matview em schema multi-tenant — matview nao suporta RLS e pertence a rpt', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE MATERIALIZED VIEW clin.__mv AS SELECT 1 AS n');
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain(
+      'clin.__mv: matview em schema multi-tenant — matview nao suporta RLS; ela mora em rpt e e exposta por view security_barrier',
+    );
+  });
+
+  it('reprova particao que nao recebeu as policies do pai', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__particionada (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, dia date NOT NULL
+      ) PARTITION BY RANGE (dia)`);
+      await c.query('ALTER TABLE clin.__particionada ENABLE ROW LEVEL SECURITY');
+      await c.query('ALTER TABLE clin.__particionada FORCE ROW LEVEL SECURITY');
+      await c.query(
+        'CREATE POLICY tenant_isolation ON clin.__particionada AS PERMISSIVE FOR ALL TO app_rw USING (tenant_id = app.current_tenant_id())',
+      );
+      await c.query(`CREATE TABLE clin.__particionada_2026 PARTITION OF clin.__particionada
+        FOR VALUES FROM ('2026-01-01') TO ('2027-01-01')`);
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain('clin.__particionada_2026: RLS nao habilitada');
+  });
+
+  it('app.secure_partition faz a particao herdar RLS forcada e as policies do pai', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__particionada (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, dia date NOT NULL
+      ) PARTITION BY RANGE (dia)`);
+      await c.query('ALTER TABLE clin.__particionada ENABLE ROW LEVEL SECURITY');
+      await c.query('ALTER TABLE clin.__particionada FORCE ROW LEVEL SECURITY');
+      await c.query(
+        'CREATE POLICY tenant_isolation ON clin.__particionada AS PERMISSIVE FOR ALL TO app_rw USING (tenant_id = app.current_tenant_id())',
+      );
+      await c.query(`CREATE TABLE clin.__particionada_2026 PARTITION OF clin.__particionada
+        FOR VALUES FROM ('2026-01-01') TO ('2027-01-01')`);
+      await c.query("SELECT app.secure_partition('clin.__particionada_2026'::regclass)");
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes.filter((v) => v.startsWith('clin.__particionada'))).toEqual([]);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv01-rls.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./catalog"`.
+
+- [ ] **Passo 3: Criar o contrato de conexão, em fonte única**
+
+Criar `packages/db/src/queryable.ts`:
+
+```ts
+import type { QueryResult, QueryResultRow } from 'pg';
+
+/**
+ * Contrato minimo de execucao de SQL. `Pool`, `PoolClient` e `Client` do `pg` o
+ * satisfazem — e e por isso que todo check roda tanto no pool quanto dentro de uma
+ * transacao revertida, sem duas versoes do mesmo codigo.
+ *
+ * Fonte UNICA: o harness de conformidade, o runner dos invariantes e o verificador
+ * de restauracao (Task 48) usam este tipo. Duas declaracoes com o mesmo nome e
+ * assinaturas diferentes seriam compatibilidade estrutural acidental que ninguem
+ * mantem sincronizada.
+ */
+export interface Queryable {
+  query<R extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params?: unknown[],
+  ): Promise<QueryResult<R>>;
+}
+```
+
+- [ ] **Passo 4: Criar o harness de catálogo**
+
+Criar `packages/db/src/invariants/catalog.ts`:
+
+```ts
+import { Client, Pool, type PoolClient } from 'pg';
+
+export type { Queryable } from '../queryable';
+
+/**
+ * Os cinco schemas sujeitos ao regime multi-tenant (§3.13 item 1).
+ * `ref`, `id`, `rpt` e `pgboss` ficam de fora por construcao: referencia global,
+ * identidade global, relatorio (exposto so por view) e fila de jobs.
+ */
+export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit'] as const;
+
+let pool: Pool | undefined;
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === '') {
+    throw new Error(
+      `variavel de ambiente ausente: ${name} — rode \`cp .env.example .env\`, \`pnpm db:up\` e \`pnpm db:migrate\``,
+    );
+  }
+  return value;
+}
+
+/**
+ * Conexao administrativa: enxerga o catalogo inteiro e ignora RLS de proposito.
+ * Um invariante que rodasse sob RLS veria o schema pela fresta e aprovaria o que
+ * nao consegue enxergar.
+ */
+export function catalogPool(): Pool {
+  pool ??= new Pool({
+    connectionString: requireEnv('DATABASE_URL_ADMIN'),
+    max: 4,
+    application_name: 'cadencia-invariants',
+  });
+  return pool;
+}
+
+export async function closeCatalogPool(): Promise<void> {
+  const atual = pool;
+  pool = undefined;
+  await atual?.end();
+}
+
+/**
+ * Conexao como o papel `api` — o mesmo papel de runtime, com os mesmos privilegios
+ * e a mesma RLS. Usada pela matriz CRUD do invariante 10 (Task 45).
+ */
+export async function apiClient(): Promise<Client> {
+  const client = new Client({
+    connectionString: requireEnv('DATABASE_URL'),
+    application_name: 'cadencia-invariants-api',
+  });
+  await client.connect();
+  return client;
+}
+
+/**
+ * Executa `fn` numa transacao SEMPRE revertida. DDL no PostgreSQL e transacional,
+ * entao a violacao proposital nasce e morre dentro do teste, sem sujar o banco de
+ * desenvolvimento nem o do CI.
+ */
+export async function inRollbackTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  const client = await catalogPool().connect();
+  try {
+    await client.query('BEGIN');
+    return await fn(client);
+  } finally {
+    await client.query('ROLLBACK').catch(() => undefined);
+    client.release();
+  }
+}
+```
+
+- [ ] **Passo 5: Rodar e confirmar que a falha mudou**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv01-rls.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv01-rls"`.
+
+- [ ] **Passo 6: Implementar o check do invariante 1**
+
+Criar `packages/db/src/invariants/inv01-rls.ts`:
+
+```ts
+import { TENANT_SCHEMAS } from './catalog';
+import type { Queryable } from '../queryable';
+
+export interface RelationRls {
+  schema: string;
+  relation: string;
+  relkind: string;
+  comment: string | null;
+  hasDiscriminator: boolean;
+  rlsEnabled: boolean;
+  rlsForced: boolean;
+  policies: number;
+  securityInvoker: boolean;
+}
+
+const SQL = `
+SELECT n.nspname                          AS schema,
+       c.relname                          AS relation,
+       c.relkind::text                    AS relkind,
+       obj_description(c.oid, 'pg_class') AS comment,
+       EXISTS (
+         SELECT 1 FROM pg_attribute a
+          WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+            AND a.attname = CASE WHEN obj_description(c.oid, 'pg_class') = 'tenant-root'
+                                 THEN 'id' ELSE 'tenant_id' END
+       )                                  AS has_discriminator,
+       c.relrowsecurity                   AS rls_enabled,
+       c.relforcerowsecurity              AS rls_forced,
+       (SELECT count(*) FROM pg_policy p WHERE p.polrelid = c.oid)::int AS policies,
+       EXISTS (
+         SELECT 1 FROM unnest(coalesce(c.reloptions, '{}'::text[])) AS o(opt)
+          WHERE lower(o.opt) IN ('security_invoker=true', 'security_invoker=on')
+       )                                  AS security_invoker
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p', 'm', 'v', 'f')
+ ORDER BY 1, 2`;
+
+export async function readRelations(db: Queryable): Promise<RelationRls[]> {
+  const { rows } = await db.query<{
+    schema: string;
+    relation: string;
+    relkind: string;
+    comment: string | null;
+    has_discriminator: boolean;
+    rls_enabled: boolean;
+    rls_forced: boolean;
+    policies: number;
+    security_invoker: boolean;
+  }>(SQL, [[...TENANT_SCHEMAS]]);
+
+  return rows.map((r) => ({
+    schema: r.schema,
+    relation: r.relation,
+    relkind: r.relkind,
+    comment: r.comment,
+    hasDiscriminator: r.has_discriminator,
+    rlsEnabled: r.rls_enabled,
+    rlsForced: r.rls_forced,
+    policies: r.policies,
+    securityInvoker: r.security_invoker,
+  }));
+}
+
+export function rlsViolations(relations: readonly RelationRls[]): string[] {
+  const out: string[] = [];
+
+  for (const rel of relations) {
+    const nome = `${rel.schema}.${rel.relation}`;
+    if (rel.comment === 'global-reference') continue;
+
+    if (rel.relkind === 'm') {
+      out.push(
+        `${nome}: matview em schema multi-tenant — matview nao suporta RLS; ela mora em rpt e e exposta por view security_barrier`,
+      );
+      continue;
+    }
+    if (rel.relkind === 'f') {
+      out.push(`${nome}: foreign table em schema multi-tenant — RLS nao se aplica a tabela estrangeira`);
+      continue;
+    }
+    if (rel.relkind === 'v') {
+      if (!rel.securityInvoker) {
+        out.push(
+          `${nome}: view sem security_invoker=true — executa com os privilegios do dono e ignora a RLS de quem chama`,
+        );
+      }
+      continue;
+    }
+
+    if (!rel.hasDiscriminator) out.push(`${nome}: sem coluna tenant_id`);
+    if (!rel.rlsEnabled) out.push(`${nome}: RLS nao habilitada`);
+    if (!rel.rlsForced) out.push(`${nome}: RLS nao forcada — o dono da tabela escapa da policy`);
+    if (rel.policies === 0) out.push(`${nome}: nenhuma policy`);
+  }
+
+  return out;
+}
+```
+
+- [ ] **Passo 7: Rodar e confirmar que falha só no último teste**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv01-rls.int.test.ts`
+
+Esperado: FALHA apenas em `app.secure_partition faz a particao herdar RLS forcada e as policies do pai`, com `function app.secure_partition(regclass) does not exist` (SQLSTATE `42883`). Os outros oito passam — inclusive o `reprova particao que nao recebeu as policies do pai`, que é o buraco que a migration do passo seguinte fecha.
+
+- [ ] **Passo 8: Escrever a migration que faz partição herdar RLS**
+
+Rodar: `pnpm db:new secure_partition` — como as Tasks 28 a 40 já ocuparam `0011` a `0020`, o comando cria `packages/db/migrations/0021_secure_partition.sql`. Preencher com exatamente:
+
+```sql
+-- 0021_secure_partition.sql
+-- Particao NAO herda relrowsecurity, relforcerowsecurity nem pg_policy do pai.
+-- Quem consultar a particao diretamente escapa da policy. A Task 26 resolveu isso
+-- a mao para audit.event (audit.ensure_partitions); esta funcao generaliza a regra
+-- para qualquer particao futura, e o invariante 1 pega quem esquecer de chama-la.
+
+CREATE FUNCTION app.secure_partition(p_partition regclass) RETURNS void
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_parent regclass;
+  v_pol    record;
+BEGIN
+  SELECT inhparent INTO v_parent FROM pg_inherits WHERE inhrelid = p_partition;
+  IF v_parent IS NULL THEN
+    RAISE EXCEPTION '% nao e particao de ninguem', p_partition USING ERRCODE = '42809';
+  END IF;
+
+  EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', p_partition::text);
+  EXECUTE format('ALTER TABLE %s FORCE  ROW LEVEL SECURITY', p_partition::text);
+
+  FOR v_pol IN
+    SELECT p.polname,
+           p.polpermissive,
+           p.polcmd,
+           pg_get_expr(p.polqual,      p.polrelid) AS using_expr,
+           pg_get_expr(p.polwithcheck, p.polrelid) AS check_expr,
+           CASE WHEN 0 = ANY (p.polroles) THEN 'PUBLIC'
+                ELSE (SELECT string_agg(quote_ident(r.rolname), ', ')
+                        FROM pg_roles r WHERE r.oid = ANY (p.polroles)) END AS roles
+      FROM pg_policy p
+     WHERE p.polrelid = v_parent
+       AND NOT EXISTS (SELECT 1 FROM pg_policy q
+                        WHERE q.polrelid = p_partition AND q.polname = p.polname)
+  LOOP
+    EXECUTE format(
+      'CREATE POLICY %I ON %s AS %s FOR %s TO %s %s %s',
+      v_pol.polname,
+      p_partition::text,
+      CASE WHEN v_pol.polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,
+      CASE v_pol.polcmd WHEN 'r' THEN 'SELECT' WHEN 'a' THEN 'INSERT'
+                        WHEN 'w' THEN 'UPDATE' WHEN 'd' THEN 'DELETE' ELSE 'ALL' END,
+      v_pol.roles,
+      CASE WHEN v_pol.using_expr IS NULL THEN '' ELSE 'USING (' || v_pol.using_expr || ')' END,
+      CASE WHEN v_pol.check_expr IS NULL THEN '' ELSE 'WITH CHECK (' || v_pol.check_expr || ')' END);
+  END LOOP;
+END $$;
+
+ALTER FUNCTION app.secure_partition(regclass) OWNER TO app_owner;
+REVOKE ALL ON FUNCTION app.secure_partition(regclass) FROM PUBLIC;
+
+-- Rede de seguranca para as particoes que ja existem. As de audit.event ja vieram
+-- em conformidade pela audit.ensure_partitions da 0009: aqui o laco e no-op nelas
+-- (ENABLE/FORCE sao idempotentes e o laco de policy pula as que ja existem).
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT c.oid::regclass AS rel
+             FROM pg_class c
+             JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relispartition
+              AND n.nspname IN ('app', 'clin', 'fin', 'tiss', 'audit')
+  LOOP
+    PERFORM app.secure_partition(r.rel);
+  END LOOP;
+END $$;
+```
+
+- [ ] **Passo 9: Aplicar a migration e confirmar que passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/db/src/invariants/inv01-rls.int.test.ts
+```
+
+Esperado: PASSA, 9 testes.
+
+Se o primeiro teste falhar apontando uma relação **real** do schema (e não uma `__violacao`), a migration daquela relação é que está errada. As três correções possíveis, nesta ordem: (a) acrescentar `ENABLE`/`FORCE ROW LEVEL SECURITY` e a policy na migration que criou a relação; (b) se a relação for global, fora do regime multi-tenant, declarar `COMMENT ON TABLE ... IS 'global-reference'` na mesma migration; (c) se a relação for a raiz do tenant — e só `app.tenant` é —, a marca correta é `'tenant-root'`, que a migration 0003 já grava. Nunca resolver editando a lista do teste: não existe lista.
+
+- [ ] **Passo 10: Commitar**
+
+```bash
+git add packages/db/src/queryable.ts packages/db/src/invariants/catalog.ts \
+        packages/db/src/invariants/inv01-rls.ts \
+        packages/db/src/invariants/inv01-rls.int.test.ts \
+        packages/db/migrations/0021_secure_partition.sql
+git commit -m "test(db): assert RLS is enabled, forced and policied on every multi-tenant relation"
+```
+
+---
+
+### Task 42: Invariante 2 — FK composta com `tenant_id` e nenhuma coluna `*_id` órfã
+
+**Por que a regra é esta.** O par `(tenant_id, patient_id)` só existe se o paciente for **deste** tenant: referência cruzada vira erro `23503` na escrita, não linha invisível na leitura. A regra é mecânica e não tem lista: **se a relação referenciada tem coluna `tenant_id`, a FK precisa incluir `tenant_id` e ter duas colunas ou mais.** FK para relação sem `tenant_id` (`app.tenant`, `id."user"`, `ref.*`) fica isenta porque a FK composta é impossível ali.
+
+A segunda metade — nenhuma coluna `*_id` órfã — pega o caso oposto: a coluna que *parece* referência e não é. O `schema` `audit` fica de fora dela por decisão: a trilha registra tentativa **sem** contexto válido (`tenant_id` é nullable) e sobre entidade que pode nem existir mais; FK ali faria a trilha recusar exatamente o evento que o auditor procura.
+
+A Task 13 já provou essa regra dentro da suíte `test:iso`, com uma varredura escrita à mão dentro do arquivo de teste. Aqui ela vira função do runner, ganha o segundo critério (coluna órfã) e passa a rodar contra qualquer banco.
+
+**Arquivos:**
+- Criar: `packages/db/src/invariants/inv02-fk.ts`
+- Teste: `packages/db/src/invariants/inv02-fk.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/db/src/invariants/inv02-fk.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { fkViolations, orphanIdColumns, readForeignKeys } from './inv02-fk';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 2 — a FK composta e o que transforma bug de aplicacao em 23503', () => {
+  it('toda FK para relacao multi-tenant inclui tenant_id e tem duas colunas ou mais', async () => {
+    const fks = await readForeignKeys(catalogPool());
+    expect(fks.length).toBeGreaterThan(0);
+    expect(fkViolations(fks)).toEqual([]);
+  });
+
+  it('reprova a FK de coluna unica para tabela multi-tenant — o caminho pelo qual o paciente de outra clinica entra no atendimento', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__consulta (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, patient_id uuid NOT NULL,
+        PRIMARY KEY (id),
+        CONSTRAINT fk_paciente FOREIGN KEY (patient_id) REFERENCES clin.patient (id))`);
+      return fkViolations(await readForeignKeys(c));
+    });
+    expect(violacoes).toContain(
+      'clin.__consulta.fk_paciente: FK de coluna unica (patient_id) para clin.patient, que e multi-tenant — precisa ser composta com tenant_id',
+    );
+  });
+
+  it('reprova a FK composta que nao inclui tenant_id', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__consulta (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, patient_id uuid NOT NULL, kind text NOT NULL,
+        PRIMARY KEY (id))`);
+      await c.query('CREATE UNIQUE INDEX ux__pid_kind ON clin.patient_identifier (patient_id, kind)');
+      await c.query(`ALTER TABLE clin.__consulta ADD CONSTRAINT fk_ident
+        FOREIGN KEY (patient_id, kind) REFERENCES clin.patient_identifier (patient_id, kind)`);
+      return fkViolations(await readForeignKeys(c));
+    });
+    expect(violacoes).toContain(
+      'clin.__consulta.fk_ident: FK (patient_id, kind) para clin.patient_identifier nao inclui tenant_id',
+    );
+  });
+
+  it('aceita FK de coluna unica para relacao global, onde a FK composta e impossivel', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE app.__unidade (
+        tenant_id uuid NOT NULL REFERENCES app.tenant (id), id uuid NOT NULL, PRIMARY KEY (id))`);
+      return fkViolations(await readForeignKeys(c));
+    });
+    expect(violacoes.filter((v) => v.startsWith('app.__unidade'))).toEqual([]);
+  });
+
+  it('nenhuma coluna *_id que aponte para uma tabela conhecida fica sem FK', async () => {
+    expect(await orphanIdColumns(catalogPool())).toEqual([]);
+  });
+
+  it('reprova a coluna *_id sem FK — a fresta por onde entra o id de outro tenant', async () => {
+    const orfas = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE fin.__lancamento (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, patient_id uuid NOT NULL, PRIMARY KEY (id))`);
+      return orphanIdColumns(c);
+    });
+    expect(orfas).toContain(
+      'fin.__lancamento.patient_id: coluna *_id sem FK, com alvo conhecido em clin.patient',
+    );
+  });
+
+  it('nao reclama de coluna *_id que nao corresponde a tabela nenhuma, como head_version_id', async () => {
+    const orfas = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__cache (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, head_version_id uuid, PRIMARY KEY (id))`);
+      return orphanIdColumns(c);
+    });
+    expect(orfas.filter((o) => o.includes('__cache'))).toEqual([]);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv02-fk.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv02-fk"`.
+
+- [ ] **Passo 3: Implementar o check**
+
+Criar `packages/db/src/invariants/inv02-fk.ts`:
+
+```ts
+import { TENANT_SCHEMAS } from './catalog';
+import type { Queryable } from '../queryable';
+
+export interface ForeignKey {
+  schema: string;
+  relation: string;
+  constraintName: string;
+  columns: string[];
+  refSchema: string;
+  refRelation: string;
+  refHasTenantId: boolean;
+}
+
+const FK_SQL = `
+SELECT n.nspname   AS schema,
+       c.relname   AS relation,
+       con.conname AS constraint_name,
+       (SELECT array_agg(a.attname ORDER BY k.ord)
+          FROM unnest(con.conkey) WITH ORDINALITY AS k(attnum, ord)
+          JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = k.attnum) AS columns,
+       rn.nspname AS ref_schema,
+       rc.relname AS ref_relation,
+       EXISTS (SELECT 1 FROM pg_attribute a
+                WHERE a.attrelid = con.confrelid AND a.attname = 'tenant_id'
+                  AND a.attnum > 0 AND NOT a.attisdropped) AS ref_has_tenant_id
+  FROM pg_constraint con
+  JOIN pg_class c      ON c.oid  = con.conrelid
+  JOIN pg_namespace n  ON n.oid  = c.relnamespace
+  JOIN pg_class rc     ON rc.oid = con.confrelid
+  JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+ WHERE con.contype = 'f'
+   AND n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p')
+   AND NOT c.relispartition          -- particao repete a FK do pai
+ ORDER BY 1, 2, 3`;
+
+/**
+ * `audit` fica de fora da varredura de coluna orfa: a trilha registra tentativa sem
+ * contexto e entidade que pode ja nao existir. FK ali faria a trilha recusar
+ * justamente o evento que o auditor procura.
+ */
+const ORPHAN_SCOPE = ['app', 'clin', 'fin', 'tiss'];
+
+const ORPHAN_SQL = `
+WITH conhecidas AS (
+  SELECT c.oid, n.nspname, c.relname
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE c.relkind IN ('r', 'p')
+     AND n.nspname IN ('app', 'clin', 'fin', 'tiss', 'audit', 'ref', 'id')
+)
+SELECT n.nspname AS schema,
+       c.relname AS relation,
+       a.attname AS column_name,
+       (SELECT string_agg(k.nspname || '.' || k.relname, ', ' ORDER BY k.nspname)
+          FROM conhecidas k WHERE k.relname = left(a.attname, length(a.attname) - 3)) AS targets
+  FROM pg_attribute a
+  JOIN pg_class c     ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p')
+   AND NOT c.relispartition
+   AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname LIKE '%\\_id'
+   AND a.attname <> 'tenant_id'
+   AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND EXISTS (SELECT 1 FROM conhecidas k WHERE k.relname = left(a.attname, length(a.attname) - 3))
+   AND NOT EXISTS (SELECT 1 FROM pg_constraint con
+                    WHERE con.conrelid = c.oid AND con.contype = 'f'
+                      AND a.attnum = ANY (con.conkey))
+ ORDER BY 1, 2, 3`;
+
+export async function readForeignKeys(db: Queryable): Promise<ForeignKey[]> {
+  const { rows } = await db.query<{
+    schema: string;
+    relation: string;
+    constraint_name: string;
+    columns: string[] | null;
+    ref_schema: string;
+    ref_relation: string;
+    ref_has_tenant_id: boolean;
+  }>(FK_SQL, [[...TENANT_SCHEMAS]]);
+
+  return rows.map((r) => ({
+    schema: r.schema,
+    relation: r.relation,
+    constraintName: r.constraint_name,
+    columns: r.columns ?? [],
+    refSchema: r.ref_schema,
+    refRelation: r.ref_relation,
+    refHasTenantId: r.ref_has_tenant_id,
+  }));
+}
+
+export function fkViolations(fks: readonly ForeignKey[]): string[] {
+  const out: string[] = [];
+
+  for (const fk of fks) {
+    // Alvo global (app.tenant, id."user", ref.*): FK composta e impossivel, e e isenta.
+    if (!fk.refHasTenantId) continue;
+
+    const onde = `${fk.schema}.${fk.relation}.${fk.constraintName}`;
+    const alvo = `${fk.refSchema}.${fk.refRelation}`;
+    const cols = fk.columns.join(', ');
+
+    if (fk.columns.length < 2) {
+      out.push(
+        `${onde}: FK de coluna unica (${cols}) para ${alvo}, que e multi-tenant — precisa ser composta com tenant_id`,
+      );
+    } else if (!fk.columns.includes('tenant_id')) {
+      out.push(`${onde}: FK (${cols}) para ${alvo} nao inclui tenant_id`);
+    }
+  }
+
+  return out;
+}
+
+export async function orphanIdColumns(db: Queryable): Promise<string[]> {
+  const { rows } = await db.query<{
+    schema: string;
+    relation: string;
+    column_name: string;
+    targets: string | null;
+  }>(ORPHAN_SQL, [ORPHAN_SCOPE]);
+
+  return rows.map(
+    (r) => `${r.schema}.${r.relation}.${r.column_name}: coluna *_id sem FK, com alvo conhecido em ${r.targets}`,
+  );
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv02-fk.int.test.ts`
+
+Esperado: PASSA, 7 testes.
+
+- [ ] **Passo 5: Commitar**
+
+```bash
+git add packages/db/src/invariants/inv02-fk.ts packages/db/src/invariants/inv02-fk.int.test.ts
+git commit -m "test(db): assert every multi-tenant foreign key is composite and no *_id column is orphan"
+```
+
+---
+
+### Task 43: Invariantes 3 e 6 — papéis do banco e GRANTs proibidos
+
+**O invariante 3 já existe: ele é a Task 5.** `packages/db/src/roles-invariants.int.test.ts` afirma, desde lá, que `api` não é dona de relação e que `jobs` é o único papel não-superusuário com `BYPASSRLS`. **Esta tarefa não recria aquele teste** — ela transforma a mesma regra em `roleViolations()`, uma função do runner único, pela razão que dá nome à Task 46: o runner precisa rodar contra o *staging*, contra a produção e contra o banco restaurado pelo ensaio da Task 48, onde não há Vitest. A Task 5 continua exatamente como está.
+
+**Por que os invariantes 3 e 6 andam juntos.** As duas regras respondem à mesma pergunta: *quem consegue fazer o quê, independentemente de policy*. `api` dona de relação consegue `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` e `DROP POLICY` — a RLS inteira vira decoração. E `GRANT INSERT` direto em `audit.event` permite forjar evento sem passar por `audit.log`, que é o único lugar que carimba `actor_kind`, `outcome`, `request_id` e a whitelist de `meta`.
+
+**Detalhe que derruba a primeira execução se ninguém avisar:** o superusuário do cluster (`postgres` no container local, o usuário mestre no RDS) tem `rolbypassrls = true` por construção do `initdb`. Ele não é papel de aplicação. Por isso o check tem um conjunto fechado — os nove papéis da §3.1 — e afirma, separadamente, que nenhum deles é superusuário. É a mesma correção que a Task 5 já fez com `AND NOT rolsuper`.
+
+**Arquivos:**
+- Criar: `packages/db/src/invariants/inv03-roles.ts`
+- Teste: `packages/db/src/invariants/inv03-roles.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/db/src/invariants/inv03-roles.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { APP_ROLES, forbiddenGrantViolations, readRoles, roleViolations } from './inv03-roles';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 3 — o papel de login da aplicacao nao pode desligar o proprio isolamento', () => {
+  it('api nao e superuser, nao tem BYPASSRLS, nao cria banco nem papel e nao herda privilegio', async () => {
+    const papeis = await readRoles(catalogPool());
+    const api = papeis.find((r) => r.name === 'api');
+    expect(api, 'papel api nao existe: a migration 0001 nao rodou').toBeDefined();
+    expect(api?.superuser).toBe(false);
+    expect(api?.bypassRls).toBe(false);
+    expect(api?.createDb).toBe(false);
+    expect(api?.createRole).toBe(false);
+    expect(api?.inherit).toBe(false);
+  });
+
+  it('api tem row_security=on fixado no proprio papel', async () => {
+    const papeis = await readRoles(catalogPool());
+    expect(papeis.find((r) => r.name === 'api')?.config).toContain('row_security=on');
+  });
+
+  it('jobs e o unico papel de aplicacao com BYPASSRLS — sem ele o selo e o detector de drift rodariam vendo zero linhas', async () => {
+    const papeis = await readRoles(catalogPool());
+    expect(papeis.filter((r) => APP_ROLES.has(r.name) && r.bypassRls).map((r) => r.name)).toEqual(['jobs']);
+  });
+
+  it('nenhum papel de aplicacao e superuser — superuser vence REVOKE, RLS e trigger', async () => {
+    const papeis = await readRoles(catalogPool());
+    expect(papeis.filter((r) => APP_ROLES.has(r.name) && r.superuser).map((r) => r.name)).toEqual([]);
+  });
+
+  it('api nao e dona de nenhuma relacao nem de nenhum schema', async () => {
+    expect(await roleViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova api dona de tabela', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE app.__minha (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      await c.query('ALTER TABLE app.__minha OWNER TO api');
+      return roleViolations(c);
+    });
+    expect(violacoes).toContain(
+      'api e dona de app.__minha — dono desliga RLS e derruba policy, o isolamento inteiro vira decoracao',
+    );
+  });
+
+  it('reprova um segundo papel de aplicacao com BYPASSRLS', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('ALTER ROLE support BYPASSRLS');
+      return roleViolations(c);
+    });
+    expect(violacoes).toContain('mais de um papel com BYPASSRLS: jobs, support — so jobs pode ter');
+  });
+});
+
+describe('invariante 6 — a trilha nao aceita escrita direta e os relatorios nao vazam pelo rpt', () => {
+  it('ninguem alem do dono tem INSERT, UPDATE, DELETE ou TRUNCATE em audit.event nem nas particoes dela', async () => {
+    expect(await forbiddenGrantViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova GRANT INSERT direto em audit.event — evento forjado sem passar por audit.log', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('GRANT INSERT ON audit.event TO app_rw');
+      return forbiddenGrantViolations(c);
+    });
+    expect(violacoes).toContain('audit.event: GRANT INSERT para app_rw — a trilha so se escreve por audit.log');
+  });
+
+  it('reprova GRANT INSERT numa PARTICAO da trilha — a porta dos fundos que o GRANT no pai nao mostra', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      const { rows } = await c.query<{ nome: string }>(
+        `SELECT c.relname AS nome
+           FROM pg_inherits i
+           JOIN pg_class c ON c.oid = i.inhrelid
+          WHERE i.inhparent = 'audit.event'::regclass
+          ORDER BY 1 LIMIT 1`,
+      );
+      const particao = rows[0]?.nome;
+      expect(particao, 'audit.event nao tem particao: a migration 0008 nao rodou').toBeDefined();
+      await c.query(`GRANT INSERT ON audit.${particao} TO app_rw`);
+      return forbiddenGrantViolations(c);
+    });
+    expect(violacoes.some((v) => v.includes('GRANT INSERT para app_rw — a trilha so se escreve por audit.log'))).toBe(
+      true,
+    );
+  });
+
+  it('reprova qualquer GRANT em rpt.* para app_rw — matview nao suporta RLS', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE rpt.__mv_atendimentos (tenant_id uuid NOT NULL, total int NOT NULL)');
+      await c.query('GRANT SELECT ON rpt.__mv_atendimentos TO app_rw');
+      return forbiddenGrantViolations(c);
+    });
+    expect(violacoes).toContain(
+      'rpt.__mv_atendimentos: GRANT SELECT para app_rw — rpt e exposto so por view security_barrier',
+    );
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv03-roles.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv03-roles"`.
+
+- [ ] **Passo 3: Implementar o check**
+
+Criar `packages/db/src/invariants/inv03-roles.ts`:
+
+```ts
+import type { Queryable } from '../queryable';
+
+export interface RoleRow {
+  name: string;
+  superuser: boolean;
+  bypassRls: boolean;
+  createDb: boolean;
+  createRole: boolean;
+  canLogin: boolean;
+  inherit: boolean;
+  config: string[];
+}
+
+/**
+ * Os nove papeis da §3.1 — os unicos sujeitos ao invariante 3. O superusuario do
+ * cluster (o `postgres` do compose, o mestre do RDS) tem `rolbypassrls = true` por
+ * construcao do initdb e nao e papel de aplicacao. Por isso o check varre este
+ * conjunto fechado e, separadamente, afirma que nenhum deles e superuser.
+ */
+export const APP_ROLES: ReadonlySet<string> = new Set([
+  'app_owner',
+  'app_rw',
+  'clin_writer',
+  'audit_owner',
+  'rpt_owner',
+  'app_support',
+  'api',
+  'support',
+  'jobs',
+]);
+
+const ROLES_SQL = `
+SELECT rolname AS name, rolsuper AS superuser, rolbypassrls AS bypass_rls,
+       rolcreatedb AS create_db, rolcreaterole AS create_role,
+       rolcanlogin AS can_login, rolinherit AS inherit,
+       coalesce(rolconfig, '{}'::text[]) AS config
+  FROM pg_roles
+ WHERE rolname NOT LIKE 'pg\\_%'
+ ORDER BY rolname`;
+
+const OWNED_SQL = `
+SELECT n.nspname || '.' || c.relname AS object
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_roles r     ON r.oid = c.relowner
+ WHERE r.rolname = 'api'
+   AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
+ UNION ALL
+SELECT 'schema ' || n.nspname
+  FROM pg_namespace n
+  JOIN pg_roles r ON r.oid = n.nspowner
+ WHERE r.rolname = 'api'
+ ORDER BY 1`;
+
+/** audit.event E as particoes dela: GRANT na particao e a porta dos fundos. */
+const AUDIT_GRANTS_SQL = `
+WITH trilha AS (
+  SELECT c.oid, n.nspname || '.' || c.relname AS object, c.relowner
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE n.nspname = 'audit' AND c.relname = 'event'
+   UNION ALL
+  SELECT c.oid, n.nspname || '.' || c.relname, c.relowner
+    FROM pg_inherits i
+    JOIN pg_class c     ON c.oid = i.inhrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE i.inhparent = 'audit.event'::regclass
+)
+SELECT t.object,
+       coalesce(g.rolname, 'PUBLIC') AS grantee,
+       a.privilege_type              AS privilege
+  FROM trilha t
+  CROSS JOIN LATERAL aclexplode(coalesce(
+    (SELECT c.relacl FROM pg_class c WHERE c.oid = t.oid),
+    acldefault('r', t.relowner))) a
+  LEFT JOIN pg_roles g     ON g.oid = a.grantee
+  JOIN pg_roles proprietario ON proprietario.oid = t.relowner
+ WHERE a.privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')
+   AND coalesce(g.rolname, 'PUBLIC') <> proprietario.rolname
+ ORDER BY 1, 2, 3`;
+
+const RPT_GRANTS_SQL = `
+SELECT n.nspname || '.' || c.relname AS object,
+       coalesce(g.rolname, 'PUBLIC') AS grantee,
+       a.privilege_type              AS privilege
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+  LEFT JOIN pg_roles g ON g.oid = a.grantee
+ WHERE n.nspname = 'rpt'
+   AND coalesce(g.rolname, 'PUBLIC') IN ('app_rw', 'api', 'PUBLIC')
+ ORDER BY 1, 2, 3`;
+
+export async function readRoles(db: Queryable): Promise<RoleRow[]> {
+  const { rows } = await db.query<{
+    name: string;
+    superuser: boolean;
+    bypass_rls: boolean;
+    create_db: boolean;
+    create_role: boolean;
+    can_login: boolean;
+    inherit: boolean;
+    config: string[];
+  }>(ROLES_SQL);
+
+  return rows.map((r) => ({
+    name: r.name,
+    superuser: r.superuser,
+    bypassRls: r.bypass_rls,
+    createDb: r.create_db,
+    createRole: r.create_role,
+    canLogin: r.can_login,
+    inherit: r.inherit,
+    config: r.config,
+  }));
+}
+
+export async function roleViolations(db: Queryable): Promise<string[]> {
+  const out: string[] = [];
+  const papeis = (await readRoles(db)).filter((r) => APP_ROLES.has(r.name));
+
+  const bypass = papeis.filter((r) => r.bypassRls).map((r) => r.name);
+  if (bypass.length !== 1 || bypass[0] !== 'jobs') {
+    out.push(`mais de um papel com BYPASSRLS: ${bypass.join(', ')} — so jobs pode ter`);
+  }
+
+  const supers = papeis.filter((r) => r.superuser).map((r) => r.name);
+  if (supers.length > 0) {
+    out.push(`papel de aplicacao com SUPERUSER: ${supers.join(', ')} — superuser vence REVOKE e RLS`);
+  }
+
+  const api = papeis.find((r) => r.name === 'api');
+  if (!api) {
+    out.push('papel api nao existe');
+  } else {
+    if (api.superuser) out.push('api e superuser');
+    if (api.bypassRls) out.push('api tem BYPASSRLS');
+    if (api.createDb) out.push('api tem CREATEDB');
+    if (api.createRole) out.push('api tem CREATEROLE');
+    if (api.inherit) out.push('api tem INHERIT — deve ser NOINHERIT e usar SET LOCAL ROLE app_rw');
+    if (!api.config.includes('row_security=on')) out.push('api sem row_security=on no papel');
+  }
+
+  const { rows } = await db.query<{ object: string }>(OWNED_SQL);
+  for (const row of rows) {
+    out.push(
+      `api e dona de ${row.object} — dono desliga RLS e derruba policy, o isolamento inteiro vira decoracao`,
+    );
+  }
+
+  return out;
+}
+
+export async function forbiddenGrantViolations(db: Queryable): Promise<string[]> {
+  const out: string[] = [];
+
+  const trilha = await db.query<{ object: string; grantee: string; privilege: string }>(AUDIT_GRANTS_SQL);
+  for (const row of trilha.rows) {
+    out.push(`${row.object}: GRANT ${row.privilege} para ${row.grantee} — a trilha so se escreve por audit.log`);
+  }
+
+  const rpt = await db.query<{ object: string; grantee: string; privilege: string }>(RPT_GRANTS_SQL);
+  for (const row of rpt.rows) {
+    out.push(
+      `${row.object}: GRANT ${row.privilege} para ${row.grantee} — rpt e exposto so por view security_barrier`,
+    );
+  }
+
+  return out;
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv03-roles.int.test.ts`
+
+Esperado: PASSA, 11 testes.
+
+- [ ] **Passo 5: Confirmar que a Task 5 continua verde**
+
+Rodar: `pnpm test:int packages/db/src/roles-invariants.int.test.ts`
+
+Esperado: PASSA, 5 testes. As duas verificações convivem de propósito: a da Task 5 roda na suíte, a desta task roda no runner que aponta para qualquer banco.
+
+- [ ] **Passo 6: Commitar**
+
+```bash
+git add packages/db/src/invariants/inv03-roles.ts packages/db/src/invariants/inv03-roles.int.test.ts
+git commit -m "test(db): assert api owns nothing, jobs is the only BYPASSRLS role and the audit trail has no direct grants"
+```
+
+---
+
+### Task 44: Invariantes 4 e 5 — append-only clínico e policy RESTRICTIVE
+
+**As duas regras, sem lista manual.** (4) Toda tabela em `clin.*` com coluna `version_id` é append-only: `app_rw` não tem `UPDATE` nem `DELETE`, e `clin_writer` só pode `UPDATE` da coluna `live` — que é bit de índice, não registro clínico. (5) Toda tabela em `clin.*` com `patient_id` ou `version_id` tem ao menos uma policy `RESTRICTIVE`; sem isso o compartilhamento é contornável escolhendo outra tabela, e sai queixa, CID e sinais vitais dos pacientes de outro profissional.
+
+**O que já existe e o que muda.** A Task 12 criou as duas policies `RESTRICTIVE` da Fase 0 (`clin.patient_identifier` e `clin.record_share`) e provou a regra 5 com uma varredura dentro da suíte `test:iso`. Nenhuma migration nova é necessária aqui: o check nasce verde contra o schema real, e o que ele passa a garantir é que a **próxima** tabela clínica não nasça sem a camada restritiva.
+
+**Sobre o invariante 4 nascer sem nenhuma linha para verificar.** Na Fase 0 ainda não existe tabela em `clin.*` com `version_id` — ela chega com `clin.encounter_version` na Fase 1. Um check que varre zero linhas passa por vácuo, e é por isso que os quatro testes de violação abaixo não são enfeite: são eles que provam que o check funciona antes de existir a primeira tabela versionada.
+
+**Arquivos:**
+- Criar: `packages/db/src/invariants/inv04-append-only.ts`
+- Teste: `packages/db/src/invariants/inv04-append-only.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste que falha**
+
+Criar `packages/db/src/invariants/inv04-append-only.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { appendOnlyViolations, clinicalScopeRelations, restrictivePolicyViolations } from './inv04-append-only';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao', () => {
+  it('nenhuma tabela de clin com version_id e atualizavel ou apagavel por app_rw', async () => {
+    expect(await appendOnlyViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova UPDATE concedido a app_rw em tabela versionada', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT SELECT, UPDATE ON clin.__diagnostico TO app_rw');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__diagnostico: app_rw tem UPDATE — tabela com version_id e append-only');
+  });
+
+  it('reprova DELETE concedido a app_rw em tabela versionada', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT DELETE ON clin.__diagnostico TO app_rw');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__diagnostico: app_rw tem DELETE — tabela com version_id e append-only');
+  });
+
+  it('reprova clin_writer com UPDATE da tabela inteira em vez de so da coluna live', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        code text NOT NULL, live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT INSERT, UPDATE ON clin.__diagnostico TO clin_writer');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain(
+      'clin.__diagnostico: clin_writer tem UPDATE da tabela inteira — so UPDATE (live) e permitido',
+    );
+  });
+
+  it('aceita o unico UPDATE legitimo: clin_writer sobre a coluna live', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        code text NOT NULL, live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT SELECT ON clin.__diagnostico TO app_rw');
+      await c.query('GRANT INSERT, UPDATE (live) ON clin.__diagnostico TO clin_writer');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('__diagnostico'))).toEqual([]);
+  });
+});
+
+describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornavel trocando de tabela', () => {
+  it('a varredura enxerga as duas tabelas clinicas da Fase 0 — nao passa por vacuo', async () => {
+    expect(await clinicalScopeRelations(catalogPool())).toEqual([
+      'clin.patient_identifier',
+      'clin.record_share',
+    ]);
+  });
+
+  it('toda tabela de clin com patient_id ou version_id tem ao menos uma policy RESTRICTIVE', async () => {
+    expect(await restrictivePolicyViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova tabela clinica com so policy PERMISSIVE', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__observacao (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, patient_id uuid NOT NULL)`);
+      await c.query('ALTER TABLE clin.__observacao ENABLE ROW LEVEL SECURITY');
+      await c.query('ALTER TABLE clin.__observacao FORCE ROW LEVEL SECURITY');
+      await c.query(
+        'CREATE POLICY tenant_isolation ON clin.__observacao AS PERMISSIVE FOR ALL TO app_rw USING (tenant_id = app.current_tenant_id())',
+      );
+      return restrictivePolicyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__observacao: nenhuma policy RESTRICTIVE');
+  });
+
+  it('clin.patient continua de fora: ela e cadastro, nao prontuario (§10 item 18)', async () => {
+    expect(await clinicalScopeRelations(catalogPool())).not.toContain('clin.patient');
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar o teste e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv04-append-only.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv04-append-only"`.
+
+- [ ] **Passo 3: Implementar o check**
+
+Criar `packages/db/src/invariants/inv04-append-only.ts`:
+
+```ts
+import type { Queryable } from '../queryable';
+
+const APPEND_ONLY_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation,
+       has_table_privilege('app_rw', c.oid, 'UPDATE')      AS rw_update,
+       has_table_privilege('app_rw', c.oid, 'DELETE')      AS rw_delete,
+       has_table_privilege('clin_writer', c.oid, 'UPDATE') AS writer_table_update,
+       coalesce((SELECT array_agg(a.attname ORDER BY a.attname)
+                   FROM pg_attribute a
+                  WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+                    AND has_column_privilege('clin_writer', c.oid, a.attname, 'UPDATE')),
+                '{}'::name[]) AS writer_update_columns
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = 'clin'
+   AND c.relkind IN ('r', 'p')
+   AND NOT c.relispartition
+   AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND EXISTS (SELECT 1 FROM pg_attribute a
+                WHERE a.attrelid = c.oid AND a.attname = 'version_id'
+                  AND a.attnum > 0 AND NOT a.attisdropped)
+ ORDER BY 1`;
+
+const CLINICAL_SCOPE_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation,
+       (SELECT count(*) FROM pg_policy p
+         WHERE p.polrelid = c.oid AND NOT p.polpermissive)::int AS restrictive_policies
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = 'clin'
+   AND c.relkind IN ('r', 'p')
+   AND NOT c.relispartition
+   AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND EXISTS (SELECT 1 FROM pg_attribute a
+                WHERE a.attrelid = c.oid AND a.attname IN ('patient_id', 'version_id')
+                  AND a.attnum > 0 AND NOT a.attisdropped)
+ ORDER BY 1`;
+
+export async function appendOnlyViolations(db: Queryable): Promise<string[]> {
+  const out: string[] = [];
+  const { rows } = await db.query<{
+    relation: string;
+    rw_update: boolean;
+    rw_delete: boolean;
+    writer_table_update: boolean;
+    writer_update_columns: string[];
+  }>(APPEND_ONLY_SQL);
+
+  for (const row of rows) {
+    if (row.rw_update) out.push(`${row.relation}: app_rw tem UPDATE — tabela com version_id e append-only`);
+    if (row.rw_delete) out.push(`${row.relation}: app_rw tem DELETE — tabela com version_id e append-only`);
+
+    if (row.writer_table_update) {
+      out.push(`${row.relation}: clin_writer tem UPDATE da tabela inteira — so UPDATE (live) e permitido`);
+      continue; // com GRANT de tabela, has_column_privilege devolve todas as colunas
+    }
+
+    const extras = row.writer_update_columns.filter((col) => col !== 'live');
+    if (extras.length > 0) {
+      out.push(`${row.relation}: clin_writer tem UPDATE das colunas ${extras.join(', ')} — so live e permitido`);
+    }
+  }
+
+  return out;
+}
+
+/** As relacoes que o invariante 5 varre — exportada para o teste provar que a varredura nao e vazia. */
+export async function clinicalScopeRelations(db: Queryable): Promise<string[]> {
+  const { rows } = await db.query<{ relation: string }>(CLINICAL_SCOPE_SQL);
+  return rows.map((r) => r.relation);
+}
+
+export async function restrictivePolicyViolations(db: Queryable): Promise<string[]> {
+  const { rows } = await db.query<{ relation: string; restrictive_policies: number }>(CLINICAL_SCOPE_SQL);
+  return rows.filter((r) => r.restrictive_policies === 0).map((r) => `${r.relation}: nenhuma policy RESTRICTIVE`);
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv04-append-only.int.test.ts`
+
+Esperado: PASSA, 9 testes.
+
+Se `a varredura enxerga as duas tabelas clinicas da Fase 0` falhar com uma lista maior, é porque uma task posterior criou tabela clínica nova — a correção é conferir que ela tem policy `RESTRICTIVE` e acrescentar o nome à expectativa, nunca afrouxar o check.
+
+- [ ] **Passo 5: Commitar**
+
+```bash
+git add packages/db/src/invariants/inv04-append-only.ts \
+        packages/db/src/invariants/inv04-append-only.int.test.ts
+git commit -m "test(db): assert clinical tables with version_id are append-only and carry a restrictive policy"
+```
+
+---
+
+### Task 45: Invariantes 7 e 10 — privilégios afirmados tabela a tabela e matriz CRUD cruzada
+
+**Por que privilégio se afirma tabela a tabela.** `ALTER DEFAULT PRIVILEGES` não substitui a asserção: tabela nova com policy correta e **sem GRANT** dá 500 na primeira recepcionista às 8h, e o alarme de rollback por taxa global de erro **não dispara**, porque uma tela quebrada em cem não move a taxa. O arquivo `packages/db/privileges.json` não é lista de tabelas mantida à mão: a descoberta vem do catálogo, e o check reprova tanto a relação **descoberta e não declarada** quanto a entrada **declarada e inexistente**. O que o arquivo faz é obrigar toda mudança de privilégio a passar por revisão de código.
+
+**Por que a matriz aceita duas formas de sucesso.** Tentar ler dado do tenant B com contexto do tenant A pode terminar em `rowCount = 0` (a policy filtrou) ou em `42501` (não há privilégio nenhum). As duas são corretas e significam coisas diferentes — o relatório distingue, senão a suíte comemora "isolado" quando na verdade a tabela é ilegível para todo mundo, inclusive para quem deveria ler. E a matriz usa **coluna sabidamente presente**: o `UPDATE` escreve `tenant_id = tenant_id` (ou `id = id` na raiz), garantido pelo invariante 1. `updated_at` não existe em metade das tabelas, e o teste que erra o nome da coluna falha por `42703` e é lido como "isolamento OK".
+
+**Sobre a conexão do papel `api`.** A matriz usa `DATABASE_URL` — o mesmo papel de runtime. No compose local a autenticação é `trust` e a URL não tem senha; no CI o workflow da Task 48 define uma com `ALTER ROLE api LOGIN PASSWORD`. Como `api` é `NOINHERIT` (§3.1), cada célula executa `SET ROLE app_rw` dentro da transação — sem isso não há privilégio nenhum e a matriz mediria permissão, não isolamento.
+
+**Arquivos:**
+- Criar: `packages/db/src/invariants/fixtures.ts`
+- Criar: `packages/db/src/invariants/inv07-privileges.ts`
+- Criar: `packages/db/src/invariants/write-privileges.ts`
+- Criar: `packages/db/src/invariants/inv10-crud-matrix.ts`
+- Criar: `packages/db/privileges.json`
+- Modificar: `package.json` (raiz) — bloco `scripts`
+- Teste: `packages/db/src/invariants/inv07-privileges.int.test.ts`
+- Teste: `packages/db/src/invariants/inv10-crud-matrix.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste do invariante 7**
+
+Criar `packages/db/src/invariants/inv07-privileges.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { diffDeclaredGrants, readDeclaredGrants, readEffectiveGrants } from './inv07-privileges';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 7 — privilegio e afirmado tabela a tabela, nao herdado de default privileges', () => {
+  it('os privilegios do banco sao exatamente os declarados em packages/db/privileges.json', async () => {
+    const atual = await readEffectiveGrants(catalogPool());
+    expect(Object.keys(atual).length).toBeGreaterThan(0);
+    expect(diffDeclaredGrants(atual, readDeclaredGrants())).toEqual([]);
+  });
+
+  it('reprova a tabela nova sem declaracao — e ela que da 500 na primeira recepcionista as 8h', async () => {
+    const diff = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE app.__nova (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      await c.query('GRANT SELECT ON app.__nova TO app_rw');
+      return diffDeclaredGrants(await readEffectiveGrants(c), readDeclaredGrants());
+    });
+    expect(diff).toContain('app.__nova: relacao existe no banco e nao esta declarada em packages/db/privileges.json');
+  });
+
+  it('reprova a tabela declarada cujo GRANT a migration esqueceu', async () => {
+    const atual = await readEffectiveGrants(catalogPool());
+    const comExtra = { ...readDeclaredGrants(), 'app.tenant': { table: { app_rw: ['SELECT', 'INSERT'] } } };
+    expect(diffDeclaredGrants(atual, comExtra).some((d) => d.startsWith('app.tenant: privilegios divergem'))).toBe(
+      true,
+    );
+  });
+
+  it('reprova declaracao orfa, de tabela que ja nao existe', async () => {
+    const atual = await readEffectiveGrants(catalogPool());
+    const comFantasma = { ...readDeclaredGrants(), 'clin.tabela_que_nao_existe': { table: { app_rw: ['SELECT'] } } };
+    expect(diffDeclaredGrants(atual, comFantasma)).toContain(
+      'clin.tabela_que_nao_existe: declarada em packages/db/privileges.json e inexistente no banco',
+    );
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv07-privileges.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv07-privileges"`.
+
+- [ ] **Passo 3: Implementar o check do invariante 7**
+
+Criar `packages/db/src/invariants/inv07-privileges.ts`:
+
+```ts
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { TENANT_SCHEMAS } from './catalog';
+import type { Queryable } from '../queryable';
+
+/** packages/db/privileges.json — resolvido pelo modulo, nao pelo cwd de quem chama. */
+export const PRIVILEGES_FILE = fileURLToPath(new URL('../../privileges.json', import.meta.url));
+
+export interface RelationGrants {
+  table: Record<string, string[]>;
+  columns?: Record<string, Record<string, string[]>>;
+}
+
+export type GrantMap = Record<string, RelationGrants>;
+
+/** Privilegio do dono e consequencia da posse, nao GRANT: fica de fora da declaracao. */
+const TABLE_GRANTS_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation,
+       coalesce(g.rolname, 'PUBLIC')  AS grantee,
+       a.privilege_type               AS privilege
+  FROM pg_class c
+  JOIN pg_namespace n     ON n.oid = c.relnamespace
+  JOIN pg_roles proprietario ON proprietario.oid = c.relowner
+  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+  LEFT JOIN pg_roles g    ON g.oid = a.grantee
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+   AND NOT c.relispartition
+   AND coalesce(g.rolname, 'PUBLIC') <> proprietario.rolname
+ ORDER BY 1, 2, 3`;
+
+const COLUMN_GRANTS_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation,
+       coalesce(g.rolname, 'PUBLIC')  AS grantee,
+       att.attname                    AS column_name,
+       a.privilege_type               AS privilege
+  FROM pg_attribute att
+  JOIN pg_class c         ON c.oid = att.attrelid
+  JOIN pg_namespace n     ON n.oid = c.relnamespace
+  JOIN pg_roles proprietario ON proprietario.oid = c.relowner
+  CROSS JOIN LATERAL aclexplode(att.attacl) a
+  LEFT JOIN pg_roles g    ON g.oid = a.grantee
+ WHERE n.nspname = ANY ($1::text[])
+   AND att.attnum > 0 AND NOT att.attisdropped
+   AND att.attacl IS NOT NULL
+   AND NOT c.relispartition
+   AND coalesce(g.rolname, 'PUBLIC') <> proprietario.rolname
+ ORDER BY 1, 2, 3, 4`;
+
+/**
+ * Relacoes existentes, inclusive as SEM nenhum GRANT — que sao o caso perigoso.
+ * Particao fica de fora: o nome dela muda todo mes (event_202608, event_202609) e
+ * o arquivo declarado viraria ruido mensal em vez de revisao.
+ */
+const RELATIONS_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+   AND NOT c.relispartition
+ ORDER BY 1`;
+
+export async function readEffectiveGrants(db: Queryable): Promise<GrantMap> {
+  const mapa: GrantMap = {};
+
+  const relacoes = await db.query<{ relation: string }>(RELATIONS_SQL, [[...TENANT_SCHEMAS]]);
+  for (const row of relacoes.rows) {
+    mapa[row.relation] = { table: {} };
+  }
+
+  const tabela = await db.query<{ relation: string; grantee: string; privilege: string }>(TABLE_GRANTS_SQL, [
+    [...TENANT_SCHEMAS],
+  ]);
+  for (const row of tabela.rows) {
+    const entrada = (mapa[row.relation] ??= { table: {} });
+    (entrada.table[row.grantee] ??= []).push(row.privilege);
+  }
+
+  const coluna = await db.query<{
+    relation: string;
+    grantee: string;
+    column_name: string;
+    privilege: string;
+  }>(COLUMN_GRANTS_SQL, [[...TENANT_SCHEMAS]]);
+  for (const row of coluna.rows) {
+    const entrada = (mapa[row.relation] ??= { table: {} });
+    const colunas = (entrada.columns ??= {});
+    const porPapel = (colunas[row.grantee] ??= {});
+    (porPapel[row.column_name] ??= []).push(row.privilege);
+  }
+
+  return sortDeep(mapa);
+}
+
+/** Ordem estavel: o diff tem que mostrar mudanca de privilegio, nunca mudanca de ordem. */
+function sortDeep(mapa: GrantMap): GrantMap {
+  const out: GrantMap = {};
+  for (const relacao of Object.keys(mapa).sort()) {
+    const entrada = mapa[relacao]!;
+    const table: Record<string, string[]> = {};
+    for (const papel of Object.keys(entrada.table).sort()) {
+      table[papel] = [...entrada.table[papel]!].sort();
+    }
+    const resultado: RelationGrants = { table };
+    if (entrada.columns) {
+      const columns: Record<string, Record<string, string[]>> = {};
+      for (const papel of Object.keys(entrada.columns).sort()) {
+        const porColuna: Record<string, string[]> = {};
+        for (const coluna of Object.keys(entrada.columns[papel]!).sort()) {
+          porColuna[coluna] = [...entrada.columns[papel]![coluna]!].sort();
+        }
+        columns[papel] = porColuna;
+      }
+      resultado.columns = columns;
+    }
+    out[relacao] = resultado;
+  }
+  return out;
+}
+
+export function readDeclaredGrants(): GrantMap {
+  if (!existsSync(PRIVILEGES_FILE)) {
+    throw new Error(
+      `${PRIVILEGES_FILE} nao existe: rode \`pnpm db:privileges\` e revise o arquivo gerado antes de commitar`,
+    );
+  }
+  return JSON.parse(readFileSync(PRIVILEGES_FILE, 'utf8')) as GrantMap;
+}
+
+export function writeDeclaredGrants(atual: GrantMap): void {
+  writeFileSync(PRIVILEGES_FILE, `${JSON.stringify(atual, null, 2)}\n`, 'utf8');
+}
+
+export function diffDeclaredGrants(atual: GrantMap, declarado: GrantMap): string[] {
+  const out: string[] = [];
+
+  for (const relacao of Object.keys(atual)) {
+    const esperado = declarado[relacao];
+    if (esperado === undefined) {
+      out.push(`${relacao}: relacao existe no banco e nao esta declarada em packages/db/privileges.json`);
+      continue;
+    }
+    const a = JSON.stringify(atual[relacao]);
+    const d = JSON.stringify(sortDeep({ x: esperado }).x);
+    if (a !== d) {
+      out.push(`${relacao}: privilegios divergem — banco ${a} · declarado ${d}`);
+    }
+  }
+
+  for (const relacao of Object.keys(declarado)) {
+    if (!(relacao in atual)) {
+      out.push(`${relacao}: declarada em packages/db/privileges.json e inexistente no banco`);
+    }
+  }
+
+  return out.sort();
+}
+```
+
+- [ ] **Passo 4: Escrever o gerador da declaração**
+
+Criar `packages/db/src/invariants/write-privileges.ts`:
+
+```ts
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { catalogPool, closeCatalogPool } from './catalog';
+import { PRIVILEGES_FILE, readEffectiveGrants, writeDeclaredGrants } from './inv07-privileges';
+
+/**
+ * `pnpm db:privileges` — regrava packages/db/privileges.json a partir do catalogo.
+ * O arquivo gerado e RASCUNHO: ele descreve o estado atual do banco. O que o
+ * invariante 7 garante daqui em diante e que ninguem muda esse estado sem revisao.
+ */
+const envPath = resolve(process.cwd(), '.env');
+if (existsSync(envPath)) {
+  process.loadEnvFile(envPath);
+}
+
+const grants = await readEffectiveGrants(catalogPool());
+writeDeclaredGrants(grants);
+await closeCatalogPool();
+
+console.log(`${PRIVILEGES_FILE}: ${Object.keys(grants).length} relacoes declaradas`);
+```
+
+Modificar `package.json` (raiz), bloco `"scripts"`, acrescentando a linha:
+
+```json
+    "db:privileges": "tsx packages/db/src/invariants/write-privileges.ts"
+```
+
+- [ ] **Passo 5: Gerar o arquivo e revisar tabela por tabela**
+
+Rodar:
+
+```bash
+pnpm db:privileges
+git add -N packages/db/privileges.json
+git diff packages/db/privileges.json
+```
+
+Esperado: o comando imprime o caminho e a contagem de relações, e o `git diff` mostra o arquivo inteiro.
+
+Ler o diff **tabela por tabela** e conferir contra as regras já decididas: `audit.event` só `{"app_rw":["SELECT"]}`; nada em `rpt`; nenhum `UPDATE`/`DELETE` para `app_rw` em tabela de `clin` com `version_id`. Onde o diff mostrar um GRANT que não deveria existir, a correção é na migration que o concedeu — nunca no JSON.
+
+- [ ] **Passo 6: Rodar e confirmar que o invariante 7 passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv07-privileges.int.test.ts`
+
+Esperado: PASSA, 4 testes.
+
+- [ ] **Passo 7: Escrever as fixtures da matriz CRUD**
+
+Criar `packages/db/src/invariants/fixtures.ts`:
+
+```ts
+import type { Queryable } from '../queryable';
+
+/**
+ * Dois tenants de sonda, com ids fixos e formato de UUIDv7 (versao 7, variante 10xx).
+ * Sao literais de proposito: uma matriz de isolamento tem que ser reproduzivel byte
+ * a byte. Todos os INSERT usam ON CONFLICT DO NOTHING — semear duas vezes e no-op.
+ */
+export const CRUD_TENANT_A = '01930000-0000-7000-8000-0000000ca001';
+export const CRUD_TENANT_B = '01930000-0000-7000-8000-0000000ca002';
+export const CRUD_CLINIC_A = '01930000-0000-7000-8000-0000000ca011';
+export const CRUD_CLINIC_B = '01930000-0000-7000-8000-0000000ca012';
+export const CRUD_PATIENT_A = '01930000-0000-7000-8000-0000000ca021';
+export const CRUD_PATIENT_B = '01930000-0000-7000-8000-0000000ca022';
+
+/** CNPJ alfanumerico da IN RFB 2.229/2024: 12 alfanumericos + 2 digitos. */
+const CNPJ_A = '12ABC34501DE35';
+const CNPJ_B = '98XYZ76509FG21';
+
+/**
+ * Semeia os dois tenants pela conexao administrativa, que ignora RLS de proposito.
+ * As linhas COMMITAM: a conexao do papel `api` precisa enxerga-las para que o
+ * "zero linhas" da matriz signifique "a policy filtrou", e nao "nao havia nada la".
+ */
+export async function seedTwoTenants(db: Queryable): Promise<void> {
+  await db.query(
+    `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
+          VALUES ($1, 'sonda-crud-a', 'Clinica Vila Nova Ltda', $3),
+                 ($2, 'sonda-crud-b', 'Clinica Rio Branco Ltda', $4)
+     ON CONFLICT (id) DO NOTHING`,
+    [CRUD_TENANT_A, CRUD_TENANT_B, CNPJ_A, CNPJ_B],
+  );
+
+  await db.query(
+    `INSERT INTO app.clinic (tenant_id, id, nome, timezone)
+          VALUES ($1, $3, 'Unidade Vila Nova',  'America/Sao_Paulo'),
+                 ($2, $4, 'Unidade Rio Branco', 'America/Rio_Branco')
+     ON CONFLICT (id) DO NOTHING`,
+    [CRUD_TENANT_A, CRUD_TENANT_B, CRUD_CLINIC_A, CRUD_CLINIC_B],
+  );
+
+  await db.query(
+    `INSERT INTO clin.patient (tenant_id, id, full_name)
+          VALUES ($1, $3, 'Maria Souza Lima'),
+                 ($2, $4, 'Joao Pereira da Silva')
+     ON CONFLICT (id) DO NOTHING`,
+    [CRUD_TENANT_A, CRUD_TENANT_B, CRUD_PATIENT_A, CRUD_PATIENT_B],
+  );
+}
+```
+
+- [ ] **Passo 8: Escrever o teste da matriz CRUD**
+
+Criar `packages/db/src/invariants/inv10-crud-matrix.int.test.ts`:
+
+```ts
+import type { Client } from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { apiClient, catalogPool, closeCatalogPool } from './catalog';
+import { CRUD_TENANT_A, CRUD_TENANT_B, seedTwoTenants } from './fixtures';
+import { readCrudTargets, runCrudMatrix } from './inv10-crud-matrix';
+
+let api: Client;
+
+beforeAll(async () => {
+  await seedTwoTenants(catalogPool());
+  api = await apiClient();
+});
+
+afterAll(async () => {
+  await api?.end();
+  await closeCatalogPool();
+});
+
+describe('invariante 10 — matriz CRUD cruzada, com as tabelas descobertas do catalogo', () => {
+  it('nenhuma tabela multi-tenant devolve ou escreve linha do outro tenant', async () => {
+    const alvos = await readCrudTargets(catalogPool());
+    expect(alvos.length).toBeGreaterThan(0);
+
+    const celulas = await runCrudMatrix(api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
+    const vazadas = celulas.filter((c) => c.outcome === 'VAZOU');
+    expect(vazadas.map((c) => `${c.relation} ${c.operation}: ${c.detail}`)).toEqual([]);
+  });
+
+  it('a matriz nao e vaga: as tabelas semeadas tem linha do tenant B e ainda assim devolvem zero', async () => {
+    const alvos = await readCrudTargets(catalogPool());
+    const celulas = await runCrudMatrix(api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
+    const semeadas = celulas.filter((c) => c.operation === 'SELECT' && c.seeded);
+
+    expect(semeadas.map((c) => c.relation).sort()).toEqual(['app.clinic', 'app.tenant', 'clin.patient']);
+    for (const celula of semeadas) {
+      expect(celula.outcome, `${celula.relation}: ${celula.detail}`).toBe('zero_linhas');
+    }
+  });
+
+  it('o relatorio distingue zero linhas de privilegio negado', async () => {
+    const alvos = await readCrudTargets(catalogPool());
+    const celulas = await runCrudMatrix(api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
+
+    expect(celulas.every((c) => c.outcome === 'zero_linhas' || c.outcome === 'privilegio_negado')).toBe(true);
+    // app_rw tem SELECT e nada mais em audit.event: UPDATE tem de ser privilegio negado.
+    expect(celulas.find((c) => c.relation === 'audit.event' && c.operation === 'UPDATE')?.outcome).toBe(
+      'privilegio_negado',
+    );
+  });
+
+  it('pega a tabela que vaza — RLS desligada e GRANT aberto', async () => {
+    const admin = catalogPool();
+    try {
+      // Esta tabela precisa COMMITAR: a conexao do papel api nao enxerga DDL de
+      // uma transacao aberta em outra conexao. O DROP no finally e o que a limpa.
+      await admin.query('CREATE TABLE clin.__vazamento (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      await admin.query('GRANT SELECT, INSERT, UPDATE, DELETE ON clin.__vazamento TO app_rw');
+      await admin.query('INSERT INTO clin.__vazamento (tenant_id, id) VALUES ($1, gen_random_uuid())', [
+        CRUD_TENANT_B,
+      ]);
+
+      const alvos = (await readCrudTargets(admin)).filter((t) => t.relation === '__vazamento');
+      expect(alvos).toHaveLength(1);
+
+      const celulas = await runCrudMatrix(api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
+      expect(celulas.find((c) => c.operation === 'SELECT')?.outcome).toBe('VAZOU');
+    } finally {
+      await admin.query('DROP TABLE IF EXISTS clin.__vazamento');
+    }
+  });
+});
+```
+
+- [ ] **Passo 9: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv10-crud-matrix.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv10-crud-matrix"`.
+
+- [ ] **Passo 10: Implementar a matriz**
+
+Criar `packages/db/src/invariants/inv10-crud-matrix.ts`:
+
+```ts
+import type { Client } from 'pg';
+import { TENANT_SCHEMAS } from './catalog';
+import type { Queryable } from '../queryable';
+
+export interface CrudTarget {
+  schema: string;
+  relation: string;
+  /** Coluna sabidamente presente, garantida pelo invariante 1. Nunca updated_at. */
+  discriminator: string;
+  seeded: boolean;
+}
+
+export type CrudOutcome = 'zero_linhas' | 'privilegio_negado' | 'VAZOU';
+
+export interface CrudCell {
+  relation: string;
+  operation: 'SELECT' | 'UPDATE' | 'DELETE';
+  outcome: CrudOutcome;
+  seeded: boolean;
+  detail: string;
+}
+
+/** As tres relacoes que a fixture semeia com linha dos DOIS tenants. */
+const SEEDED = new Set(['app.tenant', 'app.clinic', 'clin.patient']);
+
+const TARGETS_SQL = `
+SELECT n.nspname AS schema,
+       c.relname AS relation,
+       CASE WHEN obj_description(c.oid, 'pg_class') = 'tenant-root' THEN 'id' ELSE 'tenant_id' END AS discriminator
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p')
+   AND NOT c.relispartition
+   AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND EXISTS (
+     SELECT 1 FROM pg_attribute a
+      WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+        AND a.attname = CASE WHEN obj_description(c.oid, 'pg_class') = 'tenant-root'
+                             THEN 'id' ELSE 'tenant_id' END)
+ ORDER BY 1, 2`;
+
+export async function readCrudTargets(db: Queryable): Promise<CrudTarget[]> {
+  const { rows } = await db.query<{ schema: string; relation: string; discriminator: string }>(TARGETS_SQL, [
+    [...TENANT_SCHEMAS],
+  ]);
+  return rows.map((r) => ({
+    schema: r.schema,
+    relation: r.relation,
+    discriminator: r.discriminator,
+    seeded: SEEDED.has(`${r.schema}.${r.relation}`),
+  }));
+}
+
+function quoted(target: CrudTarget): string {
+  return `"${target.schema}"."${target.relation}"`;
+}
+
+async function runCell(
+  api: Client,
+  target: CrudTarget,
+  operation: CrudCell['operation'],
+  tenantA: string,
+  tenantB: string,
+): Promise<CrudCell> {
+  const relation = `${target.schema}.${target.relation}`;
+  const disc = `"${target.discriminator}"`;
+  const sql =
+    operation === 'SELECT'
+      ? `SELECT 1 FROM ${quoted(target)} WHERE ${disc} = $1`
+      : operation === 'UPDATE'
+        ? `UPDATE ${quoted(target)} SET ${disc} = ${disc} WHERE ${disc} = $1`
+        : `DELETE FROM ${quoted(target)} WHERE ${disc} = $1`;
+
+  await api.query('BEGIN');
+  try {
+    // `api` e NOINHERIT: sem SET ROLE nao ha privilegio de app_rw nem policy aplicavel.
+    await api.query('SET ROLE app_rw');
+    // Ator de sistema: dispensa linha em app.membership e ainda satisfaz app.is_member().
+    await api.query(
+      `SELECT set_config('app.tenant_id', $1, TRUE),
+              set_config('app.user_id', '', TRUE),
+              set_config('app.clinic_id', '', TRUE),
+              set_config('app.actor_kind', 'system', TRUE),
+              set_config('app.request_id', '', TRUE)`,
+      [tenantA],
+    );
+
+    const resultado = await api.query(sql, [tenantB]);
+    const linhas = resultado.rowCount ?? 0;
+    return {
+      relation,
+      operation,
+      seeded: target.seeded,
+      outcome: linhas === 0 ? 'zero_linhas' : 'VAZOU',
+      detail: linhas === 0 ? 'zero linhas com contexto do tenant A' : `${linhas} linha(s) do tenant B alcancadas`,
+    };
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code === '42501') {
+      return {
+        relation,
+        operation,
+        seeded: target.seeded,
+        outcome: 'privilegio_negado',
+        detail: 'privilegio ausente (42501)',
+      };
+    }
+    throw new Error(`${relation} ${operation} falhou com ${code}: ${(error as Error).message}`);
+  } finally {
+    await api.query('ROLLBACK').catch(() => undefined);
+    await api.query('RESET ROLE').catch(() => undefined);
+  }
+}
+
+export async function runCrudMatrix(
+  api: Client,
+  targets: readonly CrudTarget[],
+  tenantA: string,
+  tenantB: string,
+): Promise<CrudCell[]> {
+  const celulas: CrudCell[] = [];
+  for (const target of targets) {
+    for (const operation of ['SELECT', 'UPDATE', 'DELETE'] as const) {
+      celulas.push(await runCell(api, target, operation, tenantA, tenantB));
+    }
+  }
+  return celulas;
+}
+
+/** Só as células que reprovam — é o que o runner da Task 46 publica. */
+export function crudViolations(cells: readonly CrudCell[]): string[] {
+  return cells
+    .filter((c) => c.outcome === 'VAZOU')
+    .map((c) => `${c.relation} ${c.operation}: ${c.detail}`);
+}
+```
+
+- [ ] **Passo 11: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv10-crud-matrix.int.test.ts`
+
+Esperado: PASSA, 4 testes.
+
+- [ ] **Passo 12: Reconciliar o invariante 7 com as linhas semeadas e commitar**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv07-privileges.int.test.ts`
+
+Esperado: PASSA, 4 testes — a fixture só insere **linhas**, e o invariante 7 fala de **privilégios**; nenhum dos dois interfere no outro.
+
+```bash
+git add packages/db/src/invariants/fixtures.ts packages/db/src/invariants/inv07-privileges.ts \
+        packages/db/src/invariants/write-privileges.ts packages/db/src/invariants/inv10-crud-matrix.ts \
+        packages/db/src/invariants/inv07-privileges.int.test.ts \
+        packages/db/src/invariants/inv10-crud-matrix.int.test.ts \
+        packages/db/privileges.json package.json
+git commit -m "test(db): assert per-table grants against a declared file and run the cross-tenant CRUD matrix"
+```
+
+---
+
+### Task 46: Invariantes 8 e 9 — lint de DDL, trilha viva e o runner único `pnpm db:invariants`
+
+**As cinco proibições do invariante 8, e por que cada uma existe.** `cnpj` numérico perde o CNPJ alfanumérico da IN RFB 2.229/2024 e o erro aparece com o cliente na linha. `now()`/`current_date` em `tiss` faz o lookup de TUSS usar a terminologia de hoje em vez da vigente na data do atendimento — o lote volta rejeitado meses depois. `::date` sobre `timestamptz` fora de `app.local_date()` derruba a data do atendimento em Rio Branco. `'atendimento'` em `app.consent_type` deixaria alguém escrever o código que bloqueia atendimento esperando aceite, contra o art. 11 II f. E índice que não começa por `tenant_id` faz a recepcionista de uma clínica pagar o crescimento da base de todas as outras.
+
+**O lint vai pegar um caso real do próprio repositório, e isso é o esperado.** `audit.ensure_partitions` (migration 0009) deriva os limites de partição de `now()` com `::date`. É legítimo — limite de partição é decisão de armazenamento, não data de evento clínico — e a marca de exceção `'clock-derived-date'`, gravada em migration, é como se declara isso. Não existe allowlist em arquivo de teste.
+
+**Invariante 9: a trilha tem de estar viva, não só existir.** Uma trilha que existe e não recebe evento nenhum é pior que nenhuma trilha: ela dá a impressão de controle. O check reprova banco com `audit.event` vazio, e o teste prova a reprovação truncando a trilha dentro de uma transação revertida — `TRUNCATE` é transacional e não dispara o trigger `no_mutate`, que é `FOR EACH ROW`.
+
+**E o runner único.** Ao fim desta task os dez invariantes existem como função. `pnpm db:invariants` roda todos contra qualquer banco, sem Vitest, sem repositório de teste montado — é o que o CI executa como job próprio e o que o ensaio de restauração da Task 48 aponta para o banco restaurado. O invariante 3, que nasceu na Task 5 como teste, entra aqui pela mesma porta que os outros nove.
+
+**Arquivos:**
+- Criar: `packages/db/src/invariants/inv08-ddl-lint.ts`
+- Criar: `packages/db/src/invariants/inv09-audit-alive.ts`
+- Criar: `packages/db/src/invariants/index.ts`
+- Criar: `packages/db/src/invariants-cli.ts`
+- Criar: `packages/db/migrations/0022_clock_derived_date_marks.sql`
+- Modificar: `packages/db/src/index.ts`
+- Modificar: `package.json` (raiz) — bloco `scripts`
+- Teste: `packages/db/src/invariants/inv08-ddl-lint.int.test.ts`
+- Teste: `packages/db/src/invariants/inv09-audit-alive.int.test.ts`
+- Teste: `packages/db/src/invariants/run-invariants.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste do lint de DDL**
+
+Criar `packages/db/src/invariants/inv08-ddl-lint.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { ddlLintViolations } from './inv08-ddl-lint';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
+  it('o schema atual nao viola nenhuma das cinco proibicoes', async () => {
+    expect(await ddlLintViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova coluna cnpj numerica — CNPJ e alfanumerico desde 01/07/2026', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE app.__fornecedor (tenant_id uuid NOT NULL, id uuid NOT NULL, cnpj bigint)');
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain(
+      'app.__fornecedor.cnpj e bigint — CNPJ e alfanumerico (^[A-Z0-9]{12}[0-9]{2}$), varchar(14)',
+    );
+  });
+
+  it('reprova relogio dentro do schema tiss — vale a terminologia da data do atendimento', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE FUNCTION tiss.__procedimento_vigente() RETURNS date
+                     LANGUAGE sql STABLE AS $fn$ SELECT current_date $fn$`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain('tiss.__procedimento_vigente (function): le o relogio dentro do schema tiss');
+  });
+
+  it('reprova cast para date fora de app.local_date — e o que faz a guia sair com a data errada em Rio Branco', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE FUNCTION clin.__dia_do_atendimento(p_at timestamptz) RETURNS date
+                     LANGUAGE sql IMMUTABLE AS $fn$ SELECT p_at::date $fn$`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain(
+      'clin.__dia_do_atendimento (function): cast para date fora de app.local_date() — use a coluna occurred_date',
+    );
+  });
+
+  it('aceita a excecao declarada por COMMENT ON FUNCTION quando o limite vem do relogio, nao do evento', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE FUNCTION clin.__proxima_particao() RETURNS date
+                     LANGUAGE sql VOLATILE AS $fn$ SELECT (date_trunc('month', now()) + interval '1 month')::date $fn$`);
+      await c.query("COMMENT ON FUNCTION clin.__proxima_particao() IS 'clock-derived-date'");
+      return ddlLintViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('__proxima_particao'))).toEqual([]);
+  });
+
+  it('nao reclama de literal com sufixo ::date, que nao e derivacao de timestamptz', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__periodo (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, inicio date NOT NULL,
+        CONSTRAINT ck_inicio CHECK (inicio >= '2020-01-01'::date))`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('__periodo'))).toEqual([]);
+  });
+
+  it('reprova o valor atendimento em app.consent_type — bloquear atendimento esperando aceite contraria o art. 11 II f', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      // DDL e transacional: o tipo nasce e morre dentro desta transacao.
+      await c.query('DROP TYPE IF EXISTS app.consent_type');
+      await c.query("CREATE TYPE app.consent_type AS ENUM ('marketing','pesquisa','compartilhamento','atendimento')");
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain(
+      "app.consent_type contem o valor 'atendimento' — a base legal da assistencia e o art. 11 II f, nao consentimento",
+    );
+  });
+
+  it('aceita app.consent_type sem o valor atendimento', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('DROP TYPE IF EXISTS app.consent_type');
+      await c.query("CREATE TYPE app.consent_type AS ENUM ('marketing','pesquisa','compartilhamento')");
+      return ddlLintViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('consent_type'))).toEqual([]);
+  });
+
+  it('reprova indice de tabela multi-tenant que nao comeca por tenant_id', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE INDEX ix__patient_created ON clin.patient (created_at)');
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain(
+      'clin.patient / ix__patient_created: indice de tabela multi-tenant nao comeca por tenant_id (primeira coluna: created_at)',
+    );
+  });
+
+  it('aceita a excecao declarada por COMMENT ON INDEX quando a linha ja esta escopada pelo pai', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE INDEX ix__patient_created ON clin.patient (created_at)');
+      await c.query("COMMENT ON INDEX clin.ix__patient_created IS 'tenant-scoped-by-parent'");
+      return ddlLintViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('ix__patient_created'))).toEqual([]);
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv08-ddl-lint.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv08-ddl-lint"`.
+
+- [ ] **Passo 3: Implementar o lint**
+
+Criar `packages/db/src/invariants/inv08-ddl-lint.ts`:
+
+```ts
+import { TENANT_SCHEMAS } from './catalog';
+import type { Queryable } from '../queryable';
+
+/**
+ * Toda expressao PERSISTIDA no banco, de todas as origens onde um erro de DDL se
+ * esconde: corpo de funcao, DEFAULT de coluna, CHECK/EXCLUDE, definicao de view e
+ * de indice. O `comment` carrega a marca de excecao, quando ela existir.
+ */
+const EXPRESSIONS_SQL = `
+SELECT 'function' AS source_kind, n.nspname AS schema, p.proname AS object_name,
+       p.prosrc AS definition, obj_description(p.oid, 'pg_proc') AS comment
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = ANY ($1::text[])
+UNION ALL
+SELECT 'default', n.nspname, c.relname || '.' || a.attname,
+       pg_get_expr(d.adbin, d.adrelid), NULL
+  FROM pg_attrdef d
+  JOIN pg_class c     ON c.oid = d.adrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_attribute a ON a.attrelid = d.adrelid AND a.attnum = d.adnum
+ WHERE n.nspname = ANY ($1::text[])
+UNION ALL
+SELECT 'constraint', n.nspname, con.conname,
+       pg_get_constraintdef(con.oid), obj_description(con.oid, 'pg_constraint')
+  FROM pg_constraint con JOIN pg_namespace n ON n.oid = con.connamespace
+ WHERE n.nspname = ANY ($1::text[]) AND con.contype IN ('c', 'x')
+UNION ALL
+SELECT 'view', n.nspname, c.relname, pg_get_viewdef(c.oid), obj_description(c.oid, 'pg_class')
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[]) AND c.relkind IN ('v', 'm')
+UNION ALL
+SELECT 'index', n.nspname, i.relname, pg_get_indexdef(i.oid), obj_description(i.oid, 'pg_class')
+  FROM pg_index x
+  JOIN pg_class i     ON i.oid = x.indexrelid
+  JOIN pg_class c     ON c.oid = x.indrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])`;
+
+const CNPJ_SQL = `
+SELECT n.nspname AS schema, c.relname AS relation, a.attname AS column_name,
+       format_type(a.atttypid, a.atttypmod) AS type_name
+  FROM pg_attribute a
+  JOIN pg_class c     ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+   AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname LIKE '%cnpj%'
+   AND a.atttypid IN ('numeric'::regtype, 'bigint'::regtype, 'integer'::regtype,
+                      'smallint'::regtype, 'double precision'::regtype, 'real'::regtype)
+ ORDER BY 1, 2, 3`;
+
+const CONSENT_SQL = `
+SELECT e.enumlabel AS label
+  FROM pg_enum e
+  JOIN pg_type t      ON t.oid = e.enumtypid
+  JOIN pg_namespace n ON n.oid = t.typnamespace
+ WHERE n.nspname = 'app' AND t.typname = 'consent_type'`;
+
+const INDEX_SQL = `
+SELECT n.nspname AS schema,
+       c.relname AS relation,
+       i.relname AS index_name,
+       x.indisprimary AS is_primary,
+       x.indisunique  AS is_unique,
+       obj_description(i.oid, 'pg_class') AS comment,
+       coalesce((SELECT a.attname FROM pg_attribute a
+                  WHERE a.attrelid = x.indrelid AND a.attnum = x.indkey[0]),
+                '(expressao)') AS first_column
+  FROM pg_index x
+  JOIN pg_class i     ON i.oid = x.indexrelid
+  JOIN pg_class c     ON c.oid = x.indrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = ANY ($1::text[])
+   AND NOT c.relispartition
+   AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND EXISTS (SELECT 1 FROM pg_attribute a
+                WHERE a.attrelid = c.oid AND a.attname = 'tenant_id'
+                  AND a.attnum > 0 AND NOT a.attisdropped)
+ ORDER BY 1, 2, 3`;
+
+/** Literal de texto vira '' antes do teste: '2020-01-01'::date e valor, nao derivacao. */
+function stripLiterals(definition: string): string {
+  return definition.replace(/'[^']*'/g, "''").replace(/''\s*::\s*date\b/gi, "''");
+}
+
+const CLOCK_RE = /\b(now\s*\(\s*\)|current_date|current_timestamp|localtimestamp)\b/i;
+const DATE_CAST_RE = /(::\s*date\b|\bas\s+date\s*\))/i;
+
+export async function ddlLintViolations(db: Queryable): Promise<string[]> {
+  const out: string[] = [];
+  const schemas = [...TENANT_SCHEMAS];
+
+  const cnpj = await db.query<{ schema: string; relation: string; column_name: string; type_name: string }>(
+    CNPJ_SQL,
+    [schemas],
+  );
+  for (const row of cnpj.rows) {
+    out.push(
+      `${row.schema}.${row.relation}.${row.column_name} e ${row.type_name} — CNPJ e alfanumerico (^[A-Z0-9]{12}[0-9]{2}$), varchar(14)`,
+    );
+  }
+
+  const expressoes = await db.query<{
+    source_kind: string;
+    schema: string;
+    object_name: string;
+    definition: string | null;
+    comment: string | null;
+  }>(EXPRESSIONS_SQL, [schemas]);
+
+  for (const row of expressoes.rows) {
+    const corpo = stripLiterals(row.definition ?? '');
+    const rotulo = `${row.schema}.${row.object_name} (${row.source_kind})`;
+
+    if (row.schema === 'tiss' && CLOCK_RE.test(corpo)) {
+      out.push(`${rotulo}: le o relogio dentro do schema tiss`);
+    }
+
+    const eLocalDate = row.schema === 'app' && row.object_name === 'local_date';
+    const marcada = row.comment === 'clock-derived-date';
+    if (!eLocalDate && !marcada && DATE_CAST_RE.test(corpo)) {
+      out.push(`${rotulo}: cast para date fora de app.local_date() — use a coluna occurred_date`);
+    }
+  }
+
+  const consent = await db.query<{ label: string }>(CONSENT_SQL);
+  for (const row of consent.rows) {
+    if (row.label === 'atendimento') {
+      out.push(
+        "app.consent_type contem o valor 'atendimento' — a base legal da assistencia e o art. 11 II f, nao consentimento",
+      );
+    }
+  }
+
+  const indices = await db.query<{
+    schema: string;
+    relation: string;
+    index_name: string;
+    is_primary: boolean;
+    is_unique: boolean;
+    comment: string | null;
+    first_column: string;
+  }>(INDEX_SQL, [schemas]);
+
+  for (const row of indices.rows) {
+    if (row.is_primary || row.is_unique) continue; // chave global de UUIDv7, por decisao
+    if (row.comment === 'tenant-scoped-by-parent') continue;
+    if (row.first_column === 'tenant_id') continue;
+    out.push(
+      `${row.schema}.${row.relation} / ${row.index_name}: indice de tabela multi-tenant nao comeca por tenant_id (primeira coluna: ${row.first_column})`,
+    );
+  }
+
+  return out;
+}
+```
+
+- [ ] **Passo 4: Rodar e ver o lint pegar o primeiro caso real**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv08-ddl-lint.int.test.ts`
+
+Esperado: FALHA no primeiro teste, com `audit.ensure_partitions (function): cast para date fora de app.local_date() — use a coluna occurred_date`. Isto é o invariante funcionando: a função da migration 0009 deriva limite de partição de `now()` com `::date`. É legítimo, e o passo seguinte declara a exceção da única forma aceita — em migration.
+
+- [ ] **Passo 5: Escrever a migration que declara a exceção**
+
+Rodar: `pnpm db:new clock_derived_date_marks` — cria `packages/db/migrations/0022_clock_derived_date_marks.sql`. Preencher com exatamente:
+
+```sql
+-- 0022_clock_derived_date_marks.sql
+-- Invariante 8 (§3.13): nenhum `::date` sobre timestamptz fora de app.local_date().
+-- audit.ensure_partitions deriva LIMITE DE PARTICAO do relogio — decisao de
+-- armazenamento, nao data de evento clinico. A excecao e declarada aqui, em migration
+-- revisada com CODEOWNERS, e nunca numa allowlist dentro de arquivo de teste.
+--
+-- Quem for escrever funcao nova com esta marca, leia antes: se o `date` derivado
+-- aparece em guia, prontuario, recibo ou relatorio, a marca esta errada e a resposta
+-- e app.local_date(timestamptz, text) com o fuso da UNIDADE.
+COMMENT ON FUNCTION audit.ensure_partitions(int) IS 'clock-derived-date';
+```
+
+- [ ] **Passo 6: Aplicar a migration e confirmar que o lint passa**
+
+Rodar:
+
+```bash
+pnpm db:migrate
+pnpm test:int packages/db/src/invariants/inv08-ddl-lint.int.test.ts
+```
+
+Esperado: PASSA, 10 testes.
+
+- [ ] **Passo 7: Escrever o teste do invariante 9**
+
+Criar `packages/db/src/invariants/inv09-audit-alive.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { CRUD_PATIENT_A, CRUD_TENANT_A } from './fixtures';
+import { auditAliveViolations } from './inv09-audit-alive';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 9 — a trilha tem de estar viva, nao so existir', () => {
+  it('audit.log executado de verdade insere linha em audit.event', async () => {
+    const pool = catalogPool();
+    const antes = await pool.query<{ total: string }>('SELECT count(*)::text AS total FROM audit.event');
+
+    // UMA conexao do comeco ao fim: o contexto e transacional (TRUE) e o INSERT
+    // precisa commitar para o check enxergar o evento. Pool.query nao garante a
+    // mesma conexao entre chamadas, e audit.log rodaria sem tenant nenhum.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `SELECT set_config('app.tenant_id', $1, TRUE),
+                set_config('app.user_id', '', TRUE),
+                set_config('app.actor_kind', 'system', TRUE),
+                set_config('app.request_id', '', TRUE)`,
+        [CRUD_TENANT_A],
+      );
+      await client.query('SELECT audit.log($1, $2, $3, $4::uuid, $5, $6::jsonb)', [
+        'CONFORMANCE_PROBE',
+        'clin',
+        'patient',
+        CRUD_PATIENT_A,
+        'sucesso',
+        '{}',
+      ]);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    const depois = await pool.query<{ total: string }>('SELECT count(*)::text AS total FROM audit.event');
+    expect(Number(depois.rows[0]!.total)).toBe(Number(antes.rows[0]!.total) + 1);
+  });
+
+  it('o evento gravado carrega tipo, desfecho e referencia — e nenhum conteudo clinico', async () => {
+    const { rows } = await catalogPool().query<{
+      event_type: string;
+      outcome: string;
+      entity_schema: string;
+      entity_table: string;
+      entity_id: string;
+      meta: string;
+    }>(
+      `SELECT event_type, outcome, entity_schema, entity_table, entity_id::text, meta::text AS meta
+         FROM audit.event WHERE event_type = 'CONFORMANCE_PROBE'
+        ORDER BY occurred_at DESC, id DESC LIMIT 1`,
+    );
+    expect(rows[0]).toMatchObject({
+      event_type: 'CONFORMANCE_PROBE',
+      outcome: 'sucesso',
+      entity_schema: 'clin',
+      entity_table: 'patient',
+      entity_id: CRUD_PATIENT_A,
+      meta: '{}',
+    });
+  });
+
+  it('a trilha atual nao esta vazia', async () => {
+    expect(await auditAliveViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova trilha vazia — banco com a tabela e sem evento nao prova nada em auditoria', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      // TRUNCATE e transacional e nao dispara o trigger no_mutate, que e FOR EACH ROW:
+      // a trilha some so dentro desta transacao, que sempre e revertida.
+      await c.query('TRUNCATE audit.event');
+      return auditAliveViolations(c);
+    });
+    expect(violacoes).toEqual(['audit.event vazio — a trilha existe e ninguem escreve nela']);
+  });
+
+  it('reprova trilha parada ha mais tempo que o orcamento', async () => {
+    const violacoes = await auditAliveViolations(catalogPool(), { maxLagMinutes: -1 });
+    expect(violacoes.some((v) => v.startsWith('audit.event parado ha'))).toBe(true);
+  });
+});
+```
+
+- [ ] **Passo 8: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv09-audit-alive.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./inv09-audit-alive"`.
+
+- [ ] **Passo 9: Implementar o check da trilha viva**
+
+Criar `packages/db/src/invariants/inv09-audit-alive.ts`:
+
+```ts
+import type { Queryable } from '../queryable';
+
+export interface AuditAliveOptions {
+  /** Defasagem maxima aceita entre agora e o evento mais recente. Ausente = sem limite. */
+  maxLagMinutes?: number;
+}
+
+async function relationExists(db: Queryable, relation: string): Promise<boolean> {
+  const { rows } = await db.query<{ existe: boolean }>('SELECT to_regclass($1) IS NOT NULL AS existe', [relation]);
+  return rows[0]?.existe === true;
+}
+
+/**
+ * A trilha nao pode so existir: uma tabela audit.event vazia da impressao de controle
+ * e nao prova nada em auditoria. Num banco recem-migrado o check reprova de proposito —
+ * a resposta certa e exercitar audit.log, nao afrouxar o invariante.
+ */
+export async function auditAliveViolations(db: Queryable, opts: AuditAliveOptions = {}): Promise<string[]> {
+  if (!(await relationExists(db, 'audit.event'))) {
+    return ['audit.event nao existe — a trilha nao e opcional'];
+  }
+
+  const { rows } = await db.query<{ total: string; lag_minutes: string | null }>(
+    `SELECT count(*)::text AS total,
+            round(extract(epoch FROM (now() - max(occurred_at))) / 60)::text AS lag_minutes
+       FROM audit.event`,
+  );
+  const total = Number(rows[0]?.total ?? '0');
+  if (total === 0) {
+    return ['audit.event vazio — a trilha existe e ninguem escreve nela'];
+  }
+
+  const limite = opts.maxLagMinutes;
+  const atraso = rows[0]?.lag_minutes;
+  if (limite !== undefined && atraso !== null && atraso !== undefined && Number(atraso) > limite) {
+    return [`audit.event parado ha ${Number(atraso)} min (orcamento: ${limite} min)`];
+  }
+
+  return [];
+}
+```
+
+- [ ] **Passo 10: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/invariants/inv09-audit-alive.int.test.ts`
+
+Esperado: PASSA, 5 testes.
+
+- [ ] **Passo 11: Escrever o teste do runner único**
+
+Criar `packages/db/src/invariants/run-invariants.int.test.ts`:
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { CRUD_TENANT_A } from './fixtures';
+import { runAllInvariants } from './index';
+
+beforeAll(async () => {
+  // O invariante 9 exige trilha com evento. Um `pnpm db:migrate` recem-rodado ainda
+  // nao tem nenhum, e o runner reprovaria por um motivo que nao e o deste teste.
+  const client = await catalogPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `SELECT set_config('app.tenant_id', $1, TRUE),
+              set_config('app.user_id', '', TRUE),
+              set_config('app.actor_kind', 'system', TRUE)`,
+      [CRUD_TENANT_A],
+    );
+    await client.query('SELECT audit.log($1, $2, $3, NULL, $4, $5::jsonb)', [
+      'INVARIANTS_RUNNER_PROBE',
+      'audit',
+      'event',
+      'sucesso',
+      '{}',
+    ]);
+    await client.query('COMMIT');
+  } finally {
+    client.release();
+  }
+});
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('runner unico dos 10 invariantes', () => {
+  it('roda os dez, na ordem da §3.13, e o banco atual nao reprova em nenhum', async () => {
+    const resultados = await runAllInvariants(catalogPool());
+    expect(resultados.map((r) => r.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+    const reprovados = resultados.filter((r) => r.violations.length > 0);
+    expect(reprovados.map((r) => `#${r.number} ${r.name}: ${r.violations.join(' · ')}`)).toEqual([]);
+  });
+
+  it('pula a matriz CRUD quando nao recebe conexao do papel api, e diz que pulou', async () => {
+    const resultados = await runAllInvariants(catalogPool());
+    const matriz = resultados.find((r) => r.number === 10);
+    expect(matriz?.skipped).toBe(true);
+    expect(matriz?.detail).toContain('conexao do papel api');
+  });
+
+  it('reprova junto com o invariante que reprova — uma tabela sem RLS derruba o runner inteiro', async () => {
+    const resultados = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE clin.__sem_rls (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      return runAllInvariants(c);
+    });
+    const rls = resultados.find((r) => r.number === 1);
+    expect(rls?.violations).toContain('clin.__sem_rls: RLS nao habilitada');
+  });
+});
+```
+
+- [ ] **Passo 12: Implementar o runner e o comando**
+
+Criar `packages/db/src/invariants/index.ts`:
+
+```ts
+import type { Client } from 'pg';
+import { readRelations, rlsViolations } from './inv01-rls';
+import { fkViolations, orphanIdColumns, readForeignKeys } from './inv02-fk';
+import { forbiddenGrantViolations, roleViolations } from './inv03-roles';
+import { appendOnlyViolations, restrictivePolicyViolations } from './inv04-append-only';
+import { diffDeclaredGrants, readDeclaredGrants, readEffectiveGrants } from './inv07-privileges';
+import { ddlLintViolations } from './inv08-ddl-lint';
+import { auditAliveViolations } from './inv09-audit-alive';
+import { crudViolations, readCrudTargets, runCrudMatrix } from './inv10-crud-matrix';
+import { CRUD_TENANT_A, CRUD_TENANT_B, seedTwoTenants } from './fixtures';
+import type { Queryable } from '../queryable';
+
+export interface InvariantResult {
+  number: number;
+  name: string;
+  skipped: boolean;
+  detail: string;
+  violations: string[];
+}
+
+export interface RunInvariantsOptions {
+  /**
+   * Conexao do papel `api`. Sem ela o invariante 10 e PULADO: a matriz cruzada
+   * semeia dois tenants de sonda, e semear nao e coisa que se faz em producao sem
+   * quem executa ter pedido.
+   */
+  api?: Client;
+  /** Defasagem maxima da trilha, em minutos (invariante 9). */
+  auditMaxLagMinutes?: number;
+}
+
+function ok(number: number, name: string, violations: string[]): InvariantResult {
+  return {
+    number,
+    name,
+    skipped: false,
+    detail: violations.length === 0 ? 'sem violacao' : `${violations.length} violacao(oes)`,
+    violations,
+  };
+}
+
+/**
+ * Os 10 invariantes da §3.13 contra QUALQUER banco: o local, o do CI, o staging e o
+ * restaurado pelo ensaio da Task 48. Os nove primeiros so leem catalogo — nenhum
+ * deles escreve linha nenhuma.
+ */
+export async function runAllInvariants(
+  db: Queryable,
+  opts: RunInvariantsOptions = {},
+): Promise<InvariantResult[]> {
+  const resultados: InvariantResult[] = [];
+
+  resultados.push(ok(1, 'RLS habilitada, forcada e com policy', rlsViolations(await readRelations(db))));
+  resultados.push(
+    ok(2, 'FK composta e nenhuma coluna *_id orfa', [
+      ...fkViolations(await readForeignKeys(db)),
+      ...(await orphanIdColumns(db)),
+    ]),
+  );
+  resultados.push(ok(3, 'api sem posse, jobs unico com BYPASSRLS', await roleViolations(db)));
+  resultados.push(ok(4, 'append-only clinico', await appendOnlyViolations(db)));
+  resultados.push(ok(5, 'policy RESTRICTIVE no nucleo clinico', await restrictivePolicyViolations(db)));
+  resultados.push(ok(6, 'nenhum GRANT direto na trilha nem em rpt', await forbiddenGrantViolations(db)));
+  resultados.push(
+    ok(7, 'privilegios afirmados tabela a tabela', diffDeclaredGrants(await readEffectiveGrants(db), readDeclaredGrants())),
+  );
+  resultados.push(ok(8, 'lint de DDL', await ddlLintViolations(db)));
+  resultados.push(
+    ok(
+      9,
+      'trilha viva',
+      await auditAliveViolations(
+        db,
+        opts.auditMaxLagMinutes === undefined ? {} : { maxLagMinutes: opts.auditMaxLagMinutes },
+      ),
+    ),
+  );
+
+  if (!opts.api) {
+    resultados.push({
+      number: 10,
+      name: 'matriz CRUD cruzada',
+      skipped: true,
+      detail: 'pulado: exige conexao do papel api (rode com --with-crud)',
+      violations: [],
+    });
+    return resultados;
+  }
+
+  await seedTwoTenants(db);
+  const alvos = await readCrudTargets(db);
+  const celulas = await runCrudMatrix(opts.api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
+  const violacoes = crudViolations(celulas);
+  resultados.push({
+    number: 10,
+    name: 'matriz CRUD cruzada',
+    skipped: false,
+    detail: `${celulas.length} celulas em ${alvos.length} relacoes`,
+    violations: violacoes,
+  });
+
+  return resultados;
+}
+```
+
+Criar `packages/db/src/invariants-cli.ts`:
+
+```ts
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { apiClient, catalogPool, closeCatalogPool } from './invariants/catalog';
+import { runAllInvariants } from './invariants/index';
+
+/**
+ * pnpm db:invariants              — os 9 invariantes de catalogo, so leitura
+ * pnpm db:invariants --with-crud  — mais a matriz CRUD cruzada (semeia dois tenants de sonda)
+ */
+const envPath = resolve(process.cwd(), '.env');
+if (existsSync(envPath)) {
+  process.loadEnvFile(envPath);
+}
+
+const comCrud = process.argv.includes('--with-crud');
+const api = comCrud ? await apiClient() : undefined;
+
+try {
+  const resultados = await runAllInvariants(catalogPool(), api ? { api } : {});
+
+  for (const r of resultados) {
+    const rotulo = r.skipped ? 'PULADO' : r.violations.length === 0 ? 'OK' : 'REPROVA';
+    console.log(`#${String(r.number).padStart(2, '0')} ${rotulo.padEnd(7)} ${r.name} — ${r.detail}`);
+    for (const v of r.violations) {
+      console.error(`        ${v}`);
+    }
+  }
+
+  const reprovados = resultados.filter((r) => r.violations.length > 0);
+  if (reprovados.length > 0) {
+    console.error(
+      `\n${reprovados.length} invariante(s) reprovado(s). Nenhum deles se conserta editando o teste: ` +
+        'a correcao e na migration que criou a relacao, o GRANT ou a policy.',
+    );
+    process.exitCode = 1;
+  } else {
+    console.log('\ntodos os invariantes da §3.13 verdes');
+  }
+} finally {
+  await api?.end();
+  await closeCatalogPool();
+}
+```
+
+Modificar `package.json` (raiz), bloco `"scripts"`, acrescentando a linha:
+
+```json
+    "db:invariants": "tsx packages/db/src/invariants-cli.ts"
+```
+
+Substituir o conteúdo de `packages/db/src/index.ts` por:
+
+```ts
+export { runMigrations, type MigrateOptions, type MigrateResult } from './migrate';
+export { businessPool, auditPool, closePools } from './pool';
+export { withTenantTx, preambleParams, type Actor, type TxClient } from './tx';
+export type { Queryable } from './queryable';
+export { runAllInvariants, type InvariantResult, type RunInvariantsOptions } from './invariants/index';
+```
+
+- [ ] **Passo 13: Rodar o runner e a suíte**
+
+Rodar:
+
+```bash
+pnpm test:int packages/db/src/invariants/run-invariants.int.test.ts
+pnpm db:invariants
+```
+
+Esperado: os testes passam (3 testes) e o comando imprime dez linhas — `#01` a `#09` com `OK` e `#10 PULADO`, terminando com `todos os invariantes da §3.13 verdes` e código de saída 0.
+
+- [ ] **Passo 14: Rodar o runner com a matriz e confirmar o exit code**
+
+Rodar: `pnpm db:invariants --with-crud`
+
+Esperado: as dez linhas com `OK`, agora com `#10 OK  matriz CRUD cruzada — N celulas em M relacoes`.
+
+- [ ] **Passo 15: Commitar**
+
+```bash
+git add packages/db/src/invariants/inv08-ddl-lint.ts packages/db/src/invariants/inv09-audit-alive.ts \
+        packages/db/src/invariants/index.ts packages/db/src/invariants-cli.ts \
+        packages/db/src/invariants/inv08-ddl-lint.int.test.ts \
+        packages/db/src/invariants/inv09-audit-alive.int.test.ts \
+        packages/db/src/invariants/run-invariants.int.test.ts \
+        packages/db/migrations/0022_clock_derived_date_marks.sql \
+        packages/db/src/index.ts package.json
+git commit -m "feat(db): lint DDL, assert the audit trail is alive and expose all ten invariants in a single runner"
+```
+
+---
+
+### Task 47: `pnpm arch:check` — setas só descem, irmão nunca importa irmão, sem ciclo
+
+**A sub-ordem dentro de L0, que o grafo da §2.2 não desenha, e que este plano já decidiu.** L0 tem três faixas, e a diferença entre elas é o que a Task 3 do plano já afirmou em prosa: **`packages/db` não importa `packages/kernel`** — são irmãos, e a §2.2 não abre exceção. A ordem é:
+
+- **base**: `kernel`, `events` — não importam pacote nenhum. `events` carrega contrato, sem comportamento.
+- **infraestrutura**: `db`, `audit` — **também não importam pacote nenhum, nem o kernel**. É por isso que a Fase 0 constrói o banco *antes* do kernel, e é por isso que `withTenantTx` relança o erro cru do PostgreSQL em vez de traduzir para erro de domínio: a tradução é responsabilidade de L3.
+- **serviços de L0**: `authn`, `authz`, `storage`, `jobs`, `outbox`, `integrations` — podem importar base e infraestrutura, nunca uns aos outros.
+
+Dentro de cada faixa a proibição é absoluta, **inclusive pelo `index.ts`** — permitir importar o barril do irmão para pegar um tipo é o caminho pelo qual o ciclo volta em seis meses.
+
+**Por que o teste cria o arquivo alvo também.** Um teste de violação que importa um módulo inexistente dispara a regra `sem-import-nao-resolvido`, e não a regra de camada que ele afirma verificar. Passaria verde com a configuração de camadas inteira quebrada. Por isso cada caso cria **os dois** arquivos e afirma explicitamente que a saída **não** contém `sem-import-nao-resolvido`.
+
+**Arquivos:**
+- Criar: `.dependency-cruiser.cjs`
+- Criar: `tools/arch/arch-check.test.ts`
+- Modificar: `package.json` (raiz) — blocos `scripts` e `devDependencies`
+
+- [ ] **Passo 1: Instalar o dependency-cruiser**
+
+```bash
+pnpm add -D -w dependency-cruiser
+```
+
+- [ ] **Passo 2: Escrever o teste que falha**
+
+Criar `tools/arch/arch-check.test.ts`:
+
+```ts
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const STUB = 'export const nada = null;\n';
+const TIMEOUT = 120_000;
+
+function archCheck(): { code: number; output: string } {
+  try {
+    const output = execFileSync('pnpm', ['arch:check'], { encoding: 'utf8', stdio: 'pipe' });
+    return { code: 0, output };
+  } catch (error) {
+    const e = error as { status?: number; stdout?: string; stderr?: string };
+    return { code: e.status ?? 1, output: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+  }
+}
+
+/**
+ * Cria TODOS os arquivos de uma vez: o importador e o alvo. Sem o alvo, o import nao
+ * resolve e o depcruise reprova por `sem-import-nao-resolvido` — o teste passaria sem
+ * nunca exercitar a regra de camada, que e o que ele existe para verificar.
+ */
+function withTempFiles(arquivos: ReadonlyArray<readonly [string, string]>, fn: () => void): void {
+  for (const [caminho, conteudo] of arquivos) {
+    mkdirSync(join(caminho, '..'), { recursive: true });
+    writeFileSync(caminho, conteudo, 'utf8');
+  }
+  try {
+    fn();
+  } finally {
+    for (const [caminho] of arquivos) rmSync(caminho, { force: true });
+  }
+}
+
+describe('arch:check — o grafo de modulos e verificado, nao combinado', () => {
+  it(
+    'o repositorio atual respeita as camadas',
+    () => {
+      const { code, output } = archCheck();
+      expect(output).not.toMatch(/error/i);
+      expect(code).toBe(0);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'reprova import ascendente: L0 nao conhece L1',
+    () => {
+      withTempFiles(
+        [
+          [join(process.cwd(), 'packages/patients/src/__arch_target__.ts'), STUB],
+          [
+            join(process.cwd(), 'packages/authn/src/__arch_violation__.ts'),
+            "import { nada } from '../../patients/src/__arch_target__';\nexport const x = nada;\n",
+          ],
+        ],
+        () => {
+          const { code, output } = archCheck();
+          expect(code).not.toBe(0);
+          expect(output).not.toMatch(/sem-import-nao-resolvido/);
+          expect(output).toMatch(/setas-so-descem/);
+        },
+      );
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'reprova import entre irmaos, mesmo passando pelo index.ts — e por ai que o ciclo volta',
+    () => {
+      withTempFiles(
+        [
+          [join(process.cwd(), 'packages/authz/src/__arch_target__.ts'), STUB],
+          [
+            join(process.cwd(), 'packages/authn/src/__arch_violation__.ts'),
+            "import { nada } from '../../authz/src/__arch_target__';\nexport const x = nada;\n",
+          ],
+        ],
+        () => {
+          const { code, output } = archCheck();
+          expect(code).not.toBe(0);
+          expect(output).not.toMatch(/sem-import-nao-resolvido/);
+          expect(output).toMatch(/irmao-nao-importa-irmao/);
+        },
+      );
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'reprova packages/db importando packages/kernel — irmaos em L0, sem excecao',
+    () => {
+      withTempFiles(
+        [
+          [join(process.cwd(), 'packages/kernel/src/__arch_target__.ts'), STUB],
+          [
+            join(process.cwd(), 'packages/db/src/__arch_violation__.ts'),
+            "import { nada } from '../../kernel/src/__arch_target__';\nexport const x = nada;\n",
+          ],
+        ],
+        () => {
+          const { code, output } = archCheck();
+          expect(code).not.toBe(0);
+          expect(output).not.toMatch(/sem-import-nao-resolvido/);
+          expect(output).toMatch(/db-e-audit-nao-importam-irmao/);
+        },
+      );
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'reprova import horizontal em L2, onde o grafo tem zero arestas por decisao',
+    () => {
+      withTempFiles(
+        [
+          [join(process.cwd(), 'packages/emr/src/__arch_target__.ts'), STUB],
+          [
+            join(process.cwd(), 'packages/billing/src/__arch_violation__.ts'),
+            "import { nada } from '../../emr/src/__arch_target__';\nexport const x = nada;\n",
+          ],
+        ],
+        () => {
+          const { code, output } = archCheck();
+          expect(code).not.toBe(0);
+          expect(output).not.toMatch(/sem-import-nao-resolvido/);
+          expect(output).toMatch(/irmao-nao-importa-irmao/);
+        },
+      );
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'reprova web importando db — web nao recebe DATABASE_URL por task role',
+    () => {
+      withTempFiles(
+        [
+          [join(process.cwd(), 'packages/db/src/__arch_target__.ts'), STUB],
+          [
+            join(process.cwd(), 'apps/web/src/__arch_violation__.ts'),
+            "import { nada } from '../../../packages/db/src/__arch_target__';\nexport const x = nada;\n",
+          ],
+        ],
+        () => {
+          const { code, output } = archCheck();
+          expect(code).not.toBe(0);
+          expect(output).not.toMatch(/sem-import-nao-resolvido/);
+          expect(output).toMatch(/web-nao-fala-com-banco/);
+        },
+      );
+    },
+    TIMEOUT,
+  );
+});
+```
+
+- [ ] **Passo 3: Rodar e confirmar que falha**
+
+Rodar: `pnpm test tools/arch/arch-check.test.ts`
+
+Esperado: FALHA com `ERR_PNPM_NO_SCRIPT  Missing script: arch:check` na saída capturada de todos os casos.
+
+- [ ] **Passo 4: Escrever a configuração completa**
+
+Criar `.dependency-cruiser.cjs`:
+
+```js
+/**
+ * Grafo de modulos do Cadencia (§2.2). Tres regras mecanicas:
+ *   1. Setas so descem — nenhum import ascendente.
+ *   2. Irmao nunca importa irmao, nem pelo index.ts. Sem excecao.
+ *   3. Composicao entre irmaos e responsabilidade de L3.
+ *
+ * L0 tem tres faixas, e a diferenca entre elas ja esta escrita no plano da Fase 0:
+ *   base   = kernel, events            -> nao importam pacote nenhum
+ *   infra  = db, audit                 -> TAMBEM nao importam pacote nenhum, nem o kernel
+ *   serv   = authn, authz, storage, jobs, outbox, integrations -> importam base e infra
+ *
+ * `packages/db` importar `packages/kernel` e violacao: sao irmaos em L0, e e por isso
+ * que a Fase 0 constroi o banco antes do kernel e que withTenantTx relanca o erro cru
+ * do PostgreSQL em vez de traduzir para erro de dominio.
+ */
+const BASE = 'kernel|events';
+const INFRA = 'db|audit';
+const SERV = 'authn|authz|storage|jobs|outbox|integrations';
+const L1 = 'identity|tenancy|people|patients|catalogs';
+const L2 =
+  'scheduling|emr|documents|prescriptions|billing|payments|tiss|messaging|inventory|reports|export|retention';
+const L3 = 'web|api|worker';
+
+/** Proibe irmao importar irmao usando a retrorreferencia $1 do grupo casado em `from`. */
+function siblings(nome, grupo) {
+  return {
+    name: `irmao-nao-importa-irmao-${nome}`,
+    severity: 'error',
+    comment:
+      'Irmao nunca importa irmao — nem o index.ts. Composicao entre irmaos e responsabilidade de L3.',
+    from: { path: `^packages/(${grupo})/` },
+    to: { path: `^packages/(${grupo})/`, pathNot: '^packages/$1/' },
+  };
+}
+
+/** Proibe import ascendente de uma faixa para outra. */
+function upward(nome, de, para) {
+  return {
+    name: `setas-so-descem-${nome}`,
+    severity: 'error',
+    comment: 'Import ascendente: a camada de baixo nao pode conhecer a de cima.',
+    from: { path: `^packages/(${de})/` },
+    to: { path: `^packages/(${para})/` },
+  };
+}
+
+module.exports = {
+  forbidden: [
+    {
+      name: 'sem-ciclo',
+      severity: 'error',
+      comment: 'Ciclo de dependencia: o grafo de modulos e um DAG estrito.',
+      from: {},
+      to: { circular: true },
+    },
+    {
+      name: 'sem-import-nao-resolvido',
+      severity: 'error',
+      comment: 'Import que nao resolve para arquivo nem para pacote instalado.',
+      from: {},
+      to: { couldNotResolve: true },
+    },
+
+    {
+      name: 'folha-nao-importa-pacote',
+      severity: 'error',
+      comment: 'kernel e events sao folhas do grafo: zero dependencia de pacote do repositorio.',
+      from: { path: `^packages/(${BASE})/` },
+      to: { path: '^packages/', pathNot: '^packages/$1/' },
+    },
+    {
+      name: 'db-e-audit-nao-importam-irmao',
+      severity: 'error',
+      comment:
+        'db e audit nao importam pacote nenhum, nem o kernel: sao irmaos em L0 e a §2.2 nao abre excecao. ' +
+        'Result, uuidv7 e a traducao de erro entram na borda, em L3.',
+      from: { path: `^packages/(${INFRA})/` },
+      to: { path: '^packages/', pathNot: '^packages/$1/' },
+    },
+
+    siblings('L0', SERV),
+    siblings('L1', L1),
+    siblings('L2', L2),
+    {
+      name: 'irmao-nao-importa-irmao-L3',
+      severity: 'error',
+      comment: 'web, api e worker sao processos separados: falam por HTTP, nao por import.',
+      from: { path: `^apps/(${L3})/` },
+      to: { path: `^apps/(${L3})/`, pathNot: '^apps/$1/' },
+    },
+
+    upward('L0-para-L1-L2', `${BASE}|${INFRA}|${SERV}`, `${L1}|${L2}`),
+    upward('L1-para-L2', L1, L2),
+    {
+      name: 'setas-so-descem-nada-importa-apps',
+      severity: 'error',
+      comment: 'Nenhum pacote importa app: L3 e o topo e so ele compoe.',
+      from: { path: '^packages/' },
+      to: { path: `^apps/(${L3})/` },
+    },
+
+    {
+      name: 'web-nao-fala-com-banco',
+      severity: 'error',
+      comment: 'So api e worker abrem conexao: web nao recebe DATABASE_URL por task role (§2.1).',
+      from: { path: '^apps/web/' },
+      to: { path: '^packages/(db|jobs|outbox)/' },
+    },
+  ],
+
+  options: {
+    doNotFollow: { path: 'node_modules' },
+    exclude: { path: '(^|/)(dist|coverage|\\.next|\\.turbo)/' },
+    tsPreCompilationDeps: true,
+    tsConfig: { fileName: 'tsconfig.json' },
+    enhancedResolveOptions: {
+      exportsFields: ['exports'],
+      conditionNames: ['import', 'require', 'node', 'default'],
+    },
+    reporterOptions: { text: { highlightFocused: true } },
+  },
+};
+```
+
+- [ ] **Passo 5: Registrar o comando**
+
+Modificar `package.json` (raiz), bloco `"scripts"`, acrescentando a linha:
+
+```json
+    "arch:check": "depcruise --config .dependency-cruiser.cjs --output-type err-long packages apps"
+```
+
+- [ ] **Passo 6: Rodar e confirmar que passa**
+
+Rodar: `pnpm arch:check`
+
+Esperado: nenhuma violação e código de saída 0.
+
+Rodar: `pnpm test tools/arch/arch-check.test.ts`
+
+Esperado: PASSA, 6 testes. Os arquivos de violação nascem e morrem dentro de cada caso (`finally` com `rmSync`); os diretórios `packages/*/src` e `apps/*/src` já existem desde a Task 1.
+
+- [ ] **Passo 7: Fazer o `prepush` rodar o `arch:check`**
+
+A Definição de pronto registra, textualmente, que `prepush` nasceu como `pnpm lint:session-guc && pnpm test:iso` **porque `arch:check` ainda não existia**. Agora existe, e ele é o mais barato dos três — roda em segundos e pega a classe de erro mais cara de desfazer.
+
+Modificar `package.json` (raiz), bloco `"scripts"`, substituindo a linha do `prepush` por:
+
+```json
+    "prepush": "pnpm arch:check && pnpm lint:session-guc && pnpm test:iso"
+```
+
+Rodar: `pnpm prepush`
+
+Esperado: os três terminam com código 0, nesta ordem: grafo de módulos, lint do GUC de sessão, suíte de isolamento.
+
+- [ ] **Passo 8: Commitar**
+
+```bash
+git add .dependency-cruiser.cjs tools/arch/arch-check.test.ts package.json pnpm-lock.yaml
+git commit -m "build: enforce the module DAG with dependency-cruiser and wire arch:check into prepush"
+```
+
+---
+
+### Task 48: `verify-restore`, `pnpm restore:drill` e o workflow do GitHub Actions
+
+**Por que o ensaio é inegociável.** Perder prontuário é evento de extinção do negócio: a guarda é de 20 anos por lei (Lei 13.787/2018, art. 6 §5), o acervo é append-only e não existe versão de papel para reconstituir. E **backup nunca testado não é backup — é um arquivo com nome de backup**. O ensaio restaura o snapshot **em VPC isolada** (nunca ao lado da produção, onde um erro de endpoint escreve no banco vivo), roda `verify-restore` **e o runner dos dez invariantes** contra a instância restaurada, mede o tempo até a primeira consulta boa e destrói a instância. Mensal; trimestral só a partir do segundo provedor, senão a cópia externa nunca foi testada.
+
+**Por que o ensaio roda os invariantes também.** Restauração que devolve os bytes mas perde `FORCE ROW LEVEL SECURITY`, ou volta com um GRANT que não estava lá, é restauração que só se descobre errada no dia em que ela for usada de verdade — que é, por definição, o pior dia possível.
+
+**Arquivos:**
+- Criar: `packages/db/src/verify-restore.ts`
+- Criar: `scripts/restore-drill.ts`
+- Criar: `.github/workflows/ci.yml`
+- Criar: `.github/workflows/agendado.yml`
+- Modificar: `packages/db/src/index.ts`
+- Modificar: `tsconfig.json` (campo `include`)
+- Modificar: `package.json` (raiz) — blocos `scripts` e `devDependencies`
+- Teste: `packages/db/src/verify-restore.int.test.ts`
+
+- [ ] **Passo 1: Escrever o teste do verificador**
+
+Criar `packages/db/src/verify-restore.int.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './invariants/catalog';
+import { verifyRestore } from './verify-restore';
+import type { CheckResult } from './verify-restore';
+
+const TENANT = '01930000-0000-7000-8000-0000000ce001';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+function check(resultados: readonly CheckResult[], nome: string): CheckResult {
+  const achado = resultados.find((r) => r.name === nome);
+  expect(achado, `check ${nome} nao foi executado`).toBeDefined();
+  return achado!;
+}
+
+describe('verify-restore — restauracao so vale se for verificada', () => {
+  it('confirma que os oito schemas do desenho vieram inteiros', async () => {
+    const resultados = await verifyRestore(catalogPool());
+    const schemas = check(resultados, 'schemas-presentes');
+    expect(schemas.ok).toBe(true);
+    expect(schemas.skipped).toBe(false);
+  });
+
+  it('aprova quando a trilha tem evento — e o estado esperado de um banco restaurado de verdade', async () => {
+    const resultados = await verifyRestore(catalogPool());
+    const trilha = check(resultados, 'trilha-nao-vazia');
+    expect(trilha.skipped).toBe(false);
+    expect(trilha.ok).toBe(true);
+    expect(trilha.detail).toMatch(/^[1-9]\d* evento\(s\) em audit\.event$/);
+  });
+
+  it('reprova trilha vazia — banco restaurado sem trilha nao prova nada em auditoria', async () => {
+    const resultados = await inRollbackTx(async (c) => {
+      // TRUNCATE e transacional e nao dispara o trigger de linha `no_mutate`:
+      // a trilha some so dentro desta transacao, que sempre e revertida.
+      await c.query('TRUNCATE audit.event');
+      return verifyRestore(c);
+    });
+    const trilha = check(resultados, 'trilha-nao-vazia');
+    expect(trilha.skipped).toBe(false);
+    expect(trilha.ok).toBe(false);
+    expect(trilha.detail).toBe('0 evento(s) em audit.event');
+  });
+
+  it('aprova cadeia de selo encadeada corretamente', async () => {
+    const resultados = await inRollbackTx(async (c) => {
+      await c.query(
+        `INSERT INTO audit.seal (tenant_id, seal_date, first_id, last_id, row_count,
+                                 chain_hash, prev_chain_hash, snapshot_xmin)
+              VALUES ($1, DATE '2026-08-01', 1, 10, 10, '\\x01'::bytea, NULL,          1),
+                     ($1, DATE '2026-08-02', 11, 20, 10, '\\x02'::bytea, '\\x01'::bytea, 2)`,
+        [TENANT],
+      );
+      return verifyRestore(c);
+    });
+    expect(check(resultados, 'cadeia-de-selo').ok).toBe(true);
+  });
+
+  it('reprova cadeia de selo rompida — e a unica prova de que a trilha nao foi adulterada', async () => {
+    const resultados = await inRollbackTx(async (c) => {
+      await c.query(
+        `INSERT INTO audit.seal (tenant_id, seal_date, first_id, last_id,row_count,
+                                 chain_hash, prev_chain_hash, snapshot_xmin)
+              VALUES ($1, DATE '2026-08-01', 1, 10, 10, '\\x01'::bytea, NULL,          1),
+                     ($1, DATE '2026-08-02', 11, 20, 10, '\\x02'::bytea, '\\xff'::bytea, 2)`,
+        [TENANT],
+      );
+      return verifyRestore(c);
+    });
+    const cadeia = check(resultados, 'cadeia-de-selo');
+    expect(cadeia.ok).toBe(false);
+    expect(cadeia.detail).toContain('2026-08-02');
+  });
+
+  it('pula em silencio o que ainda nao existe nesta fase, e diz que pulou', async () => {
+    const resultados = await verifyRestore(catalogPool());
+    const versoes = check(resultados, 'cadeia-de-versao-clinica');
+    expect(versoes.skipped).toBe(true);
+    expect(versoes.detail).toContain('clin.encounter_version');
+  });
+});
+```
+
+- [ ] **Passo 2: Rodar e confirmar que falha**
+
+Rodar: `pnpm test:int packages/db/src/verify-restore.int.test.ts`
+
+Esperado: FALHA com `Failed to resolve import "./verify-restore"`.
+
+- [ ] **Passo 3: Implementar o verificador**
+
+Criar `packages/db/src/verify-restore.ts`:
+
+```ts
+import type { Queryable } from './queryable';
+
+export type { Queryable };
+
+export interface CheckResult {
+  name: string;
+  ok: boolean;
+  skipped: boolean;
+  detail: string;
+}
+
+export interface VerifyRestoreOptions {
+  /** Orcamento de RPO em minutos. Ausente = nao mede defasagem (uso local). */
+  rpoMinutes?: number;
+}
+
+/** Os oito schemas criados pela migration 0002. `pgboss` fica de fora: fila e reconstruivel. */
+const REQUIRED_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'ref', 'rpt', 'id'];
+
+async function relationExists(db: Queryable, relation: string): Promise<boolean> {
+  const { rows } = await db.query<{ existe: boolean }>('SELECT to_regclass($1) IS NOT NULL AS existe', [relation]);
+  return rows[0]?.existe === true;
+}
+
+async function schemasPresent(db: Queryable): Promise<CheckResult> {
+  const { rows } = await db.query<{ nspname: string }>(
+    'SELECT nspname FROM pg_namespace WHERE nspname = ANY ($1::text[])',
+    [REQUIRED_SCHEMAS],
+  );
+  const achados = new Set(rows.map((r) => r.nspname));
+  const faltando = REQUIRED_SCHEMAS.filter((s) => !achados.has(s));
+  return {
+    name: 'schemas-presentes',
+    ok: faltando.length === 0,
+    skipped: false,
+    detail: faltando.length === 0 ? `${REQUIRED_SCHEMAS.length} schemas presentes` : `faltando: ${faltando.join(', ')}`,
+  };
+}
+
+async function trailNotEmpty(db: Queryable): Promise<CheckResult> {
+  if (!(await relationExists(db, 'audit.event'))) {
+    return { name: 'trilha-nao-vazia', ok: false, skipped: true, detail: 'audit.event ausente nesta fase' };
+  }
+  const { rows } = await db.query<{ total: string }>('SELECT count(*)::text AS total FROM audit.event');
+  const total = Number(rows[0]?.total ?? '0');
+  return {
+    name: 'trilha-nao-vazia',
+    ok: total > 0,
+    skipped: false,
+    detail: `${total} evento(s) em audit.event`,
+  };
+}
+
+async function sealChain(db: Queryable): Promise<CheckResult> {
+  if (!(await relationExists(db, 'audit.seal'))) {
+    return { name: 'cadeia-de-selo', ok: true, skipped: true, detail: 'audit.seal ausente nesta fase' };
+  }
+  const { rows } = await db.query<{ tenant_id: string; seal_date: string }>(
+    `SELECT s.tenant_id, to_char(s.seal_date, 'YYYY-MM-DD') AS seal_date
+       FROM audit.seal s
+       JOIN LATERAL (
+         SELECT p.chain_hash FROM audit.seal p
+          WHERE p.tenant_id = s.tenant_id AND p.seal_date < s.seal_date
+          ORDER BY p.seal_date DESC LIMIT 1
+       ) anterior ON true
+      WHERE s.prev_chain_hash IS DISTINCT FROM anterior.chain_hash
+      ORDER BY 1, 2`,
+  );
+  return {
+    name: 'cadeia-de-selo',
+    ok: rows.length === 0,
+    skipped: false,
+    detail:
+      rows.length === 0
+        ? 'cadeia de selo integra'
+        : `cadeia rompida em: ${rows.map((r) => `${r.tenant_id}/${r.seal_date}`).join(', ')}`,
+  };
+}
+
+async function clinicalVersionChain(db: Queryable): Promise<CheckResult> {
+  if (!(await relationExists(db, 'clin.encounter_version'))) {
+    return {
+      name: 'cadeia-de-versao-clinica',
+      ok: true,
+      skipped: true,
+      detail: 'clin.encounter_version ausente nesta fase',
+    };
+  }
+  const { rows } = await db.query<{ id: string; version_no: number }>(
+    `SELECT v.id, v.version_no
+       FROM clin.encounter_version v
+       JOIN clin.encounter_version p
+         ON p.encounter_id = v.encounter_id AND p.version_no = v.version_no - 1
+      WHERE v.prev_hash IS DISTINCT FROM p.content_hash
+      ORDER BY 1`,
+  );
+  return {
+    name: 'cadeia-de-versao-clinica',
+    ok: rows.length === 0,
+    skipped: false,
+    detail:
+      rows.length === 0
+        ? 'cadeia de hash das versoes integra'
+        : `elos rompidos: ${rows.map((r) => `${r.id}#${r.version_no}`).join(', ')}`,
+  };
+}
+
+async function rpoWithinBudget(db: Queryable, rpoMinutes: number | undefined): Promise<CheckResult> {
+  if (rpoMinutes === undefined) {
+    return { name: 'rpo', ok: true, skipped: true, detail: 'sem orcamento de RPO declarado' };
+  }
+  if (!(await relationExists(db, 'audit.event'))) {
+    return { name: 'rpo', ok: true, skipped: true, detail: 'audit.event ausente nesta fase' };
+  }
+  const { rows } = await db.query<{ lag_minutes: string | null }>(
+    `SELECT round(extract(epoch FROM (now() - max(occurred_at))) / 60)::text AS lag_minutes FROM audit.event`,
+  );
+  const atraso = rows[0]?.lag_minutes;
+  if (atraso === null || atraso === undefined) {
+    return { name: 'rpo', ok: true, skipped: true, detail: 'nenhum evento para medir defasagem' };
+  }
+  const minutos = Number(atraso);
+  return {
+    name: 'rpo',
+    ok: minutos <= rpoMinutes,
+    skipped: false,
+    detail: `evento mais recente tem ${minutos} min (orcamento: ${rpoMinutes} min)`,
+  };
+}
+
+/**
+ * Restauracao so vale se for verificada. Cada check diz tres coisas: passou, foi
+ * pulado (o objeto ainda nao existe nesta fase) e por que — check pulado em silencio
+ * e o modo de falha que faz um ensaio inteiro passar sem verificar nada.
+ */
+export async function verifyRestore(db: Queryable, opts: VerifyRestoreOptions = {}): Promise<CheckResult[]> {
+  return [
+    await schemasPresent(db),
+    await trailNotEmpty(db),
+    await sealChain(db),
+    await clinicalVersionChain(db),
+    await rpoWithinBudget(db, opts.rpoMinutes),
+  ];
+}
+```
+
+- [ ] **Passo 4: Rodar e confirmar que passa**
+
+Rodar: `pnpm test:int packages/db/src/verify-restore.int.test.ts`
+
+Esperado: PASSA, 6 testes.
+
+- [ ] **Passo 5: Publicar no barril do pacote**
+
+Substituir o conteúdo de `packages/db/src/index.ts` por:
+
+```ts
+export { runMigrations, type MigrateOptions, type MigrateResult } from './migrate';
+export { businessPool, auditPool, closePools } from './pool';
+export { withTenantTx, preambleParams, type Actor, type TxClient } from './tx';
+export type { Queryable } from './queryable';
+export { runAllInvariants, type InvariantResult, type RunInvariantsOptions } from './invariants/index';
+export { verifyRestore, type CheckResult, type VerifyRestoreOptions } from './verify-restore';
+```
+
+Rodar: `pnpm typecheck`
+
+Esperado: sem saída (zero erros de tipo).
+
+- [ ] **Passo 6: Instalar o SDK e fazer o `typecheck` enxergar `scripts/`**
+
+```bash
+pnpm add -D -w @aws-sdk/client-rds
+```
+
+Modificar `tsconfig.json` (raiz), campo `include`, acrescentando `scripts/**/*.ts`:
+
+```json
+  "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "apps/*/src/**/*.ts", "scripts/**/*.ts", "tools/**/*.ts", "*.config.ts"]
+```
+
+Sem essa linha, `pnpm typecheck` ignora em silêncio o script do passo seguinte — e um erro de tipo no orquestrador do ensaio só apareceria no dia 1 do mês, às 06:00 UTC, sem ninguém olhando.
+
+- [ ] **Passo 7: Escrever o orquestrador do ensaio**
+
+Criar `scripts/restore-drill.ts`:
+
+```ts
+/**
+ * pnpm restore:drill — restaura o snapshot automatico mais recente numa VPC ISOLADA,
+ * roda verify-restore e os 10 invariantes, grava o relatorio e destroi a instancia.
+ *
+ * A VPC isolada nao e zelo: restaurar ao lado da producao coloca um endpoint quase
+ * identico ao lado do verdadeiro, e o erro de digitacao escreve no banco vivo.
+ *
+ * O relogio aqui MEDE (performance.now) e carimba um relatorio operacional. Nada
+ * disto vira dado de dominio: o carimbo persistido vem sempre do PostgreSQL.
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  DeleteDBInstanceCommand,
+  DescribeDBInstancesCommand,
+  DescribeDBSnapshotsCommand,
+  RDSClient,
+  RestoreDBInstanceFromDBSnapshotCommand,
+  waitUntilDBInstanceAvailable,
+} from '@aws-sdk/client-rds';
+import { Client } from 'pg';
+import { runAllInvariants, type InvariantResult } from '../packages/db/src/invariants/index';
+import { verifyRestore, type CheckResult } from '../packages/db/src/verify-restore';
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === '') {
+    throw new Error(`variavel de ambiente obrigatoria ausente: ${name}`);
+  }
+  return value;
+}
+
+const REGION = process.env.AWS_REGION ?? 'sa-east-1';
+const SOURCE_INSTANCE = requireEnv('DRILL_SOURCE_DB_INSTANCE');
+const SUBNET_GROUP = requireEnv('DRILL_SUBNET_GROUP');
+const SECURITY_GROUP = requireEnv('DRILL_SECURITY_GROUP');
+const DB_USER = requireEnv('DRILL_DB_USER');
+const DB_PASSWORD = requireEnv('DRILL_DB_PASSWORD');
+const RTO_BUDGET_MINUTES = Number(process.env.DRILL_RTO_BUDGET_MINUTES ?? '120');
+const RPO_BUDGET_MINUTES = Number(process.env.DRILL_RPO_BUDGET_MINUTES ?? '15');
+
+const rds = new RDSClient({ region: REGION });
+const stamp = new Date().toISOString().slice(0, 10);
+const target = `cadencia-restore-drill-${stamp}`;
+
+async function latestSnapshot(): Promise<string> {
+  const { DBSnapshots = [] } = await rds.send(
+    new DescribeDBSnapshotsCommand({ DBInstanceIdentifier: SOURCE_INSTANCE, SnapshotType: 'automated' }),
+  );
+  const maisNovo = DBSnapshots.filter((s) => s.Status === 'available').sort(
+    (a, b) => (b.SnapshotCreateTime?.getTime() ?? 0) - (a.SnapshotCreateTime?.getTime() ?? 0),
+  )[0];
+  if (!maisNovo?.DBSnapshotIdentifier) {
+    throw new Error(`nenhum snapshot disponivel para ${SOURCE_INSTANCE}`);
+  }
+  return maisNovo.DBSnapshotIdentifier;
+}
+
+async function restore(snapshotId: string): Promise<string> {
+  await rds.send(
+    new RestoreDBInstanceFromDBSnapshotCommand({
+      DBInstanceIdentifier: target,
+      DBSnapshotIdentifier: snapshotId,
+      DBSubnetGroupName: SUBNET_GROUP,
+      VpcSecurityGroupIds: [SECURITY_GROUP],
+      PubliclyAccessible: false,
+      MultiAZ: false,
+      DeletionProtection: false,
+      Tags: [
+        { Key: 'cadencia:purpose', Value: 'restore-drill' },
+        { Key: 'cadencia:ephemeral', Value: 'true' },
+      ],
+    }),
+  );
+
+  await waitUntilDBInstanceAvailable(
+    { client: rds, maxWaitTime: RTO_BUDGET_MINUTES * 60 },
+    { DBInstanceIdentifier: target },
+  );
+
+  const { DBInstances = [] } = await rds.send(new DescribeDBInstancesCommand({ DBInstanceIdentifier: target }));
+  const endpoint = DBInstances[0]?.Endpoint;
+  if (!endpoint?.Address) throw new Error('instancia restaurada sem endpoint');
+  return `postgres://${DB_USER}:${encodeURIComponent(DB_PASSWORD)}@${endpoint.Address}:${endpoint.Port ?? 5432}/cadencia`;
+}
+
+async function destroy(): Promise<void> {
+  await rds
+    .send(
+      new DeleteDBInstanceCommand({
+        DBInstanceIdentifier: target,
+        SkipFinalSnapshot: true,
+        DeleteAutomatedBackups: true,
+      }),
+    )
+    .catch((error: Error) => console.error(`falha ao destruir ${target}: ${error.message}`));
+}
+
+async function main(): Promise<void> {
+  const inicio = performance.now();
+  let checks: CheckResult[] = [];
+  let invariantes: InvariantResult[] = [];
+  let erro: string | undefined;
+
+  try {
+    const snapshotId = await latestSnapshot();
+    console.log(`snapshot: ${snapshotId} -> instancia ${target} (VPC isolada, sem acesso publico)`);
+    const url = await restore(snapshotId);
+
+    const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: true } });
+    await client.connect();
+    try {
+      checks = await verifyRestore(client, { rpoMinutes: RPO_BUDGET_MINUTES });
+      // Restauracao que devolve os bytes e perde FORCE ROW LEVEL SECURITY so se
+      // descobre errada no dia em que o backup for usado de verdade.
+      invariantes = await runAllInvariants(client, { auditMaxLagMinutes: RPO_BUDGET_MINUTES });
+    } finally {
+      await client.end();
+    }
+  } catch (e) {
+    erro = (e as Error).message;
+  } finally {
+    await destroy();
+  }
+
+  const minutos = Math.round((performance.now() - inicio) / 60_000);
+  const rtoOk = minutos <= RTO_BUDGET_MINUTES;
+  const checksReprovados = checks.filter((c) => !c.ok && !c.skipped);
+  const invariantesReprovados = invariantes.filter((i) => i.violations.length > 0);
+
+  const relatorio = {
+    executadoEm: new Date().toISOString(),
+    instancia: target,
+    rtoMinutos: minutos,
+    rtoOrcamentoMinutos: RTO_BUDGET_MINUTES,
+    rtoOk,
+    erro: erro ?? null,
+    checks,
+    invariantes,
+  };
+
+  mkdirSync(join(process.cwd(), '.artifacts'), { recursive: true });
+  writeFileSync(
+    join(process.cwd(), '.artifacts', `restore-drill-${stamp}.json`),
+    `${JSON.stringify(relatorio, null, 2)}\n`,
+  );
+  console.log(JSON.stringify(relatorio, null, 2));
+
+  if (erro || !rtoOk || checksReprovados.length > 0 || invariantesReprovados.length > 0) {
+    console.error(
+      `ENSAIO REPROVADO — ${erro ?? ''} ${checksReprovados.map((c) => `${c.name}: ${c.detail}`).join(' · ')} ` +
+        `${invariantesReprovados.map((i) => `#${i.number} ${i.name}`).join(' · ')}`.trim(),
+    );
+    process.exitCode = 1;
+  } else {
+    console.log(`ENSAIO APROVADO em ${minutos} min`);
+  }
+}
+
+await main();
+```
+
+Modificar `package.json` (raiz), bloco `"scripts"`, acrescentando a linha:
+
+```json
+    "restore:drill": "tsx scripts/restore-drill.ts"
+```
+
+- [ ] **Passo 8: Provar que o script recusa rodar sem alvo declarado**
+
+Rodar: `pnpm restore:drill`
+
+Esperado: FALHA imediata com `variavel de ambiente obrigatoria ausente: DRILL_SOURCE_DB_INSTANCE`. O script recusa adivinhar a instância em vez de sair procurando — adivinhar, aqui, é apontar para produção.
+
+Rodar: `pnpm typecheck`
+
+Esperado: sem saída.
+
+- [ ] **Passo 9: Escrever o workflow de CI**
+
+Criar `.github/workflows/ci.yml`:
+
+```yaml
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
+jobs:
+  estatico:
+    name: tipos, unidade, lint estrutural e grafo de modulos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # `pnpm test` inclui tools/arch/arch-check.test.ts, que prova que a config
+      # do dependency-cruiser realmente reprova cada violacao que ela promete pegar.
+      - run: pnpm test
+      - name: 'lint:session-guc — `SET app.` so em packages/db/src/tx.ts'
+        run: pnpm lint:session-guc
+      - name: 'arch:check — setas so descem, irmao nunca importa irmao, sem ciclo'
+        run: pnpm arch:check
+
+  integracao:
+    name: integracao e os 10 invariantes contra PostgreSQL 18
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cadencia
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cadencia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: .env do CI
+        run: |
+          {
+            echo "DATABASE_URL_ADMIN=postgres://postgres:postgres@localhost:5433/cadencia"
+            echo "DATABASE_URL=postgres://api:api@localhost:5433/cadencia"
+            echo "DATABASE_URL_JOBS=postgres://jobs:jobs@localhost:5433/cadencia"
+          } > .env
+
+      - name: cluster em UTC, como o compose local
+        run: psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1
+             -c "ALTER DATABASE cadencia SET timezone TO 'UTC'"
+
+      - name: db:migrate — as migrations reais, em ordem
+        run: pnpm db:migrate
+
+      - name: senha para os papeis de login
+        # O compose local usa `trust` e a URL nao tem senha; o service container do
+        # Actions exige senha. Os papeis nascem sem senha na migration 0001.
+        run: psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1
+             -c "ALTER ROLE api LOGIN PASSWORD 'api'; ALTER ROLE jobs LOGIN PASSWORD 'jobs'"
+
+      - name: 'test:int — integracao contra PostgreSQL real'
+        run: pnpm test:int
+
+      - name: 'db:invariants — o runner unico dos 10 invariantes da §3.13'
+        run: pnpm db:invariants --with-crud
+
+  isolamento:
+    name: isolamento multi-tenant
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # test:iso sobe o proprio PostgreSQL 18 por Testcontainers e aplica as migrations
+      # reais: o canario T7 exige um banco em estado conhecido byte a byte.
+      - name: 'test:iso — a suite que existe desde antes da primeira tela'
+        run: pnpm test:iso
+
+  merge-gate:
+    name: pronto para merge
+    runs-on: ubuntu-latest
+    needs: [estatico, integracao, isolamento]
+    steps:
+      - run: echo "estatico, integracao com os 10 invariantes e isolamento verdes"
+```
+
+Marcar `merge-gate` como *required status check* na proteção do branch `main`. É o único job que precisa ser exigido: ele só fica verde se os três anteriores ficarem.
+
+- [ ] **Passo 10: Escrever o workflow agendado do ensaio**
+
+Criar `.github/workflows/agendado.yml`:
+
+```yaml
+name: agendado
+
+on:
+  schedule:
+    # Ensaio de restauracao no dia 1 de cada mes, 06:00 UTC (03:00 BRT).
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
+jobs:
+  restore-drill:
+    name: ensaio de restauracao em VPC isolada
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: restore-drill
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_RESTORE_DRILL_ROLE_ARN }}
+          aws-region: sa-east-1
+      - name: 'restore:drill'
+        env:
+          DRILL_SOURCE_DB_INSTANCE: ${{ secrets.DRILL_SOURCE_DB_INSTANCE }}
+          DRILL_SUBNET_GROUP: ${{ secrets.DRILL_SUBNET_GROUP }}
+          DRILL_SECURITY_GROUP: ${{ secrets.DRILL_SECURITY_GROUP }}
+          DRILL_DB_USER: ${{ secrets.DRILL_DB_USER }}
+          DRILL_DB_PASSWORD: ${{ secrets.DRILL_DB_PASSWORD }}
+          DRILL_RTO_BUDGET_MINUTES: '120'
+          DRILL_RPO_BUDGET_MINUTES: '15'
+        run: pnpm restore:drill
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: restore-drill-report
+          path: .artifacts/restore-drill-*.json
+          retention-days: 400
+```
+
+O relatório fica retido por 400 dias porque ele **é** a evidência de que o backup foi testado — é o que se mostra ao auditor, e é o que responde "quando foi o último ensaio" sem depender da memória de ninguém.
+
+- [ ] **Passo 11: Rodar a verificação final e commitar**
+
+Rodar:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm test:int
+pnpm test:iso
+pnpm arch:check
+pnpm db:invariants --with-crud
+```
+
+Esperado: os seis terminam com código 0. É exatamente a sequência que o `ci.yml` executa, distribuída em três jobs.
+
+```bash
+git add packages/db/src/verify-restore.ts packages/db/src/verify-restore.int.test.ts \
+        packages/db/src/index.ts scripts/restore-drill.ts \
+        .github/workflows/ci.yml .github/workflows/agendado.yml \
+        tsconfig.json package.json pnpm-lock.yaml
+git commit -m "ci: run invariants, iso suite and arch check on every merge and drill the restore monthly"
+```
+
+---
+
+**Estado ao fim da Parte VI.** Os 10 invariantes da §3.13 rodam a cada merge contra um PostgreSQL 18 com as migrations reais, descobrindo o schema no catálogo — tabela nova entra na verificação sozinha, sem ninguém lembrar de cadastrá-la. Os mesmos dez rodam como um comando único, `pnpm db:invariants`, contra qualquer banco: o local, o do CI e o restaurado pelo ensaio. `pnpm arch:check` guarda o DAG de módulos e entrou no `prepush`, junto com `lint:session-guc` e `test:iso`. O ensaio de restauração roda todo dia 1, em VPC isolada, verifica schemas, trilha, cadeia de selo, RPO **e os invariantes**, e deixa relatório retido por 400 dias. Entregável visível: nenhum, como a Fase 0 prevê.
+
+---
+
 ## Definição de pronto da Fase 0
 
 A fase só está concluída quando **todos** os comandos abaixo passam verdes, em sequência, num clone limpo do repositório.
@@ -8274,61 +16873,71 @@ pnpm typecheck                  # zero erro, sem saida
 
 # 2. Unidade (nada aqui toca em banco)
 pnpm test                       # workspace, migration-files, session-guc,
-                                # time-source, kernel inteiro
+                                # time-source, kernel inteiro, authz
 
 # 3. Banco local e schema
 pnpm db:up
-pnpm db:migrate                 # aplica 0001..0010; segunda execucao imprime
+pnpm db:migrate                 # aplica 0001..0022; segunda execucao imprime
                                 # "nenhuma migration pendente"
+pnpm authz:seed                 # regenera o catalogo de acoes a partir de actions.ts
 
 # 4. Integracao contra PostgreSQL real
-pnpm test:int                   # compose, migrate, roles, roles-invariants,
-                                # transaction-context, pool, tx, audit (3 arquivos)
+pnpm test:int                   # db, audit (4 canais), authn, authz, catalogs
 
-# 5. Isolamento multi-tenant — o gate inegociavel da Fase 0
+# 5. Isolamento multi-tenant - o gate inegociavel da Fase 0
 pnpm test:iso                   # 00-bootstrap .. 08-t6, com o canario T7 verde
                                 # no teardown (nenhuma mensagem "T7 CANARIO REPROVADO")
 
-# 6. Lint estrutural
-pnpm lint:session-guc           # exit 0
+# 6. Invariantes estruturais do banco (os 10 da secao 3.13)
+pnpm db:invariants              # descobertos do catalogo, nunca lista manual
+pnpm db:privileges              # privilegios afirmados tabela a tabela
 
-# 7. O gate de pre-push, que roda 6 e 5 juntos
+# 7. Lint estrutural
+pnpm lint:session-guc           # exit 0
+pnpm lint:terminology-clock     # exit 0
+pnpm arch:check                 # setas so descem, irmao nao importa irmao, sem ciclo
+
+# 8. O gate de pre-push
 pnpm prepush
 ```
 
-Além dos comandos, estes fatos precisam ser verdadeiros — todos já cobertos por teste acima, listados aqui para conferência de revisão:
+### Fatos que precisam ser verdadeiros
 
-- [ ] `pnpm test:iso` reprova quando `app.is_member()` sai da policy de `clin.patient` (Task 18, Passo 3).
-- [ ] `pnpm test:iso` reprova quando a FK de `clin.patient_identifier` deixa de incluir `tenant_id` (Task 13, Passo 3).
-- [ ] `pnpm test:int` reprova quando os cinco `TRUE` do preâmbulo viram `FALSE` (Task 15, Passo 5).
-- [ ] `pnpm test:int` reprova quando o `nullif` sai de `app.current_user_id()` (Task 6, Passo 7).
-- [ ] `pnpm test:int` reprova quando outro papel além de `jobs` ganha `BYPASSRLS` (Task 5, Passo 3).
-- [ ] `pnpm test:int` reprova quando a policy `writer` de `audit.event` é derrubada (Task 26, Passo 1).
-- [ ] `pnpm lint:session-guc` reprova quando aparece `SET app.` fora de `packages/db/src/tx.ts` (Task 17, Passo 7).
-- [ ] O canário T7 fica vermelho quando qualquer linha do tenant B muda (Task 18, Passo 7).
+Todos já cobertos por teste no plano; listados para conferência de revisão. Cada um é um teste que **prova que a proteção pega uma violação proposital** — proteção sem esse teste é decoração.
+
+- [ ] `pnpm test:iso` reprova quando `app.is_member()` sai da policy de `clin.patient` (Task 18).
+- [ ] `pnpm test:iso` reprova quando a FK de `clin.patient_identifier` deixa de incluir `tenant_id` (Task 13).
+- [ ] `pnpm test:int` reprova quando os cinco `TRUE` do preâmbulo viram `FALSE` (Task 15).
+- [ ] `pnpm test:int` reprova quando o `nullif` sai de `app.current_user_id()` (Task 6).
+- [ ] `pnpm test:int` reprova quando outro papel além de `jobs` ganha `BYPASSRLS` (Task 5).
+- [ ] `pnpm test:int` reprova quando a policy `writer` de `audit.event` é derrubada (Task 26).
+- [ ] Um evento de acesso negado **sobrevive ao rollback** da transação de negócio que falhou (Task 29).
+- [ ] 50 leituras do mesmo paciente na mesma janela de 5 minutos geram **1** evento, não 50 (Task 30).
+- [ ] Um lote que começa 23h58 e commita 00h03 **não** entra num dia já selado (Task 31, `snapshot_xmin`).
+- [ ] Sessão opaca revogada para de funcionar na requisição seguinte (Task 34).
+- [ ] Ação sem entrada no catálogo é **negada por padrão** (Task 37).
+- [ ] Atendimento de 2 anos atrás resolve o código pela vigência **daquela data** (Tasks 39 e 39B).
+- [ ] `pnpm lint:session-guc` reprova quando aparece `SET app.` fora de `packages/db/src/tx.ts` (Task 17).
+- [ ] `pnpm arch:check` reprova quando `packages/db` importa `packages/kernel` (Task 47).
+- [ ] O canário T7 fica vermelho quando qualquer linha do tenant B muda (Task 18).
+- [ ] `pnpm restore:drill` restaura em VPC isolada e o `verify-restore` confere schema, trilha e cadeia de selo (Task 48).
 - [ ] Entregável visível: **nenhum**. Se existir uma tela, ela não deveria estar aqui.
 
-### Comandos do Apêndice B que ainda não existem ao final destas 27 tarefas
+### O que a Fase 0 deixa pronto para a Fase 1
 
-Estes fazem parte da Fase 0 pela §8 e pertencem às faixas de tarefas que **não** chegaram no material de origem (ver a seção seguinte). Enquanto não existirem, nenhum passo deste plano os invoca — e é por isso que `prepush` está definido como `pnpm lint:session-guc && pnpm test:iso`, e não com `pnpm arch:check` na frente:
+Nenhuma tarefa da Fase 1 precisa mexer em migration de segurança, em policy ou no formato de persistência clínica. A Fase 1 escreve **tela e regra de negócio** sobre uma fundação que já garante, por construção:
 
-| Comando | Do que depende |
+| Garantia | Onde nasce |
 |---|---|
-| `pnpm dev` | apps `web`/`api`/`worker` com providers fake |
-| `pnpm authz:seed` | módulo `authz` (catálogo de ações com fonte única) |
-| `pnpm arch:check` | pipeline de CI (dependency-cruiser: camadas, ciclos, imports entre irmãos) |
-| `pnpm test:perf` | pipeline de CI (k6 + Lighthouse) |
-| `pnpm restore:drill` | ensaio mensal de restauração em VPC isolada |
-| `pnpm audit:export --tenant <id> --from ... --to ... --format xml` | exportação NGS1.07.08, que depende do restante do módulo `audit` |
+| Isolamento entre clínicas é invariante do banco, não convenção de código | RLS `FORCE` + FK composta + `app.is_member()` |
+| Registro clínico não pode ser apagado nem alterado silenciosamente | `REVOKE`, escrita por `SECURITY DEFINER`, versões com cadeia de hash |
+| Toda ação relevante deixa rastro que resiste a rollback e a superusuário | Canais A e B, trigger `no_mutate`, selo diário em conta separada |
+| Terminologia responde pela data do atendimento, não pela de hoje | `daterange` + `EXCLUDE USING gist` + `display_snapshot` |
+| Documento assinado hoje continua verificável em 20 anos | Canonicalização JCS com `canonicalVersion` congelado |
+| Regressão estrutural quebra o merge, não a produção | `db:invariants`, `db:privileges`, `arch:check`, `test:iso` no pre-push |
 
----
+### Próximo plano
 
-## Estado do material de origem (leia antes de considerar o plano completo)
+**Fase 1 — "O dia"** (10–14 semanas): Hoje, Agenda, Pacientes, o motor de prontuário, documentos com assinatura ICP-Brasil, exportação ECF.18 e prescrição via Memed. É a primeira fase com entregável visível, e a primeira vendável sozinha — uma clínica particular de 1 a 5 médicos substitui papel, planilha e agenda de parede.
 
-Este documento consolida **quatro** das seis faixas de tarefas revisadas. O que segue é factual e precisa ser resolvido antes de a Fase 0 ser dada como planejada:
-
-1. **Chegou e está aqui, com todas as correções dos verificadores aplicadas:** scaffold + kernel (originalmente Tasks 1–8), papéis/harness/`db` (originalmente Tasks 9–15), tabelas núcleo + RLS + `test:iso` (originalmente Tasks 16–24) e as três primeiras tarefas da trilha de auditoria (originalmente Tasks 25–27).
-2. **Chegou truncado:** a faixa da trilha de auditoria terminava na Task 31. O material foi cortado no meio da Task 28 (canal A — `audit.log`, `packages/audit/src/domain.ts`). As Tasks 28 a 31 — canal A (`audit.log`), canal B (`audit.log_security` + `SecurityAuditChannel` com buffer em disco), auditoria de leitura (`audit.log_read` + `audit.read_dedup`) e o selo diário (`audit.seal`, `audit.seal_run`, `audit.seal_day`, `audit.seal_watchdog`) — **não** puderam ser escritas sem inventar SQL e assinaturas. As migrations `0011` a `0014` estão reservadas para elas.
-3. **Não chegou:** duas faixas inteiras, que pela §8 cobrem `authn` (sessão opaca, Argon2id, TOTP, SameSite+CSRF), `authz` (catálogo de ações com fonte única), `identity`/`tenancy`/`people`/`patients`/`catalogs` (CID-10 e TUSS já versionada por data), o pipeline com os 10 invariantes de CI e o `restore:drill`.
-
-As 27 tarefas deste documento são executáveis de ponta a ponta e deixam o repositório verde nos sete comandos da definição de pronto acima. Elas **não** encerram a Fase 0: falta o que está nos itens 2 e 3.
+Escrever esse plano é um ciclo próprio, a partir das seções 4, 5 e 6 do documento de design.
