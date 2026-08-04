@@ -4,6 +4,7 @@ import { uuidv7 } from '@cadencia/kernel';
 export interface SementeDoc {
   tenantId: string; clinicId: string; userId: string;
   professionalId: string; patientId: string; encounterId: string;
+  versionId: string;
   documentId: string; documentId2: string; documentId3: string;
 }
 
@@ -21,6 +22,7 @@ export async function semearDocumentos(): Promise<SementeDoc> {
   const s: SementeDoc = {
     tenantId: uuidv7(), clinicId: uuidv7(), userId: uuidv7(),
     professionalId: uuidv7(), patientId: uuidv7(), encounterId: uuidv7(),
+    versionId: uuidv7(),
     documentId: uuidv7(), documentId2: uuidv7(), documentId3: uuidv7(),
   };
   const admin = new Pool({ connectionString: adminUrl(), max: 1 });
@@ -51,6 +53,20 @@ export async function semearDocumentos(): Promise<SementeDoc> {
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
        VALUES ($1, $2, 'Paciente Doc', 'completo')`,
       [s.tenantId, s.patientId]);
+    await c.query(
+      `INSERT INTO clin.encounter
+         (tenant_id, id, patient_id, professional_id, clinic_id, occurred_at, occurred_date)
+       VALUES ($1, $2, $3, $4, $5, TIMESTAMPTZ '2026-08-01T14:00:00Z',
+               app.local_date(TIMESTAMPTZ '2026-08-01T14:00:00Z',
+                              (SELECT timezone FROM app.clinic WHERE id = $5)))`,
+      [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId]);
+    await c.query(
+      `INSERT INTO clin.encounter_version
+         (tenant_id, id, encounter_id, version_no, kind, author_user_id,
+          author_professional_id, content_hash, serializer_version)
+       VALUES ($1, $2, $3, 1, 'original', $4, $5,
+               sha256('versao original doc test'::bytea), 'jcs-1')`,
+      [s.tenantId, s.versionId, s.encounterId, s.userId, s.professionalId]);
     await c.query('COMMIT');
   } catch (e) {
     await c.query('ROLLBACK');
