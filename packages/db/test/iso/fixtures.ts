@@ -80,6 +80,10 @@ export const FINDING_B_MARCOS = '01930000-0000-7000-8000-0000000000d1';
 export const PROCEDURE_A_JOANA = '01930000-0000-7000-8000-0000000000d2';
 export const PROCEDURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d3';
 
+/** Apoio por IA registrado no prontuario: uma linha em cada tenant. */
+export const AI_ASSISTANCE_A_JOANA = '01930000-0000-7000-8000-0000000000d4';
+export const AI_ASSISTANCE_B_MARCOS = '01930000-0000-7000-8000-0000000000d5';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

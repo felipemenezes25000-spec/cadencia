@@ -320,6 +320,38 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
   );
 
+  // clin.ai_assistance nasceu na Task 17 da Fase 1: o apoio por IA e parte do
+  // prontuario, nao um log paralelo. Como toda tabela multi-tenant, precisa de
+  // linha do tenant B, senao o teste meta ("o seed realmente criou linha do tenant
+  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai
+  // como superusuario: app_rw so tem SELECT nela.
+  //
+  // encounter_id e patient_id sao lidos do PROPRIO atendimento em vez de repetidos
+  // como literal, no mesmo espirito das tabelas de primeira classe. Os dois hashes
+  // sao sha256 de verdade porque o CHECK exige 32 bytes; o output fica em texto
+  // legivel porque a auditoria de alucinacao precisa ler o que a IA escreveu.
+  await admin.query(
+    `INSERT INTO clin.ai_assistance
+       (tenant_id, id, encounter_id, version_id, patient_id, purpose, risk_class,
+        provider, model_id, model_version, residency, input_hash, output, output_hash)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, e.patient_id,
+            'transcricao_anamnese', 'IIa', 'provedor-br', 'modelo-transcricao', '2026.07',
+            'br', sha256('entrada do tenant A'::bytea),
+            'Paciente relata cefaleia ha tres dias, sem febre.',
+            sha256('saida do tenant A'::bytea)
+       FROM clin.encounter e WHERE e.id = $7::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, e.patient_id,
+            'resumo_historico', 'I', 'provedor-br', 'modelo-resumo', '2026.07',
+            'br', sha256('entrada do tenant B'::bytea),
+            'Paciente com dor lombar recorrente ha dois anos.',
+            sha256('saida do tenant B'::bytea)
+       FROM clin.encounter e WHERE e.id = $8::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.AI_ASSISTANCE_A_JOANA, F.AI_ASSISTANCE_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

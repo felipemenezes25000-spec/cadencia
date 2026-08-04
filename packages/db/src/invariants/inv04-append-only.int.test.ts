@@ -67,7 +67,10 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
     // As quatro tabelas de primeira classe (migration 0035) entraram por terem
     // patient_id E version_id: sao prontuario, e o compartilhamento tem que valer
     // nelas tanto quanto no atendimento de onde saíram.
+    // clin.ai_assistance entrou com a migration 0036 pelo mesmo motivo: o apoio
+    // por IA e parte do prontuario, nao um log paralelo.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
+      'clin.ai_assistance',
       'clin.diagnosis',
       'clin.encounter',
       'clin.encounter_field_value',

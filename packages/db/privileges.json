@@ -83,6 +83,33 @@
       ]
     }
   },
+  "clin.ai_assistance": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "clinician_decision": [
+          "UPDATE"
+        ],
+        "decided_at": [
+          "UPDATE"
+        ],
+        "decided_by_user_id": [
+          "UPDATE"
+        ],
+        "version_id": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.diagnosis": {
     "table": {
       "app_rw": [
