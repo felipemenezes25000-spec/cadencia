@@ -6,6 +6,7 @@ import {
   hasZodFastifySchemaValidationErrors,
 } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { comTransacao } from './context';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -53,6 +54,15 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setNotFoundHandler((_req, reply) => reply.code(404).send({ erro: 'nao_encontrado' }));
 
   app.get('/health', async () => ({ status: 'ok' }));
+
+  app.get('/v1/whoami', async (req, reply) => {
+    const r = await comTransacao(req, reply, async (_tx, ctx) => ({
+      kind: ctx.actor.kind, tenantId: ctx.actor.tenantId,
+      userId: ctx.actor.userId, clinicId: ctx.actor.clinicId,
+    }));
+    if (r === undefined) return reply;
+    return r;
+  });
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {

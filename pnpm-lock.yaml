@@ -47,6 +47,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@cadencia/authn':
+        specifier: workspace:*
+        version: link:../../packages/authn
       '@cadencia/db':
         specifier: workspace:*
         version: link:../../packages/db
