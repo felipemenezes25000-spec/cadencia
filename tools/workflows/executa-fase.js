@@ -15,7 +15,7 @@ const RAIZ = 'C:/Users/Felipe/Downloads/novo projeto'
 // Numeradas ate 79 sem lacuna, ja ordenadas por dependencia
 // no proprio plano. Sequencial: cada uma commita e a seguinte enxerga o resultado.
 const TAREFAS = []
-for (let n = 23; n <= 79; n++) TAREFAS.push(String(n))
+for (let n = 37; n <= 79; n++) TAREFAS.push(String(n))
 
 const CONTEXTO = [
 '# PROJETO CADENCIA — Fase 1 ("O dia")',

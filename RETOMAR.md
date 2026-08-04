@@ -16,8 +16,31 @@ Uma sessão nova — minha ou de outro desenvolvedor — lê este arquivo e cont
 | Repositório | `github.com/felipemenezes25000-spec/cadencia` (privado) |
 | Branch de trabalho | `fase-0-fundacao` |
 | Fase 0 — Fundação | ✅ **concluída**, 48 tarefas |
-| Fase 1 — "O dia" | 🔄 **em andamento** |
+| Fase 1 — "O dia" | 🔄 **tarefas 1 a 36 concluídas** — retomar na **37** |
 | Fases 2 a 4 | ⬜ planos ainda não escritos |
+
+## ▶ Ponto de retomada exato
+
+Última sessão parou com a árvore limpa e tudo verde, no commit
+`2fe4ac4 feat(scheduling): live day counters and queue over a partial index`
+— que entrega a **Task 36** (`scheduling.dayQueue`).
+
+**A próxima é a Task 37** (`scheduling.checkIn`). Em
+`tools/workflows/executa-fase.js`:
+
+```js
+for (let n = 37; n <= 79; n++) TAREFAS.push(String(n))
+```
+
+O que já está de pé na Fase 1: o motor de prontuário completo (catálogo de
+seções e campos, rascunho com concorrência otimista, `finalize_encounter` com a
+cadeia de hash, retificação, adendo, leitura versionada com auditoria acoplada),
+pacientes com cadastro mínimo viável e busca, e a agenda (bloqueios, recorrência
+materializada, lista de espera, encaixe, contadores ao vivo).
+
+O que falta: check-in, o painel "Precisa de você", assinatura ICP-Brasil,
+documentos e exportação ECF.18, prescrição via Memed, a API Fastify com RBAC, o
+app shell com o design system, e as telas.
 
 Para ver o estado exato agora:
 
