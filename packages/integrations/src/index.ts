@@ -18,3 +18,7 @@ export {
 export {
   createFakePrescriptionProvider, type FakePrescriptionOptions,
 } from './fakes/prescription-fake';
+export {
+  assertNoDuplicateOnTimeout, assertSafetyDeclared,
+  type TimeoutOutcome, type TimeoutScenario,
+} from './conformance';
