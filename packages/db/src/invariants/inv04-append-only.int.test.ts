@@ -1,0 +1,91 @@
+import { afterAll, describe, expect, it } from 'vitest';
+import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { appendOnlyViolations, clinicalScopeRelations, restrictivePolicyViolations } from './inv04-append-only';
+
+afterAll(async () => {
+  await closeCatalogPool();
+});
+
+describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao', () => {
+  it('nenhuma tabela de clin com version_id e atualizavel ou apagavel por app_rw', async () => {
+    expect(await appendOnlyViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova UPDATE concedido a app_rw em tabela versionada', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT SELECT, UPDATE ON clin.__diagnostico TO app_rw');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__diagnostico: app_rw tem UPDATE — tabela com version_id e append-only');
+  });
+
+  it('reprova DELETE concedido a app_rw em tabela versionada', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT DELETE ON clin.__diagnostico TO app_rw');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__diagnostico: app_rw tem DELETE — tabela com version_id e append-only');
+  });
+
+  it('reprova clin_writer com UPDATE da tabela inteira em vez de so da coluna live', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        code text NOT NULL, live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT INSERT, UPDATE ON clin.__diagnostico TO clin_writer');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes).toContain(
+      'clin.__diagnostico: clin_writer tem UPDATE da tabela inteira — so UPDATE (live) e permitido',
+    );
+  });
+
+  it('aceita o unico UPDATE legitimo: clin_writer sobre a coluna live', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__diagnostico (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, version_id uuid NOT NULL,
+        code text NOT NULL, live boolean NOT NULL DEFAULT true)`);
+      await c.query('GRANT SELECT ON clin.__diagnostico TO app_rw');
+      await c.query('GRANT INSERT, UPDATE (live) ON clin.__diagnostico TO clin_writer');
+      return appendOnlyViolations(c);
+    });
+    expect(violacoes.filter((v) => v.includes('__diagnostico'))).toEqual([]);
+  });
+});
+
+describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornavel trocando de tabela', () => {
+  it('a varredura enxerga as duas tabelas clinicas da Fase 0 — nao passa por vacuo', async () => {
+    expect(await clinicalScopeRelations(catalogPool())).toEqual([
+      'clin.patient_identifier',
+      'clin.record_share',
+    ]);
+  });
+
+  it('toda tabela de clin com patient_id ou version_id tem ao menos uma policy RESTRICTIVE', async () => {
+    expect(await restrictivePolicyViolations(catalogPool())).toEqual([]);
+  });
+
+  it('reprova tabela clinica com so policy PERMISSIVE', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE clin.__observacao (
+        tenant_id uuid NOT NULL, id uuid NOT NULL, patient_id uuid NOT NULL)`);
+      await c.query('ALTER TABLE clin.__observacao ENABLE ROW LEVEL SECURITY');
+      await c.query('ALTER TABLE clin.__observacao FORCE ROW LEVEL SECURITY');
+      await c.query(
+        'CREATE POLICY tenant_isolation ON clin.__observacao AS PERMISSIVE FOR ALL TO app_rw USING (tenant_id = app.current_tenant_id())',
+      );
+      return restrictivePolicyViolations(c);
+    });
+    expect(violacoes).toContain('clin.__observacao: nenhuma policy RESTRICTIVE');
+  });
+
+  it('clin.patient continua de fora: ela e cadastro, nao prontuario (§10 item 18)', async () => {
+    expect(await clinicalScopeRelations(catalogPool())).not.toContain('clin.patient');
+  });
+});
