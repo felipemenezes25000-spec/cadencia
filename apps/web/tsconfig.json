@@ -1,4 +1,12 @@
 {
   "extends": ["../../tsconfig.base.json", "../../tsconfig.paths.json"],
-  "include": ["src/**/*.ts"]
+  "compilerOptions": {
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "plugins": [{ "name": "next" }],
+    "incremental": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "app/**/*.ts", "app/**/*.tsx", "next.config.ts", "vitest.config.ts", "vitest.setup.ts", "next-env.d.ts"],
+  "exclude": ["node_modules"]
 }
