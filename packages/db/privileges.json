@@ -249,6 +249,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "clin_writer": [
+        "SELECT"
       ]
     }
   },
@@ -259,6 +262,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "clin_writer": [
+        "SELECT"
       ]
     }
   },
