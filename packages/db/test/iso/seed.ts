@@ -149,6 +149,20 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.FIELD_A_PA, F.FIELD_B_PA],
   );
 
+  // O layout do prontuario e POR PROFISSIONAL: clin.record_layout_item nasceu na
+  // Task 6 da Fase 1 e tambem e multi-tenant — precisa de linha do tenant B, senao
+  // o teste meta reprova e o T1 passaria a toa nela.
+  await admin.query(
+    `INSERT INTO clin.record_layout_item
+       (tenant_id, id, professional_id, section_id, ordinal, visible) VALUES
+       ($1, $3, $5, $7, 1, true),
+       ($2, $4, $6, $8, 1, true)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LAYOUT_A_ANA_SINAIS_VITAIS, F.LAYOUT_B_DIEGO_SINAIS_VITAIS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

@@ -51,6 +51,10 @@ export const COMPONENT_A_PA_DIA = '01930000-0000-7000-8000-0000000000bb';
 export const COMPONENT_B_PA_SIS = '01930000-0000-7000-8000-0000000000bc';
 export const COMPONENT_B_PA_DIA = '01930000-0000-7000-8000-0000000000bd';
 
+/** Layout do prontuario: cada tenant tem um profissional com ordem propria. */
+export const LAYOUT_A_ANA_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000be';
+export const LAYOUT_B_DIEGO_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000bf';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

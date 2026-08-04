@@ -120,6 +120,16 @@
       ]
     }
   },
+  "clin.record_layout_item": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "clin.record_section": {
     "table": {
       "app_rw": [
