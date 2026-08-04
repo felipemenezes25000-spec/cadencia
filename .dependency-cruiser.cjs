@@ -110,7 +110,7 @@ module.exports = {
 
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^|/)(dist|coverage|\\.next|\\.turbo)/' },
+    exclude: { path: '(^|/)(dist|coverage|\\.next|\\.turbo)/|\\.test\\.ts$' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.json' },
     enhancedResolveOptions: {

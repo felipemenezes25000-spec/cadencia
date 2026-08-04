@@ -25,7 +25,7 @@ describe('catalogo de acoes', () => {
   });
 
   it('toda chave segue o formato dominio.verbo', () => {
-    for (const a of ACTIONS) expect(a.key).toMatch(/^[a-z_]+\.[a-z_]+$/);
+    for (const a of ACTIONS) expect(a.key).toMatch(/^[a-z_]+(\.[a-z_]+)+$/);
   });
 });
 

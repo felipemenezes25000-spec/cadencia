@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
-import { uuidv7 } from '@cadencia/kernel';
-import { closePdfPool } from '@cadencia/documents';
+import { systemClock, uuidv7 } from '@cadencia/kernel';
+import { closePdfPool, documentHtml, escapeHtml, renderPdf, stampPageNumbers } from '@cadencia/documents';
 import { exportRecord } from './export-record';
 import { buildReceipt } from './receipt';
 import { semearProntuarioCompleto, type SementeExport } from './test-support';
@@ -15,6 +15,8 @@ beforeAll(async () => {
             requestId: uuidv7() };
 });
 afterAll(async () => { await closePools(); await closePdfPool(); });
+
+const deps = { clock: systemClock, docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } };
 
 describe('exportacao integral ECF.18', () => {
   it('o recibo tem os dezenove campos indissociaveis', () => {
@@ -33,7 +35,7 @@ describe('exportacao integral ECF.18', () => {
 
   it('produz um PDF com todas as paginas e registra a entidade', async () => {
     const r = await withTenantTx(actor, (tx) => exportRecord(tx, {
-      patientId: s.patientId, requesterKind: 'titular' }));
+      patientId: s.patientId, requesterKind: 'titular' }, deps));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     const doc = await PDFDocument.load(r.value.pdfBytes);
@@ -53,7 +55,7 @@ describe('exportacao integral ECF.18', () => {
 
   it('a numeracao e carimbada por ULTIMO, cobrindo tambem as paginas dos anexos', async () => {
     const r = await withTenantTx(actor, (tx) => exportRecord(tx, {
-      patientId: s.patientId, requesterKind: 'judicial' }));
+      patientId: s.patientId, requesterKind: 'judicial' }, deps));
     if (!r.ok) throw new Error('nao exportou');
     const doc = await PDFDocument.load(r.value.pdfBytes);
     expect(doc.getPageCount()).toBe(r.value.pageCount);

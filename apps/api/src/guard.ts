@@ -7,7 +7,7 @@ export function rota<T>(
   acao: string,
   handler: (tx: TxClient, ctx: RequestContext, req: FastifyRequest, reply: FastifyReply) => Promise<T>,
 ) {
-  return async (req: FastifyRequest, reply: FastifyReply): Promise<T | FastifyReply> => {
+  return async (req: FastifyRequest, reply: FastifyReply): Promise<T | void> => {
     const r = await comTransacao(req, reply, async (tx, ctx) => {
       const sujeito: AuthzSubject = {
         userId: ctx.actor.userId, tenantId: ctx.actor.tenantId,
@@ -20,12 +20,12 @@ export function rota<T>(
           `SELECT audit.log('AUTHZ_DENY', 'ref', 'action', NULL, 'negado',
                             jsonb_build_object('acao', $1::text, 'motivo', $2::text), $3)`,
           [acao, d.reason, ctx.actor.clinicId]);
-        await reply.code(403).send({ erro: 'sem_permissao', acao, motivo: d.reason });
+        void reply.code(403).send({ erro: 'sem_permissao', acao, motivo: d.reason });
         return undefined;
       }
       return handler(tx, ctx, req, reply);
     });
-    if (r === undefined) return reply;
+    if (r === undefined) return;
     return r;
   };
 }

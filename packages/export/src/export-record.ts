@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
 import { PDFDocument } from 'pdf-lib';
-import { ok, uuidv7, type Result } from '@cadencia/kernel';
+import { ok, uuidv7, type Clock, type Result } from '@cadencia/kernel';
 import type { TxClient } from '@cadencia/db';
-import { documentHtml, escapeHtml, renderPdf, stampPageNumbers } from '@cadencia/documents';
 import { collectRecord, type CollectedRecord, type ExportBlock } from './collect';
 import { buildReceipt, receiptHtml } from './receipt';
 
@@ -23,44 +22,60 @@ export interface ExportedRecord {
   readonly durationMs: number;
 }
 
+export interface ExportDocumentAdapter {
+  readonly escapeHtml: (text: string) => string;
+  readonly documentHtml: (input: {
+    readonly titulo: string;
+    readonly clinica: { readonly nome: string; readonly cnpj: string; readonly cnes: string; readonly endereco: string };
+    readonly profissional: { readonly nome: string; readonly conselho: string; readonly numero: string; readonly uf: string };
+    readonly paciente: { readonly nome: string; readonly nascimento: string | null; readonly cpf: string | null };
+    readonly emitidoEm: string;
+    readonly corpo: string;
+  }) => string;
+  readonly renderPdf: (html: string) => Promise<Uint8Array>;
+  readonly stampPageNumbers: (pdf: Uint8Array, opts: { readonly prefixo: string }) => Promise<Uint8Array>;
+}
+
 const SOFTWARE_NOME = 'Cadência';
 const SOFTWARE_VERSAO = '1.0.0';
 
-function blocoHtml(b: ExportBlock): string {
+function blocoHtml(b: ExportBlock, escape: (t: string) => string): string {
   const versoes = b.versoes.map((v) => {
     const cabecalho = v.superseded
-      ? `<div class="super">Versão ${v.versionNo} · ${escapeHtml(v.kind)} · RETIFICADA${
+      ? `<div class="super">Versão ${v.versionNo} · ${escape(v.kind)} · RETIFICADA${
           v.justificativaDaSuperssao === null ? ''
-            : ` — justificativa: ${escapeHtml(v.justificativaDaSuperssao)}`}</div>`
-      : `<div class="vig">Versão ${v.versionNo} · ${escapeHtml(v.kind)}${
+            : ` — justificativa: ${escape(v.justificativaDaSuperssao)}`}</div>`
+      : `<div class="vig">Versão ${v.versionNo} · ${escape(v.kind)}${
           v.incompleto ? ' · REGISTRO INCOMPLETO (auto-finalizado)' : ''}</div>`;
     const campos = v.campos.map((c) =>
-      `<p><strong>${escapeHtml(c.labelSnapshot)}:</strong> ${escapeHtml(c.texto)}${
-        c.displaySnapshot === null ? '' : ` (${escapeHtml(c.displaySnapshot)})`}</p>`).join('');
+      `<p><strong>${escape(c.labelSnapshot)}:</strong> ${escape(c.texto)}${
+        c.displaySnapshot === null ? '' : ` (${escape(c.displaySnapshot)})`}</p>`).join('');
     const cids = v.diagnosticos.length === 0 ? ''
       : `<p><strong>CID:</strong> ${v.diagnosticos
-          .map((d) => `${escapeHtml(d.code)} — ${escapeHtml(d.display)}`).join('; ')}</p>`;
+          .map((d) => `${escape(d.code)} — ${escape(d.display)}`).join('; ')}</p>`;
     return `<section class="${v.superseded ? 'tachado' : ''}">${cabecalho}${campos}${cids}
-      <p class="assin">Autor: ${escapeHtml(v.authorNome)} · finalizado em ${escapeHtml(v.finalizedAt)}</p>
+      <p class="assin">Autor: ${escape(v.authorNome)} · finalizado em ${escape(v.finalizedAt)}</p>
     </section>`;
   }).join('');
-  return `<article><h2>${escapeHtml(b.occurredDate)} — ${escapeHtml(b.clinicaNome)}</h2>${versoes}</article>`;
+  return `<article><h2>${escape(b.occurredDate)} — ${escape(b.clinicaNome)}</h2>${versoes}</article>`;
 }
 
 export async function exportRecord(
-  tx: TxClient, i: ExportRecordInput,
+  tx: TxClient, i: ExportRecordInput, deps: { readonly clock: Clock; readonly docs: ExportDocumentAdapter },
 ): Promise<Result<ExportedRecord, { kind: 'paciente_nao_encontrado' }>> {
-  const inicio = Date.now();
+  const inicio = deps.clock.monotonicMs();
+  const { escapeHtml, documentHtml, renderPdf, stampPageNumbers } = deps.docs;
 
   const cab = await tx.query<{
     display_name: string; cpf: string | null;
-    razao_social: string; cnpj: string; cnes: string; solicitante: string }>(
+    razao_social: string; cnpj: string; cnes: string; solicitante: string; agora: string }>(
     `SELECT p.display_name, t.razao_social, t.cnpj,
             coalesce(c.cnes, '0000000') AS cnes,
             (SELECT i.value FROM clin.patient_identifier i
               WHERE i.tenant_id = p.tenant_id AND i.patient_id = p.id AND i.kind = 'CPF'
               LIMIT 1) AS cpf,
-            (SELECT u.full_name FROM id."user" u WHERE u.id = app.current_user_id()) AS solicitante
+            (SELECT u.full_name FROM id."user" u WHERE u.id = app.current_user_id()) AS solicitante,
+            to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS agora
        FROM clin.patient p
        JOIN app.tenant t ON t.id = p.tenant_id
        LEFT JOIN app.clinic c ON c.tenant_id = p.tenant_id
@@ -88,8 +103,8 @@ export async function exportRecord(
       clinica: { nome: h.razao_social, cnpj: h.cnpj, cnes: h.cnes, endereco: '' },
       profissional: { nome: h.solicitante, conselho: '', numero: '', uf: '' },
       paciente: { nome: h.display_name, nascimento: null, cpf: h.cpf },
-      emitidoEm: new Date().toISOString(),
-      corpo: lote.map(blocoHtml).join(''),
+      emitidoEm: h.agora,
+      corpo: lote.map((b) => blocoHtml(b, escapeHtml)).join(''),
     });
     const parcial = await PDFDocument.load(await renderPdf(html));
     const paginas = await final.copyPages(parcial, parcial.getPageIndices());
@@ -102,7 +117,7 @@ export async function exportRecord(
       clinica: { nome: h.razao_social, cnpj: h.cnpj, cnes: h.cnes, endereco: '' },
       profissional: { nome: h.solicitante, conselho: '', numero: '', uf: '' },
       paciente: { nome: h.display_name, nascimento: null, cpf: h.cpf },
-      emitidoEm: new Date().toISOString(),
+      emitidoEm: h.agora,
       corpo: `<ol>${coletado.anexos.map((a) =>
         `<li>${escapeHtml(a.originalName)} — ${escapeHtml(a.contentType)} — SHA-256 ${
           escapeHtml(a.sha256Hex)}</li>`).join('')}</ol>`,
@@ -121,7 +136,7 @@ export async function exportRecord(
     patientNome: h.display_name, patientCpf: h.cpf,
     tenantRazaoSocial: h.razao_social, tenantCnpj: h.cnpj, clinicaCnes: h.cnes,
     requesterKind: i.requesterKind, requestedByNome: h.solicitante,
-    emitidoEm: new Date().toISOString(),
+    emitidoEm: h.agora,
     periodoDe: i.from ?? null, periodoAte: i.to ?? null,
     totalVersoes: coletado.blocos.reduce((n, b) => n + b.versoes.length, 0),
     totalAnexos: coletado.anexos.length,
@@ -139,7 +154,7 @@ export async function exportRecord(
   const sha = createHash('sha256').update(carimbado).digest();
   const pdfKey = uuidv7();
   const pageCount = (await PDFDocument.load(carimbado)).getPageCount();
-  const durationMs = Date.now() - inicio;
+  const durationMs = Math.round(deps.clock.monotonicMs() - inicio);
 
   await tx.query(
     `INSERT INTO clin.record_export (

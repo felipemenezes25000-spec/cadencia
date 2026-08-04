@@ -267,6 +267,9 @@
       "clin_writer": [
         "INSERT",
         "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
       ]
     }
   },

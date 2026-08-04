@@ -91,7 +91,7 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
   r.get('/v1/pacientes/:id/pendencias', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
-      response: { 200: z.object({ patientId: z.string(), pendentes: z.array(z.string()) }) },
+      response: { 200: z.object({ patientId: z.string(), pendentes: z.array(z.string()).readonly() }) },
     },
   }, rota('patient.read', async (tx, _ctx, req) => {
     const p = req.params as { id: string };

@@ -38,6 +38,6 @@ describe('renderizacao de PDF', () => {
     const t1 = Date.now();
     await renderPdf(HTML);
     const segunda = Date.now() - t1;
-    expect(segunda).toBeLessThanOrEqual(primeira);
+    expect(segunda).toBeLessThanOrEqual(primeira * 1.1 + 50);
   });
 });

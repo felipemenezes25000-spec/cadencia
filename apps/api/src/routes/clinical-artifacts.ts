@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { documentHtml, escapeHtml, renderPdf, stampPageNumbers } from '@cadencia/documents';
 import { issueDocument } from '@cadencia/documents';
 import { openPrescriberSession, confirmPrescription } from '@cadencia/prescriptions';
 import { exportRecord } from '@cadencia/export';
+import { systemClock } from '@cadencia/kernel';
 import { rota } from '../guard';
 import { providers } from '../providers';
 
@@ -21,7 +23,7 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
         patientId: z.string().uuid(),
         encounterId: z.string().uuid().optional(),
         versionId: z.string().uuid().optional(),
-        payload: z.record(z.unknown()),
+        payload: z.record(z.string(), z.unknown()),
       }),
       response: {
         201: z.object({
@@ -66,7 +68,7 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
       response: {
         200: z.object({
           mode: z.literal('embedded'), scriptUrl: z.string(), token: z.string(),
-          expiresAt: z.string(), patientPayload: z.record(z.string()),
+          expiresAt: z.string(), patientPayload: z.record(z.string(), z.string()),
           correlationId: z.string() }),
       },
     },
@@ -136,7 +138,8 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
     const p = req.params as { id: string };
     const b = req.body as { requesterKind: never; from?: string; to?: string;
                             requesterNote?: string };
-    const resultado = await exportRecord(tx, { patientId: p.id, ...b });
+    const resultado = await exportRecord(tx, { patientId: p.id, ...b },
+      { clock: systemClock, docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } });
     if (!resultado.ok) erroDominio(resultado.error.kind, 404);
     void reply.code(201);
     return {

@@ -38,6 +38,10 @@ export function fixedClock(startMs: number): TestClock {
   };
 }
 
+export function isoFromMs(ms: number): string {
+  return new Date(ms).toISOString();
+}
+
 export interface Measured<T> {
   readonly value: T;
   readonly durationMs: number;

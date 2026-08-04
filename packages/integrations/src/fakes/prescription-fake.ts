@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { isoFromMs, systemClock } from '@cadencia/kernel';
 import { asRfc3339, failure, success, type ProviderCtx, type Rfc3339 } from '../contracts/common';
 import type {
   PrescriberSession, PrescriptionProvider, PrescriptionRecord,
@@ -26,7 +27,7 @@ export function createFakePrescriptionProvider(
   }
 
   function agora(): Rfc3339 {
-    return asRfc3339(new Date().toISOString()) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
+    return asRfc3339(isoFromMs(systemClock.nowMs())) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
   }
 
   return {
@@ -45,7 +46,7 @@ export function createFakePrescriptionProvider(
         return failure<PrescriberSession>({ kind: 'misconfigured', retrySafe: false,
           detail: 'token do prescritor ja vencido: reautorize o profissional' });
       }
-      const expira = new Date(Date.now() + 15 * 60_000).toISOString();
+      const expira = isoFromMs(systemClock.nowMs() + 15 * 60_000);
       return success<PrescriberSession>({
         mode: 'embedded',
         scriptUrl: 'https://parceiro.fake/modulo.js',

@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { uuidv7 } from '@cadencia/kernel';
-import { openDraft, saveDraft, finalizeEncounter, amendEncounter } from '@cadencia/emr';
+import { openDraft, saveDraft, finalizeEncounter, amendEncounter,
+  type FinalizeInput, type AmendInput } from '@cadencia/emr';
 import { rota } from '../guard';
 
 function erroDominio(kind: string, status: number, extra: Record<string, unknown> = {}): never {
@@ -58,7 +59,7 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
       }),
       response: {
         201: z.object({ encounterId: z.string().uuid(), status: z.literal('rascunho'),
-                        rev: z.number().int(), payload: z.record(z.unknown()) }),
+                        rev: z.number().int(), payload: z.record(z.string(), z.unknown()) }),
       },
     },
   }, rota('encounter.write', async (tx, ctx, req, reply) => {
@@ -84,7 +85,7 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
     schema: {
       params: z.object({ id: z.string().uuid() }),
       response: { 200: z.object({ encounterId: z.string(), rev: z.number().int(),
-                                  payload: z.record(z.unknown()) }) },
+                                  payload: z.record(z.string(), z.unknown()) }) },
     },
   }, rota('encounter.read', async (tx, _ctx, req) => {
     const p = req.params as { id: string };
@@ -96,7 +97,7 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
   r.put('/v1/atendimentos/:id/rascunho', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
-      body: z.object({ expectedRev: z.number().int().min(1), payload: z.record(z.unknown()) }),
+      body: z.object({ expectedRev: z.number().int().min(1), payload: z.record(z.string(), z.unknown()) }),
       response: { 200: z.object({ rev: z.number().int() }) },
     },
   }, rota('encounter.write', async (tx, _ctx, req) => {
@@ -122,7 +123,7 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
   }, rota('encounter.finalize', async (tx, _ctx, req) => {
     const p = req.params as { id: string };
     const resultado = await finalizeEncounter(tx, {
-      encounterId: p.id, ...(req.body as never) });
+      encounterId: p.id, ...(req.body as Omit<FinalizeInput, 'encounterId'>) });
     if (!resultado.ok) {
       if (resultado.error.kind === 'cadastro_preliminar_bloqueia_finalizacao') {
         erroDominio(resultado.error.kind, 422, { faltando: resultado.error.faltando });
@@ -145,7 +146,7 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
   }, rota('encounter.amend', async (tx, _ctx, req) => {
     const p = req.params as { id: string };
     const resultado = await amendEncounter(tx, {
-      encounterId: p.id, ...(req.body as never) });
+      encounterId: p.id, ...(req.body as Omit<AmendInput, 'encounterId'>) });
     if (!resultado.ok) erroDominio(resultado.error.kind, 422);
     return resultado.value;
   }));

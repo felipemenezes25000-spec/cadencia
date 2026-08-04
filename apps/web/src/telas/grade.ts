@@ -24,10 +24,9 @@ export interface PosicaoNaGrade {
 }
 
 function minutosLocais(iso: string, timezone: string): number {
-  const d = new Date(iso);
   const fmt = new Intl.DateTimeFormat('pt-BR', {
     hour: '2-digit', minute: '2-digit', hour12: false, timeZone: timezone });
-  const [h, m] = fmt.format(d).split(':').map(Number);
+  const [h, m] = fmt.format(Date.parse(iso)).split(':').map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
 

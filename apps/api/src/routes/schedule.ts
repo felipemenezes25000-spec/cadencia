@@ -34,7 +34,7 @@ export async function scheduleRoutes(app: FastifyInstance): Promise<void> {
       response: {
         201: z.object({
           appointmentId: z.string().uuid(), startsAt: z.string(), endsAt: z.string(),
-          appointmentDate: z.string(), avisos: z.array(z.literal('horario_bloqueado')),
+          appointmentDate: z.string(), avisos: z.array(z.literal('horario_bloqueado')).readonly(),
         }),
       },
     },
@@ -96,7 +96,7 @@ export async function scheduleRoutes(app: FastifyInstance): Promise<void> {
       params: z.object({ id: z.string().uuid() }),
       response: {
         200: z.object({ appointmentId: z.string(), status: z.literal('aguardando'),
-                        pendentes: z.array(z.string()) }),
+                        pendentes: z.array(z.string()).readonly() }),
       },
     },
   }, rota('appointment.checkin', async (tx, _ctx, req) => {
