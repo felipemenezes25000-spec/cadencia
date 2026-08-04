@@ -12,3 +12,4 @@ build/
 coverage/
 .tmp-blocos/
 .tasks/
+.tasks-fase1/
