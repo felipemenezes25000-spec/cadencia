@@ -13,12 +13,15 @@
     "typecheck": "tsc -p tsconfig.json",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d --wait db"
+    "db:reset": "docker compose down -v && docker compose up -d --wait db",
+    "db:new": "tsx packages/db/src/new-migration.ts",
+    "db:migrate": "tsx packages/db/src/migrate-cli.ts"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
     "@types/pg": "^8.20.3",
     "pg": "^8.22.0",
+    "tsx": "^4.23.5",
     "typescript": "~5.9.3",
     "vitest": "^4.1.10",
     "yaml": "^2.9.0"
