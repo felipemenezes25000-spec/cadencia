@@ -6,3 +6,9 @@ export {
   openDraft, saveDraft,
   type DraftFailure, type DraftPayload, type DraftState, type SaveDraftInput,
 } from './draft';
+export {
+  buildCanonicalVersion, hashCanonicalVersion,
+  type AiSnapshot, type DiagnosisSnapshot, type FieldSnapshot, type FieldValue,
+  type FindingSnapshot, type ObservationSnapshot, type ProcedureSnapshot,
+  type VersionSnapshot,
+} from './canonical-version';
