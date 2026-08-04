@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 let business: Pool | undefined;
 let audit: Pool | undefined;
 let jobs: Pool | undefined;
+let app: Pool | undefined;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -64,11 +65,39 @@ export function jobsPool(): Pool {
   return jobs;
 }
 
+/**
+ * Pool da aplicacao para o que acontece FORA de uma transacao de negocio:
+ * resolucao de sessao (que precisa rodar ANTES de existir tenant) e consulta de
+ * terminologia global (`ref.*`, sem RLS). Nunca substitui withTenantTx — nada
+ * que leia tabela com tenant_id passa por aqui.
+ *
+ * `api` foi criado NOINHERIT na 0001: sem o SET ROLE abaixo, toda query retorna
+ * 42501. A query e enfileirada na conexao antes de qualquer outra, porque o `pg`
+ * mantem uma fila FIFO por cliente.
+ */
+export function appPool(): Pool {
+  if (app === undefined) {
+    const created = new Pool({
+      connectionString: requireEnv('DATABASE_URL'),
+      max: 5,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+      application_name: 'cadencia-app',
+    });
+    created.on('connect', (client) => {
+      void client.query('SET ROLE app_rw').catch(() => undefined);
+    });
+    app = created;
+  }
+  return app;
+}
+
 /** Fecha todos os pools. Usado no shutdown do processo e entre arquivos de teste. */
 export async function closePools(): Promise<void> {
-  const pools = [business, audit, jobs].filter((p): p is Pool => p !== undefined);
+  const pools = [business, audit, jobs, app].filter((p): p is Pool => p !== undefined);
   business = undefined;
   audit = undefined;
   jobs = undefined;
+  app = undefined;
   await Promise.all(pools.map((p) => p.end()));
 }
