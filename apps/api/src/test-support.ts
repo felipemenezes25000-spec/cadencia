@@ -9,8 +9,11 @@ export interface SementeSessao {
   professionalId: string;
   patientId: string;
   patientPreliminarId: string;
+  patientNome: string;
+  patientCpf: string;
   procedureId: string;
   appointmentId: string;
+  encounterId: string;
   token: string;
   csrf: string;
   clinicIdDeOutroTenant: string;
@@ -30,9 +33,10 @@ function adminUrl(): string {
 }
 
 export async function semearSessao(
-  opts: { role?: Role } = {},
+  opts: { role?: Role; comMfa?: boolean } = {},
 ): Promise<SementeSessao> {
   const role = opts.role ?? 'admin_clinico';
+  const comMfa = opts.comMfa ?? true;
   const tenantId = uuidv7();
   const clinicId = uuidv7();
   const userId = uuidv7();
@@ -41,9 +45,12 @@ export async function semearSessao(
   const patientPreliminarId = uuidv7();
   const procedureId = uuidv7();
   const appointmentId = uuidv7();
+  const encounterId = uuidv7();
   const tenantB = uuidv7();
   const clinicB = uuidv7();
   const csrf = newCsrfToken();
+  const cpf = `${Math.floor(Math.random() * 90000000000 + 10000000000)}`;
+  const nome = 'Paciente Sessao';
 
   const admin = new Pool({ connectionString: adminUrl(), max: 1 });
   const c = await admin.connect();
@@ -71,9 +78,13 @@ export async function semearSessao(
        VALUES ($1, $2, $3, '06', '999888', 'SP', '225125')`,
       [tenantId, professionalId, userId]);
     await c.query(
-      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
-       VALUES ($1, $2, 'Paciente Sessao', 'completo', '1990-01-15')`,
-      [tenantId, patientId]);
+      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date, search_digits)
+       VALUES ($1, $2, $3, 'completo', '1990-01-15', $4)`,
+      [tenantId, patientId, nome, cpf]);
+    await c.query(
+      `INSERT INTO clin.patient_identifier (tenant_id, id, patient_id, kind, value)
+       VALUES ($1, gen_random_uuid(), $2, 'CPF', $3)`,
+      [tenantId, patientId, cpf]);
     await c.query(
       `INSERT INTO sched.procedure (tenant_id, id, code, nome, cor, duracao_min)
        VALUES ($1, $2, 'CONS01', 'Consulta Padrao', '#3b82f6', 30)`,
@@ -89,6 +100,15 @@ export async function semearSessao(
        VALUES ($1, $2, $3, $4, $5, $6,
                '2026-12-15T10:00:00Z', '2026-12-15T10:30:00Z', '2026-12-15', $7)`,
       [tenantId, appointmentId, patientId, professionalId, clinicId, procedureId, userId]);
+
+    // Encounter for clinical artifact tests
+    await c.query(
+      `INSERT INTO clin.encounter
+         (tenant_id, id, patient_id, professional_id, clinic_id,
+          occurred_at, occurred_date)
+       VALUES ($1, $2, $3, $4, $5, clock_timestamp(),
+               (clock_timestamp() AT TIME ZONE 'America/Sao_Paulo')::date)`,
+      [tenantId, encounterId, patientId, professionalId, clinicId]);
 
     // Tenant B — para testar vinculo cruzado
     await c.query(
@@ -112,10 +132,17 @@ export async function semearSessao(
     userId, activeTenantId: tenantId, activeClinicId: clinicId,
   });
 
+  if (comMfa) {
+    await admin.query(
+      `UPDATE id.session SET mfa_at = clock_timestamp()
+        WHERE user_id = $1 AND revoked_at IS NULL`, [userId]);
+  }
+
   await admin.end();
 
   return {
     tenantId, clinicId, userId, professionalId, patientId, patientPreliminarId,
-    procedureId, appointmentId, token, csrf, clinicIdDeOutroTenant: clinicB,
+    patientNome: nome, patientCpf: cpf, procedureId, appointmentId, encounterId,
+    token, csrf, clinicIdDeOutroTenant: clinicB,
   };
 }

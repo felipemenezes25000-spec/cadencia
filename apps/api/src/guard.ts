@@ -12,7 +12,7 @@ export function rota<T>(
       const sujeito: AuthzSubject = {
         userId: ctx.actor.userId, tenantId: ctx.actor.tenantId,
         memberships: ctx.memberships.map((m) => ({ clinicId: m.clinicId, role: m.role })),
-        mfaAt: null,
+        mfaAt: ctx.mfaAt,
       };
       const d = can(sujeito, acao, { clinicId: ctx.actor.clinicId });
       if (!d.allowed) {

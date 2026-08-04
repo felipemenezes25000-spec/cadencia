@@ -9,6 +9,7 @@ export interface RequestContext {
   readonly actor: Extract<Actor, { kind: 'user' }>;
   readonly memberships: readonly MembershipRow[];
   readonly sessionId: string;
+  readonly mfaAt: Date | null;
 }
 
 export type ContextFailure =
@@ -64,7 +65,8 @@ export async function resolveContext(
   }
 
   return { ok: true, value: {
-    actor: preAtor, memberships, sessionId: sessao.value.sessionId } };
+    actor: preAtor, memberships, sessionId: sessao.value.sessionId,
+    mfaAt: sessao.value.mfaAt } };
 }
 
 export async function comTransacao<T>(
