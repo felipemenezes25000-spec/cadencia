@@ -369,5 +369,14 @@
         "UPDATE"
       ]
     }
+  },
+  "sched.recurrence": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }
