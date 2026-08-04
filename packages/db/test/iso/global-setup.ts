@@ -6,6 +6,7 @@ import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
+import { seedDoisTenants } from './seed';
 // O Vitest 4 removeu `GlobalSetupContext`: o global setup recebe o proprio
 // TestProject, que expoe o mesmo `provide` usado abaixo.
 import type { TestProject } from 'vitest/node';
@@ -54,6 +55,8 @@ export default async function setup({ provide }: TestProject) {
   const aplicadas = await aplicarMigrationsReais(admin);
   // eslint-disable-next-line no-console
   console.log(`[test:iso] migrations aplicadas: ${aplicadas.join(', ')}`);
+
+  await seedDoisTenants(admin);
 
   // O papel `api` nasce LOGIN sem senha na migration 0001; o container precisa de uma.
   await admin.query(`ALTER ROLE api LOGIN PASSWORD 'api'`);
