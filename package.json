@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:int": "vitest run --config vitest.int.config.ts",
     "test:iso": "vitest run --config vitest.iso.config.ts",
+    "test:load": "CADENCIA_LOAD_TESTS=1 vitest run --config vitest.int.config.ts --testTimeout 900000",
     "typecheck": "tsc -p tsconfig.json",
     "arch:check": "depcruise --config .dependency-cruiser.cjs --output-type err-long packages apps",
     "lint:session-guc": "tsx tools/check-session-guc.ts",

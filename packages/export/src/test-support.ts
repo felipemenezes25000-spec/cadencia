@@ -4,6 +4,7 @@ import { uuidv7 } from '@cadencia/kernel';
 export interface SementeExport {
   tenantId: string; clinicId: string; userId: string;
   professionalId: string; patientId: string;
+  sectionId: string; fieldId: string;
   encounterId1: string; encounterId2: string;
   versionId1: string; versionId2: string; versionId3: string;
   attachmentId1: string; attachmentId2: string;
@@ -24,6 +25,7 @@ export async function semearProntuarioCompleto(): Promise<SementeExport> {
   const s: SementeExport = {
     tenantId: uuidv7(), clinicId: uuidv7(), userId: uuidv7(),
     professionalId: uuidv7(), patientId: uuidv7(),
+    sectionId: uuidv7(), fieldId: uuidv7(),
     encounterId1: uuidv7(), encounterId2: uuidv7(),
     versionId1: uuidv7(), versionId2: uuidv7(), versionId3: uuidv7(),
     attachmentId1: uuidv7(), attachmentId2: uuidv7(),
@@ -57,6 +59,15 @@ export async function semearProntuarioCompleto(): Promise<SementeExport> {
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
        VALUES ($1, $2, 'Paciente Export', 'completo')`,
       [s.tenantId, s.patientId]);
+    await c.query(
+      `INSERT INTO clin.record_section (tenant_id, id, code, label, ordinal)
+       VALUES ($1, $2, 'anamnese', 'Anamnese', 1)`,
+      [s.tenantId, s.sectionId]);
+    await c.query(
+      `INSERT INTO clin.record_field
+         (tenant_id, id, section_id, code, label, kind, ordinal)
+       VALUES ($1, $2, $3, 'queixa_principal', 'Queixa principal', 'texto_longo', 1)`,
+      [s.tenantId, s.fieldId, s.sectionId]);
 
     // Encounter 1: junho/2026
     await c.query(
