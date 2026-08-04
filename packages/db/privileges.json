@@ -378,5 +378,14 @@
         "UPDATE"
       ]
     }
+  },
+  "sched.waitlist": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }
