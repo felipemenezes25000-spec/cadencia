@@ -8,9 +8,17 @@ export interface SementeSessao {
   userId: string;
   professionalId: string;
   patientId: string;
+  procedureId: string;
   token: string;
   csrf: string;
   clinicIdDeOutroTenant: string;
+}
+
+export function auth(s: SementeSessao) {
+  return {
+    cookies: { '__Host-cadencia_sid': s.token, '__Host-cadencia_csrf': s.csrf },
+    headers: { 'x-clinic-id': s.clinicId, 'x-csrf-token': s.csrf },
+  };
 }
 
 function adminUrl(): string {
@@ -28,6 +36,7 @@ export async function semearSessao(
   const userId = uuidv7();
   const professionalId = uuidv7();
   const patientId = uuidv7();
+  const procedureId = uuidv7();
   const tenantB = uuidv7();
   const clinicB = uuidv7();
   const csrf = newCsrfToken();
@@ -52,17 +61,19 @@ export async function semearSessao(
       `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
        VALUES ($1, gen_random_uuid(), $2, $3, $4)`,
       [tenantId, userId, clinicId, role]);
-    if (role === 'admin_clinico' || role === 'diretor_tecnico' || role === 'profissional') {
-      await c.query(
-        `INSERT INTO app.professional
-           (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho, cbos)
-         VALUES ($1, $2, $3, '06', '999888', 'SP', '225125')`,
-        [tenantId, professionalId, userId]);
-    }
+    await c.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho, cbos)
+       VALUES ($1, $2, $3, '06', '999888', 'SP', '225125')`,
+      [tenantId, professionalId, userId]);
     await c.query(
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
        VALUES ($1, $2, 'Paciente Sessao', 'completo')`,
       [tenantId, patientId]);
+    await c.query(
+      `INSERT INTO sched.procedure (tenant_id, id, code, nome, cor, duracao_min)
+       VALUES ($1, $2, 'CONS01', 'Consulta Padrao', '#3b82f6', 30)`,
+      [tenantId, procedureId]);
 
     // Tenant B — para testar vinculo cruzado
     await c.query(
@@ -89,7 +100,7 @@ export async function semearSessao(
   await admin.end();
 
   return {
-    tenantId, clinicId, userId, professionalId, patientId,
+    tenantId, clinicId, userId, professionalId, patientId, procedureId,
     token, csrf, clinicIdDeOutroTenant: clinicB,
   };
 }

@@ -8,6 +8,7 @@ import {
 import { z } from 'zod';
 import { comTransacao } from './context';
 import { patientRoutes } from './routes/patients';
+import { scheduleRoutes } from './routes/schedule';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -48,7 +49,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       ? (erro as { statusCode: number }).statusCode : 500;
     const dominio = (erro as { dominio?: string }).dominio;
     if (typeof dominio === 'string') {
-      return reply.code(status).send({ erro: dominio });
+      const extra = (erro as { extra?: Record<string, unknown> }).extra ?? {};
+      return reply.code(status).send({ erro: dominio, ...extra });
     }
     return reply.code(status).send({
       erro: status === 500 ? 'interno' : 'requisicao_invalida',
@@ -70,6 +72,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(patientRoutes);
+  await app.register(scheduleRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
