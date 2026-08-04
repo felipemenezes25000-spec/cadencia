@@ -3,3 +3,8 @@ export {
   type E164, type Provider, type ProviderCtx, type ProviderFailure, type ProviderResult,
   type Rfc3339, type Safety, type StorageKey,
 } from './contracts/common';
+export {
+  SIGNATURE_POLICIES, isSignaturePolicy,
+  type CertificateInfo, type SignDocumentInput, type SignatureProvider,
+  type SignaturePolicy, type SignedDocument, type VerifyResult,
+} from './contracts/signature';
