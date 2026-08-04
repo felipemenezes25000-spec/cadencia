@@ -1,1 +1,1 @@
-export {};
+export { startWorker } from './worker';

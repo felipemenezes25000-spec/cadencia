@@ -2,5 +2,12 @@
   "name": "@cadencia/worker",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@cadencia/db": "workspace:*",
+    "@cadencia/kernel": "workspace:*",
+    "pg-boss": "^10.3.1"
+  }
 }
