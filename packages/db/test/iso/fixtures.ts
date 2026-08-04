@@ -1,0 +1,47 @@
+/**
+ * Identificadores fixos da suite de isolamento.
+ * Sao UUIDs validos com o formato de um UUIDv7 (versao 7, variante 10xx) para que
+ * nenhuma coluna precise de tratamento especial. Sao literais de proposito:
+ * um teste de isolamento tem que ser reproduzivel byte a byte.
+ */
+export const TENANT_A = '01930000-0000-7000-8000-0000000000a0';
+export const TENANT_B = '01930000-0000-7000-8000-0000000000b0';
+
+export const CLINIC_A_SP = '01930000-0000-7000-8000-0000000000a1';
+export const CLINIC_A_MANAUS = '01930000-0000-7000-8000-0000000000a2';
+export const CLINIC_B_RIO_BRANCO = '01930000-0000-7000-8000-0000000000b1';
+
+export const USER_A_ANA = '01930000-0000-7000-8000-0000000000a3';
+export const USER_A_BRUNO = '01930000-0000-7000-8000-0000000000a4';
+export const USER_A_CARLA = '01930000-0000-7000-8000-0000000000a5';
+export const USER_B_DIEGO = '01930000-0000-7000-8000-0000000000b2';
+
+export const PROF_A_ANA = '01930000-0000-7000-8000-0000000000a6';
+export const PROF_A_BRUNO = '01930000-0000-7000-8000-0000000000a7';
+export const PROF_B_DIEGO = '01930000-0000-7000-8000-0000000000b3';
+
+export const MEMBERSHIP_ANA_SP = '01930000-0000-7000-8000-0000000000c1';
+export const MEMBERSHIP_ANA_MANAUS = '01930000-0000-7000-8000-0000000000c2';
+export const MEMBERSHIP_BRUNO_SP = '01930000-0000-7000-8000-0000000000c3';
+export const MEMBERSHIP_CARLA_SP = '01930000-0000-7000-8000-0000000000c4';
+export const MEMBERSHIP_DIEGO_RB = '01930000-0000-7000-8000-0000000000c5';
+
+export const PATIENT_A_JOANA = '01930000-0000-7000-8000-0000000000a8';
+export const PATIENT_A_RECEM_NASCIDO = '01930000-0000-7000-8000-0000000000a9';
+export const PATIENT_B_MARCOS = '01930000-0000-7000-8000-0000000000b4';
+
+export const PID_A_JOANA_CPF = '01930000-0000-7000-8000-0000000000aa';
+export const PID_A_RN_SEM_DOCUMENTO = '01930000-0000-7000-8000-0000000000ab';
+export const PID_B_MARCOS_CPF = '01930000-0000-7000-8000-0000000000b5';
+
+export const SHARE_A_JOANA_PARA_BRUNO = '01930000-0000-7000-8000-0000000000ac';
+export const SHARE_B_MARCOS_PARA_DIEGO = '01930000-0000-7000-8000-0000000000ad';
+
+/** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
+export const CPF_VALIDO = '52998224725';
+
+export const REQUEST_ID = '01930000-0000-7000-8000-0000000000ff';
+
+/** CNPJ alfanumerico da IN RFB 2.229/2024: 12 alfanumericos + 2 digitos. */
+export const CNPJ_A = '12ABC345678901';
+export const CNPJ_B = '98XYZ765432109';

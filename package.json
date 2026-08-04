@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:int": "vitest run --config vitest.int.config.ts",
+    "test:iso": "vitest run --config vitest.iso.config.ts",
     "typecheck": "tsc -p tsconfig.json",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
@@ -18,9 +19,11 @@
     "db:migrate": "tsx packages/db/src/migrate-cli.ts"
   },
   "devDependencies": {
+    "@testcontainers/postgresql": "^12.0.4",
     "@types/node": "^24.13.3",
     "@types/pg": "^8.20.3",
     "pg": "^8.22.0",
+    "testcontainers": "^12.0.4",
     "tsx": "^4.23.5",
     "typescript": "~5.9.3",
     "vitest": "^4.1.10",
