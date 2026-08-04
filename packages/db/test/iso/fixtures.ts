@@ -67,6 +67,19 @@ export const VERSION_B_MARCOS_ORIGINAL = '01930000-0000-7000-8000-0000000000c9';
 export const FIELD_VALUE_A_JOANA_PESO = '01930000-0000-7000-8000-0000000000ca';
 export const FIELD_VALUE_B_MARCOS_PESO = '01930000-0000-7000-8000-0000000000cb';
 
+/**
+ * Linhas de primeira classe promovidas para fora do EAV: uma de cada tipo em cada
+ * tenant, penduradas na versao original do atendimento daquele tenant.
+ */
+export const DIAGNOSIS_A_JOANA = '01930000-0000-7000-8000-0000000000cc';
+export const DIAGNOSIS_B_MARCOS = '01930000-0000-7000-8000-0000000000cd';
+export const OBSERVATION_A_JOANA_PESO = '01930000-0000-7000-8000-0000000000ce';
+export const OBSERVATION_B_MARCOS_PESO = '01930000-0000-7000-8000-0000000000cf';
+export const FINDING_A_JOANA = '01930000-0000-7000-8000-0000000000d0';
+export const FINDING_B_MARCOS = '01930000-0000-7000-8000-0000000000d1';
+export const PROCEDURE_A_JOANA = '01930000-0000-7000-8000-0000000000d2';
+export const PROCEDURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d3';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

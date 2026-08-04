@@ -239,6 +239,87 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.FIELD_A_PESO, F.FIELD_B_PESO],
   );
 
+  // As quatro tabelas de primeira classe nasceram na Task 16 da Fase 1. Como toda
+  // tabela multi-tenant, precisam de linha do tenant B, senao o teste meta ("o seed
+  // realmente criou linha do tenant B em toda tabela multi-tenant") reprova e o T1
+  // passaria a toa. A insercao vai como superusuario: app_rw so tem SELECT nelas.
+  //
+  // encounter_id, patient_id, professional_id, clinic_id e occurred_date sao lidos
+  // do PROPRIO atendimento em vez de repetidos como literal: sao colunas
+  // desnormalizadas, e copiar da origem e o que impede o seed de inventar uma
+  // combinacao que o sistema real nunca produziria.
+  await admin.query(
+    `INSERT INTO clin.diagnosis
+       (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
+        clinic_id, occurred_date, code_system, code, display_snapshot,
+        terminology_version, is_principal)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'CID10', 'J45', 'Asma', '202601', true
+       FROM clin.encounter e WHERE e.id = $7::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'CID10', 'M54', 'Dorsalgia', '202601', true
+       FROM clin.encounter e WHERE e.id = $8::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.DIAGNOSIS_A_JOANA, F.DIAGNOSIS_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.observation
+       (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
+        clinic_id, occurred_date, observation_code, value_num, unit, field_id)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'PESO', 68.400, 'kg', $9::uuid
+       FROM clin.encounter e WHERE e.id = $7::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'PESO', 81.200, 'kg', $10::uuid
+       FROM clin.encounter e WHERE e.id = $8::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.OBSERVATION_A_JOANA_PESO, F.OBSERVATION_B_MARCOS_PESO,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.FIELD_A_PESO, F.FIELD_B_PESO],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.encounter_finding
+       (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
+        clinic_id, occurred_date, field_id, field_code, option_code, display_snapshot)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, $9::uuid, 'peso', 'aferido', 'Aferido'
+       FROM clin.encounter e WHERE e.id = $7::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, $10::uuid, 'peso', 'aferido', 'Aferido'
+       FROM clin.encounter e WHERE e.id = $8::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.FINDING_A_JOANA, F.FINDING_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.FIELD_A_PESO, F.FIELD_B_PESO],
+  );
+
+  // TUSS exige `tabela`: o CHECK da migration 0035 amarra code_system = 'TUSS' a
+  // tabela IS NOT NULL. 22 e a tabela de procedimentos e eventos em saude.
+  await admin.query(
+    `INSERT INTO clin.procedure
+       (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
+        clinic_id, occurred_date, code_system, tabela, code, display_snapshot,
+        terminology_version, quantidade, valor_centavos)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'TUSS', 22::smallint, '10101012',
+            'Consulta em consultorio', '202601', 1, 25000
+       FROM clin.encounter e WHERE e.id = $7::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, e.patient_id, e.professional_id,
+            e.clinic_id, e.occurred_date, 'TUSS', 22::smallint, '10101012',
+            'Consulta em consultorio', '202601', 1, 30000
+       FROM clin.encounter e WHERE e.id = $8::uuid`,
+    [F.TENANT_A, F.TENANT_B, F.PROCEDURE_A_JOANA, F.PROCEDURE_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

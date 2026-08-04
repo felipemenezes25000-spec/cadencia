@@ -64,10 +64,17 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
     // clin.encounter_field_value entrou na lista com a migration 0034: e a
     // primeira tabela com a coluna `version_id` literal. clin.encounter_version
     // continua de fora porque a coluna dela chama supersedes_version_id.
+    // As quatro tabelas de primeira classe (migration 0035) entraram por terem
+    // patient_id E version_id: sao prontuario, e o compartilhamento tem que valer
+    // nelas tanto quanto no atendimento de onde saíram.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
+      'clin.diagnosis',
       'clin.encounter',
       'clin.encounter_field_value',
+      'clin.encounter_finding',
+      'clin.observation',
       'clin.patient_identifier',
+      'clin.procedure',
       'clin.record_share',
     ]);
   });

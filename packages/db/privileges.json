@@ -83,6 +83,24 @@
       ]
     }
   },
+  "clin.diagnosis": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "live": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.encounter": {
     "table": {
       "app_rw": [
@@ -139,6 +157,24 @@
       ]
     }
   },
+  "clin.encounter_finding": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "live": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "clin.encounter_version": {
     "table": {
       "app_rw": [
@@ -148,6 +184,24 @@
         "INSERT",
         "SELECT"
       ]
+    }
+  },
+  "clin.observation": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "live": [
+          "UPDATE"
+        ]
+      }
     }
   },
   "clin.patient": {
@@ -167,6 +221,24 @@
         "SELECT",
         "UPDATE"
       ]
+    }
+  },
+  "clin.procedure": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "clin_writer": {
+        "live": [
+          "UPDATE"
+        ]
+      }
     }
   },
   "clin.record_field": {
