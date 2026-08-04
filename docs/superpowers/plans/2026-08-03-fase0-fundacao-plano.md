@@ -6,7 +6,9 @@
 
 **Arquitetura:** monorepo pnpm com quatro camadas em DAG estrito (L0 plataforma → L1 cadastros → L2 operação → L3 apps), setas só descem e irmão nunca importa irmão. Todo o isolamento entre clínicas é propriedade estrutural do PostgreSQL — RLS `FORCE` com verificação de vínculo, FK sempre composta `(tenant_id, id)`, papel de login sem posse e sem `BYPASSRLS` — e um único lugar da aplicação abre transação, gravando o contexto com escopo de transação. A trilha de auditoria mora em schema com dono próprio, é append-only por trigger e registra que algo aconteceu, nunca o que foi escrito.
 
-**Stack:** TypeScript 5.9 `strict` + `noUncheckedIndexedAccess` · Node.js 24 LTS (ESM) · PostgreSQL 18 (extensões `pgcrypto`, `btree_gist`, `btree_gin`, `pg_trgm`, `unaccent`, `citext`) · `pg` 8.16 (Pool) · Vitest 3 · Testcontainers · Docker Compose · pnpm workspaces.
+**Stack:** TypeScript 5.9 `strict` + `noUncheckedIndexedAccess` · Node.js 24 LTS (ESM) · PostgreSQL 18 (extensões `pgcrypto`, `btree_gist`, `btree_gin`, `pg_trgm`, `unaccent`, `citext`) · `pg` 8.16 (Pool) · Vitest 4 · Testcontainers · Docker Compose · pnpm workspaces.
+
+> **Nota de versão (registrada na execução da Task 1).** A stack original dizia "Vitest 3", mas o comando de instalação do plano não fixa versão e o `pnpm add` resolveu para 4.1.10. Mantivemos a 4: nada neste plano usa API removida na major — `defineConfig`, `setupFiles`, `globalSetup` e `fileParallelism` são estáveis entre as duas. Se alguma tarefa futura depender de comportamento específico da 3, o correto é fixar `vitest@^3` explicitamente e não confiar no `latest`.
 
 ---
 
@@ -55,7 +57,9 @@ A ordem do projeto é: primeiro o que é impossível retrofitar, depois o que é
 1. **Tasks 1–2 — chão do repositório.** Monorepo, TypeScript estrito, Vitest, PostgreSQL 18 local.
 2. **Tasks 3–18 — banco e isolamento.** Harness de migration, papéis, contexto de transação e, na primeira oportunidade em que ela pode existir (Task 7), a suíte `test:iso`. Tudo que cria tabela com `tenant_id` depois disso já nasce com o teste de isolamento correspondente.
 3. **Tasks 19–24 — `kernel`.** `Result`, erros, UUIDv7, `Clock`, `Money`, canonicalização JCS e validadores brasileiros. Vem depois do banco de propósito: `packages/db` **não** importa `packages/kernel` (são irmãos em L0, e a §2.2 proíbe import entre irmãos sem exceção), então o kernel não bloqueia nada do isolamento.
-4. **Tasks 25–27 — trilha de auditoria.** Schema com dono próprio, RLS forçada com policy de INSERT e o trigger que torna a trilha append-only para qualquer papel.
+4. **Tasks 25–31 — trilha de auditoria.** Schema com dono próprio, RLS forçada com policy de INSERT e o trigger que torna a trilha append-only para qualquer papel; depois os dois canais de gravação, a auditoria de leitura deduplicada e o selo diário com marca d'água de visibilidade.
+5. **Tasks 32–40 — `authn`, `authz` e `catalogs`.** Credencial global, Argon2id, sessão opaca, TOTP, CSRF, o vínculo que vira sujeito de autorização, o catálogo de ações com negação por padrão, e CID-10/TUSS versionados por data de vigência. Vem depois da auditoria porque login e acesso negado são eventos do canal B, que precisa existir antes.
+6. **Tasks 41–48 — invariantes de CI e restauração.** Os 10 invariantes da §3.13 como consultas ao catálogo do PostgreSQL, `arch:check`, o workflow do GitHub Actions e o ensaio de restauração. Vem por último de propósito: os invariantes descobrem o schema, então precisam de schema para descobrir — rodá-los antes das tabelas existirem passaria verde sem verificar nada.
 
 ---
 
