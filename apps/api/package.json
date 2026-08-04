@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@cadencia/authn": "workspace:*",
+    "@cadencia/authz": "workspace:*",
     "@cadencia/db": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "@cadencia/integrations": "workspace:*",

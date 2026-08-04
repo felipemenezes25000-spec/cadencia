@@ -1,6 +1,38 @@
 {
-  "checksum": "48dbe8937a630e127ef3f5731029266c81c71d017e9ca32d628183d1e49f6b51",
+  "checksum": "7c39e2f01655d3aaeb538baf63a7fe2d78fa594b572b333ac1970e53827a85e9",
   "rows": [
+    {
+      "key": "appointment.checkin",
+      "description": "Fazer check-in do paciente",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "appointment.read",
+      "description": "Ler a agenda da unidade",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "appointment.write",
+      "description": "Agendar, mover e cancelar",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
     {
       "key": "audit.read",
       "description": "Ler a trilha de auditoria do tenant",
@@ -41,6 +73,53 @@
         "admin_clinico"
       ],
       "requiresMfa": true
+    },
+    {
+      "key": "document.issue",
+      "description": "Emitir atestado, pedido, relatorio ou declaracao",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "encounter.amend",
+      "description": "Retificar, adendar, transferir ou anular",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "encounter.finalize",
+      "description": "Finalizar atendimento",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "encounter.read",
+      "description": "Ler prontuario",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "encounter.write",
+      "description": "Escrever rascunho de atendimento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
     },
     {
       "key": "membership.grant",
@@ -85,6 +164,64 @@
         "admin_clinico",
         "diretor_tecnico",
         "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "prescription.write",
+      "description": "Prescrever",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "record.break_glass",
+      "description": "Quebra-vidro assistencial",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "record.export",
+      "description": "Exportar prontuario integral (ECF.18)",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "record.share",
+      "description": "Compartilhar prontuario com outro profissional",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "record.template.write",
+      "description": "Configurar secoes e campos do prontuario",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "waitlist.write",
+      "description": "Gerir a lista de espera",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
         "recepcao"
       ],
       "requiresMfa": false

@@ -50,6 +50,9 @@ importers:
       '@cadencia/authn':
         specifier: workspace:*
         version: link:../../packages/authn
+      '@cadencia/authz':
+        specifier: workspace:*
+        version: link:../../packages/authz
       '@cadencia/db':
         specifier: workspace:*
         version: link:../../packages/db

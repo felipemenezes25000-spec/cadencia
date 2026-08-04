@@ -37,6 +37,37 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'audit.read', description: 'Ler a trilha de auditoria do tenant',
     roles: ['admin_clinico', 'diretor_tecnico'], requiresMfa: true },
+  // ── Fase 1 · Agenda ──────────────────────────────────────────────────────
+  { key: 'appointment.read', description: 'Ler a agenda da unidade',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'appointment.write', description: 'Agendar, mover e cancelar',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'appointment.checkin', description: 'Fazer check-in do paciente',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao'] },
+  { key: 'waitlist.write', description: 'Gerir a lista de espera',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao'] },
+  // ── Fase 1 · Prontuario ──────────────────────────────────────────────────
+  { key: 'encounter.read', description: 'Ler prontuario',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'encounter.write', description: 'Escrever rascunho de atendimento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'encounter.finalize', description: 'Finalizar atendimento',
+    roles: ['diretor_tecnico', 'profissional'] },
+  { key: 'encounter.amend', description: 'Retificar, adendar, transferir ou anular',
+    roles: ['diretor_tecnico', 'profissional'] },
+  { key: 'record.template.write', description: 'Configurar secoes e campos do prontuario',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'record.export', description: 'Exportar prontuario integral (ECF.18)',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'], requiresMfa: true },
+  { key: 'record.break_glass', description: 'Quebra-vidro assistencial',
+    roles: ['diretor_tecnico', 'profissional'], requiresMfa: true },
+  { key: 'record.share', description: 'Compartilhar prontuario com outro profissional',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  // ── Fase 1 · Documentos e prescricao ─────────────────────────────────────
+  { key: 'document.issue', description: 'Emitir atestado, pedido, relatorio ou declaracao',
+    roles: ['diretor_tecnico', 'profissional'] },
+  { key: 'prescription.write', description: 'Prescrever',
+    roles: ['diretor_tecnico', 'profissional'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
