@@ -92,6 +92,10 @@ export const AI_ASSISTANCE_B_MARCOS = '01930000-0000-7000-8000-0000000000d5';
 export const BILLING_A_JOANA = '01930000-0000-7000-8000-0000000000d6';
 export const BILLING_B_MARCOS = '01930000-0000-7000-8000-0000000000d7';
 
+/** Assinatura digital: uma linha em cada tenant. */
+export const SIGNATURE_A_JOANA = '01930000-0000-7000-8000-0000000000d8';
+export const SIGNATURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d9';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

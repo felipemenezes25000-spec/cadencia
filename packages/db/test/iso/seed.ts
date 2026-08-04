@@ -392,6 +392,33 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS, F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // clin.signature nasceu na Task 42 da Fase 1: os bytes que fazem o documento
+  // sobreviver a nos e ao PSC. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai como
+  // superusuario: app_rw so tem SELECT e INSERT nesta tabela, e o trigger
+  // no_mutate bloqueia UPDATE de colunas de conteudo e DELETE.
+  await admin.query(
+    `INSERT INTO clin.signature
+       (tenant_id, id, subject_kind, subject_id, canonical_key, canonical_version,
+        hash, policy_oid, standard, psc, signer_user_id, signer_cpf, cert_serial,
+        cert_not_after, pkcs7, timestamp_token, ltv_material_key,
+        verified_status, verified_at, signed_at) VALUES
+       ($1, $3, 'encounter_version', $5, gen_random_uuid(), 'jcs-1',
+        sha256('assinatura tenant A'::bytea), '2.16.76.1.7.1.2.2.3', 'AD_RT',
+        'fake', $7, '00000000000', 'SEED-A', TIMESTAMPTZ '2046-01-01',
+        '\\x01'::bytea, '\\x02'::bytea, gen_random_uuid(),
+        'valida', clock_timestamp(), clock_timestamp()),
+       ($2, $4, 'encounter_version', $6, gen_random_uuid(), 'jcs-1',
+        sha256('assinatura tenant B'::bytea), '2.16.76.1.7.1.2.2.3', 'AD_RT',
+        'fake', $8, '00000000000', 'SEED-B', TIMESTAMPTZ '2046-01-01',
+        '\\x01'::bytea, '\\x02'::bytea, gen_random_uuid(),
+        'valida', clock_timestamp(), clock_timestamp())`,
+    [F.TENANT_A, F.TENANT_B, F.SIGNATURE_A_JOANA, F.SIGNATURE_B_MARCOS,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
