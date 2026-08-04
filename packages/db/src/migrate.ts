@@ -52,8 +52,9 @@ export async function runMigrations(opts: MigrateOptions = {}): Promise<MigrateR
     );
 
     for (const migration of pending) {
-      // performance.now(), nunca Date.now(): duracao e MEDICAO, e a guarda de fonte
-      // de tempo (tools/repo/time-source.ts) reprova relogio de parede em packages/**.
+      // performance.now(), nunca o relogio de parede: duracao e MEDICAO, e a guarda
+      // de fonte de tempo (tools/repo/time-source.ts) reprova relogio de parede em
+      // packages/** — inclusive quando o nome proibido aparece so em comentario.
       const startedAt = performance.now();
       try {
         // Uma transacao por arquivo: ou o arquivo inteiro entra, ou nada entra.
