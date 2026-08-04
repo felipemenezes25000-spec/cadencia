@@ -323,6 +323,36 @@
       ]
     }
   },
+  "clin.signature": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "retimestamped_at": [
+          "UPDATE"
+        ],
+        "verified_at": [
+          "UPDATE"
+        ],
+        "verified_status": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
+  "clin.signature_pending": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "clin.record_share": {
     "table": {
       "app_rw": [

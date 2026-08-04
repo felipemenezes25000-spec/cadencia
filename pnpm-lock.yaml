@@ -95,7 +95,17 @@ importers:
         specifier: ^8.20.3
         version: 8.20.3
 
-  packages/documents: {}
+  packages/documents:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/integrations':
+        specifier: workspace:*
+        version: link:../integrations
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
   packages/emr: {}
 

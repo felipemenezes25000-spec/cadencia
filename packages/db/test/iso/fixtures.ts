@@ -96,6 +96,10 @@ export const BILLING_B_MARCOS = '01930000-0000-7000-8000-0000000000d7';
 export const SIGNATURE_A_JOANA = '01930000-0000-7000-8000-0000000000d8';
 export const SIGNATURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d9';
 
+/** Pendencia de assinatura: uma linha em cada tenant. */
+export const SIGNATURE_PENDING_A = '01930000-0000-7000-8000-0000000000da';
+export const SIGNATURE_PENDING_B = '01930000-0000-7000-8000-0000000000db';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

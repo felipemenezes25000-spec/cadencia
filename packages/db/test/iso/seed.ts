@@ -419,6 +419,27 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
+  // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa.
+  //
+  // subject_id usa gen_random_uuid() porque nao ha FK: a mesma tabela serve
+  // encounter_version, document e prescription.
+  await admin.query(
+    `INSERT INTO clin.signature_pending
+       (tenant_id, id, clinic_id, subject_kind, subject_id, canonical_key,
+        hash, signer_user_id, motivo, detalhe, precisa_reconciliar) VALUES
+       ($1, $3, $5, 'document', gen_random_uuid(), gen_random_uuid(),
+        sha256('pendente tenant A'::bytea), $7, 'unavailable',
+        'PSC fake indisponivel', false),
+       ($2, $4, $6, 'document', gen_random_uuid(), gen_random_uuid(),
+        sha256('pendente tenant B'::bytea), $8, 'timeout',
+        'deadline de 3s estourou', true)`,
+    [F.TENANT_A, F.TENANT_B, F.SIGNATURE_PENDING_A, F.SIGNATURE_PENDING_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO, F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
