@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@cadencia/kernel": "workspace:*",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-popover": "^1.1.23",
     "@tanstack/react-query": "^5.101.4",
