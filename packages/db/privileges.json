@@ -102,6 +102,24 @@
       ]
     }
   },
+  "clin.record_field": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "clin.record_section": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "clin.record_share": {
     "table": {
       "app_rw": [

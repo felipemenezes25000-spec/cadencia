@@ -37,6 +37,12 @@ export const PID_B_MARCOS_CPF = '01930000-0000-7000-8000-0000000000b5';
 export const SHARE_A_JOANA_PARA_BRUNO = '01930000-0000-7000-8000-0000000000ac';
 export const SHARE_B_MARCOS_PARA_DIEGO = '01930000-0000-7000-8000-0000000000ad';
 
+/** Definicao de prontuario: uma secao e um campo vivos em cada tenant. */
+export const SECTION_A_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000ae';
+export const FIELD_A_PESO = '01930000-0000-7000-8000-0000000000af';
+export const SECTION_B_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000b6';
+export const FIELD_B_PESO = '01930000-0000-7000-8000-0000000000b7';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

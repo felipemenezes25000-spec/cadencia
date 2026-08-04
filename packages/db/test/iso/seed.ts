@@ -102,6 +102,29 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_B, F.SHARE_B_MARCOS_PARA_DIEGO, F.PATIENT_B_MARCOS, F.PROF_B_DIEGO],
   );
 
+  // ── Definicao de prontuario ────────────────────────────────────────────────
+  //
+  // clin.record_section e clin.record_field nasceram na Task 4 da Fase 1. Como
+  // toda tabela multi-tenant, precisam de linha do tenant B: sem ela o teste meta
+  // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
+  // reprova, e o T1 passaria a toa nelas — nao haveria o que vazar.
+  await admin.query(
+    `INSERT INTO clin.record_section (tenant_id, id, code, label, ordinal) VALUES
+       ($1, $3, 'sinais_vitais', 'Sinais vitais', 1),
+       ($2, $4, 'sinais_vitais', 'Sinais vitais', 1)`,
+    [F.TENANT_A, F.TENANT_B, F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.record_field
+       (tenant_id, id, section_id, code, label, kind, observation_code, unit,
+        is_reportable, ordinal, generation) VALUES
+       ($1, $3, $5, 'peso', 'Peso', 'numerico', 'PESO', 'kg', true, 1, 1),
+       ($2, $4, $6, 'peso', 'Peso', 'numerico', 'PESO', 'kg', true, 1, 1)`,
+    [F.TENANT_A, F.TENANT_B, F.FIELD_A_PESO, F.FIELD_B_PESO,
+     F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
