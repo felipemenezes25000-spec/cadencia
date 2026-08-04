@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { buildWorkspaceAlias } from './tools/test/workspace-alias';
+import { buildWorkspaceAlias } from './tools/test/workspace-alias.ts';
 
 export default defineConfig({
   resolve: { alias: buildWorkspaceAlias() },
