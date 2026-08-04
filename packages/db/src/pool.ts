@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 
 let business: Pool | undefined;
 let audit: Pool | undefined;
+let jobs: Pool | undefined;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -43,10 +44,31 @@ export function auditPool(): Pool {
   return audit;
 }
 
-/** Fecha os dois pools. Usado no shutdown do processo e entre arquivos de teste. */
+/**
+ * Pool do papel `jobs` — o UNICO do cluster com BYPASSRLS (§3.1). Existe para
+ * selo diario, detector de divergencia do financeiro, carga bimestral da TUSS e
+ * montagem de cenario nos testes. NUNCA serve caminho de requisicao: aqui a RLS
+ * nao filtra nada, e o isolamento entre clinicas deixa de existir.
+ *
+ * BYPASSRLS ignora POLICY, nao ignora GRANT: cada migration que cria tabela usada
+ * por job ou por fixture precisa conceder privilegio a `jobs` explicitamente.
+ */
+export function jobsPool(): Pool {
+  jobs ??= new Pool({
+    connectionString: requireEnv('DATABASE_URL_JOBS'),
+    max: 4,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+    application_name: 'cadencia-jobs',
+  });
+  return jobs;
+}
+
+/** Fecha todos os pools. Usado no shutdown do processo e entre arquivos de teste. */
 export async function closePools(): Promise<void> {
-  const pools = [business, audit].filter((p): p is Pool => p !== undefined);
+  const pools = [business, audit, jobs].filter((p): p is Pool => p !== undefined);
   business = undefined;
   audit = undefined;
+  jobs = undefined;
   await Promise.all(pools.map((p) => p.end()));
 }
