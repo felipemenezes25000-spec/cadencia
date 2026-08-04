@@ -159,7 +159,17 @@ importers:
 
   packages/people: {}
 
-  packages/prescriptions: {}
+  packages/prescriptions:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/integrations':
+        specifier: workspace:*
+        version: link:../integrations
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
   packages/reports: {}
 
