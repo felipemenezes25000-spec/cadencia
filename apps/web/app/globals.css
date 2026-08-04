@@ -1,1 +1,127 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+:root {
+  /* ── primitivas (OKLCH) ────────────────────────────────────────────── */
+  --tinta-50:  oklch(96.5% 0.014 258);  --tinta-100: oklch(92% 0.030 258);
+  --tinta-300: oklch(74% 0.080 258);    --tinta-500: oklch(52% 0.132 258);
+  --tinta-600: oklch(45% 0.140 258);    --tinta-700: oklch(38% 0.128 258);
+  --papel-0:   oklch(99.2% 0.003 95);   --papel-50:  oklch(97.6% 0.005 95);
+  --papel-100: oklch(95.4% 0.006 95);   --papel-200: oklch(91%   0.007 95);
+  --papel-300: oklch(84%   0.008 95);   --papel-500: oklch(62%   0.010 95);
+  --grafite-700: oklch(38% 0.012 265);  --grafite-800: oklch(30% 0.012 265);
+  --grafite-900: oklch(23% 0.012 265);  --grafite-950: oklch(17% 0.012 265);
+  --verde-500:  oklch(53% 0.130 155);   --verde-100: oklch(94% 0.040 155);
+  --ambar-500:  oklch(52% 0.140 75);    --ambar-100: oklch(95% 0.055 75);
+  --rubi-500:   oklch(53% 0.190 25);    --rubi-100:  oklch(94% 0.045 25);
+  --violeta-500:oklch(52% 0.150 300);   --violeta-100:oklch(95% 0.040 300);
+
+  /* ── semanticas: claro ─────────────────────────────────────────────── */
+  --bg:            var(--papel-50);
+  --surface:       var(--papel-0);
+  --surface-sunken:var(--papel-100);
+  --surface-hover: var(--papel-100);
+  --line:          var(--papel-200);
+  --line-strong:   var(--papel-300);
+  --text:          var(--grafite-900);
+  --text-muted:    oklch(48% 0.012 265);
+  --text-faint:    var(--papel-500);
+  --accent:        var(--tinta-600);
+  --accent-hover:  var(--tinta-700);
+  --accent-soft:   var(--tinta-50);
+  --accent-on:     var(--papel-0);
+  --ok:   var(--verde-500);  --ok-soft:   var(--verde-100);
+  --warn: var(--ambar-500);  --warn-soft: var(--ambar-100);
+  --danger: var(--rubi-500); --danger-soft: var(--rubi-100);
+  --ai:   var(--violeta-500);--ai-soft:   var(--violeta-100);
+
+  --st-agendado: var(--papel-300);  --st-confirmado: var(--tinta-300);
+  --st-aguardando: var(--ambar-500);--st-atendendo: var(--tinta-600);
+  --st-atendido: var(--verde-500);  --st-faltou: var(--rubi-500);
+  --st-cancelado: var(--papel-300);
+
+  /* ── espaco, forma, elevacao ───────────────────────────────────────── */
+  --s-1:2px; --s-2:4px; --s-3:6px; --s-4:8px; --s-5:12px; --s-6:16px;
+  --s-7:20px; --s-8:24px; --s-9:32px; --s-10:40px; --s-11:56px;
+  --r-sm:3px; --r-md:5px; --r-lg:8px; --r-xl:12px; --r-full:999px;
+  --border: 1px solid var(--line);
+  --elev-1: 0 1px 2px oklch(0% 0 0 / .06), 0 0 0 1px oklch(0% 0 0 / .04);
+  --elev-2: 0 8px 24px oklch(0% 0 0 / .10), 0 0 0 1px oklch(0% 0 0 / .06);
+
+  /* ── tipografia ────────────────────────────────────────────────────── */
+  --font-ui:    "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono:  "IBM Plex Mono", ui-monospace, monospace;
+  --font-doc:   "IBM Plex Serif", Georgia, serif;
+  --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-15:15px;
+  --fs-16:16px; --fs-18:18px; --fs-22:22px; --fs-28:28px;
+  --lh-tight:1.25; --lh-ui:1.45; --lh-read:1.6;
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600;
+  --num-tabular: "tnum" 1, "lnum" 1;
+
+  /* ── movimento ─────────────────────────────────────────────────────── */
+  --dur-1:90ms; --dur-2:140ms; --dur-3:200ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in-out: cubic-bezier(.4,0,.2,1);
+
+  /* ── foco e camadas ────────────────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+  --z-sticky:10; --z-panel:40; --z-popover:60; --z-modal:80; --z-toast:100;
+}
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: var(--grafite-950); --surface: var(--grafite-900);
+  --surface-sunken: var(--grafite-950); --surface-hover: var(--grafite-800);
+  --line: var(--grafite-800); --line-strong: var(--grafite-700);
+  --text: oklch(95% 0.006 95); --text-muted: oklch(72% 0.010 265);
+  --text-faint: oklch(58% 0.010 265);
+  --accent: oklch(72% 0.115 258); --accent-hover: oklch(79% 0.110 258);
+  --accent-soft: oklch(30% 0.055 258); --accent-on: var(--grafite-950);
+  --ok: oklch(72% 0.130 155);  --ok-soft: oklch(28% 0.050 155);
+  --warn: oklch(80% 0.130 75); --warn-soft: oklch(30% 0.055 75);
+  --danger: oklch(70% 0.150 25); --danger-soft: oklch(29% 0.060 25);
+  --ai: oklch(72% 0.120 300);  --ai-soft: oklch(29% 0.055 300);
+  --elev-1: 0 1px 2px oklch(0% 0 0 / .5), 0 0 0 1px oklch(100% 0 0 / .06);
+  --elev-2: 0 8px 28px oklch(0% 0 0 / .6), 0 0 0 1px oklch(100% 0 0 / .08);
+}}
+
+:root[data-theme="dark"] {
+  --bg: var(--grafite-950); --surface: var(--grafite-900);
+  --surface-sunken: var(--grafite-950); --surface-hover: var(--grafite-800);
+  --line: var(--grafite-800); --line-strong: var(--grafite-700);
+  --text: oklch(95% 0.006 95); --text-muted: oklch(72% 0.010 265);
+  --text-faint: oklch(58% 0.010 265);
+  --accent: oklch(72% 0.115 258); --accent-hover: oklch(79% 0.110 258);
+  --accent-soft: oklch(30% 0.055 258); --accent-on: var(--grafite-950);
+  --ok: oklch(72% 0.130 155);  --ok-soft: oklch(28% 0.050 155);
+  --warn: oklch(80% 0.130 75); --warn-soft: oklch(30% 0.055 75);
+  --danger: oklch(70% 0.150 25); --danger-soft: oklch(29% 0.060 25);
+  --ai: oklch(72% 0.120 300);  --ai-soft: oklch(29% 0.055 300);
+  --elev-1: 0 1px 2px oklch(0% 0 0 / .5), 0 0 0 1px oklch(100% 0 0 / .06);
+  --elev-2: 0 8px 28px oklch(0% 0 0 / .6), 0 0 0 1px oklch(100% 0 0 / .08);
+}
+:root[data-theme="light"] {
+  --bg: var(--papel-50); --surface: var(--papel-0);
+  --surface-sunken: var(--papel-100); --surface-hover: var(--papel-100);
+  --line: var(--papel-200); --line-strong: var(--papel-300);
+  --text: var(--grafite-900); --text-muted: oklch(48% 0.012 265);
+  --text-faint: var(--papel-500);
+  --accent: var(--tinta-600); --accent-hover: var(--tinta-700);
+  --accent-soft: var(--tinta-50); --accent-on: var(--papel-0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 1ms; --dur-2: 1ms; --dur-3: 1ms; }
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; scroll-behavior: auto !important;
+  }
+}
+
+html { color-scheme: light dark; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: var(--fw-regular) var(--fs-14)/var(--lh-ui) var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--r-sm); }
+.num, td.num, .mono { font-variant-numeric: tabular-nums lining-nums; }
+.mono { font-family: var(--font-mono); }
