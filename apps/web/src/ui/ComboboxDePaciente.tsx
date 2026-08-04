@@ -13,12 +13,14 @@ export interface PacienteHit {
 }
 
 interface Props {
+  readonly rotulo?: string;
   readonly buscar: (termo: string) => Promise<PacienteHit[]>;
   readonly aoEscolher: (hit: PacienteHit) => void;
   readonly aoCriar: (termo: string) => void;
+  readonly autoFocus?: boolean;
 }
 
-export function ComboboxDePaciente({ buscar, aoEscolher, aoCriar }: Props) {
+export function ComboboxDePaciente({ rotulo = 'Buscar paciente', buscar, aoEscolher, aoCriar, autoFocus }: Props) {
   const id = useId();
   const listboxId = `${id}-listbox`;
   const [termo, setTermo] = useState('');
@@ -89,11 +91,12 @@ export function ComboboxDePaciente({ buscar, aoEscolher, aoCriar }: Props) {
         lineHeight: 1.3, color: 'var(--text-muted)', display: 'block',
         marginBottom: 'var(--s-2)',
       }}>
-        Buscar paciente
+        {rotulo}
       </label>
       <input
         id={`${id}-input`}
         role="combobox"
+        autoFocus={autoFocus}
         aria-expanded={aberto}
         aria-autocomplete="list"
         aria-controls={listboxId}
