@@ -61,8 +61,12 @@ describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao',
 
 describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornavel trocando de tabela', () => {
   it('a varredura enxerga as tabelas clinicas com patient_id — nao passa por vacuo', async () => {
+    // clin.encounter_field_value entrou na lista com a migration 0034: e a
+    // primeira tabela com a coluna `version_id` literal. clin.encounter_version
+    // continua de fora porque a coluna dela chama supersedes_version_id.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
       'clin.encounter',
+      'clin.encounter_field_value',
       'clin.patient_identifier',
       'clin.record_share',
     ]);

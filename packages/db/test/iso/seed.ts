@@ -214,6 +214,31 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PROF_A_ANA, F.PROF_B_DIEGO],
   );
 
+  // clin.encounter_field_value nasceu na Task 15 da Fase 1 e e PARTICIONADA por
+  // finalized_at. Como toda tabela multi-tenant, precisa de linha do tenant B,
+  // senao o teste meta ("o seed realmente criou linha do tenant B em toda tabela
+  // multi-tenant") reprova e o T1 passaria a toa. A insercao vai como
+  // superusuario: app_rw NAO tem INSERT nesta tabela, de proposito.
+  //
+  // finalized_at vem da PROPRIA versao, nunca de um literal: e a chave de
+  // particao, e copiar o valor da versao e o que garante que o valor cai na mesma
+  // faixa que o registro assinado. label_snapshot congela 'Peso' — se a clinica
+  // renomear o campo amanha, este atendimento continua mostrando o que o medico viu.
+  await admin.query(
+    `INSERT INTO clin.encounter_field_value
+       (tenant_id, id, version_id, finalized_at, field_id, field_generation,
+        label_snapshot, value_num)
+     SELECT $1::uuid, $3::uuid, $5::uuid, v.finalized_at, $7::uuid, 1, 'Peso', 68.400
+       FROM clin.encounter_version v WHERE v.id = $5::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, $6::uuid, v.finalized_at, $8::uuid, 1, 'Peso', 81.200
+       FROM clin.encounter_version v WHERE v.id = $6::uuid`,
+    [F.TENANT_A, F.TENANT_B,
+     F.FIELD_VALUE_A_JOANA_PESO, F.FIELD_VALUE_B_MARCOS_PESO,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.FIELD_A_PESO, F.FIELD_B_PESO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

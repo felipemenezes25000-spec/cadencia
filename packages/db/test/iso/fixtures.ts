@@ -63,6 +63,10 @@ export const ENCOUNTER_B_MARCOS = '01930000-0000-7000-8000-0000000000c7';
 export const VERSION_A_JOANA_ORIGINAL = '01930000-0000-7000-8000-0000000000c8';
 export const VERSION_B_MARCOS_ORIGINAL = '01930000-0000-7000-8000-0000000000c9';
 
+/** Um valor de campo ('Peso') gravado na versao original de cada tenant. */
+export const FIELD_VALUE_A_JOANA_PESO = '01930000-0000-7000-8000-0000000000ca';
+export const FIELD_VALUE_B_MARCOS_PESO = '01930000-0000-7000-8000-0000000000cb';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
