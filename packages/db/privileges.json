@@ -111,6 +111,15 @@
       ]
     }
   },
+  "clin.record_field_component": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "clin.record_section": {
     "table": {
       "app_rw": [

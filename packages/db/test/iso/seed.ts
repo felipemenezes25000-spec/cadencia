@@ -125,6 +125,30 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
   );
 
+  // 'PA' e um campo COMPOSTO: um campo, DUAS observacoes. clin.record_field_component
+  // nasceu na Task 5 da Fase 1 e tambem e multi-tenant — precisa de linha do tenant B.
+  await admin.query(
+    `INSERT INTO clin.record_field
+       (tenant_id, id, section_id, code, label, kind, is_reportable, ordinal, generation) VALUES
+       ($1, $3, $5, 'pa', 'Pressao arterial', 'composto', true, 2, 1),
+       ($2, $4, $6, 'pa', 'Pressao arterial', 'composto', true, 2, 1)`,
+    [F.TENANT_A, F.TENANT_B, F.FIELD_A_PA, F.FIELD_B_PA,
+     F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.record_field_component
+       (tenant_id, id, field_id, ordinal, observation_code, label, unit) VALUES
+       ($1, $3, $7, 1, 'PA_SIS', 'Sistolica',  'mmHg'),
+       ($1, $4, $7, 2, 'PA_DIA', 'Diastolica', 'mmHg'),
+       ($2, $5, $8, 1, 'PA_SIS', 'Sistolica',  'mmHg'),
+       ($2, $6, $8, 2, 'PA_DIA', 'Diastolica', 'mmHg')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.COMPONENT_A_PA_SIS, F.COMPONENT_A_PA_DIA,
+     F.COMPONENT_B_PA_SIS, F.COMPONENT_B_PA_DIA,
+     F.FIELD_A_PA, F.FIELD_B_PA],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

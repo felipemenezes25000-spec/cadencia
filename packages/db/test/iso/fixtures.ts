@@ -43,6 +43,14 @@ export const FIELD_A_PESO = '01930000-0000-7000-8000-0000000000af';
 export const SECTION_B_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000b6';
 export const FIELD_B_PESO = '01930000-0000-7000-8000-0000000000b7';
 
+/** Campo composto: 'PA' e um campo com DOIS componentes em cada tenant. */
+export const FIELD_A_PA = '01930000-0000-7000-8000-0000000000b8';
+export const FIELD_B_PA = '01930000-0000-7000-8000-0000000000b9';
+export const COMPONENT_A_PA_SIS = '01930000-0000-7000-8000-0000000000ba';
+export const COMPONENT_A_PA_DIA = '01930000-0000-7000-8000-0000000000bb';
+export const COMPONENT_B_PA_SIS = '01930000-0000-7000-8000-0000000000bc';
+export const COMPONENT_B_PA_DIA = '01930000-0000-7000-8000-0000000000bd';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
