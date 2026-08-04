@@ -194,6 +194,26 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // clin.encounter_version nasceu na Task 14 da Fase 1: a versao e a unidade
+  // assinavel do registro. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai
+  // como superusuario: app_rw NAO tem INSERT nesta tabela, de proposito.
+  // version_no 1 obriga kind = 'original'; prev_hash fica NULL porque e o elo
+  // inicial da cadeia de hash daquele atendimento.
+  await admin.query(
+    `INSERT INTO clin.encounter_version
+       (tenant_id, id, encounter_id, version_no, kind, author_user_id,
+        author_professional_id, content_hash, serializer_version) VALUES
+       ($1, $3, $5, 1, 'original', $7, $9,  sha256('versao original do tenant A'::bytea), 'jcs-1'),
+       ($2, $4, $6, 1, 'original', $8, $10, sha256('versao original do tenant B'::bytea), 'jcs-1')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.USER_A_ANA, F.USER_B_DIEGO,
+     F.PROF_A_ANA, F.PROF_B_DIEGO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

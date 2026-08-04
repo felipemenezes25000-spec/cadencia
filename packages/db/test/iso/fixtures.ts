@@ -59,6 +59,10 @@ export const LAYOUT_B_DIEGO_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000b
 export const ENCOUNTER_A_JOANA = '01930000-0000-7000-8000-0000000000c6';
 export const ENCOUNTER_B_MARCOS = '01930000-0000-7000-8000-0000000000c7';
 
+/** Versao original ja finalizada de cada atendimento do seed. */
+export const VERSION_A_JOANA_ORIGINAL = '01930000-0000-7000-8000-0000000000c8';
+export const VERSION_B_MARCOS_ORIGINAL = '01930000-0000-7000-8000-0000000000c9';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

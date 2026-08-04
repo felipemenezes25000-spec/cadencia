@@ -74,10 +74,14 @@ describe('verify-restore — restauracao so vale se for verificada', () => {
     expect(cadeia.detail).toContain('2026-08-02');
   });
 
-  it('pula em silencio o que ainda nao existe nesta fase, e diz que pulou', async () => {
+  // Na Fase 0 este teste afirmava que a cadeia de versao PULAVA, porque
+  // clin.encounter_version ainda nao existia. A migration 0033 criou a tabela:
+  // a verificacao deixou de ser adiada e passou a valer de verdade.
+  it('verifica a cadeia de hash das versoes agora que clin.encounter_version existe', async () => {
     const resultados = await verifyRestore(catalogPool());
     const versoes = check(resultados, 'cadeia-de-versao-clinica');
-    expect(versoes.skipped).toBe(true);
-    expect(versoes.detail).toContain('clin.encounter_version');
+    expect(versoes.skipped).toBe(false);
+    expect(versoes.ok).toBe(true);
+    expect(versoes.detail).toBe('cadeia de hash das versoes integra');
   });
 });
