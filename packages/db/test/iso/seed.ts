@@ -181,6 +181,19 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
   );
 
+  // clin.encounter_draft nasceu na Task 10 da Fase 1 e e a UNICA superficie
+  // mutavel do sistema. Como toda tabela multi-tenant, precisa de linha do tenant
+  // B: sem ela o teste meta ("o seed realmente criou linha do tenant B em toda
+  // tabela multi-tenant") reprova, e o T1 passaria a toa. rev fica no padrao 1 —
+  // e o banco, nao o seed, quem conduz a revisao.
+  await admin.query(
+    `INSERT INTO clin.encounter_draft (tenant_id, encounter_id, payload, updated_by) VALUES
+       ($1, $3, '{"queixa":"cefaleia ha 3 dias"}'::jsonb, $5),
+       ($2, $4, '{"queixa":"dor lombar"}'::jsonb, $6)`,
+    [F.TENANT_A, F.TENANT_B, F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

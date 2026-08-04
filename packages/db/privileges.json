@@ -108,6 +108,20 @@
       }
     }
   },
+  "clin.encounter_draft": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "clin_writer": [
+        "DELETE",
+        "SELECT"
+      ]
+    }
+  },
   "clin.patient": {
     "table": {
       "app_rw": [
