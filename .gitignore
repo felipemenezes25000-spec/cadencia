@@ -2,9 +2,12 @@ node_modules/
 .superpowers/
 .env
 .env.*
+.env.local
 dist/
 build/
 .next/
 *.log
+*.tsbuildinfo
+coverage/
 .tmp-blocos/
 .tasks/
