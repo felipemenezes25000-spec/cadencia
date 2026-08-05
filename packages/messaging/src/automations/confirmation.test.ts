@@ -3,7 +3,6 @@ import {
   handleAppointmentCreated,
   type AppointmentCreatedPayload,
   type AutomationRule,
-  type ConfirmationOutboxEntry,
 } from './confirmation';
 
 const REGRA_ATIVA: AutomationRule = {

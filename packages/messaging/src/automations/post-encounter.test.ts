@@ -3,8 +3,6 @@ import {
   handleEncounterFinalized,
   scheduleNps,
   type EncounterFinalizedPayload,
-  type PostEncounterOutboxEntry,
-  type NpsOutboxEntry,
 } from './post-encounter';
 import type { AutomationRule } from './confirmation';
 

@@ -716,6 +716,17 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // fin.webhook_event nasceu na Task 39 da Fase 2: evento bruto do PSP. Como toda
+  // tabela multi-tenant, precisa de linha do tenant B, senao o teste meta reprova
+  // e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.webhook_event
+       (tenant_id, id, event_type, raw_payload) VALUES
+       ($1, $3, 'payment.confirmed', '{"paymentLinkId":"seed-a"}'::jsonb),
+       ($2, $4, 'payment.confirmed', '{"paymentLinkId":"seed-b"}'::jsonb)`,
+    [F.TENANT_A, F.TENANT_B, F.WEBHOOK_EVENT_A, F.WEBHOOK_EVENT_B],
+  );
+
   // fin.reconciliation_log nasceu na Task 32 da Fase 2: divergencias detectadas
   // pela conciliacao. Como toda tabela multi-tenant, precisa de linha do tenant B,
   // senao o teste meta reprova e o T1 passaria a toa.

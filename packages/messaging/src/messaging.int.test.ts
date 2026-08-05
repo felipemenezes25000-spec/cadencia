@@ -141,7 +141,7 @@ describe('sendMessage', () => {
       [conversationId]));
     const tDepois = depois.rows[0]?.last_message_at;
     expect(tDepois).not.toBeNull();
-    if (tAntes !== null && tDepois !== null) {
+    if (tAntes != null && tDepois != null) {
       expect(tDepois >= tAntes).toBe(true);
     }
   });

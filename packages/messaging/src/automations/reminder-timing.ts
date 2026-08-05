@@ -1,3 +1,5 @@
+import { isoFromMs } from '@cadencia/kernel';
+
 /**
  * Calcula o instante UTC de envio de lembrete/automacao.
  *
@@ -21,14 +23,12 @@
  * Negativo = oeste (ex: -180 para UTC-3).
  */
 function utcOffsetMinutesAt(instantMs: number, timezone: string): number {
-  const dt = new Date(instantMs);
-  // Formata partes no fuso-alvo
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
     hour12: false,
-  }).formatToParts(dt);
+  }).formatToParts(instantMs);
 
   const get = (type: string): number => {
     const part = parts.find((p) => p.type === type);
@@ -50,7 +50,7 @@ export function computeReminderInstant(
   timezone: string,
   offsetMinutes: number,
 ): string {
-  const startsMs = new Date(startsAtUtc).getTime();
+  const startsMs = Date.parse(startsAtUtc);
 
   // 1. Offset UTC do fuso no instante da consulta
   const tzOffsetAtStart = utcOffsetMinutesAt(startsMs, timezone);
@@ -69,5 +69,5 @@ export function computeReminderInstant(
   // 5. Converte de volta para UTC usando o offset correto
   const targetUtcMs = targetLocalMs - tzOffsetAtTarget * 60_000;
 
-  return new Date(targetUtcMs).toISOString();
+  return isoFromMs(targetUtcMs);
 }

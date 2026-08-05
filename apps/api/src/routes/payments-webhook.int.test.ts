@@ -34,6 +34,7 @@ beforeAll(async () => {
   entryId = uuidv7();
   paymentLinkId = uuidv7();
   const userId = uuidv7();
+  const professionalId = uuidv7();
   const paymentMethodId = uuidv7();
 
   const admin = new Pool({ connectionString: adminUrl(), max: 1 });
@@ -52,6 +53,11 @@ beforeAll(async () => {
       `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, 'User PayWh')`,
       [userId, `${userId}@example.test`]);
     await c.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho)
+       VALUES ($1, $2, $3, 'RM', '123456', 'SP')`,
+      [tenantId, professionalId, userId]);
+    await c.query(
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
        VALUES ($1, $2, 'Paciente PayWh', 'completo', '1988-03-15')`,
       [tenantId, patientId]);
@@ -65,7 +71,7 @@ beforeAll(async () => {
           amount_cents, payment_method_id, status, description, idempotency_key)
        VALUES ($1, $2, 'receita', $3, $4, $5, 20000, $6, 'pendente',
                'Consulta via link', $7)`,
-      [tenantId, entryId, patientId, clinicId, userId,
+      [tenantId, entryId, patientId, clinicId, professionalId,
        paymentMethodId, `link:${entryId}`]);
     await c.query(
       `INSERT INTO fin.payment_link
@@ -148,7 +154,7 @@ describe('webhook de pagamento', () => {
            (tenant_id, id, kind, patient_id, clinic_id, professional_id,
             amount_cents, payment_method_id, status, description, idempotency_key)
          VALUES ($1, $2, 'receita', $3, $4,
-                 (SELECT id FROM id."user" LIMIT 1), 10000,
+                 (SELECT id FROM app.professional WHERE tenant_id = $1 LIMIT 1), 10000,
                  (SELECT id FROM fin.payment_method WHERE tenant_id = $1 LIMIT 1),
                  'pendente', 'Segundo link', $5)`,
         [tenantId, entryId2, patientId, clinicId, `link:${entryId2}`]);

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
-import { appPool, closePools, withTenantTx, type Actor } from '@cadencia/db';
+import { closePools, withTenantTx, type Actor } from '@cadencia/db';
 import { uuidv7 } from '@cadencia/kernel';
 
 interface SementeFinanceiro {

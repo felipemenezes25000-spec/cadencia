@@ -10,6 +10,7 @@
  * que o despachante saiba o que fazer.
  */
 
+import { systemClock } from '@cadencia/kernel';
 import { computeReminderInstant } from './reminder-timing';
 import type { AutomationRule, AppointmentCreatedPayload } from './confirmation';
 
@@ -41,7 +42,7 @@ export interface ReminderOutboxEntry {
 export function scheduleReminders(
   appt: AppointmentCreatedPayload,
   rules: readonly AutomationRule[],
-  nowMs: number = Date.now(),
+  nowMs: number = systemClock.nowMs(),
 ): ReminderOutboxEntry[] {
   if (appt.patientPhone === null || appt.patientPhone === '') {
     return [];
@@ -61,7 +62,7 @@ export function scheduleReminders(
     );
 
     // Descarta lembretes cujo instante de envio ja passou
-    const startAfterMs = new Date(startAfter).getTime();
+    const startAfterMs = Date.parse(startAfter);
     if (startAfterMs <= nowMs) {
       continue;
     }

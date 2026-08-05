@@ -500,6 +500,191 @@
       ]
     }
   },
+  "fin.category": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.daily_rollup": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.entry": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "fin.payment_link": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "fin.payment_method": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.receipt": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.receipt_counter": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.reconciliation_log": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.webhook_event": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "msg.automation_rule": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "msg.channel_identity": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "msg.conversation": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "msg.inbound_event": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "msg.message": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "msg.nps_response": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "msg.sent_reminder": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "msg.template": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "sched.appointment": {
     "table": {
       "app_rw": [

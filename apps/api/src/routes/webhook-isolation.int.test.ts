@@ -71,6 +71,7 @@ beforeAll(async () => {
   const clinicA = uuidv7();
   const clinicB = uuidv7();
   const userA = uuidv7();
+  const professionalA = uuidv7();
   const patientA = uuidv7();
   channelIdentityA = uuidv7();
   paymentLinkA = uuidv7();
@@ -99,6 +100,11 @@ beforeAll(async () => {
       `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, 'User Iso A')`,
       [userA, `${userA}@example.test`]);
     await c.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho)
+       VALUES ($1, $2, $3, 'RM', '654321', 'SP')`,
+      [tenantA, professionalA, userA]);
+    await c.query(
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
        VALUES ($1, $2, 'Paciente Iso A', 'completo', '1991-01-01')`,
       [tenantA, patientA]);
@@ -117,7 +123,7 @@ beforeAll(async () => {
           amount_cents, payment_method_id, status, description, idempotency_key)
        VALUES ($1, $2, 'receita', $3, $4, $5, 30000, $6, 'pendente',
                'Consulta iso A', $7)`,
-      [tenantA, entryA, patientA, clinicA, userA,
+      [tenantA, entryA, patientA, clinicA, professionalA,
        paymentMethodA, `link:${entryA}`]);
     await c.query(
       `INSERT INTO fin.payment_link

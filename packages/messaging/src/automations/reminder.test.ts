@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scheduleReminders, type ReminderOutboxEntry } from './reminder';
+import { scheduleReminders } from './reminder';
 import type { AutomationRule } from './confirmation';
 
 const REGRA_24H: AutomationRule = {

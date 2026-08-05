@@ -1,5 +1,5 @@
 {
-  "checksum": "7c39e2f01655d3aaeb538baf63a7fe2d78fa594b572b333ac1970e53827a85e9",
+  "checksum": "82f8975070f6f9566bd1a3b0b6008a01e8b8bf619ac4a6cf33b87e2d827bb5f6",
   "rows": [
     {
       "key": "appointment.checkin",
@@ -147,6 +147,64 @@
       "requiresMfa": true
     },
     {
+      "key": "messaging.automation.write",
+      "description": "Configurar regras de automacao",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "messaging.conversation.read",
+      "description": "Ler conversas do tenant",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "messaging.message.read",
+      "description": "Ler mensagens de uma conversa",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "messaging.message.write",
+      "description": "Enviar mensagem",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "messaging.template.read",
+      "description": "Listar templates de mensagem",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "messaging.template.write",
+      "description": "Criar ou editar templates",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": false
+    },
+    {
       "key": "patient.read",
       "description": "Ler cadastro de paciente",
       "roles": [
@@ -164,6 +222,48 @@
         "admin_clinico",
         "diretor_tecnico",
         "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "payment.link.write",
+      "description": "Criar link de pagamento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "payment.read",
+      "description": "Listar pagamentos",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "payment.refund",
+      "description": "Estornar pagamento",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "payment.write",
+      "description": "Registrar pagamento no atendimento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
         "recepcao"
       ],
       "requiresMfa": false

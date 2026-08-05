@@ -146,6 +146,10 @@ export const PAYMENT_LINK_B = '01930000-0000-7000-8000-0000000000f1';
 export const RECONCILIATION_LOG_A = '01930000-0000-7000-8000-0000000000f2';
 export const RECONCILIATION_LOG_B = '01930000-0000-7000-8000-0000000000f3';
 
+/** Evento bruto de webhook do PSP: um em cada tenant. */
+export const WEBHOOK_EVENT_A = '01930000-0000-7000-8000-0000000000f4';
+export const WEBHOOK_EVENT_B = '01930000-0000-7000-8000-0000000000f5';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

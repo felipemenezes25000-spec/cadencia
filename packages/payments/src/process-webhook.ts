@@ -1,6 +1,6 @@
 // packages/payments/src/process-webhook.ts
 import type { TxClient } from '@cadencia/db';
-import { NotFoundError, ok, err, type Result } from '@cadencia/kernel';
+import { NotFoundError, ok, err, type Result, systemClock, isoFromMs } from '@cadencia/kernel';
 
 export interface WebhookPayload {
   readonly providerPaymentId: string;
@@ -73,7 +73,7 @@ export async function processPaymentWebhook(
               status = 'pago',
               external_ref = $2
         WHERE id = $3 AND paid_at IS NULL`,
-      [payload.paidAt ?? new Date().toISOString(), payload.providerPaymentId, link.entry_id],
+      [payload.paidAt ?? isoFromMs(systemClock.nowMs()), payload.providerPaymentId, link.entry_id],
     );
   }
 
