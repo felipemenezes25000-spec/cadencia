@@ -7,6 +7,7 @@
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
     "@cadencia/db": "workspace:*",
+    "@cadencia/integrations": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "pg-boss": "^10.3.1"
   }

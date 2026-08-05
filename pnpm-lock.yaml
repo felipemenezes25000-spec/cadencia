@@ -186,6 +186,9 @@ importers:
       '@cadencia/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@cadencia/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -284,7 +287,21 @@ importers:
 
   packages/kernel: {}
 
-  packages/messaging: {}
+  packages/messaging:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.20.3
+        version: 8.20.3
 
   packages/outbox:
     dependencies:

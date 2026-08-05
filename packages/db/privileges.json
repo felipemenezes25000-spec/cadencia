@@ -34,6 +34,10 @@
       "app_rw": [
         "INSERT",
         "SELECT"
+      ],
+      "jobs": [
+        "SELECT",
+        "UPDATE"
       ]
     },
     "columns": {
@@ -321,6 +325,9 @@
       ],
       "clin_writer": [
         "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
       ]
     }
   },
@@ -499,6 +506,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
       ]
     }
   },
