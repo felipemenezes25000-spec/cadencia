@@ -26,7 +26,7 @@
     "db:privileges": "tsx packages/db/src/invariants/write-privileges.ts",
     "db:invariants": "tsx packages/db/src/invariants-cli.ts",
     "restore:drill": "tsx scripts/restore-drill.ts",
-    "prepush": "pnpm arch:check && pnpm lint:session-guc && pnpm test:iso",
+    "prepush": "pnpm typecheck && pnpm arch:check && pnpm lint:terminology-clock && pnpm lint:session-guc && pnpm test && pnpm test:int && pnpm test:iso",
     "prepare": "husky"
   },
   "devDependencies": {

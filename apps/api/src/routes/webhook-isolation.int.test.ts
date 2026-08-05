@@ -30,6 +30,12 @@ function sign(payload: string): string {
     .update(payload).digest('hex');
 }
 
+/** Assina o payload com o segredo padrao do FakePaymentProvider. */
+function signPayment(payload: string): string {
+  return createHmac('sha256', 'fake-payment-secret')
+    .update(Buffer.from(payload)).digest('hex');
+}
+
 let tenantA: string;
 let tenantB: string;
 let channelIdentityA: string;
@@ -195,7 +201,7 @@ describe('isolamento de webhooks (test:iso)', () => {
       url: '/v1/payments/webhook',
       headers: {
         'content-type': 'application/json',
-        'x-psp-signature': 'valid-sig',
+        'x-webhook-signature': signPayment(payload),
       },
       payload,
     });
@@ -259,7 +265,7 @@ describe('isolamento de webhooks (test:iso)', () => {
       url: `/v1/payments/webhook?tenant_id=${tenantB}`,
       headers: {
         'content-type': 'application/json',
-        'x-psp-signature': 'valid-sig',
+        'x-webhook-signature': signPayment(payload),
       },
       payload,
     });

@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { isoFromMs, systemClock } from '@cadencia/kernel';
 import {
   asRfc3339, failure, success,
@@ -10,12 +11,14 @@ import type {
 
 export interface FakePaymentOptions {
   readonly modo?: 'ok' | 'indisponivel' | 'timeout';
+  readonly webhookSecret?: string;
 }
 
 export function createFakePaymentProvider(
   opts: FakePaymentOptions = {},
 ): PaymentProvider {
   const modo = opts.modo ?? 'ok';
+  const webhookSecret = opts.webhookSecret ?? 'fake-payment-secret';
   const pagamentos = new Map<string, PaymentSnapshot>();
 
   function falha<T>() {
@@ -105,7 +108,15 @@ export function createFakePaymentProvider(
       return success({ refundId, status: refundedSnap.status }, refundId);
     },
 
-    verifyWebhook(_raw: Buffer, _h) {
+    verifyWebhook(raw: Buffer, h) {
+      const sig = h['x-webhook-signature'];
+      if (sig === undefined) {
+        return { valid: false, reason: 'header x-webhook-signature ausente' };
+      }
+      const expected = createHmac('sha256', webhookSecret).update(raw).digest('hex');
+      if (sig !== expected) {
+        return { valid: false, reason: 'assinatura HMAC invalida' };
+      }
       return { valid: true };
     },
 

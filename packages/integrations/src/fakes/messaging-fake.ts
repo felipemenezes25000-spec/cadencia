@@ -10,7 +10,7 @@ import type {
   OutboundBody, StatusUpdate,
 } from '../contracts/messaging';
 
-export type ModoFakeMsg = 'ok' | 'indisponivel' | 'timeout';
+export type ModoFakeMsg = 'ok' | 'indisponivel' | 'timeout' | 'bloqueado';
 
 export interface FakeMessagingOptions {
   readonly modo?: ModoFakeMsg;
@@ -44,6 +44,11 @@ export function createFakeMessagingProvider(
     if (modo === 'timeout') {
       return failure<T>({ kind: 'timeout', retrySafe: false,
                           detail: 'deadline estourou' });
+    }
+    if (modo === 'bloqueado') {
+      return failure<T>({ kind: 'rejected', retrySafe: false,
+                          code: 'CHANNEL_SUSPENDED',
+                          detail: 'canal suspenso — numero bloqueado pelo parceiro' });
     }
     return null;
   }

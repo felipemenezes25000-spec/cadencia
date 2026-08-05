@@ -3,11 +3,17 @@
 // ADAPTACAO: o plano original referenciava `fin.payment` e colunas
 // fantasma. O repositorio real usa `fin.entry` (0077) e `fin.payment_link`
 // com entry_id (0079). Veja 00-CONTRATOS.md secoes A3 e A7.
+import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closePools, jobsPool } from '@cadencia/db';
 import { uuidv7 } from '@cadencia/kernel';
 import { Pool } from 'pg';
 import { buildApp } from '../app';
+
+/** Assina o payload com o segredo padrao do FakePaymentProvider. */
+function signPayment(payload: string): string {
+  return createHmac('sha256', 'fake-payment-secret').update(Buffer.from(payload)).digest('hex');
+}
 
 function adminUrl(): string {
   const url = process.env['DATABASE_URL_ADMIN'];
@@ -97,7 +103,7 @@ describe('webhook de pagamento', () => {
       url: '/v1/payments/webhook',
       headers: {
         'content-type': 'application/json',
-        'x-psp-signature': 'valid-sig',
+        'x-webhook-signature': signPayment(payload),
       },
       payload,
     });
@@ -174,7 +180,7 @@ describe('webhook de pagamento', () => {
     const r = await app.inject({
       method: 'POST',
       url: '/v1/payments/webhook',
-      headers: { 'content-type': 'application/json', 'x-psp-signature': 'valid-sig' },
+      headers: { 'content-type': 'application/json', 'x-webhook-signature': signPayment(payload) },
       payload,
     });
 

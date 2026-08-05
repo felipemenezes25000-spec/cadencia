@@ -85,9 +85,24 @@ describe('PaymentProvider fake', () => {
     expect(h.up).toBe(false);
   });
 
-  it('verifyWebhook do fake sempre retorna valido', () => {
+  it('verifyWebhook do fake valida HMAC corretamente', () => {
+    const { createHmac } = require('node:crypto');
     const p = createFakePaymentProvider();
-    expect(p.verifyWebhook(Buffer.from('{}'), {})).toEqual({ valid: true });
+    const body = Buffer.from('{}');
+    const sig = createHmac('sha256', 'fake-payment-secret').update(body).digest('hex');
+    expect(p.verifyWebhook(body, { 'x-webhook-signature': sig })).toEqual({ valid: true });
+  });
+
+  it('verifyWebhook do fake rejeita assinatura invalida', () => {
+    const p = createFakePaymentProvider();
+    expect(p.verifyWebhook(Buffer.from('{}'), { 'x-webhook-signature': 'invalida' }))
+      .toEqual({ valid: false, reason: 'assinatura HMAC invalida' });
+  });
+
+  it('verifyWebhook do fake rejeita header ausente', () => {
+    const p = createFakePaymentProvider();
+    expect(p.verifyWebhook(Buffer.from('{}'), {}))
+      .toEqual({ valid: false, reason: 'header x-webhook-signature ausente' });
   });
 
   it('estorno parcial marca como partially_refunded', async () => {
