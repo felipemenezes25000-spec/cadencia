@@ -3,20 +3,28 @@
 import { useEffect, useState } from 'react';
 import { EditorClinico, type CodigoHit, type ModeloHit, type ValorAnterior } from './EditorClinico';
 import { PainelLateral } from '../ui/PainelLateral';
+import { PainelDeCobranca, type MetodoPagamento } from '../ui/PainelDeCobranca';
 
 export interface TelaDeAtendimentoProps {
   readonly encounterId: string;
   readonly pacienteNome: string;
+  readonly procedimentoNome?: string;
+  readonly valorSugeridoCentavos?: number;
   readonly abrirSessaoDoPrescritor: () => Promise<{ mode: string }>;
   readonly buscarCodigo: (termo: string) => Promise<CodigoHit[]>;
   readonly buscarModelo: (termo: string) => Promise<ModeloHit[]>;
   readonly buscarValorAnterior: (campo: string) => Promise<ValorAnterior | null>;
   readonly aoConfirmarPrescricao: () => Promise<{ prescriptionId: string }>;
   readonly aoFinalizar: () => Promise<{ versionId: string; versionNo: number }>;
+  readonly aoRegistrarPagamento?: (dados: { amountCents: number; method: Exclude<MetodoPagamento, 'link'> }) =>
+    Promise<{ entryId: string; receiptNumber: number }>;
+  readonly aoCriarLinkPagamento?: (dados: { amountCents: number }) =>
+    Promise<{ linkUrl: string; linkId: string }>;
 }
 
 export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   const [prescricaoAberta, setPrescricaoAberta] = useState(false);
+  const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
 
   useEffect(() => {
@@ -37,6 +45,17 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           <h1 style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
             {p.pacienteNome}
           </h1>
+          {p.aoRegistrarPagamento !== undefined ? (
+            <button type="button"
+              onClick={() => setCobrancaAberta(true)}
+              aria-label="Cobrar"
+              style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                       background: 'var(--surface)', padding: 'var(--s-3) var(--s-5)',
+                       cursor: 'pointer', color: 'var(--text)',
+                       fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)' }}>
+              Cobrar
+            </button>
+          ) : null}
         </header>
 
         <EditorClinico
@@ -48,6 +67,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           aoPedirExame={() => {}}
           aoEmitirDocumento={() => {}}
           aoFinalizar={() => { void finalizar(); }}
+          aoCobrar={() => setCobrancaAberta(true)}
         />
 
         {finalizado ? (
@@ -70,6 +90,18 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         aoFechar={() => setPrescricaoAberta(false)}>
         <p style={{ margin: 0 }}>Prescrição embarcada para {p.pacienteNome}</p>
       </PainelLateral>
+
+      {p.aoRegistrarPagamento !== undefined && p.aoCriarLinkPagamento !== undefined ? (
+        <PainelDeCobranca
+          aberto={cobrancaAberta}
+          pacienteNome={p.pacienteNome}
+          procedimentoNome={p.procedimentoNome ?? 'Consulta'}
+          valorSugeridoCentavos={p.valorSugeridoCentavos ?? 0}
+          aoRegistrar={p.aoRegistrarPagamento}
+          aoCriarLink={p.aoCriarLinkPagamento}
+          aoFechar={() => setCobrancaAberta(false)}
+        />
+      ) : null}
     </div>
   );
 }

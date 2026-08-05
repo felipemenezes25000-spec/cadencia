@@ -22,6 +22,7 @@ export const ATALHOS_DO_ATENDIMENTO: readonly AtalhoDoAtendimento[] = [
   { combinacao: 'Ctrl+I', acao: 'transcricao_por_ia', descricao: 'Transcrição por IA' },
   { combinacao: 'Ctrl+;', acao: 'inserir_data_hora_do_servidor',
     descricao: 'Data/hora do servidor' },
+  { combinacao: 'Ctrl+$', acao: 'cobrar', descricao: 'Cobrar' },
   { combinacao: 'Ctrl+ArrowUp', acao: 'secao_anterior', descricao: 'Seção anterior' },
   { combinacao: 'Ctrl+ArrowDown', acao: 'proxima_secao', descricao: 'Próxima seção' },
   { combinacao: 'Ctrl+Enter', acao: 'finalizar', descricao: 'Finalizar atendimento' },

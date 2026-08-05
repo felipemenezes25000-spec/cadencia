@@ -1,17 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TelaDeAtendimento } from './TelaDeAtendimento';
 
 function montar(over = {}) {
   const props = {
     encounterId: 'e1', pacienteNome: 'Maria Souza Lima',
+    procedimentoNome: 'Consulta', valorSugeridoCentavos: 25000,
     abrirSessaoDoPrescritor: vi.fn(async () => ({ mode: 'embedded' as const })),
     buscarCodigo: vi.fn(async () => [{ code: 'I10', display: 'Hipertensão essencial' }]),
     buscarModelo: vi.fn(async () => [{ code: 'retorno', texto: 'Retorno em 30 dias.' }]),
     buscarValorAnterior: vi.fn(async () => ({ valor: '72,4 kg', em: '12/05/2026' })),
     aoConfirmarPrescricao: vi.fn(async () => ({ prescriptionId: 'rx1' })),
     aoFinalizar: vi.fn(async () => ({ versionId: 'v1', versionNo: 1 })),
+    aoRegistrarPagamento: vi.fn(async () => ({ entryId: 'e1', receiptNumber: 42 })),
+    aoCriarLinkPagamento: vi.fn(async () => ({ linkUrl: 'https://pay.example.com/abc', linkId: 'lk1' })),
     ...over,
   };
   render(<TelaDeAtendimento {...props} />);
@@ -39,6 +42,15 @@ describe('fluxo critico (b) — medico atende, prescreve e finaliza', () => {
     await waitFor(() => expect(aoFinalizar).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(
       screen.getByRole('button', { name: /Próximo paciente/ })).toBeVisible());
+  });
+
+  it('Ctrl+$ abre o painel de cobranca ao lado do atendimento', async () => {
+    montar();
+    const editor = screen.getByRole('article');
+    fireEvent.keyDown(editor, { key: '$', ctrlKey: true });
+    const dialog = screen.getByRole('dialog', { name: /Cobrar/ });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByText('Maria Souza Lima')).toBeVisible();
   });
 
   it('a assinatura NAO bloqueia: PSC fora do ar finaliza e joga a pendencia para depois', async () => {

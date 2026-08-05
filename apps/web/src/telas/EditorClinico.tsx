@@ -16,6 +16,7 @@ export interface EditorClinicoProps {
   readonly aoPedirExame: () => void;
   readonly aoEmitirDocumento: () => void;
   readonly aoFinalizar: () => void;
+  readonly aoCobrar?: () => void;
 }
 
 const MAPA_ATALHOS: Record<string, string> = {};
@@ -49,6 +50,7 @@ export function EditorClinico(p: EditorClinicoProps) {
       case 'prescrever': p.aoPrescrever(); break;
       case 'pedir_exame': p.aoPedirExame(); break;
       case 'emitir_documento': p.aoEmitirDocumento(); break;
+      case 'cobrar': p.aoCobrar?.(); break;
       case 'finalizar': p.aoFinalizar(); break;
     }
   }
