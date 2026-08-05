@@ -51,7 +51,7 @@ export async function processPaymentWebhook(
         SET status = $1,
             paid_at = CASE WHEN $1 = 'paid' THEN $2::timestamptz ELSE paid_at END,
             fee_cents = CASE WHEN $3::bigint IS NOT NULL THEN $3::bigint ELSE fee_cents END,
-            method = CASE WHEN $4 IS NOT NULL THEN $4 ELSE method END,
+            method = CASE WHEN $4::text IS NOT NULL THEN $4::text ELSE method END,
             webhook_raw = $5::jsonb,
             updated_at = clock_timestamp()
       WHERE id = $6`,
