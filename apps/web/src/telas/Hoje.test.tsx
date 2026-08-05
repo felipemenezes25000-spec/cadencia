@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { Hoje } from './Hoje';
+import { Hoje, type HojeProps } from './Hoje';
 
 const DIA = {
   contadores: { agendados: 3, confirmados: 1, aguardando: 1, atendidos: 1, faltas: 0 },
@@ -27,7 +27,10 @@ function montar(over: Partial<Parameters<typeof Hoje>[0]> = {}) {
     dia: '2026-08-03', carregarDia: vi.fn(async () => DIA),
     carregarPrecisaDeVoce: vi.fn(async () => PRECISA),
     aoCheckIn: vi.fn(async () => {}), aoAbrirAtendimento: vi.fn(),
-    filtro: undefined, aoMudarFiltro: vi.fn(), ...over,
+    filtro: undefined, aoMudarFiltro: vi.fn(),
+    aoRegistrarPagamento: undefined as HojeProps['aoRegistrarPagamento'],
+    aoCriarLinkPagamento: undefined as HojeProps['aoCriarLinkPagamento'],
+    ...over,
   };
   render(<Hoje {...props} />);
   return props;
@@ -76,6 +79,19 @@ describe('tela Hoje', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Precisa de você' })).toBeVisible());
     expect(screen.getByText('4')).toBeVisible();
     expect(screen.getByText(/confirmações sem resposta/i)).toBeVisible();
+  });
+
+  it('botao "Cobrar" na fila abre o painel de cobranca com os dados da linha', async () => {
+    const aoRegistrarPagamento = vi.fn(async () => ({ entryId: 'e1', receiptNumber: 1 }));
+    const aoCriarLinkPagamento = vi.fn(async () => ({ linkUrl: 'https://pay.example.com/x', linkId: 'l1' }));
+    montar({ aoRegistrarPagamento, aoCriarLinkPagamento });
+    await waitFor(() => expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0));
+    const botoes = screen.getAllByRole('button', { name: /Cobrar/i });
+    expect(botoes.length).toBeGreaterThan(0);
+    await userEvent.click(botoes[0]!);
+    const dialog = screen.getByRole('dialog', { name: /Cobrar/ });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByText('Maria Souza Lima')).toBeVisible();
   });
 
   it('sem violacao de acessibilidade', async () => {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FaixaDeContadores, type Contadores, type FiltroDoDia } from '../ui/FaixaDeContadores';
 import { LinhaDaAgenda } from '../ui/LinhaDaAgenda';
 import { Botao } from '../ui/Botao';
+import { PainelDeCobranca, type MetodoPagamento } from '../ui/PainelDeCobranca';
 import type { StatusAgenda } from '../ui/ChipDeStatus';
 
 export interface LinhaDaFila {
@@ -13,6 +14,7 @@ export interface LinhaDaFila {
   readonly operadoraNome: string | null; readonly status: StatusAgenda;
   readonly encaixe: boolean; readonly teleconsulta: boolean; readonly primeiraVez: boolean;
   readonly cadastroPreliminar: boolean; readonly encounterId: string | null;
+  readonly valorSugeridoCentavos?: number;
 }
 
 export interface PrecisaDeVoce {
@@ -30,6 +32,12 @@ export interface HojeProps {
   readonly aoCheckIn: (appointmentId: string) => Promise<void>;
   readonly aoAbrirAtendimento: (linha: LinhaDaFila) => void;
   readonly aoMudarFiltro: (filtro: FiltroDoDia | undefined) => void;
+  readonly aoRegistrarPagamento?: (appointmentId: string, dados: {
+    amountCents: number; method: Exclude<MetodoPagamento, 'link'>;
+  }) => Promise<{ entryId: string; receiptNumber: number }>;
+  readonly aoCriarLinkPagamento?: (appointmentId: string, dados: {
+    amountCents: number;
+  }) => Promise<{ linkUrl: string; linkId: string }>;
 }
 
 const PENDENCIAS: ReadonlyArray<[keyof PrecisaDeVoce, string]> = [
@@ -56,6 +64,7 @@ export function Hoje(p: HojeProps) {
   const [contadores, setContadores] = useState<Contadores | null>(null);
   const [fila, setFila] = useState<LinhaDaFila[]>([]);
   const [precisa, setPrecisa] = useState<PrecisaDeVoce | null>(null);
+  const [cobranca, setCobranca] = useState<LinhaDaFila | null>(null);
 
   useEffect(() => {
     void p.carregarDia(p.dia, p.filtro).then((r) => {
@@ -111,7 +120,8 @@ export function Hoje(p: HojeProps) {
             />
           ))}
         </ul>
-        <div style={{ display: 'flex', gap: 'var(--s-4)', marginTop: 'var(--s-5)' }}>
+        <div style={{ display: 'flex', gap: 'var(--s-4)', marginTop: 'var(--s-5)',
+                      flexWrap: 'wrap' }}>
           {fila.map((l) => (
             <span key={l.appointmentId} style={{ display: 'contents' }}>
               <Botao variante="secundario" altura={28}
@@ -124,6 +134,13 @@ export function Hoje(p: HojeProps) {
                 onClick={() => p.aoAbrirAtendimento(l)}>
                 {l.encounterId === null ? 'Abrir atendimento' : 'Continuar'}
               </Botao>
+              {p.aoRegistrarPagamento !== undefined ? (
+                <Botao variante="fantasma" altura={28}
+                  aria-label={`Cobrar de ${l.displayName}`}
+                  onClick={() => setCobranca(l)}>
+                  Cobrar
+                </Botao>
+              ) : null}
             </span>
           ))}
         </div>
@@ -150,6 +167,18 @@ export function Hoje(p: HojeProps) {
           </ul>
         </section>
       )}
+
+      {cobranca !== null && p.aoRegistrarPagamento !== undefined && p.aoCriarLinkPagamento !== undefined ? (
+        <PainelDeCobranca
+          aberto={true}
+          pacienteNome={cobranca.displayName}
+          procedimentoNome={cobranca.procedureNome ?? 'Consulta'}
+          valorSugeridoCentavos={cobranca.valorSugeridoCentavos ?? 0}
+          aoRegistrar={(dados) => p.aoRegistrarPagamento!(cobranca.appointmentId, dados)}
+          aoCriarLink={(dados) => p.aoCriarLinkPagamento!(cobranca.appointmentId, dados)}
+          aoFechar={() => setCobranca(null)}
+        />
+      ) : null}
     </div>
   );
 }
