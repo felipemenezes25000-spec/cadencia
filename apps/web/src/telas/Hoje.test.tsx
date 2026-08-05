@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { Hoje, type HojeProps } from './Hoje';
+import { Hoje } from './Hoje';
 
 const DIA = {
   contadores: { agendados: 3, confirmados: 1, aguardando: 1, atendidos: 1, faltas: 0 },
@@ -11,12 +11,14 @@ const DIA = {
       patientId: 'p1', displayName: 'Maria Souza Lima', professionalId: 'pr1',
       procedureNome: 'Consulta', procedureCor: '#2f5fd0', operadoraNome: 'Unimed',
       status: 'aguardando' as const, encaixe: false, teleconsulta: false, primeiraVez: false,
-      cadastroPreliminar: true, encounterId: null },
+      cadastroPreliminar: true, encounterId: null,
+      mensagensNaoLidas: 2, pagamentoPendente: true },
     { appointmentId: 'a2', startsAt: '2026-08-03T14:00:00.000Z', endsAt: '2026-08-03T14:30:00.000Z',
       patientId: 'p2', displayName: 'Joana Prado', professionalId: 'pr1',
       procedureNome: 'Retorno', procedureCor: '#2f5fd0', operadoraNome: null,
       status: 'agendado' as const, encaixe: true, teleconsulta: false, primeiraVez: true,
-      cadastroPreliminar: false, encounterId: null },
+      cadastroPreliminar: false, encounterId: null,
+      mensagensNaoLidas: 0, pagamentoPendente: false },
   ],
 };
 const PRECISA = { confirmacoesSemResposta: 4, prescricoesNaoAssinadas: 1,
@@ -28,8 +30,8 @@ function montar(over: Partial<Parameters<typeof Hoje>[0]> = {}) {
     carregarPrecisaDeVoce: vi.fn(async () => PRECISA),
     aoCheckIn: vi.fn(async () => {}), aoAbrirAtendimento: vi.fn(),
     filtro: undefined, aoMudarFiltro: vi.fn(),
-    aoRegistrarPagamento: undefined as HojeProps['aoRegistrarPagamento'],
-    aoCriarLinkPagamento: undefined as HojeProps['aoCriarLinkPagamento'],
+    mensagensNaoLidasTotal: 5,
+    aoMensagem: vi.fn(), aoCobrar: vi.fn(),
     ...over,
   };
   render(<Hoje {...props} />);
@@ -41,6 +43,19 @@ describe('tela Hoje', () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Hoje, segunda-feira, 3 de agosto/i })).toBeVisible());
+  });
+
+  it('mostra badge de mensagens nao-lidas no cabecalho', async () => {
+    montar();
+    await waitFor(() => expect(
+      screen.getByLabelText('5 mensagens não lidas')).toBeVisible());
+  });
+
+  it('NAO mostra badge quando nao ha mensagens nao-lidas', async () => {
+    montar({ mensagensNaoLidasTotal: 0 });
+    await waitFor(() => expect(
+      screen.getByRole('heading', { level: 1 })).toBeVisible());
+    expect(screen.queryByLabelText(/mensagens não lidas/)).not.toBeInTheDocument();
   });
 
   it('mostra a faixa de contadores e a fila em ordem de horario', async () => {
@@ -74,6 +89,27 @@ describe('tela Hoje', () => {
     expect(linhas[1]).toHaveTextContent(/Aguardando/);
   });
 
+  it('acao Mensagem aparece para todos os pacientes e mostra contagem se > 0', async () => {
+    const { aoMensagem } = montar();
+    await waitFor(() => expect(
+      screen.getByRole('button', { name: /Mensagem para Maria Souza Lima/ })).toBeVisible());
+    expect(screen.getByRole('button', { name: /Mensagem para Maria Souza Lima/ }))
+      .toHaveTextContent('Mensagem (2)');
+    expect(screen.getByRole('button', { name: /Mensagem para Joana Prado/ }))
+      .toHaveTextContent('Mensagem');
+    await userEvent.click(screen.getByRole('button', { name: /Mensagem para Maria Souza Lima/ }));
+    expect(aoMensagem).toHaveBeenCalledWith(DIA.fila[0]);
+  });
+
+  it('acao Cobrar aparece SOMENTE para quem tem pagamento pendente', async () => {
+    const { aoCobrar } = montar();
+    await waitFor(() => expect(
+      screen.getByRole('button', { name: /Cobrar Maria Souza Lima/ })).toBeVisible());
+    expect(screen.queryByRole('button', { name: /Cobrar Joana Prado/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Cobrar Maria Souza Lima/ }));
+    expect(aoCobrar).toHaveBeenCalledWith(DIA.fila[0]);
+  });
+
   it('o painel Precisa de voce lista as cinco filas com os numeros', async () => {
     montar();
     await waitFor(() => expect(screen.getByRole('region', { name: 'Precisa de você' })).toBeVisible());
@@ -81,24 +117,12 @@ describe('tela Hoje', () => {
     expect(screen.getByText(/confirmações sem resposta/i)).toBeVisible();
   });
 
-  it('botao "Cobrar" na fila abre o painel de cobranca com os dados da linha', async () => {
-    const aoRegistrarPagamento = vi.fn(async () => ({ entryId: 'e1', receiptNumber: 1 }));
-    const aoCriarLinkPagamento = vi.fn(async () => ({ linkUrl: 'https://pay.example.com/x', linkId: 'l1' }));
-    montar({ aoRegistrarPagamento, aoCriarLinkPagamento });
-    await waitFor(() => expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0));
-    const botoes = screen.getAllByRole('button', { name: /Cobrar/i });
-    expect(botoes.length).toBeGreaterThan(0);
-    await userEvent.click(botoes[0]!);
-    const dialog = screen.getByRole('dialog', { name: /Cobrar/ });
-    expect(dialog).toBeVisible();
-    expect(within(dialog).getByText('Maria Souza Lima')).toBeVisible();
-  });
-
   it('sem violacao de acessibilidade', async () => {
     const { container } = render(
       <Hoje dia="2026-08-03" carregarDia={async () => DIA}
         carregarPrecisaDeVoce={async () => PRECISA} aoCheckIn={async () => {}}
-        aoAbrirAtendimento={vi.fn()} aoMudarFiltro={vi.fn()} />);
+        aoAbrirAtendimento={vi.fn()} aoMudarFiltro={vi.fn()}
+        mensagensNaoLidasTotal={0} aoMensagem={vi.fn()} aoCobrar={vi.fn()} />);
     await waitFor(() => expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0));
     expect(await axe(container)).toHaveNoViolations();
   });

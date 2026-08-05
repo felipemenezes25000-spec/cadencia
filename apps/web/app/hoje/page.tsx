@@ -28,6 +28,9 @@ export default function PaginaHoje() {
           { method: 'POST', clinicId, csrfToken });
       }}
       aoAbrirAtendimento={(l) => { window.location.href = `/atendimento/novo?paciente=${l.patientId}`; }}
+      mensagensNaoLidasTotal={0}
+      aoMensagem={() => {}}
+      aoCobrar={() => {}}
     />
   );
 }
