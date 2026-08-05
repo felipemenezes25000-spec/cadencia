@@ -68,6 +68,28 @@ export const ACTIONS = [
     roles: ['diretor_tecnico', 'profissional'] },
   { key: 'prescription.write', description: 'Prescrever',
     roles: ['diretor_tecnico', 'profissional'] },
+  // ── Fase 2 · Mensageria ──────────────────────────────────────────────────
+  { key: 'messaging.conversation.read', description: 'Ler conversas do tenant',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'messaging.message.read', description: 'Ler mensagens de uma conversa',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'messaging.message.write', description: 'Enviar mensagem',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao'] },
+  { key: 'messaging.template.read', description: 'Listar templates de mensagem',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao'] },
+  { key: 'messaging.template.write', description: 'Criar ou editar templates',
+    roles: ['admin_clinico'] },
+  { key: 'messaging.automation.write', description: 'Configurar regras de automacao',
+    roles: ['admin_clinico'] },
+  // ── Fase 2 · Pagamento ───────────────────────────────────────────────────
+  { key: 'payment.read', description: 'Listar pagamentos',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao', 'financeiro'] },
+  { key: 'payment.write', description: 'Registrar pagamento no atendimento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao', 'financeiro'] },
+  { key: 'payment.refund', description: 'Estornar pagamento',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'payment.link.write', description: 'Criar link de pagamento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'recepcao', 'financeiro'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
