@@ -1,1 +1,19 @@
-export {};
+// packages/events/src/index.ts
+export {
+  EVENT_TYPES, isEventType,
+  type EventType,
+  type DomainEvent,
+  type DomainEventBase,
+  type AppointmentConfirmed,
+  type AppointmentConfirmedPayload,
+  type AppointmentReminderDue,
+  type AppointmentReminderDuePayload,
+  type EncounterFinalized,
+  type EncounterFinalizedPayload,
+  type PaymentReceived,
+  type PaymentReceivedPayload,
+  type PaymentLinkCreated,
+  type PaymentLinkCreatedPayload,
+  type InboundMessageReceived,
+  type InboundMessageReceivedPayload,
+} from './domain-events';
