@@ -286,7 +286,24 @@ importers:
 
   packages/messaging: {}
 
-  packages/outbox: {}
+  packages/outbox:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/events':
+        specifier: workspace:*
+        version: link:../events
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.20.3
+        version: 8.20.3
 
   packages/patients:
     dependencies:
