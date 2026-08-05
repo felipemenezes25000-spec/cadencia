@@ -16,31 +16,26 @@ Uma sessão nova — minha ou de outro desenvolvedor — lê este arquivo e cont
 | Repositório | `github.com/felipemenezes25000-spec/cadencia` (privado) |
 | Branch de trabalho | `fase-0-fundacao` |
 | Fase 0 — Fundação | ✅ **concluída**, 48 tarefas |
-| Fase 1 — "O dia" | 🔄 **tarefas 1 a 36 concluídas** — retomar na **37** |
-| Fases 2 a 4 | ⬜ planos ainda não escritos |
+| Fase 1 — "O dia" | ✅ **concluída**, 79 tarefas, 67 migrations, 737 testes |
+| Fase 2 — "A conversa e o caixa" | ✅ **concluída**, 60 tarefas, 86 migrations, gates verdes |
+| Fases 3 e 4 | ⬜ planos ainda não escritos |
 
 ## ▶ Ponto de retomada exato
 
-Última sessão parou com a árvore limpa e tudo verde, no commit
-`2fe4ac4 feat(scheduling): live day counters and queue over a partial index`
-— que entrega a **Task 36** (`scheduling.dayQueue`).
+**Fase 2 concluída.** 60 tarefas, 86 migrations (67 da Fase 1 + 19 novas),
+gates verdes (1 falha pré-existente em `verify-restore` — contaminação de cadeia
+de hash entre testes de integração, não introduzida pela Fase 2).
 
-**A próxima é a Task 37** (`scheduling.checkIn`). Em
-`tools/workflows/executa-fase.js`:
+O que a Fase 2 entrega: WhatsApp bidirecional via WABA (inbound webhook com
+HMAC, outbound via provider fake, conversas com last_message_at), automações de
+confirmação de consulta, lembrete 24h e pós-consulta com NPS, financeiro básico
+(lançamentos receita/despesa, categorias, métodos de pagamento, link de pagamento
+via PSP, webhook de pagamento com conciliação e idempotência, recibos com
+contador sequencial, rollup diário por competência e caixa), telas web
+(Conversas, Financeiro, dashboard de caixa, recibos, cobrança na agenda).
 
-```js
-for (let n = 37; n <= 79; n++) TAREFAS.push(String(n))
-```
-
-O que já está de pé na Fase 1: o motor de prontuário completo (catálogo de
-seções e campos, rascunho com concorrência otimista, `finalize_encounter` com a
-cadeia de hash, retificação, adendo, leitura versionada com auditoria acoplada),
-pacientes com cadastro mínimo viável e busca, e a agenda (bloqueios, recorrência
-materializada, lista de espera, encaixe, contadores ao vivo).
-
-O que falta: check-in, o painel "Precisa de você", assinatura ICP-Brasil,
-documentos e exportação ECF.18, prescrição via Memed, a API Fastify com RBAC, o
-app shell com o design system, e as telas.
+**Próximo passo: escrever e executar a Fase 3.** O design cobre as seis fases
+(§8 do design doc), mas apenas Fases 0–2 têm plano escrito e executado.
 
 Para ver o estado exato agora:
 
@@ -66,9 +61,13 @@ histórico é a fonte da verdade sobre progresso — não este arquivo, que enve
 2. **`docs/superpowers/plans/2026-08-03-fase0-fundacao-plano.md`** — 48 tarefas,
    já executadas.
 
-3. **`docs/superpowers/plans/2026-08-03-fase1-o-dia-plano.md`** — 79 tarefas.
+3. **`docs/superpowers/plans/2026-08-03-fase1-o-dia-plano.md`** — 79 tarefas,
+   já executadas.
 
-4. **`docs/superpowers/pesquisa/`** — a pesquisa de domínio que fundamenta o
+4. **`docs/superpowers/plans/2026-08-04-fase2-a-conversa-e-o-caixa-plano.md`** — 60
+   tarefas, já executadas. Blocos em `fase2/`, contratos em `fase2/00-CONTRATOS.md`.
+
+5. **`docs/superpowers/pesquisa/`** — a pesquisa de domínio que fundamenta o
    design: regulação do prontuário eletrônico (CFM, SBIS, LGPD), prescrição
    digital, TISS, e o inventário de navegação real do iClinic.
 
@@ -92,17 +91,11 @@ pnpm typecheck && pnpm arch:check && pnpm db:invariants
 
 # 3. Fatiar o plano em uma tarefa por arquivo
 node tools/workflows/fatiar-plano.mjs \
-     docs/superpowers/plans/2026-08-03-fase1-o-dia-plano.md .tasks-fase1
+     docs/superpowers/plans/<plano-da-fase>.md .tasks-fase<N>
 ```
 
-Depois, edite `tools/workflows/executa-fase.js` na linha do laço:
-
-```js
-for (let n = 23; n <= 79; n++) TAREFAS.push(String(n))
-//           ↑ troque pela próxima tarefa não concluída
-```
-
-E lance o workflow apontando para esse arquivo.
+Depois, crie ou edite `tools/workflows/executa-fase.js` ajustando o laço para
+a faixa de tarefas da fase, e lance o workflow.
 
 O laço é **sequencial de propósito**: cada tarefa commita, e a seguinte enxerga o
 resultado. Em paralelo daria conflito de git e migrations fora de ordem.
@@ -166,8 +159,8 @@ varredura sobre o diff completo ficou para depois, e quando acontecer será a
 **única revisão do projeto**. Vale fazê-la antes de qualquer coisa ir para
 produção.
 
-**Os planos das Fases 2, 3 e 4.** O design cobre as seis fases (§8), mas só as
-Fases 0 e 1 têm plano de implementação escrito.
+**Os planos das Fases 3 e 4.** O design cobre as seis fases (§8), mas só as
+Fases 0, 1 e 2 têm plano de implementação escrito e executado.
 
 **A Fase 5** (glosa e webservice SOAP com operadoras) é fisicamente bloqueada até
 existir cliente real: credenciais e homologação pertencem ao prestador, não a nós.
