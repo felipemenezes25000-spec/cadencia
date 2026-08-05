@@ -99,3 +99,72 @@ export async function semearPagamento(): Promise<SementePagamento> {
   }
   return s;
 }
+
+// ---------------------------------------------------------------------------
+// Seed para testes de payment link, webhook e conciliacao (Task 34)
+// ---------------------------------------------------------------------------
+
+export interface SementeFinanceiro {
+  tenantId: string; clinicId: string; userId: string;
+  professionalId: string; patientId: string; procedureId: string;
+  entryId: string; paymentMethodId: string;
+}
+
+export async function semearFinanceiro(): Promise<SementeFinanceiro> {
+  const s: SementeFinanceiro = {
+    tenantId: uuidv7(), clinicId: uuidv7(), userId: uuidv7(),
+    professionalId: uuidv7(), patientId: uuidv7(), procedureId: uuidv7(),
+    entryId: uuidv7(), paymentMethodId: uuidv7(),
+  };
+  const admin = new Pool({ connectionString: adminUrl(), max: 1 });
+  const c = await admin.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(
+      `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
+       VALUES ($1, $2, 'Clinica Financeiro', '98ABC76501DE43')`,
+      [s.tenantId, `f-${s.tenantId}`]);
+    await c.query(
+      `INSERT INTO app.clinic (tenant_id, id, nome, cnes, timezone)
+       VALUES ($1, $2, 'Unidade Fin', '7654321', 'America/Sao_Paulo')`,
+      [s.tenantId, s.clinicId]);
+    await c.query(
+      `INSERT INTO id."user" (id, email, full_name) VALUES ($1, $2, 'Recepcao Fin')`,
+      [s.userId, `${s.userId}@example.test`]);
+    await c.query(
+      `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+       VALUES ($1, gen_random_uuid(), $2, $3, 'recepcao')`,
+      [s.tenantId, s.userId, s.clinicId]);
+    await c.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho, cbos)
+       VALUES ($1, $2, $3, '06', '654321', 'RJ', '225125')`,
+      [s.tenantId, s.professionalId, s.userId]);
+    await c.query(
+      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status)
+       VALUES ($1, $2, 'Joao Pagador Silva', 'completo')`,
+      [s.tenantId, s.patientId]);
+    await c.query(
+      `INSERT INTO fin.payment_method (tenant_id, id, kind, name)
+       VALUES ($1, $2, 'pix', 'Pix Financeiro')`,
+      [s.tenantId, s.paymentMethodId]);
+    await c.query(
+      `INSERT INTO fin.entry
+         (tenant_id, id, clinic_id, patient_id, professional_id,
+          kind, amount_cents, status, description,
+          payment_method_id, idempotency_key, created_by)
+       VALUES ($1, $2, $3, $4, $5,
+               'receita', 25000, 'pendente', 'Consulta particular',
+               $6, $7, $8)`,
+      [s.tenantId, s.entryId, s.clinicId, s.patientId, s.professionalId,
+       s.paymentMethodId, `seed-${s.entryId}`, s.userId]);
+    await c.query('COMMIT');
+  } catch (e) {
+    await c.query('ROLLBACK');
+    throw e;
+  } finally {
+    c.release();
+    await admin.end();
+  }
+  return s;
+}

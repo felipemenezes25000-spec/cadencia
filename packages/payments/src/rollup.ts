@@ -142,3 +142,39 @@ export async function detectDivergence(
     liveEntries: r.live_entries,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Wrapper para a funcao SQL fin.refresh_daily_rollup (migration 0080)
+// ---------------------------------------------------------------------------
+
+export interface RollupResult {
+  readonly divergent: boolean;
+  readonly oldTotal: number;
+  readonly newTotal: number;
+}
+
+export async function refreshDailyRollup(
+  tx: TxClient,
+  tenantId: string,
+  clinicId: string,
+  day: string,
+): Promise<RollupResult> {
+  const { rows } = await tx.query<{
+    divergent: boolean;
+    old_total: string;
+    new_total: string;
+  }>(
+    `SELECT divergent, old_total::text, new_total::text
+       FROM fin.refresh_daily_rollup($1, $2, $3::date)`,
+    [tenantId, clinicId, day],
+  );
+  const row = rows[0];
+  if (row === undefined) {
+    return { divergent: false, oldTotal: 0, newTotal: 0 };
+  }
+  return {
+    divergent: row.divergent,
+    oldTotal: Number(row.old_total),
+    newTotal: Number(row.new_total),
+  };
+}
