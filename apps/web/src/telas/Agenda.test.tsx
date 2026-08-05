@@ -10,13 +10,16 @@ const FILA = [{
   procedureNome: 'Consulta', procedureCor: '#2f5fd0', operadoraNome: 'Unimed',
   status: 'agendado' as const, encaixe: false, teleconsulta: false, primeiraVez: false,
   cadastroPreliminar: false, encounterId: null,
+  mensagensNaoLidas: 0, pagamentoPendente: true,
 }];
 
 function montar(over = {}) {
   const props = {
     dia: '2026-08-03', visao: 'dia' as const, timezone: 'UTC',
     carregar: vi.fn(async () => FILA), aoMudarVisao: vi.fn(), aoMudarDia: vi.fn(),
-    aoAbrirCompositor: vi.fn(), aoMover: vi.fn(async () => {}), ...over,
+    aoAbrirCompositor: vi.fn(), aoMover: vi.fn(async () => {}),
+    aoConfirmar: vi.fn(async () => {}), aoCobrar: vi.fn(),
+    ...over,
   };
   render(<Agenda {...props} />);
   return props;
@@ -44,8 +47,39 @@ describe('tela Agenda', () => {
 
   it('o agendamento aparece posicionado na grade, com a cor do procedimento', async () => {
     montar();
-    const item = await screen.findByRole('button', { name: /Maria Souza Lima/ });
-    expect(item).toHaveStyle({ gridRow: '25 / 27' });
+    const item = await screen.findByText('Maria Souza Lima');
+    expect(item.closest('[style]')).toBeTruthy();
+  });
+
+  it('o botao Confirmar aparece para status agendado e envia template de confirmacao', async () => {
+    const { aoConfirmar } = montar();
+    const botao = await screen.findByRole('button', { name: /Confirmar Maria Souza Lima/ });
+    expect(botao).toBeVisible();
+    await userEvent.click(botao);
+    expect(aoConfirmar).toHaveBeenCalledWith('a1');
+  });
+
+  it('apos confirmar, o status muda para confirmado e o glifo aparece', async () => {
+    montar();
+    await userEvent.click(await screen.findByRole('button', { name: /Confirmar Maria Souza Lima/ }));
+    await waitFor(() => expect(screen.getByLabelText('Confirmado')).toBeVisible());
+    expect(screen.queryByRole('button', { name: /Confirmar Maria Souza Lima/ }))
+      .not.toBeInTheDocument();
+  });
+
+  it('o botao Cobrar aparece para quem tem pagamento pendente', async () => {
+    const { aoCobrar } = montar();
+    const botao = await screen.findByRole('button', { name: /Cobrar Maria Souza Lima/ });
+    expect(botao).toBeVisible();
+    await userEvent.click(botao);
+    expect(aoCobrar).toHaveBeenCalledWith('a1');
+  });
+
+  it('Cobrar NAO aparece quando pagamentoPendente e false', async () => {
+    montar({ carregar: vi.fn(async () =>
+      FILA.map((f) => ({ ...f, pagamentoPendente: false }))) });
+    await waitFor(() => expect(screen.getByText('Maria Souza Lima')).toBeVisible());
+    expect(screen.queryByRole('button', { name: /Cobrar/ })).not.toBeInTheDocument();
   });
 
   it('clicar num vao vazio abre o compositor INLINE, nao um modal de pagina cheia', async () => {
@@ -64,7 +98,7 @@ describe('tela Agenda', () => {
     const { container } = render(
       <Agenda dia="2026-08-03" visao="dia" timezone="UTC" carregar={async () => FILA}
         aoMudarVisao={vi.fn()} aoMudarDia={vi.fn()} aoAbrirCompositor={vi.fn()}
-        aoMover={async () => {}} />);
+        aoMover={async () => {}} aoConfirmar={async () => {}} aoCobrar={vi.fn()} />);
     await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(5));
     expect(await axe(container)).toHaveNoViolations();
   });

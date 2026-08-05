@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { VISOES, faixasDoDia, posicaoNaGrade, type Visao } from './grade';
 import type { LinhaDaFila } from './Hoje';
+import { Botao } from '../ui/Botao';
 
 export interface AgendaProps {
   readonly dia: string;
@@ -13,6 +14,8 @@ export interface AgendaProps {
   readonly aoMudarDia: (dia: string) => void;
   readonly aoAbrirCompositor: (inicioMin: number) => void;
   readonly aoMover: (appointmentId: string, novoInicioIso: string) => Promise<void>;
+  readonly aoConfirmar: (appointmentId: string) => Promise<void>;
+  readonly aoCobrar: (appointmentId: string) => void;
 }
 
 const INICIO_MIN = 7 * 60;
@@ -21,6 +24,7 @@ const PASSO_MIN = 15;
 
 export function Agenda(p: AgendaProps) {
   const [itens, setItens] = useState<LinhaDaFila[]>([]);
+  const [confirmando, setConfirmando] = useState<string | null>(null);
   const faixas = faixasDoDia({ inicioMin: INICIO_MIN, fimMin: FIM_MIN, passoMin: PASSO_MIN });
 
   useEffect(() => { void p.carregar(p.dia).then(setItens); }, [p, p.dia]);
@@ -37,6 +41,19 @@ export function Agenda(p: AgendaProps) {
     window.addEventListener('keydown', aoTeclar);
     return () => window.removeEventListener('keydown', aoTeclar);
   }, [p]);
+
+  async function confirmar(appointmentId: string): Promise<void> {
+    setConfirmando(appointmentId);
+    try {
+      await p.aoConfirmar(appointmentId);
+      setItens((atual) => atual.map((it) =>
+        it.appointmentId === appointmentId
+          ? { ...it, status: 'confirmado' as const }
+          : it));
+    } finally {
+      setConfirmando(null);
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)' }}>
@@ -87,8 +104,8 @@ export function Agenda(p: AgendaProps) {
           const pos = posicaoNaGrade(it.startsAt, it.endsAt,
             { inicioMin: INICIO_MIN, passoMin: PASSO_MIN, timezone: p.timezone });
           return (
-            <button
-              key={it.appointmentId} type="button"
+            <div
+              key={it.appointmentId}
               style={{
                 gridColumn: 2, gridRow: `${pos.linhaInicio} / ${pos.linhaFim}`,
                 textAlign: 'left', border: 'var(--border)',
@@ -97,12 +114,39 @@ export function Agenda(p: AgendaProps) {
                 background: it.encaixe
                   ? 'repeating-linear-gradient(45deg, var(--surface) 0 6px, var(--surface-sunken) 6px 12px)'
                   : 'var(--surface)',
-                margin: 1, padding: `var(--s-2) var(--s-4)`, cursor: 'grab',
+                margin: 1, padding: `var(--s-2) var(--s-4)`,
                 fontSize: 'var(--fs-13)', overflow: 'hidden',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}
             >
-              {it.displayName}
-            </button>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis',
+                             whiteSpace: 'nowrap' }}>
+                {it.displayName}
+                {it.status === 'confirmado' ? (
+                  <span aria-label="Confirmado" style={{ marginInlineStart: 'var(--s-2)',
+                    color: 'var(--st-confirmado)', fontSize: 'var(--fs-11)' }}>
+                    ✓
+                  </span>
+                ) : null}
+              </span>
+              <span style={{ display: 'flex', gap: 'var(--s-2)', flexShrink: 0 }}>
+                {it.status === 'agendado' ? (
+                  <Botao variante="fantasma" altura={28}
+                    carregando={confirmando === it.appointmentId}
+                    aria-label={`Confirmar ${it.displayName}`}
+                    onClick={(e) => { e.stopPropagation(); void confirmar(it.appointmentId); }}>
+                    Confirmar
+                  </Botao>
+                ) : null}
+                {it.pagamentoPendente ? (
+                  <Botao variante="fantasma" altura={28}
+                    aria-label={`Cobrar ${it.displayName}`}
+                    onClick={(e) => { e.stopPropagation(); p.aoCobrar(it.appointmentId); }}>
+                    Cobrar
+                  </Botao>
+                ) : null}
+              </span>
+            </div>
           );
         })}
       </div>
