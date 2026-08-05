@@ -29,3 +29,10 @@ export {
 export {
   createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord,
 } from './fakes/messaging-fake';
+export {
+  type PaymentLinkInput, type PaymentLinkResult, type PaymentProvider,
+  type PaymentSnapshot, type PaymentStatus, type Settlement,
+} from './contracts/payment';
+export {
+  createFakePaymentProvider, type FakePaymentOptions,
+} from './fakes/payment-fake';
