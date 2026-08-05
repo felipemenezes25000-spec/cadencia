@@ -556,6 +556,19 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO, F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
+  // app.outbox nasceu na Task 2 da Fase 2: o outbox transacional garante que o
+  // evento so existe se o efeito de dominio existir. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B, senao o teste meta ("o seed realmente criou
+  // linha do tenant B em toda tabela multi-tenant") reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO app.outbox
+       (tenant_id, id, event_type, aggregate_id, payload) VALUES
+       ($1, $3, 'APPOINTMENT_CONFIRMED', $5, '{"appointmentId":"seed-a"}'::jsonb),
+       ($2, $4, 'APPOINTMENT_CONFIRMED', $6, '{"appointmentId":"seed-b"}'::jsonb)`,
+    [F.TENANT_A, F.TENANT_B, F.OUTBOX_A, F.OUTBOX_B,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
   // ── Trilha de auditoria ────────────────────────────────────────────────────
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem

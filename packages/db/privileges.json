@@ -29,6 +29,27 @@
       ]
     }
   },
+  "app.outbox": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "attempts": [
+          "UPDATE"
+        ],
+        "dispatched_at": [
+          "UPDATE"
+        ],
+        "last_error": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "app.professional": {
     "table": {
       "app_rw": [

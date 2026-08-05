@@ -118,6 +118,10 @@ export const PRESCRIPTION_B_MARCOS = '01930000-0000-7000-8000-0000000000e3';
 export const PRESCRIPTION_ITEM_A = '01930000-0000-7000-8000-0000000000e4';
 export const PRESCRIPTION_ITEM_B = '01930000-0000-7000-8000-0000000000e5';
 
+/** Outbox: um evento transacional em cada tenant. */
+export const OUTBOX_A = '01930000-0000-7000-8000-0000000000e6';
+export const OUTBOX_B = '01930000-0000-7000-8000-0000000000e7';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
