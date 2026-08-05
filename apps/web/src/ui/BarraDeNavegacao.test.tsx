@@ -19,19 +19,24 @@ describe('barra de navegacao', () => {
       'Hoje', 'Agenda', 'Conversas', 'Pacientes', 'Financeiro', 'Desempenho']);
   });
 
-  it('marca o que ainda nao existe, com o motivo — nunca cadeado de upsell', () => {
-    const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > 1);
-    expect(futuros.map((i) => i.rotulo)).toEqual(['Conversas', 'Financeiro', 'Desempenho']);
+  it('na Fase 2 so Desempenho esta marcado como futuro', () => {
+    const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > 2);
+    expect(futuros.map((i) => i.rotulo)).toEqual(['Desempenho']);
     for (const f of futuros) expect(f.motivo).toMatch(/Fase \d/);
   });
 
-  it('renderiza os itens da Fase 1 como link e os futuros como desabilitados', () => {
+  it('Conversas e Financeiro agora sao links navegaveis', () => {
     render(<BarraDeNavegacao />);
-    expect(screen.getByRole('link', { name: 'Hoje' })).toBeInTheDocument();
-    const conversas = screen.getByRole('button', { name: /Conversas/ });
-    expect(conversas).toBeDisabled();
-    expect(conversas).toHaveAttribute('aria-disabled', 'true');
-    expect(conversas).toHaveAccessibleDescription(/Fase 2/);
+    expect(screen.getByRole('link', { name: 'Conversas' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Financeiro' })).toBeInTheDocument();
+  });
+
+  it('Desempenho permanece desabilitado com motivo', () => {
+    render(<BarraDeNavegacao />);
+    const desempenho = screen.getByRole('button', { name: /Desempenho/ });
+    expect(desempenho).toBeDisabled();
+    expect(desempenho).toHaveAttribute('aria-disabled', 'true');
+    expect(desempenho).toHaveAccessibleDescription(/Fase 3/);
   });
 
   it('a navegacao e um <nav> com rotulo e nao tem violacao de acessibilidade', async () => {
