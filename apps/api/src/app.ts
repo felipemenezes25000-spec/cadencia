@@ -14,6 +14,7 @@ import { clinicalArtifactRoutes } from './routes/clinical-artifacts';
 import { messagingRoutes } from './routes/messaging';
 import { messagingWebhookRoutes } from './routes/messaging-webhook';
 import { paymentRoutes } from './routes/payments';
+import { paymentWebhookRoutes } from './routes/payments-webhook';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -83,6 +84,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(messagingRoutes);
   await app.register(messagingWebhookRoutes);
   await app.register(paymentRoutes);
+  await app.register(paymentWebhookRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {

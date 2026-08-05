@@ -1,13 +1,15 @@
 import {
   createFakePrescriptionProvider, createFakeSignatureProvider,
-  createFakeMessagingProvider,
-  type PrescriptionProvider, type SignatureProvider, type MessagingProvider,
+  createFakeMessagingProvider, createFakePaymentProvider,
+  type PrescriptionProvider, type SignatureProvider,
+  type MessagingProvider, type PaymentProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
   readonly signature: SignatureProvider;
   readonly prescription: PrescriptionProvider;
   readonly messaging: MessagingProvider;
+  readonly payment: PaymentProvider;
 }
 
 let cache: Providers | null = null;
@@ -22,6 +24,7 @@ export function providers(): Providers {
     signature: createFakeSignatureProvider(),
     prescription: createFakePrescriptionProvider(),
     messaging: createFakeMessagingProvider(),
+    payment: createFakePaymentProvider(),
   };
   return cache;
 }
