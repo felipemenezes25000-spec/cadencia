@@ -1,8 +1,14 @@
 import type { Provider, ProviderCtx, ProviderResult, Rfc3339 } from './common';
 
-export type PaymentStatus =
-  | 'pending' | 'approved' | 'declined' | 'refunded'
-  | 'partially_refunded' | 'cancelled' | 'indeterminate';
+export const PAYMENT_STATUSES = [
+  'pending', 'approved', 'declined', 'refunded',
+  'partially_refunded', 'cancelled', 'indeterminate',
+] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export function isPaymentStatus(v: string): v is PaymentStatus {
+  return (PAYMENT_STATUSES as readonly string[]).includes(v);
+}
 
 export interface PaymentSnapshot {
   readonly providerPaymentId: string;
