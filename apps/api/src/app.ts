@@ -11,6 +11,7 @@ import { patientRoutes } from './routes/patients';
 import { scheduleRoutes } from './routes/schedule';
 import { encounterRoutes } from './routes/encounters';
 import { clinicalArtifactRoutes } from './routes/clinical-artifacts';
+import { messagingRoutes } from './routes/messaging';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -77,6 +78,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(scheduleRoutes);
   await app.register(encounterRoutes);
   await app.register(clinicalArtifactRoutes);
+  await app.register(messagingRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
