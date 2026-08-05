@@ -7,6 +7,23 @@ import type { PacienteHit } from '../ui/ComboboxDePaciente';
 export type PapelNaTela = 'profissional' | 'recepcao' | 'financeiro'
                         | 'admin_clinico' | 'diretor_tecnico';
 
+export interface MensagemResumo {
+  readonly messageId: string;
+  readonly direction: 'inbound' | 'outbound';
+  readonly bodyPreview: string;
+  readonly sentAt: string;
+  readonly status: 'sent' | 'delivered' | 'read' | 'failed';
+}
+
+export interface LancamentoResumo {
+  readonly entryId: string;
+  readonly description: string;
+  readonly amountCents: number;
+  readonly status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  readonly dueDate: string;
+  readonly paidAt: string | null;
+}
+
 export interface FichaDoPacienteProps {
   readonly paciente: PacienteHit;
   readonly papel: PapelNaTela;
@@ -16,21 +33,42 @@ export interface FichaDoPacienteProps {
   readonly carregarProntuario: () => Promise<unknown[]>;
   readonly aoSolicitarAcesso: () => void;
   readonly aoQuebrarVidro: (justificativa: string, horas: number) => Promise<void>;
+  readonly carregarConversas: () => Promise<MensagemResumo[]>;
+  readonly carregarFinanceiro: () => Promise<LancamentoResumo[]>;
+  readonly podeVerFinanceiro: boolean;
 }
 
 const CLINICOS = new Set<PapelNaTela>(['profissional', 'admin_clinico', 'diretor_tecnico']);
+const VE_FINANCEIRO = new Set<PapelNaTela>(['financeiro', 'admin_clinico', 'diretor_tecnico']);
+
+type Aba = 'perfil' | 'atendimentos' | 'prontuario' | 'conversas' | 'financeiro';
 
 export function FichaDoPaciente(p: FichaDoPacienteProps) {
   const veProntuario = CLINICOS.has(p.papel);
-  const [aba, setAba] = useState<'perfil' | 'atendimentos' | 'prontuario'>('perfil');
+  const veFinanceiro = p.podeVerFinanceiro || VE_FINANCEIRO.has(p.papel);
+  const [aba, setAba] = useState<Aba>('perfil');
   const [pedindoVidro, setPedindoVidro] = useState(false);
   const [justificativa, setJustificativa] = useState('');
+  const [conversas, setConversas] = useState<MensagemResumo[] | null>(null);
+  const [lancamentos, setLancamentos] = useState<LancamentoResumo[] | null>(null);
 
-  const abas: { chave: typeof aba; rotulo: string }[] = [
+  const abas: { chave: Aba; rotulo: string }[] = [
     { chave: 'perfil', rotulo: 'Perfil' },
     { chave: 'atendimentos', rotulo: 'Atendimentos' },
     ...(veProntuario ? [{ chave: 'prontuario' as const, rotulo: 'Prontuário' }] : []),
+    { chave: 'conversas', rotulo: 'Conversas' },
+    ...(veFinanceiro ? [{ chave: 'financeiro' as const, rotulo: 'Financeiro' }] : []),
   ];
+
+  function selecionarAba(chave: Aba): void {
+    setAba(chave);
+    if (chave === 'conversas' && conversas === null) {
+      void p.carregarConversas().then(setConversas);
+    }
+    if (chave === 'financeiro' && lancamentos === null) {
+      void p.carregarFinanceiro().then(setLancamentos);
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)' }}>
@@ -54,7 +92,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
                                                                    gap: 'var(--s-1)' }}>
         {abas.map((a) => (
           <button key={a.chave} role="tab" type="button" aria-selected={aba === a.chave}
-            onClick={() => setAba(a.chave)}
+            onClick={() => selecionarAba(a.chave)}
             style={{
               border: 0, borderBottom: aba === a.chave
                 ? '2px solid var(--accent)' : '2px solid transparent',
@@ -107,6 +145,71 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
               </Botao>
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {aba === 'conversas' ? (
+        <section aria-label="Conversas do paciente"
+          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
+          {conversas === null ? (
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Carregando conversas...</p>
+          ) : conversas.length === 0 ? (
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nenhuma conversa com este paciente.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
+                         gap: 'var(--s-3)' }}>
+              {conversas.map((msg) => (
+                <li key={msg.messageId} style={{ display: 'flex', gap: 'var(--s-4)',
+                                                  padding: 'var(--s-3) 0',
+                                                  borderBottom: 'var(--border)' }}>
+                  <span style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
+                                 minWidth: '3ch', textAlign: 'right' }}>
+                    {msg.direction === 'inbound' ? '←' : '→'}
+                  </span>
+                  <span style={{ flex: 1, fontSize: 'var(--fs-13)' }}>{msg.bodyPreview}</span>
+                  <span style={{ fontSize: 'var(--fs-11)', color: 'var(--text-muted)' }}>
+                    {msg.sentAt}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {aba === 'financeiro' ? (
+        <section aria-label="Financeiro do paciente"
+          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
+          {lancamentos === null ? (
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Carregando financeiro...</p>
+          ) : lancamentos.length === 0 ? (
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nenhum lançamento para este paciente.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
+                         gap: 'var(--s-3)' }}>
+              {lancamentos.map((l) => (
+                <li key={l.entryId} style={{ display: 'flex', justifyContent: 'space-between',
+                                             padding: 'var(--s-3) 0',
+                                             borderBottom: 'var(--border)' }}>
+                  <span style={{ fontSize: 'var(--fs-13)' }}>{l.description}</span>
+                  <span style={{ fontSize: 'var(--fs-13)', fontWeight: 'var(--fw-medium)' }}>
+                    {`R$ ${(Math.abs(l.amountCents) / 100).toFixed(2).replace('.', ',')}`}
+                  </span>
+                  <span style={{
+                    fontSize: 'var(--fs-11)', textTransform: 'uppercase',
+                    color: l.status === 'paid' ? 'var(--success)'
+                         : l.status === 'overdue' ? 'var(--danger)'
+                         : 'var(--text-muted)',
+                  }}>
+                    {l.status === 'paid' ? 'Pago' : l.status === 'overdue' ? 'Vencido'
+                     : l.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
     </div>
