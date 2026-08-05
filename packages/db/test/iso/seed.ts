@@ -642,4 +642,44 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($2, $4, 'dinheiro', 'Dinheiro')`,
     [F.TENANT_A, F.TENANT_B, F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
   );
+
+  // fin.entry nasceu na Task 25 da Fase 2: lancamento financeiro. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senao o teste meta ("o seed realmente
+  // criou linha do tenant B em toda tabela multi-tenant") reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.entry
+       (tenant_id, id, kind, category_id, patient_id, professional_id, clinic_id,
+        description, amount_cents, payment_method_id, paid_at, status, idempotency_key) VALUES
+       ($1, $3, 'receita', $5, $7, $9,  $11,
+        'Consulta particular', 25000, $13, clock_timestamp(), 'pago', 'seed-entry-a'),
+       ($2, $4, 'receita', $6, $8, $10, $12,
+        'Consulta particular', 30000, $14, clock_timestamp(), 'pago', 'seed-entry-b')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.ENTRY_A, F.ENTRY_B,
+     F.CATEGORY_A, F.CATEGORY_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
+  );
+
+  // fin.receipt_counter nasceu na Task 25 da Fase 2: sequencia de recibo por tenant.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B.
+  await admin.query(
+    `INSERT INTO fin.receipt_counter (tenant_id, next_value) VALUES
+       ($1, 2),
+       ($2, 2)`,
+    [F.TENANT_A, F.TENANT_B],
+  );
+
+  // fin.receipt nasceu na Task 25 da Fase 2: recibo vinculado ao lancamento.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B.
+  await admin.query(
+    `INSERT INTO fin.receipt (tenant_id, id, entry_id, receipt_number) VALUES
+       ($1, $3, $5, 1),
+       ($2, $4, $6, 1)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECEIPT_A, F.RECEIPT_B,
+     F.ENTRY_A, F.ENTRY_B],
+  );
 }

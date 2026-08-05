@@ -130,6 +130,14 @@ export const CATEGORY_B = '01930000-0000-7000-8000-0000000000e9';
 export const PAYMENT_METHOD_A = '01930000-0000-7000-8000-0000000000ea';
 export const PAYMENT_METHOD_B = '01930000-0000-7000-8000-0000000000eb';
 
+/** Lancamento financeiro: um em cada tenant. */
+export const ENTRY_A = '01930000-0000-7000-8000-0000000000ec';
+export const ENTRY_B = '01930000-0000-7000-8000-0000000000ed';
+
+/** Recibo: um em cada tenant. */
+export const RECEIPT_A = '01930000-0000-7000-8000-0000000000ee';
+export const RECEIPT_B = '01930000-0000-7000-8000-0000000000ef';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
