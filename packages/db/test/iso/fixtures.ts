@@ -138,6 +138,14 @@ export const ENTRY_B = '01930000-0000-7000-8000-0000000000ed';
 export const RECEIPT_A = '01930000-0000-7000-8000-0000000000ee';
 export const RECEIPT_B = '01930000-0000-7000-8000-0000000000ef';
 
+/** Link de pagamento: um em cada tenant. */
+export const PAYMENT_LINK_A = '01930000-0000-7000-8000-0000000000f0';
+export const PAYMENT_LINK_B = '01930000-0000-7000-8000-0000000000f1';
+
+/** Log de conciliacao: um em cada tenant. */
+export const RECONCILIATION_LOG_A = '01930000-0000-7000-8000-0000000000f2';
+export const RECONCILIATION_LOG_B = '01930000-0000-7000-8000-0000000000f3';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

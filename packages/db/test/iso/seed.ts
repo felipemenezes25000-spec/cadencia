@@ -697,4 +697,38 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
      F.CATEGORY_A, F.CATEGORY_B],
   );
+
+  // fin.payment_link nasceu na Task 32 da Fase 2: vincula um link do PSP a um
+  // lancamento financeiro. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.payment_link
+       (tenant_id, id, entry_id, provider_link_id, url, status, amount_cents,
+        provider_id, idempotency_key, created_by) VALUES
+       ($1, $3, $5, 'psp-link-a', 'https://pay.fake/a', 'pending', 25000,
+        'fake-psp', 'seed-plink-a', $7),
+       ($2, $4, $6, 'psp-link-b', 'https://pay.fake/b', 'pending', 30000,
+        'fake-psp', 'seed-plink-b', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.PAYMENT_LINK_A, F.PAYMENT_LINK_B,
+     F.ENTRY_A, F.ENTRY_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // fin.reconciliation_log nasceu na Task 32 da Fase 2: divergencias detectadas
+  // pela conciliacao. Como toda tabela multi-tenant, precisa de linha do tenant B,
+  // senao o teste meta reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.reconciliation_log
+       (tenant_id, id, reconciled_date, provider_payment_id, entry_id, kind,
+        expected_cents, actual_cents, detail) VALUES
+       ($1, $3, DATE '2026-08-01', 'psp-pay-a', $5, 'amount_mismatch',
+        25000, 24500, 'taxa nao esperada'),
+       ($2, $4, DATE '2026-08-01', 'psp-pay-b', $6, 'fee_mismatch',
+        500, 600, 'taxa divergente')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECONCILIATION_LOG_A, F.RECONCILIATION_LOG_B,
+     F.ENTRY_A, F.ENTRY_B],
+  );
 }
