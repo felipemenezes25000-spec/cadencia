@@ -682,4 +682,19 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.RECEIPT_A, F.RECEIPT_B,
      F.ENTRY_A, F.ENTRY_B],
   );
+
+  // fin.daily_rollup nasceu na Task 26 da Fase 2: resumo diario do financeiro com
+  // duas bases (competencia e caixa). Como toda tabela multi-tenant, precisa de
+  // linha do tenant B, senao o teste meta ("o seed realmente criou linha do tenant
+  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A PK e composta
+  // sem coluna id; o sentinel UUID substitui NULL em category_id.
+  await admin.query(
+    `INSERT INTO fin.daily_rollup
+       (tenant_id, clinic_id, day, basis, kind, category_id, status, amount_cents, entries) VALUES
+       ($1, $3, DATE '2026-08-01', 'competencia', 'receita', $5, 'pago', 25000, 1),
+       ($2, $4, DATE '2026-08-01', 'competencia', 'receita', $6, 'pago', 30000, 1)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.CATEGORY_A, F.CATEGORY_B],
+  );
 }

@@ -197,3 +197,60 @@ describe('schema fin — categorias e metodos', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('schema fin — daily_rollup', () => {
+  it('insere e le rollup com sentinela de categoria', async () => {
+    await withTenantTx(actor, async (tx) => {
+      await tx.query(
+        `INSERT INTO fin.daily_rollup
+           (tenant_id, clinic_id, day, basis, kind, category_id, status, amount_cents, entries)
+         VALUES (app.require_tenant_id(), $1, '2026-08-01', 'competencia', 'receita',
+                 '00000000-0000-0000-0000-000000000000', 'pago', 25000, 1)`,
+        [s.clinicId]);
+    });
+
+    const { rows } = await withTenantTx(actor, (tx) =>
+      tx.query<{ amount_cents: string; entries: number; basis: string }>(
+        `SELECT amount_cents::text AS amount_cents, entries, basis
+           FROM fin.daily_rollup
+          WHERE clinic_id = $1 AND day = '2026-08-01' AND basis = 'competencia'`,
+        [s.clinicId]));
+
+    expect(rows[0]).toEqual({
+      amount_cents: '25000',
+      entries: 1,
+      basis: 'competencia',
+    });
+  });
+
+  it('insere rollup com base caixa (paid_at)', async () => {
+    await withTenantTx(actor, async (tx) => {
+      await tx.query(
+        `INSERT INTO fin.daily_rollup
+           (tenant_id, clinic_id, day, basis, kind, category_id, status, amount_cents, entries)
+         VALUES (app.require_tenant_id(), $1, '2026-08-01', 'caixa', 'receita',
+                 $2, 'pago', 25000, 1)`,
+        [s.clinicId, s.categoryId]);
+    });
+
+    const { rows } = await withTenantTx(actor, (tx) =>
+      tx.query<{ amount_cents: string; basis: string }>(
+        `SELECT amount_cents::text AS amount_cents, basis
+           FROM fin.daily_rollup
+          WHERE clinic_id = $1 AND day = '2026-08-01' AND basis = 'caixa'`,
+        [s.clinicId]));
+
+    expect(rows[0]).toEqual({ amount_cents: '25000', basis: 'caixa' });
+  });
+
+  it('rejeita basis diferente de competencia ou caixa', async () => {
+    await expect(
+      withTenantTx(actor, (tx) =>
+        tx.query(
+          `INSERT INTO fin.daily_rollup
+             (tenant_id, clinic_id, day, basis, kind, status, amount_cents, entries)
+           VALUES (app.require_tenant_id(), $1, '2026-08-02', 'outro', 'receita', 'pago', 100, 1)`,
+          [s.clinicId])),
+    ).rejects.toThrow();
+  });
+});
