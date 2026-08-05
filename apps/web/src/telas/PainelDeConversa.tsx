@@ -124,7 +124,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
       </header>
 
       {/* Thread de mensagens */}
-      <div ref={threadRef} aria-label="Mensagens"
+      <div ref={threadRef} role="log" aria-label="Mensagens"
         style={{
           gridColumn: 1, overflowY: 'auto',
           padding: 'var(--s-5)', display: 'flex',
