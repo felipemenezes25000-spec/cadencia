@@ -22,3 +22,10 @@ export {
   assertNoDuplicateOnTimeout, assertSafetyDeclared,
   type TimeoutOutcome, type TimeoutScenario,
 } from './conformance';
+export {
+  type MessagingProvider, type OutboundBody, type InboundEvent,
+  type InboundMessage, type InboundMessageBody, type StatusUpdate,
+} from './contracts/messaging';
+export {
+  createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord,
+} from './fakes/messaging-fake';

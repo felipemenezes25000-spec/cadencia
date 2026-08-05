@@ -56,4 +56,9 @@ describe('tipos do contrato MessagingProvider', () => {
     const statuses: StatusUpdate['status'][] = ['sent', 'delivered', 'read', 'failed'];
     expect(statuses).toHaveLength(4);
   });
+
+  it('exporta tipos e fake pelo barrel do pacote', async () => {
+    const barrel = await import('../index');
+    expect(barrel.createFakeMessagingProvider).toBeTypeOf('function');
+  });
 });
