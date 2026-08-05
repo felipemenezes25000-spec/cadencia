@@ -122,6 +122,14 @@ export const PRESCRIPTION_ITEM_B = '01930000-0000-7000-8000-0000000000e5';
 export const OUTBOX_A = '01930000-0000-7000-8000-0000000000e6';
 export const OUTBOX_B = '01930000-0000-7000-8000-0000000000e7';
 
+/** Categoria de lancamento financeiro: uma em cada tenant. */
+export const CATEGORY_A = '01930000-0000-7000-8000-0000000000e8';
+export const CATEGORY_B = '01930000-0000-7000-8000-0000000000e9';
+
+/** Metodo de pagamento: um em cada tenant. */
+export const PAYMENT_METHOD_A = '01930000-0000-7000-8000-0000000000ea';
+export const PAYMENT_METHOD_B = '01930000-0000-7000-8000-0000000000eb';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

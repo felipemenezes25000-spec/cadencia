@@ -620,4 +620,26 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($2, DATE '2026-08-01', clock_timestamp(), 'sucesso')`,
     [F.TENANT_A, F.TENANT_B],
   );
+
+  // fin.category nasceu na Task 24 da Fase 2: categorias de lancamento financeiro.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant") reprova
+  // e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.category (tenant_id, id, name, kind) VALUES
+       ($1, $3, 'Consulta particular', 'receita'),
+       ($2, $4, 'Consulta particular', 'receita')`,
+    [F.TENANT_A, F.TENANT_B, F.CATEGORY_A, F.CATEGORY_B],
+  );
+
+  // fin.payment_method nasceu na Task 24 da Fase 2: metodos de pagamento do tenant.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant") reprova
+  // e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO fin.payment_method (tenant_id, id, kind, name) VALUES
+       ($1, $3, 'dinheiro', 'Dinheiro'),
+       ($2, $4, 'dinheiro', 'Dinheiro')`,
+    [F.TENANT_A, F.TENANT_B, F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
+  );
 }
