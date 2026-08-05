@@ -9,7 +9,7 @@ export type { Queryable } from '../queryable';
  * `sched` entrou na Fase 1 junto com a agenda: schema fora desta lista e schema
  * sem RLS obrigatoria, sem FK composta exigida e fora da matriz CRUD.
  */
-export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'sched'] as const;
+export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'sched', 'msg'] as const;
 
 let pool: Pool | undefined;
 
