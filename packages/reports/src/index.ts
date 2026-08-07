@@ -23,6 +23,7 @@ export type {
   CustomViewInput,
 } from './types';
 export { buildQuery } from './query-builder';
+export { BUILT_IN_VIEWS, getSavedView, validateCustomViewInput } from './saved-views';
 export {
   factorsAddUp,
   type DrillDownGroup,
