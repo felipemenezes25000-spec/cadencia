@@ -14,3 +14,10 @@ export {
   type MovementKind,
   type ReferenceType,
 } from './record-movement';
+export {
+  getStockAlerts,
+  getMovementHistory,
+  type StockAlert,
+  type MovementHistoryRow,
+  type MovementHistoryInput,
+} from './queries';
