@@ -17,6 +17,7 @@ import { paymentRoutes } from './routes/payments';
 import { paymentWebhookRoutes } from './routes/payments-webhook';
 import { repasseRoutes } from './routes/repasse';
 import { financeSettingsRoutes } from './routes/finance-settings';
+import { financeOperationsRoutes } from './routes/finance-operations';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -89,6 +90,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(paymentWebhookRoutes);
   await app.register(repasseRoutes);
   await app.register(financeSettingsRoutes);
+  await app.register(financeOperationsRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
