@@ -162,6 +162,14 @@ export const CONTRATO_B = '01930000-0000-7000-8000-000000000f04';
 export const PACIENTE_CONVENIO_A = '01930000-0000-7000-8000-000000000f05';
 export const PACIENTE_CONVENIO_B = '01930000-0000-7000-8000-000000000f06';
 
+/** Guia de consulta TISS: uma em cada tenant. */
+export const GUIA_CONSULTA_A = '01930000-0000-7000-8000-0000000000f8';
+export const GUIA_CONSULTA_B = '01930000-0000-7000-8000-0000000000f9';
+
+/** Ajuste de faturamento: um em cada tenant. */
+export const GUIA_AJUSTE_A = '01930000-0000-7000-8000-0000000000fa';
+export const GUIA_AJUSTE_B = '01930000-0000-7000-8000-0000000000fb';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
