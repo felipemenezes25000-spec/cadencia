@@ -41,6 +41,9 @@
         "INSERT",
         "SELECT"
       ],
+      "clin_writer": [
+        "INSERT"
+      ],
       "jobs": [
         "INSERT",
         "SELECT",
