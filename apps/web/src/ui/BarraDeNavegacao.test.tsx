@@ -31,12 +31,9 @@ describe('barra de navegacao', () => {
     expect(screen.getByRole('link', { name: 'Financeiro' })).toBeInTheDocument();
   });
 
-  it('Desempenho permanece desabilitado com motivo', () => {
+  it('Desempenho agora e um link navegavel na Fase 3', () => {
     render(<BarraDeNavegacao />);
-    const desempenho = screen.getByRole('button', { name: /Desempenho/ });
-    expect(desempenho).toBeDisabled();
-    expect(desempenho).toHaveAttribute('aria-disabled', 'true');
-    expect(desempenho).toHaveAccessibleDescription(/Fase 3/);
+    expect(screen.getByRole('link', { name: 'Desempenho' })).toBeInTheDocument();
   });
 
   it('a navegacao e um <nav> com rotulo e nao tem violacao de acessibilidade', async () => {
