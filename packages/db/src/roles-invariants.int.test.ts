@@ -28,7 +28,7 @@ describe('invariante 3 do CI: papeis e posse', () => {
     expect(result.rows.map((r) => r.objeto)).toEqual([]);
   });
 
-  it('jobs e o unico papel nao-superusuario do cluster com BYPASSRLS', async () => {
+  it('somente jobs e rpt_owner tem BYPASSRLS entre papeis nao-superusuario do cluster', async () => {
     const result = await admin.query<{ rolname: string }>(
       `SELECT rolname FROM pg_roles
         WHERE rolbypassrls
@@ -36,7 +36,7 @@ describe('invariante 3 do CI: papeis e posse', () => {
           AND rolname NOT LIKE 'pg\\_%'
         ORDER BY rolname`,
     );
-    expect(result.rows.map((r) => r.rolname)).toEqual(['jobs']);
+    expect(result.rows.map((r) => r.rolname)).toEqual(['jobs', 'rpt_owner']);
   });
 
   it('nenhum papel funcional da aplicacao faz login', async () => {

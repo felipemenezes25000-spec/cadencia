@@ -89,6 +89,9 @@ SELECT n.nspname || '.' || c.relname AS object,
   LEFT JOIN pg_roles g ON g.oid = a.grantee
  WHERE n.nspname = 'rpt'
    AND coalesce(g.rolname, 'PUBLIC') IN ('app_rw', 'api', 'PUBLIC')
+   -- refresh_log e tabela de infra (carimbo "dados ate HH:MM"), nao matview.
+   -- app_rw precisa de SELECT nela para exibir o timestamp no front (§3.8).
+   AND c.relname <> 'refresh_log'
  ORDER BY 1, 2, 3`;
 
 export async function readRoles(db: Queryable): Promise<RoleRow[]> {
@@ -120,8 +123,16 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
   const papeis = (await readRoles(db)).filter((r) => APP_ROLES.has(r.name));
 
   const bypass = papeis.filter((r) => r.bypassRls).map((r) => r.name);
-  if (bypass.length !== 1 || bypass[0] !== 'jobs') {
-    out.push(`mais de um papel com BYPASSRLS: ${bypass.join(', ')} — so jobs pode ter`);
+  const permitidos = new Set(['jobs', 'rpt_owner']);
+  const inesperados = bypass.filter((r) => !permitidos.has(r));
+  if (inesperados.length > 0) {
+    out.push(`papel inesperado com BYPASSRLS: ${inesperados.join(', ')} — so jobs e rpt_owner podem ter`);
+  }
+  if (!bypass.includes('jobs')) {
+    out.push('jobs perdeu BYPASSRLS — selo, drift e carga TUSS veriam zero linhas');
+  }
+  if (!bypass.includes('rpt_owner')) {
+    out.push('rpt_owner perdeu BYPASSRLS — REFRESH MATERIALIZED VIEW veria zero linhas nas tabelas-fonte com RLS');
   }
 
   const supers = papeis.filter((r) => r.superuser).map((r) => r.name);

@@ -11,6 +11,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -26,6 +29,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -65,6 +71,9 @@
         "SELECT"
       ],
       "jobs": [
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }
@@ -173,6 +182,9 @@
       "clin_writer": [
         "INSERT",
         "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     },
     "columns": {
@@ -215,6 +227,9 @@
         "SELECT"
       ],
       "jobs": [
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     },
@@ -298,6 +313,9 @@
       ],
       "jobs": [
         "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -330,6 +348,9 @@
         "SELECT"
       ],
       "jobs": [
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }
@@ -398,6 +419,9 @@
       ],
       "clin_writer": [
         "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     },
@@ -509,6 +533,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -518,6 +545,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -527,6 +557,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -554,6 +587,9 @@
       ],
       "jobs": [
         "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }
@@ -592,6 +628,9 @@
         "UPDATE"
       ],
       "jobs": [
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }
@@ -775,6 +814,9 @@
       "app_rw": [
         "INSERT",
         "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -807,6 +849,9 @@
         "UPDATE"
       ],
       "jobs": [
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }

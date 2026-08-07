@@ -57,7 +57,7 @@ export async function runAllInvariants(
       ...(await orphanIdColumns(db)),
     ]),
   );
-  resultados.push(ok(3, 'api sem posse, jobs unico com BYPASSRLS', await roleViolations(db)));
+  resultados.push(ok(3, 'api sem posse, jobs e rpt_owner com BYPASSRLS', await roleViolations(db)));
   resultados.push(ok(4, 'append-only clinico', await appendOnlyViolations(db)));
   resultados.push(ok(5, 'policy RESTRICTIVE no nucleo clinico', await restrictivePolicyViolations(db)));
   resultados.push(ok(6, 'nenhum GRANT direto na trilha nem em rpt', await forbiddenGrantViolations(db)));

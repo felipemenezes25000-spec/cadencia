@@ -23,9 +23,9 @@ describe('invariante 3 — o papel de login da aplicacao nao pode desligar o pro
     expect(papeis.find((r) => r.name === 'api')?.config).toContain('row_security=on');
   });
 
-  it('jobs e o unico papel de aplicacao com BYPASSRLS — sem ele o selo e o detector de drift rodariam vendo zero linhas', async () => {
+  it('somente jobs e rpt_owner tem BYPASSRLS entre os papeis de aplicacao', async () => {
     const papeis = await readRoles(catalogPool());
-    expect(papeis.filter((r) => APP_ROLES.has(r.name) && r.bypassRls).map((r) => r.name)).toEqual(['jobs']);
+    expect(papeis.filter((r) => APP_ROLES.has(r.name) && r.bypassRls).map((r) => r.name).sort()).toEqual(['jobs', 'rpt_owner']);
   });
 
   it('nenhum papel de aplicacao e superuser — superuser vence REVOKE, RLS e trigger', async () => {
@@ -48,12 +48,12 @@ describe('invariante 3 — o papel de login da aplicacao nao pode desligar o pro
     );
   });
 
-  it('reprova um segundo papel de aplicacao com BYPASSRLS', async () => {
+  it('reprova papel inesperado com BYPASSRLS', async () => {
     const violacoes = await inRollbackTx(async (c) => {
       await c.query('ALTER ROLE support BYPASSRLS');
       return roleViolations(c);
     });
-    expect(violacoes).toContain('mais de um papel com BYPASSRLS: jobs, support — so jobs pode ter');
+    expect(violacoes).toContain('papel inesperado com BYPASSRLS: support — so jobs e rpt_owner podem ter');
   });
 });
 

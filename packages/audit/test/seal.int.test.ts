@@ -46,11 +46,11 @@ describe('audit.seal: selo diario, marca d agua de visibilidade e dead man switc
     await root.end();
   });
 
-  it('o papel jobs e o unico do cluster com BYPASSRLS', async () => {
+  it('somente jobs e rpt_owner tem BYPASSRLS no cluster (excluindo superusuario)', async () => {
     const res = await root.query<{ rolname: string }>(
       'SELECT rolname FROM pg_roles WHERE rolbypassrls AND NOT rolsuper ORDER BY rolname',
     );
-    expect(res.rows.map((r) => r.rolname)).toEqual(['jobs']);
+    expect(res.rows.map((r) => r.rolname)).toEqual(['jobs', 'rpt_owner']);
   });
 
   it('a marca d agua exige pg_read_all_stats em jobs, senao o selo cega em silencio', async () => {
