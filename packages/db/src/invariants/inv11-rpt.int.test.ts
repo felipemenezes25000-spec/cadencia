@@ -88,3 +88,83 @@ describe('invariante 11 — fundacoes do esquema de relatorios (migration 0101)'
     expect(sel[0]!.has_select).toBe(true);
   });
 });
+
+describe('matviews rpt.mv_atendimentos e rpt.mv_agenda (migration 0102)', () => {
+  it('rpt.mv_atendimentos existe como matview com colunas corretas', async () => {
+    const { rows: kind } = await catalogPool().query<{ relkind: string }>(`
+      SELECT c.relkind::text FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_atendimentos'`);
+    expect(kind).toHaveLength(1);
+    expect(kind[0]!.relkind).toBe('m');
+
+    const { rows } = await catalogPool().query<{ column_name: string }>(`
+      SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'rpt' AND table_name = 'mv_atendimentos'
+       ORDER BY ordinal_position`);
+    const colunas = rows.map((r) => r.column_name);
+    expect(colunas).toEqual([
+      'encounter_id', 'patient_id', 'professional_id', 'clinic_id',
+      'occurred_date', 'duration_minutes', 'procedure_codes', 'diagnosis_codes',
+      'version_count', 'status', 'tenant_id',
+    ]);
+  });
+
+  it('rpt.mv_atendimentos pertence a rpt_owner', async () => {
+    const { rows } = await catalogPool().query<{ owner: string }>(`
+      SELECT r.rolname AS owner FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_roles r ON r.oid = c.relowner
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_atendimentos'`);
+    expect(rows[0]!.owner).toBe('rpt_owner');
+  });
+
+  it('rpt.mv_atendimentos tem indice unico para REFRESH CONCURRENTLY', async () => {
+    const { rows } = await catalogPool().query<{ indexname: string }>(`
+      SELECT i.relname AS indexname FROM pg_index ix
+      JOIN pg_class c ON c.oid = ix.indrelid
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_atendimentos' AND ix.indisunique`);
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('rpt.mv_agenda existe como matview com colunas corretas', async () => {
+    const { rows: kind } = await catalogPool().query<{ relkind: string }>(`
+      SELECT c.relkind::text FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_agenda'`);
+    expect(kind).toHaveLength(1);
+    expect(kind[0]!.relkind).toBe('m');
+
+    const { rows } = await catalogPool().query<{ column_name: string }>(`
+      SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'rpt' AND table_name = 'mv_agenda'
+       ORDER BY ordinal_position`);
+    const colunas = rows.map((r) => r.column_name);
+    expect(colunas).toEqual([
+      'appointment_date', 'professional_id', 'clinic_id',
+      'total_slots', 'booked', 'confirmed', 'attended',
+      'no_shows', 'cancelled', 'occupancy_pct', 'tenant_id',
+    ]);
+  });
+
+  it('rpt.mv_agenda pertence a rpt_owner', async () => {
+    const { rows } = await catalogPool().query<{ owner: string }>(`
+      SELECT r.rolname AS owner FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_roles r ON r.oid = c.relowner
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_agenda'`);
+    expect(rows[0]!.owner).toBe('rpt_owner');
+  });
+
+  it('rpt.mv_agenda tem indice unico para REFRESH CONCURRENTLY', async () => {
+    const { rows } = await catalogPool().query<{ indexname: string }>(`
+      SELECT i.relname AS indexname FROM pg_index ix
+      JOIN pg_class c ON c.oid = ix.indrelid
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_agenda' AND ix.indisunique`);
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+  });
+});
