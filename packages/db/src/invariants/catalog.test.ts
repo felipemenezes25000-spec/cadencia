@@ -10,6 +10,10 @@ describe('catalogo de schemas multi-tenant', () => {
     expect(TENANT_SCHEMAS).toContain('fin');
   });
 
+  it('inclui inv no TENANT_SCHEMAS', () => {
+    expect(TENANT_SCHEMAS).toContain('inv');
+  });
+
   it('os schemas da Fase 1 continuam presentes', () => {
     for (const s of ['app', 'clin', 'tiss', 'audit', 'sched']) {
       expect(TENANT_SCHEMAS).toContain(s);
