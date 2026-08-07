@@ -10,3 +10,11 @@ export type {
   SatisfacaoRow,
   RefreshLogEntry,
 } from './types';
+export {
+  factorsAddUp,
+  type DrillDownGroup,
+  type DrillDownResult,
+  type Period,
+  type VariationFactors,
+  type VariationSnapshot,
+} from './variation-types';
