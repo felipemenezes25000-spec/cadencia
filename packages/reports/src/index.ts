@@ -19,3 +19,4 @@ export {
   type VariationSnapshot,
 } from './variation-types';
 export { computeVariation } from './compute-variation';
+export { drillDownFactor } from './drill-down-factor';
