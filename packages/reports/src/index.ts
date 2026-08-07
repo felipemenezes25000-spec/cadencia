@@ -35,3 +35,4 @@ export {
 export { computeVariation } from './compute-variation';
 export { drillDownFactor } from './drill-down-factor';
 export { persistVariationSnapshot, readVariationSnapshot } from './persist-variation';
+export { exportReport } from './export';
