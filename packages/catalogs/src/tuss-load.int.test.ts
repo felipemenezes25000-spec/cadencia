@@ -1,7 +1,7 @@
 // packages/catalogs/src/tuss-load.int.test.ts
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
-import { loadTussCompetenciaSafe, type TussLoadResult } from './tuss-load';
+import { loadTussCompetenciaSafe } from './tuss-load';
 
 const TAB_PROCEDIMENTOS = 22;
 const TAB_DIARIAS = 20;
@@ -155,11 +155,14 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
   });
 
   it('tuss_at nao retorna termo fora da vigencia', async () => {
-    const { rows } = await admin.query<{ termo: string }>(
+    // tuss_at retorna composite (RETURNS ref.tuss_term, nao SETOF),
+    // entao sempre devolve 1 linha (NULL quando nao ha match).
+    // Verificamos que o campo termo e null.
+    const { rows } = await admin.query<{ termo: string | null }>(
       `SELECT termo FROM ref.tuss_at($1::smallint, $2, $3::date)`,
       [TAB_PROCEDIMENTOS, '99990010', '2026-06-01'],
     );
-    expect(rows).toHaveLength(0);
+    expect(rows[0]!.termo).toBeNull();
   });
 
   it('registra erro no log quando staging tem vigencia sobreposta com tuss_term existente de outra competencia', async () => {

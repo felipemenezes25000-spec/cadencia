@@ -971,7 +971,8 @@
       "jobs": [
         "DELETE",
         "INSERT",
-        "SELECT"
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
