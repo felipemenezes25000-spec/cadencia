@@ -3,6 +3,7 @@
 
 import { useCallback, useState } from 'react';
 import { Botao } from '../ui/Botao';
+import { GraficoExplorar } from '../ui/GraficoExplorar';
 import type { SavedView, ReportFilter, ReportColumns, ReportSort, ChartKind, ExportFormat } from '@cadencia/reports';
 
 export interface ResultadoConsulta {
@@ -183,6 +184,34 @@ export function Explorar(p: ExplorarProps) {
           </Botao>
         </div>
       </section>
+
+      {/* Grafico */}
+      {resultado !== null && visaoAtual !== null && visaoAtual.chartKind !== 'table' ? (
+        <section aria-label="Grafico" style={{ overflowX: 'auto' }}>
+          <GraficoExplorar
+            tipo={visaoAtual.chartKind}
+            dados={
+              visaoAtual.columns.groupBy !== undefined
+                ? resultado.rows.map((row) => ({
+                    label: String(row[visaoAtual.columns.groupBy!] ?? ''),
+                    value: Number(
+                      row[
+                        visaoAtual.columns.aggregate !== undefined
+                          ? `${visaoAtual.columns.aggregate.fn}_${visaoAtual.columns.aggregate.column}`
+                          : visaoAtual.columns.visible[0]!
+                      ] ?? 0,
+                    ),
+                  }))
+                : resultado.rows.map((row) => ({
+                    label: String(row[colunas[0]!] ?? ''),
+                    value: Number(row[colunas[colunas.length - 1]!] ?? 0),
+                  }))
+            }
+            largura={600}
+            altura={260}
+          />
+        </section>
+      ) : null}
 
       {/* Tabela de resultados */}
       {resultado !== null && colunas.length > 0 ? (
