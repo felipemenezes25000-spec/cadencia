@@ -1072,6 +1072,15 @@
       ]
     }
   },
+  "tiss.guia_counter": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "tiss.operadora": {
     "table": {
       "app_rw": [
