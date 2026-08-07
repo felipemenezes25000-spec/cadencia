@@ -19,6 +19,7 @@ export const EVENT_TYPES = [
   'PAYMENT_RECEIVED',
   'PAYMENT_LINK_CREATED',
   'INBOUND_MESSAGE_RECEIVED',
+  'SPLIT_CALCULATED',
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -82,6 +83,14 @@ export interface InboundMessageReceivedPayload {
   readonly fromPhone: string;
 }
 
+export interface SplitCalculatedPayload {
+  readonly entryId: string;
+  readonly splitId: string;
+  readonly professionalId: string;
+  readonly professionalShareCents: number;
+  readonly clinicShareCents: number;
+}
+
 // ---------------------------------------------------------------------------
 // Tipos concretos
 // ---------------------------------------------------------------------------
@@ -92,6 +101,7 @@ export type EncounterFinalized = DomainEventBase<'ENCOUNTER_FINALIZED', Encounte
 export type PaymentReceived = DomainEventBase<'PAYMENT_RECEIVED', PaymentReceivedPayload>;
 export type PaymentLinkCreated = DomainEventBase<'PAYMENT_LINK_CREATED', PaymentLinkCreatedPayload>;
 export type InboundMessageReceived = DomainEventBase<'INBOUND_MESSAGE_RECEIVED', InboundMessageReceivedPayload>;
+export type SplitCalculated = DomainEventBase<'SPLIT_CALCULATED', SplitCalculatedPayload>;
 
 // ---------------------------------------------------------------------------
 // Uniao discriminada
@@ -103,4 +113,5 @@ export type DomainEvent =
   | EncounterFinalized
   | PaymentReceived
   | PaymentLinkCreated
-  | InboundMessageReceived;
+  | InboundMessageReceived
+  | SplitCalculated;

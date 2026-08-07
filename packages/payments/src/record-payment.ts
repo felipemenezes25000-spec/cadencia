@@ -105,6 +105,11 @@ export async function recordPayment(
                         jsonb_build_object('receipt_number', $2::bigint,
                                            'amount_cents', $3::bigint), $4)`,
       [receiptId, receiptNumber, i.amountCents, i.clinicId]);
+
+    // Calcular split automaticamente para receitas pagas
+    await tx.query(
+      `SELECT fin.calculate_splits(app.require_tenant_id(), $1)`,
+      [entryId]);
   }
 
   return ok({ entryId, receiptId, receiptNumber, status });
