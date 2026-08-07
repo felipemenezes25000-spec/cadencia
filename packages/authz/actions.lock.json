@@ -1,5 +1,5 @@
 {
-  "checksum": "8c39689199d9289ff08b536c37988145e961a2f32ea72bda02c9fff002fc64e8",
+  "checksum": "5113a97c1e314dfaf873aacf0d835c8fe943c749a0c177b60fbd1de5091af917",
   "rows": [
     {
       "key": "appointment.checkin",
@@ -413,6 +413,16 @@
     {
       "key": "report.variation.read",
       "description": "Consultar decomposicao de variacao de receita",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "report.view.write",
+      "description": "Salvar visao customizada de relatorio",
       "roles": [
         "admin_clinico",
         "diretor_tecnico",
