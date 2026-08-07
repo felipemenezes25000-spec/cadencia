@@ -42,6 +42,7 @@
         "SELECT"
       ],
       "jobs": [
+        "INSERT",
         "SELECT",
         "UPDATE"
       ]
@@ -575,6 +576,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -748,6 +752,57 @@
       ]
     }
   },
+  "inv.product": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "inv.stock_alert": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "inv.stock_movement": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "inv.supplier": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
   "msg.automation_rule": {
     "table": {
       "app_rw": [
@@ -872,6 +927,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
       ]
     }
   },
@@ -893,7 +951,7 @@
       ]
     }
   },
-  "inv.supplier": {
+  "tiss.contrato": {
     "table": {
       "app_rw": [
         "INSERT",
@@ -902,45 +960,6 @@
       ],
       "jobs": [
         "SELECT"
-      ]
-    }
-  },
-  "inv.product": {
-    "table": {
-      "app_rw": [
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ],
-      "jobs": [
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ]
-    }
-  },
-  "inv.stock_movement": {
-    "table": {
-      "app_rw": [
-        "INSERT",
-        "SELECT"
-      ],
-      "jobs": [
-        "SELECT"
-      ]
-    }
-  },
-  "inv.stock_alert": {
-    "table": {
-      "app_rw": [
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ],
-      "jobs": [
-        "INSERT",
-        "SELECT",
-        "UPDATE"
       ]
     }
   },
@@ -956,7 +975,7 @@
       ]
     }
   },
-  "tiss.contrato": {
+  "tiss.paciente_convenio": {
     "table": {
       "app_rw": [
         "INSERT",
