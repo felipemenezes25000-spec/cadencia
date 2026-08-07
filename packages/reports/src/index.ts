@@ -18,3 +18,4 @@ export {
   type VariationFactors,
   type VariationSnapshot,
 } from './variation-types';
+export { computeVariation } from './compute-variation';
