@@ -609,6 +609,14 @@
       ]
     }
   },
+  "fin.transfer": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "fin.webhook_event": {
     "table": {
       "app_rw": [
