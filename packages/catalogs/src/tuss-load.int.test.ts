@@ -38,6 +38,11 @@ afterAll(async () => {
       WHERE competencia IN ('202701','202703')
         AND codigo IN ('99990010','99990020','99990030')`,
   );
+  await admin.query(
+    `DELETE FROM ref.tuss_term
+      WHERE competencia = '202703'
+        AND codigo LIKE '00800%'`,
+  );
   await admin.query(`TRUNCATE ref.tuss_staging`);
   await admin.query(
     `DELETE FROM ref.tuss_load_log WHERE competencia IN ('202701','202703')`,
@@ -179,5 +184,76 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
 
     expect(result.status).toBe('success');
     expect(result.inserted).toBe(1);
+  });
+
+  it('carrega 100 termos de amostra e tuss_at retorna todos corretamente', async () => {
+    const sampleRows: Array<{ tabela: number; codigo: string; termo: string; acao: string }> = [];
+    for (let i = 1; i <= 100; i++) {
+      const codigo = String(80000000 + i).padStart(10, '0').slice(0, 10);
+      sampleRows.push({
+        tabela: TAB_PROCEDIMENTOS,
+        codigo,
+        termo: `Procedimento de volume ${i}`,
+        acao: 'inclusao',
+      });
+    }
+
+    const result = await loadTussCompetenciaSafe(jobsPool, {
+      competencia: '202703',
+      vigenciaFrom: '2029-01-01',
+      vigenciaTo: null,
+      rows: sampleRows,
+    });
+
+    expect(result.status).toBe('success');
+    // 99 novos + 99990030 ja inserido na Task 10 = 100 no batch, mas 99990030 nao
+    // esta no batch de 100 — sao 100 codigos novos da faixa 80000001..80000100
+    expect(result.inserted).toBe(100);
+    expect(result.updated).toBe(0);
+    expect(result.unchanged).toBe(0);
+
+    // Verificar uma amostra via tuss_at
+    const { rows } = await admin.query<{ termo: string; competencia: string }>(
+      `SELECT termo, competencia FROM ref.tuss_at($1::smallint, $2, $3::date)`,
+      [TAB_PROCEDIMENTOS, '0080000050', '2030-01-01'],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.termo).toBe('Procedimento de volume 50');
+    expect(rows[0]!.competencia).toBe('202703');
+  });
+
+  it('recarga dos 100 termos e idempotente', async () => {
+    const sampleRows: Array<{ tabela: number; codigo: string; termo: string; acao: string }> = [];
+    for (let i = 1; i <= 100; i++) {
+      const codigo = String(80000000 + i).padStart(10, '0').slice(0, 10);
+      sampleRows.push({
+        tabela: TAB_PROCEDIMENTOS,
+        codigo,
+        termo: `Procedimento de volume ${i}`,
+        acao: 'inclusao',
+      });
+    }
+
+    const result = await loadTussCompetenciaSafe(jobsPool, {
+      competencia: '202703',
+      vigenciaFrom: '2029-01-01',
+      vigenciaTo: null,
+      rows: sampleRows,
+    });
+
+    expect(result.status).toBe('success');
+    expect(result.inserted).toBe(0);
+    expect(result.updated).toBe(0);
+    expect(result.unchanged).toBe(100);
+  });
+
+  it('log acumula todas as execucoes para rastreabilidade', async () => {
+    const { rows } = await admin.query<{ cnt: string }>(
+      `SELECT count(*)::text AS cnt FROM ref.tuss_load_log
+        WHERE competencia IN ('202701','202703')
+          AND status = 'success'`,
+    );
+    // Deve ter pelo menos as execucoes das tasks anteriores
+    expect(Number(rows[0]!.cnt)).toBeGreaterThanOrEqual(4);
   });
 });
