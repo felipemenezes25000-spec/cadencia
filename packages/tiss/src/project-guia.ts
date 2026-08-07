@@ -130,8 +130,7 @@ export async function projectGuiaConsulta(
   // 4. Busca paciente_convenio
   const { rows: _pcRows } = await tx.query<{ numero_carteira: string }>(
     `SELECT numero_carteira FROM tiss.paciente_convenio
-      WHERE encounter_id IS NOT NULL OR TRUE
-        AND operadora_id = $1
+      WHERE operadora_id = $1
         AND numero_carteira = $2
       LIMIT 1`,
     [operadora.id, billing.numero_carteira],
