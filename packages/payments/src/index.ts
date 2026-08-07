@@ -24,3 +24,8 @@ export {
   createInstallmentPlan,
   type CreateInstallmentPlanInput, type InstallmentFailure, type InstallmentPlanCreated,
 } from './installment-plan';
+export {
+  createRecurringTemplate,
+  type CreateRecurringTemplateInput, type RecurringFailure,
+  type RecurringTemplateCreated, type RecurrenceFrequency,
+} from './recurring';
