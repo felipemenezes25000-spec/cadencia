@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Client } from 'pg';
 import { TENANT_B } from './fixtures';
+import { TENANT_SCHEMAS } from '../../src/invariants/catalog';
 
 /**
  * Le, como superusuario (sem RLS), TODA linha de TODA tabela multi-tenant que
@@ -13,12 +14,13 @@ export async function impressaoDigitalDoTenantB(admin: Client): Promise<string> 
     `SELECT n.nspname AS nsp, c.relname AS rel
        FROM pg_class c
        JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname IN ('app','clin','fin','tiss','audit')
+      WHERE n.nspname = ANY ($1::text[])
         AND c.relkind IN ('r','p')
         AND EXISTS (SELECT 1 FROM pg_attribute a
                      WHERE a.attrelid = c.oid AND a.attname = 'tenant_id'
                        AND a.attnum > 0 AND NOT a.attisdropped)
       ORDER BY 1, 2`,
+    [[...TENANT_SCHEMAS]],
   );
 
   const hash = createHash('sha256');

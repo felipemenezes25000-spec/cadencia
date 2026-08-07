@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client } from 'pg';
 import { comoAtor, erroPg, openClient, type IsoActor } from './harness';
 import * as F from './fixtures';
+import { TENANT_SCHEMAS } from '../../src/invariants/catalog';
 
 const ANA: IsoActor = {
   kind: 'user',
@@ -32,12 +33,13 @@ describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
       `SELECT n.nspname AS nsp, c.relname AS rel, c.relispartition AS particao
          FROM pg_class c
          JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname IN ('app','clin','fin','tiss','audit')
+        WHERE n.nspname = ANY ($1::text[])
           AND c.relkind IN ('r','p')
           AND EXISTS (SELECT 1 FROM pg_attribute a
                        WHERE a.attrelid = c.oid AND a.attname = 'tenant_id'
                          AND a.attnum > 0 AND NOT a.attisdropped)
         ORDER BY 1, 2`,
+      [[...TENANT_SCHEMAS]],
     );
     tabelas = rows;
   });

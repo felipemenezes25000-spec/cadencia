@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client } from 'pg';
 import { comoAtor, erroPg, openClient, type IsoActor } from './harness';
 import * as F from './fixtures';
+import { TENANT_SCHEMAS } from '../../src/invariants/catalog';
 
 const ANA: IsoActor = {
   kind: 'user',
@@ -133,7 +134,7 @@ describe('T3 e T4 — escrita cruzada e FK composta', () => {
          JOIN pg_class t ON t.oid = c.conrelid
          JOIN pg_namespace n ON n.oid = t.relnamespace
         WHERE c.contype = 'f'
-          AND n.nspname IN ('app','clin','fin','tiss')
+          AND n.nspname = ANY ($1::text[])
           -- so tabelas multi-tenant
           AND EXISTS (SELECT 1 FROM pg_attribute a
                        WHERE a.attrelid = t.oid AND a.attname = 'tenant_id'
@@ -144,6 +145,7 @@ describe('T3 e T4 — escrita cruzada e FK composta', () => {
                        WHERE a.attrelid = c.confrelid AND a.attname = 'tenant_id'
                          AND a.attnum > 0 AND NOT a.attisdropped)
         ORDER BY 1, 2`,
+      [[...TENANT_SCHEMAS]],
     );
 
     expect(rows.length).toBeGreaterThanOrEqual(5);
