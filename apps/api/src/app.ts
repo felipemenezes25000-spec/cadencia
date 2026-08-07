@@ -19,6 +19,7 @@ import { repasseRoutes } from './routes/repasse';
 import { financeSettingsRoutes } from './routes/finance-settings';
 import { financeOperationsRoutes } from './routes/finance-operations';
 import { inventoryRoutes } from './routes/inventory';
+import { reportRoutes } from './routes/reports';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -93,6 +94,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(financeSettingsRoutes);
   await app.register(financeOperationsRoutes);
   await app.register(inventoryRoutes);
+  await app.register(reportRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {

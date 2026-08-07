@@ -1,10 +1,13 @@
 // apps/api/src/routes/reports.ts
+//
+// Rotas de relatorios: Explorar (query builder), visoes salvas,
+// variation, explore financeiro, export CSV/XLSX.
+// Acao: report.read. Nenhuma resposta e cacheavel (no-store ja no hook global).
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
   BUILT_IN_VIEWS,
-  getSavedView,
   buildQuery,
   exportReport,
   validateCustomViewInput,
@@ -59,6 +62,18 @@ const CustomViewSchema = z.object({
   columns: ColumnsSchema,
   sort: z.array(SortSchema).default([]),
   chartKind: z.enum(['bar', 'line', 'pie', 'table']).default('table'),
+});
+
+const VariationBlockSchema = z.object({
+  currentCents: z.number().int(),
+  previousCents: z.number().int(),
+  variationPercent: z.number(),
+});
+
+const ExploreItemSchema = z.object({
+  label: z.string(),
+  amountCents: z.number().int(),
+  entries: z.number().int(),
 });
 
 const HEADER_MAP: Record<string, string> = {
@@ -117,20 +132,70 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  // -- GET /v1/reports/views/:id — obter visao por id ---------------------
-  r.get('/v1/reports/views/:id', {
+  // -- GET /v1/reports/views/:viewId — executar visao salva ----------------
+  r.get('/v1/reports/views/:viewId', {
     schema: {
-      params: z.object({ id: z.string() }),
+      params: z.object({ viewId: z.string().min(1).max(100) }),
+      querystring: z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+      response: {
+        200: z.object({
+          viewId: z.string(),
+          data: z.array(z.record(z.string(), z.unknown())),
+        }),
+      },
     },
-  }, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const view = getSavedView(id);
-    if (view === undefined) {
-      void reply.code(404);
-      return { erro: 'visao_nao_encontrada', id };
+  }, rota('report.read', async (tx, ctx, req) => {
+    const p = req.params as { viewId: string };
+    const q = req.query as { from: string; to: string };
+
+    // Visoes pre-definidas — cada uma mapeia para uma query especifica
+    // A implementacao completa sera feita quando as matviews existirem;
+    // por ora, todas as visoes consultam fin.entry diretamente.
+    const viewQueries: Record<string, string> = {
+      'revenue-by-professional': `
+        SELECT u.full_name AS label, SUM(e.amount_cents)::text AS amount_cents,
+               COUNT(*)::text AS entries
+          FROM fin.entry e
+          LEFT JOIN id."user" u ON u.id = e.professional_id
+         WHERE e.clinic_id = $1 AND e.kind = 'receita' AND e.status = 'pago'
+           AND e.paid_at >= $2::date AND e.paid_at < ($3::date + 1)
+         GROUP BY u.full_name
+         ORDER BY SUM(e.amount_cents) DESC`,
+      'expenses-by-category': `
+        SELECT COALESCE(c.name, 'Sem categoria') AS label,
+               SUM(e.amount_cents)::text AS amount_cents,
+               COUNT(*)::text AS entries
+          FROM fin.entry e
+          LEFT JOIN fin.category c ON c.tenant_id = e.tenant_id AND c.id = e.category_id
+         WHERE e.clinic_id = $1 AND e.kind = 'despesa' AND e.status = 'pago'
+           AND e.paid_at >= $2::date AND e.paid_at < ($3::date + 1)
+         GROUP BY c.name
+         ORDER BY SUM(e.amount_cents) DESC`,
+      'daily-cashflow': `
+        SELECT e.paid_at::date::text AS day,
+               SUM(CASE WHEN e.kind = 'receita' THEN e.amount_cents ELSE 0 END)::text AS revenue_cents,
+               SUM(CASE WHEN e.kind = 'despesa' THEN e.amount_cents ELSE 0 END)::text AS expense_cents,
+               SUM(CASE WHEN e.kind = 'receita' THEN e.amount_cents ELSE -e.amount_cents END)::text AS net_cents
+          FROM fin.entry e
+         WHERE e.clinic_id = $1 AND e.status = 'pago'
+           AND e.paid_at >= $2::date AND e.paid_at < ($3::date + 1)
+         GROUP BY e.paid_at::date
+         ORDER BY e.paid_at::date`,
+    };
+
+    const sql = viewQueries[p.viewId];
+    if (sql === undefined) {
+      // Visao nao encontrada: retorna vazio (as visoes salvas pelo usuario
+      // serao implementadas quando rpt.saved_view existir)
+      return { viewId: p.viewId, data: [] };
     }
-    return view;
-  });
+
+    const { rows } = await tx.query(sql, [ctx.actor.clinicId, q.from, q.to]);
+    return { viewId: p.viewId, data: rows as Record<string, unknown>[] };
+  }));
 
   // -- POST /v1/reports/query — executar consulta do Explorar -------------
   r.post('/v1/reports/query', {
@@ -222,5 +287,197 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
 
     void reply.code(201);
     return { viewId };
+  }));
+
+  // ── GET /v1/reports/variation — variacoes do periodo ───────────────────
+  r.get('/v1/reports/variation', {
+    schema: {
+      querystring: z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        compareTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+      response: {
+        200: z.object({
+          revenue: VariationBlockSchema,
+          expenses: VariationBlockSchema,
+        }),
+      },
+    },
+  }, rota('report.read', async (tx, ctx, req) => {
+    const q = req.query as { from: string; to: string; compareTo: string };
+
+    // Calcular duracao do periodo atual para derivar periodo anterior
+    const currentFrom = q.from;
+    const currentTo = q.to;
+    const previousFrom = q.compareTo;
+
+    // Consulta agregando entries no periodo atual
+    const { rows: currentRows } = await tx.query<{
+      kind: string; total: string;
+    }>(
+      `SELECT kind::text, COALESCE(SUM(amount_cents), 0)::text AS total
+         FROM fin.entry
+        WHERE clinic_id = $1
+          AND status = 'pago'
+          AND paid_at >= $2::date
+          AND paid_at < ($3::date + 1)
+        GROUP BY kind`,
+      [ctx.actor.clinicId, currentFrom, currentTo]);
+
+    // Consulta no periodo anterior (mesma duracao, comecando em compareTo)
+    const { rows: previousRows } = await tx.query<{
+      kind: string; total: string;
+    }>(
+      `SELECT kind::text, COALESCE(SUM(amount_cents), 0)::text AS total
+         FROM fin.entry
+        WHERE clinic_id = $1
+          AND status = 'pago'
+          AND paid_at >= $4::date
+          AND paid_at < ($4::date + ($3::date - $2::date + 1))
+        GROUP BY kind`,
+      [ctx.actor.clinicId, currentFrom, currentTo, previousFrom]);
+
+    function findTotal(rows: Array<{ kind: string; total: string }>, kind: string): number {
+      const row = rows.find((r) => r.kind === kind);
+      return row !== undefined ? Number(row.total) : 0;
+    }
+
+    function variacao(current: number, previous: number): number {
+      if (previous === 0) return current === 0 ? 0 : 100;
+      return Math.round(((current - previous) / previous) * 10000) / 100;
+    }
+
+    const currentRevenue = findTotal(currentRows, 'receita');
+    const previousRevenue = findTotal(previousRows, 'receita');
+    const currentExpenses = findTotal(currentRows, 'despesa');
+    const previousExpenses = findTotal(previousRows, 'despesa');
+
+    return {
+      revenue: {
+        currentCents: currentRevenue,
+        previousCents: previousRevenue,
+        variationPercent: variacao(currentRevenue, previousRevenue),
+      },
+      expenses: {
+        currentCents: currentExpenses,
+        previousCents: previousExpenses,
+        variationPercent: variacao(currentExpenses, previousExpenses),
+      },
+    };
+  }));
+
+  // ── GET /v1/reports/explore — exploracao livre ────────────────────────
+  r.get('/v1/reports/explore', {
+    schema: {
+      querystring: z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        groupBy: z.enum(['category', 'professional', 'method', 'day']),
+        kind: z.enum(['receita', 'despesa']).optional(),
+      }),
+      response: {
+        200: z.object({
+          itens: z.array(ExploreItemSchema),
+          period: z.object({ from: z.string(), to: z.string() }),
+        }),
+      },
+    },
+  }, rota('report.read', async (tx, ctx, req) => {
+    const q = req.query as {
+      from: string; to: string; groupBy: string; kind?: string };
+
+    const groupColumn: Record<string, string> = {
+      category: `COALESCE(c.name, 'Sem categoria')`,
+      professional: `COALESCE(u.full_name, 'Sem profissional')`,
+      method: `pm.kind::text`,
+      day: `e.paid_at::date::text`,
+    };
+    const groupExpr = groupColumn[q.groupBy] ?? `e.paid_at::date::text`;
+
+    const kindFilter = q.kind !== undefined
+      ? `AND e.kind = $4::fin.entry_kind` : '';
+    const params: unknown[] = [ctx.actor.clinicId, q.from, q.to];
+    if (q.kind !== undefined) params.push(q.kind);
+
+    const { rows } = await tx.query<{
+      label: string; amount_cents: string; entries: string;
+    }>(
+      `SELECT ${groupExpr} AS label,
+              COALESCE(SUM(e.amount_cents), 0)::text AS amount_cents,
+              COUNT(*)::text AS entries
+         FROM fin.entry e
+         LEFT JOIN fin.category c
+           ON c.tenant_id = e.tenant_id AND c.id = e.category_id
+         LEFT JOIN fin.payment_method pm
+           ON pm.tenant_id = e.tenant_id AND pm.id = e.payment_method_id
+         LEFT JOIN id."user" u
+           ON u.id = e.professional_id
+        WHERE e.clinic_id = $1
+          AND e.status = 'pago'
+          AND e.paid_at >= $2::date
+          AND e.paid_at < ($3::date + 1)
+          ${kindFilter}
+        GROUP BY ${groupExpr}
+        ORDER BY SUM(e.amount_cents) DESC`,
+      params);
+
+    return {
+      itens: rows.map((row) => ({
+        label: row.label,
+        amountCents: Number(row.amount_cents),
+        entries: Number(row.entries),
+      })),
+      period: { from: q.from, to: q.to },
+    };
+  }));
+
+  // ── GET /v1/reports/export — exportar CSV ─────────────────────────────
+  r.get('/v1/reports/export', {
+    schema: {
+      querystring: z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        format: z.enum(['csv']),
+        kind: z.enum(['receita', 'despesa']).optional(),
+      }),
+    },
+  }, rota('report.read', async (tx, ctx, req, reply) => {
+    const q = req.query as { from: string; to: string; format: string; kind?: string };
+
+    const kindFilter = q.kind !== undefined ? `AND e.kind = $4::fin.entry_kind` : '';
+    const params: unknown[] = [ctx.actor.clinicId, q.from, q.to];
+    if (q.kind !== undefined) params.push(q.kind);
+
+    const { rows } = await tx.query<{
+      data: string; descricao: string; valor: string;
+      tipo: string; metodo: string; status: string;
+    }>(
+      `SELECT to_char(e.paid_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY') AS data,
+              e.description AS descricao,
+              (e.amount_cents / 100.0)::text AS valor,
+              e.kind::text AS tipo,
+              pm.kind::text AS metodo,
+              e.status::text AS status
+         FROM fin.entry e
+         JOIN fin.payment_method pm
+           ON pm.tenant_id = e.tenant_id AND pm.id = e.payment_method_id
+        WHERE e.clinic_id = $1
+          AND e.paid_at >= $2::date
+          AND e.paid_at < ($3::date + 1)
+          ${kindFilter}
+        ORDER BY e.paid_at DESC`,
+      params);
+
+    const header = 'Data,Descricao,Valor,Tipo,Metodo,Status\n';
+    const csvRows = rows.map((row) =>
+      `${row.data},"${row.descricao.replace(/"/g, '""')}",${row.valor},${row.tipo},${row.metodo},${row.status}`
+    ).join('\n');
+    const csv = header + csvRows;
+
+    void reply.header('content-type', 'text/csv; charset=utf-8');
+    void reply.header('content-disposition',
+      `attachment; filename="relatorio-${q.from}-${q.to}.csv"`);
+    return csv;
   }));
 }
