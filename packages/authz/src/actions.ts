@@ -90,6 +90,28 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'financeiro'] },
   { key: 'payment.link.write', description: 'Criar link de pagamento',
     roles: ['admin_clinico', 'diretor_tecnico', 'recepcao', 'financeiro'] },
+  // ── Fase 3 · Contas bancarias e transferencias (Bloco 03) ────────────────
+  { key: 'bank_account.read', description: 'Listar contas bancarias',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'bank_account.write', description: 'Criar ou editar contas bancarias',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'payment.transfer', description: 'Criar transferencia entre contas',
+    roles: ['admin_clinico', 'financeiro'] },
+  // ── Fase 3 · Financeiro completo (Bloco 09) ────────────────────────────
+  { key: 'finance.settings', description: 'Configurar contas bancarias, centros de custo, regras de split e recorrencia',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'finance.write', description: 'Lancar despesa e cadastrar fornecedor',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'finance.repasse', description: 'Gerar, visualizar e pagar repasse a profissionais',
+    roles: ['admin_clinico', 'financeiro'], requiresMfa: true },
+  // ── Fase 3 · Estoque (Bloco 09) ────────────────────────────────────────
+  { key: 'inventory.read', description: 'Consultar produtos e alertas de estoque',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  { key: 'inventory.write', description: 'Cadastrar produto e registrar movimentacao',
+    roles: ['admin_clinico', 'financeiro'] },
+  // ── Fase 3 · Relatorios (Bloco 09) ─────────────────────────────────────
+  { key: 'report.read', description: 'Acessar painel de desempenho e exportar relatorios',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
