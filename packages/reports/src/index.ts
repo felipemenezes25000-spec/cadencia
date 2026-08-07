@@ -20,3 +20,4 @@ export {
 } from './variation-types';
 export { computeVariation } from './compute-variation';
 export { drillDownFactor } from './drill-down-factor';
+export { persistVariationSnapshot, readVariationSnapshot } from './persist-variation';

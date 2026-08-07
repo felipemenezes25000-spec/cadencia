@@ -1,5 +1,5 @@
 {
-  "checksum": "7298acc31d03eb3e8a5a9fc1689105c6ba76ff1d2e6c933e9fa8abc02919a555",
+  "checksum": "8c39689199d9289ff08b536c37988145e961a2f32ea72bda02c9fff002fc64e8",
   "rows": [
     {
       "key": "appointment.checkin",
@@ -403,6 +403,16 @@
     {
       "key": "report.read",
       "description": "Acessar painel de desempenho e exportar relatorios",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "report.variation.read",
+      "description": "Consultar decomposicao de variacao de receita",
       "roles": [
         "admin_clinico",
         "diretor_tecnico",

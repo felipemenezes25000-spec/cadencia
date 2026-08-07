@@ -114,6 +114,9 @@ export const ACTIONS = [
   // ── Fase 3 · Relatorios (Bloco 09) ─────────────────────────────────────
   { key: 'report.read', description: 'Acessar painel de desempenho e exportar relatorios',
     roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
+  // -- Fase 3 . Desempenho ────────────────────────────────────────────────
+  { key: 'report.variation.read', description: 'Consultar decomposicao de variacao de receita',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
