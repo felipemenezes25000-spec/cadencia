@@ -7,6 +7,7 @@ import {
   type AppointmentConfirmed,
   type AppointmentReminderDue,
   type EncounterFinalized,
+  type EncounterAmended,
   type PaymentReceived,
   type PaymentLinkCreated,
   type InboundMessageReceived,
@@ -17,11 +18,12 @@ import {
 } from './domain-events';
 
 describe('eventos de dominio', () => {
-  it('EVENT_TYPES contem exatamente os 10 tipos ate a Fase 3', () => {
+  it('EVENT_TYPES contem exatamente os 11 tipos ate a Fase 4', () => {
     expect(EVENT_TYPES).toEqual([
       'APPOINTMENT_CONFIRMED',
       'APPOINTMENT_REMINDER_DUE',
       'ENCOUNTER_FINALIZED',
+      'ENCOUNTER_AMENDED',
       'PAYMENT_RECEIVED',
       'PAYMENT_LINK_CREATED',
       'INBOUND_MESSAGE_RECEIVED',
@@ -34,6 +36,7 @@ describe('eventos de dominio', () => {
 
   it('isEventType aceita tipo valido e recusa invalido', () => {
     expect(isEventType('APPOINTMENT_CONFIRMED')).toBe(true);
+    expect(isEventType('ENCOUNTER_AMENDED')).toBe(true);
     expect(isEventType('SPLIT_CALCULATED')).toBe(true);
     expect(isEventType('STOCK_ALERT_TRIGGERED')).toBe(true);
     expect(isEventType('REPASSE_CLOSED')).toBe(true);
@@ -134,5 +137,20 @@ describe('eventos de dominio', () => {
     const generico: DomainEvent = evt;
     expect(generico.type).toBe('RECURRING_ENTRY_MATERIALIZED');
     expect(evt.payload.dueDate).toBe('2026-09-05');
+  });
+
+  it('ENCOUNTER_AMENDED carrega kind e versionNo', () => {
+    const evt: EncounterAmended = {
+      type: 'ENCOUNTER_AMENDED',
+      tenantId: 't1', aggregateId: 'e1', occurredAt: '2026-08-07T10:00:00.000Z',
+      payload: {
+        encounterId: 'e1', patientId: 'p1', professionalId: 'pr1',
+        versionNo: 2, kind: 'retificacao',
+      },
+    };
+    const generico: DomainEvent = evt;
+    expect(generico.type).toBe('ENCOUNTER_AMENDED');
+    expect(evt.payload.kind).toBe('retificacao');
+    expect(evt.payload.versionNo).toBe(2);
   });
 });

@@ -16,6 +16,7 @@ export const EVENT_TYPES = [
   'APPOINTMENT_CONFIRMED',
   'APPOINTMENT_REMINDER_DUE',
   'ENCOUNTER_FINALIZED',
+  'ENCOUNTER_AMENDED',
   'PAYMENT_RECEIVED',
   'PAYMENT_LINK_CREATED',
   'INBOUND_MESSAGE_RECEIVED',
@@ -66,6 +67,15 @@ export interface EncounterFinalizedPayload {
   readonly patientId: string;
   readonly professionalId: string;
   readonly versionNo: number;
+}
+
+export interface EncounterAmendedPayload {
+  readonly encounterId: string;
+  readonly patientId: string;
+  readonly professionalId: string;
+  readonly versionNo: number;
+  /** 'retificacao' ou 'adendo' — o handler de reprojecao usa para decidir o fluxo */
+  readonly kind: 'retificacao' | 'adendo';
 }
 
 export interface PaymentReceivedPayload {
@@ -124,6 +134,7 @@ export interface RecurringEntryMaterializedPayload {
 export type AppointmentConfirmed = DomainEventBase<'APPOINTMENT_CONFIRMED', AppointmentConfirmedPayload>;
 export type AppointmentReminderDue = DomainEventBase<'APPOINTMENT_REMINDER_DUE', AppointmentReminderDuePayload>;
 export type EncounterFinalized = DomainEventBase<'ENCOUNTER_FINALIZED', EncounterFinalizedPayload>;
+export type EncounterAmended = DomainEventBase<'ENCOUNTER_AMENDED', EncounterAmendedPayload>;
 export type PaymentReceived = DomainEventBase<'PAYMENT_RECEIVED', PaymentReceivedPayload>;
 export type PaymentLinkCreated = DomainEventBase<'PAYMENT_LINK_CREATED', PaymentLinkCreatedPayload>;
 export type InboundMessageReceived = DomainEventBase<'INBOUND_MESSAGE_RECEIVED', InboundMessageReceivedPayload>;
@@ -140,6 +151,7 @@ export type DomainEvent =
   | AppointmentConfirmed
   | AppointmentReminderDue
   | EncounterFinalized
+  | EncounterAmended
   | PaymentReceived
   | PaymentLinkCreated
   | InboundMessageReceived
