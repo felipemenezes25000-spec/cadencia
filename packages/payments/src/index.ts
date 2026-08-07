@@ -50,3 +50,8 @@ export {
   type CreateSplitRuleInput, type SplitRuleCreated, type SplitRuleFailure,
   type CalculateSplitsFailure, type CalculateSplitsResult,
 } from './split-rule';
+export {
+  closeRepassePeriod, payRepasse,
+  type CloseRepasseInput, type CloseRepasseResult, type CloseRepasseFailure,
+  type PayRepasseInput, type PayRepasseResult, type PayRepasseFailure,
+} from './repasse';
