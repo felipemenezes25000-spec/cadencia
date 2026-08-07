@@ -150,6 +150,18 @@ export const RECONCILIATION_LOG_B = '01930000-0000-7000-8000-0000000000f3';
 export const WEBHOOK_EVENT_A = '01930000-0000-7000-8000-0000000000f4';
 export const WEBHOOK_EVENT_B = '01930000-0000-7000-8000-0000000000f5';
 
+/** Operadora de plano de saude: uma em cada tenant. */
+export const OPERADORA_A = '01930000-0000-7000-8000-000000000f01';
+export const OPERADORA_B = '01930000-0000-7000-8000-000000000f02';
+
+/** Contrato operadora x prestador: um em cada tenant. */
+export const CONTRATO_A = '01930000-0000-7000-8000-000000000f03';
+export const CONTRATO_B = '01930000-0000-7000-8000-000000000f04';
+
+/** Vinculo paciente x convenio (carteirinha): um em cada tenant. */
+export const PACIENTE_CONVENIO_A = '01930000-0000-7000-8000-000000000f05';
+export const PACIENTE_CONVENIO_B = '01930000-0000-7000-8000-000000000f06';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 
