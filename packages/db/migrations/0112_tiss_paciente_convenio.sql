@@ -5,7 +5,7 @@
 -- §3.9 e §8 Fase 4: vinculo paciente x operadora (carteirinha do convenio).
 -- Um paciente pode ter mais de um convenio: cada carteirinha e uma linha.
 -- numero_carteira e o campo que preenche encounter_guia_consulta.numero_carteira.
--- Nenhuma ocorrencia de now() ou current_date no schema tiss — invariante de CI.
+-- Nenhuma leitura do relogio de quem executa neste schema — invariante de CI.
 
 CREATE TABLE tiss.paciente_convenio (
   tenant_id         uuid NOT NULL DEFAULT app.require_tenant_id(),

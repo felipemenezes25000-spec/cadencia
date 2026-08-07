@@ -6,7 +6,7 @@
 -- autoria e vinculo a versao. Sem coluna de CID: item 32 do Componente
 -- Organizacional PROIBE a operadora de exigir CID na guia.
 --
--- INVARIANTE: nenhuma ocorrencia de now()/current_date neste schema.
+-- INVARIANTE: nenhuma leitura do relogio de quem executa neste schema.
 
 CREATE TABLE tiss.encounter_guia_consulta (
   tenant_id                     uuid NOT NULL DEFAULT app.require_tenant_id(),

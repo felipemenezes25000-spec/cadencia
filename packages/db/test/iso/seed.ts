@@ -743,6 +743,354 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENTRY_A, F.ENTRY_B],
   );
 
+  // ── Agenda (sched) ─────────────────────────────────────────────────────────
+  //
+  // As tabelas sched.* nasceram na Fase 1 (Tasks 37-41). Como toda tabela
+  // multi-tenant, precisam de linha do tenant B, senao o teste meta reprova
+  // e o T1 passaria a toa.
+
+  await admin.query(
+    `INSERT INTO sched.procedure
+       (tenant_id, id, code, nome, cor, duracao_min, valor_centavos) VALUES
+       ($1, $3, 'CONS-001', 'Consulta padrao', '#4f46e5', 30, 25000),
+       ($2, $4, 'CONS-001', 'Consulta padrao', '#4f46e5', 30, 30000)`,
+    [F.TENANT_A, F.TENANT_B, F.SCHED_PROCEDURE_A, F.SCHED_PROCEDURE_B],
+  );
+
+  await admin.query(
+    `INSERT INTO sched.appointment
+       (tenant_id, id, patient_id, professional_id, clinic_id, procedure_id,
+        starts_at, ends_at, appointment_date, created_by) VALUES
+       ($1, $3, $5, $7, $9,  $11,
+        TIMESTAMPTZ '2026-08-02T09:00:00Z', TIMESTAMPTZ '2026-08-02T09:30:00Z',
+        app.local_date(TIMESTAMPTZ '2026-08-02T09:00:00Z',
+          (SELECT timezone FROM app.clinic WHERE id = $9)),
+        $7),
+       ($2, $4, $6, $8, $10, $12,
+        TIMESTAMPTZ '2026-08-02T09:00:00Z', TIMESTAMPTZ '2026-08-02T09:30:00Z',
+        app.local_date(TIMESTAMPTZ '2026-08-02T09:00:00Z',
+          (SELECT timezone FROM app.clinic WHERE id = $10)),
+        $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SCHED_APPOINTMENT_A, F.SCHED_APPOINTMENT_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.SCHED_PROCEDURE_A, F.SCHED_PROCEDURE_B],
+  );
+
+  await admin.query(
+    `INSERT INTO sched.block
+       (tenant_id, id, clinic_id, starts_at, ends_at, kind, motivo, created_by) VALUES
+       ($1, $3, $5,
+        TIMESTAMPTZ '2026-08-02T12:00:00Z', TIMESTAMPTZ '2026-08-02T13:00:00Z',
+        'almoco', 'Horario de almoco', $7),
+       ($2, $4, $6,
+        TIMESTAMPTZ '2026-08-02T12:00:00Z', TIMESTAMPTZ '2026-08-02T13:00:00Z',
+        'almoco', 'Horario de almoco', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SCHED_BLOCK_A, F.SCHED_BLOCK_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO sched.recurrence
+       (tenant_id, id, patient_id, professional_id, clinic_id, procedure_id,
+        freq, first_starts_at, duracao_min, horizonte_ate, created_by) VALUES
+       ($1, $3, $5, $7, $9,  $11,
+        'semanal', TIMESTAMPTZ '2026-08-02T09:00:00Z', 30, DATE '2026-12-31', $7),
+       ($2, $4, $6, $8, $10, $12,
+        'semanal', TIMESTAMPTZ '2026-08-02T09:00:00Z', 30, DATE '2026-12-31', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SCHED_RECURRENCE_A, F.SCHED_RECURRENCE_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.SCHED_PROCEDURE_A, F.SCHED_PROCEDURE_B],
+  );
+
+  // closed_at e close_reason preenchidos de proposito: a entrada ja "saiu da fila"
+  // para nao interferir nos testes de 25-waitlist que criam os proprios candidatos.
+  // O indice parcial ux_waitlist_ativa so cobre closed_at IS NULL.
+  await admin.query(
+    `INSERT INTO sched.waitlist
+       (tenant_id, id, patient_id, clinic_id, procedure_id, created_by,
+        closed_at, close_reason) VALUES
+       ($1, $3, $5, $7, $9,  $11, clock_timestamp(), 'atendido pelo seed'),
+       ($2, $4, $6, $8, $10, $12, clock_timestamp(), 'atendido pelo seed')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SCHED_WAITLIST_A, F.SCHED_WAITLIST_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.SCHED_PROCEDURE_A, F.SCHED_PROCEDURE_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // ── Mensageria (msg) ──────────────────────────────────────────────────────
+  //
+  // As tabelas msg.* nasceram na Fase 2 (Tasks do bloco 01-07). Como toda tabela
+  // multi-tenant, precisam de linha do tenant B.
+
+  await admin.query(
+    `INSERT INTO msg.channel_identity
+       (tenant_id, id, channel, display_name, phone, status) VALUES
+       ($1, $3, 'whatsapp', 'Aurora WhatsApp', '+5511999990001', 'active'),
+       ($2, $4, 'whatsapp', 'Boreal WhatsApp', '+5568999990002', 'active')`,
+    [F.TENANT_A, F.TENANT_B, F.CHANNEL_A, F.CHANNEL_B],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.template
+       (tenant_id, id, channel_identity_id, channel, name, category, status,
+        body_template) VALUES
+       ($1, $3, $5, 'whatsapp', 'lembrete_consulta', 'utility', 'approved',
+        'Ola {{1}}, sua consulta e amanha as {{2}}.'),
+       ($2, $4, $6, 'whatsapp', 'lembrete_consulta', 'utility', 'approved',
+        'Ola {{1}}, sua consulta e amanha as {{2}}.')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.MSG_TEMPLATE_A, F.MSG_TEMPLATE_B,
+     F.CHANNEL_A, F.CHANNEL_B],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.conversation
+       (tenant_id, id, channel_identity_id, patient_id, remote_phone) VALUES
+       ($1, $3, $5, $7, '+5511988880001'),
+       ($2, $4, $6, $8, '+5568988880002')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.CONVERSATION_A, F.CONVERSATION_B,
+     F.CHANNEL_A, F.CHANNEL_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.message
+       (tenant_id, id, conversation_id, direction, channel, body_text, status) VALUES
+       ($1, $3, $5, 'outbound', 'whatsapp', 'Ola Joana, sua consulta e amanha.', 'sent'),
+       ($2, $4, $6, 'outbound', 'whatsapp', 'Ola Marcos, sua consulta e amanha.', 'sent')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.MESSAGE_A, F.MESSAGE_B,
+     F.CONVERSATION_A, F.CONVERSATION_B],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.inbound_event
+       (tenant_id, id, channel_identity_id, raw_payload) VALUES
+       ($1, $3, $5, '{"type":"message","from":"+5511988880001"}'::jsonb),
+       ($2, $4, $6, '{"type":"message","from":"+5568988880002"}'::jsonb)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.INBOUND_EVENT_A, F.INBOUND_EVENT_B,
+     F.CHANNEL_A, F.CHANNEL_B],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.automation_rule
+       (tenant_id, id, channel_identity_id, trigger, template_id, channel) VALUES
+       ($1, $3, $5, 'appointment_reminder', $7, 'whatsapp'),
+       ($2, $4, $6, 'appointment_reminder', $8, 'whatsapp')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.AUTOMATION_RULE_A, F.AUTOMATION_RULE_B,
+     F.CHANNEL_A, F.CHANNEL_B,
+     F.MSG_TEMPLATE_A, F.MSG_TEMPLATE_B],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.nps_response
+       (tenant_id, id, patient_id, score, comment) VALUES
+       ($1, $3, $5, 9, 'Excelente atendimento'),
+       ($2, $4, $6, 8, 'Muito bom')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.NPS_RESPONSE_A, F.NPS_RESPONSE_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.sent_reminder
+       (tenant_id, id, appointment_id, rule_id) VALUES
+       ($1, $3, $5, $7),
+       ($2, $4, $6, $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SENT_REMINDER_A, F.SENT_REMINDER_B,
+     F.SCHED_APPOINTMENT_A, F.SCHED_APPOINTMENT_B,
+     F.AUTOMATION_RULE_A, F.AUTOMATION_RULE_B],
+  );
+
+  // ── Financeiro Fase 3 ─────────────────────────────────────────────────────
+  //
+  // As tabelas fin.* da Fase 3 (contas bancarias, centros de custo, fornecedores,
+  // parcelamento, recorrencia, transferencia, split, repasse). Como toda tabela
+  // multi-tenant, precisam de linha do tenant B.
+
+  await admin.query(
+    `INSERT INTO fin.cost_center (tenant_id, id, code, name) VALUES
+       ($1, $3, 'CC-001', 'Administrativo'),
+       ($2, $4, 'CC-001', 'Administrativo')`,
+    [F.TENANT_A, F.TENANT_B, F.COST_CENTER_A, F.COST_CENTER_B],
+  );
+
+  await admin.query(
+    `INSERT INTO fin.supplier (tenant_id, id, name) VALUES
+       ($1, $3, 'Distribuidora Medicamentos Ltda'),
+       ($2, $4, 'Farmaceutica Norte SA')`,
+    [F.TENANT_A, F.TENANT_B, F.FIN_SUPPLIER_A, F.FIN_SUPPLIER_B],
+  );
+
+  // Segunda conta bancaria por tenant (a primeira, "Caixa Geral", foi criada
+  // pelo trigger de provisioning na migration 0088). Necessaria para fin.transfer
+  // que exige from <> to.
+  await admin.query(
+    `INSERT INTO fin.bank_account
+       (tenant_id, id, name, bank_code, agency, account_number, account_type) VALUES
+       ($1, $3, 'Conta Corrente Itau', '341', '1234', '56789-0', 'corrente'),
+       ($2, $4, 'Conta Corrente Bradesco', '237', '5678', '12345-0', 'corrente')`,
+    [F.TENANT_A, F.TENANT_B, F.BANK_ACCOUNT_2_A, F.BANK_ACCOUNT_2_B],
+  );
+
+  // Lancamentos extras para a transferencia (debito e credito).
+  await admin.query(
+    `INSERT INTO fin.entry
+       (tenant_id, id, kind, professional_id, clinic_id, description,
+        amount_cents, payment_method_id, status, idempotency_key) VALUES
+       ($1, $3, 'despesa', $7, $9,  'Transferencia saida', 5000, $11, 'pago', 'seed-xfer-debit-a'),
+       ($2, $4, 'despesa', $8, $10, 'Transferencia saida', 5000, $12, 'pago', 'seed-xfer-debit-b'),
+       ($1, $5, 'receita', $7, $9,  'Transferencia entrada', 5000, $11, 'pago', 'seed-xfer-credit-a'),
+       ($2, $6, 'receita', $8, $10, 'Transferencia entrada', 5000, $12, 'pago', 'seed-xfer-credit-b')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.ENTRY_XFER_DEBIT_A, F.ENTRY_XFER_DEBIT_B,
+     F.ENTRY_XFER_CREDIT_A, F.ENTRY_XFER_CREDIT_B,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
+  );
+
+  await admin.query(
+    `INSERT INTO fin.installment_plan
+       (tenant_id, id, mother_entry_id, total_installments) VALUES
+       ($1, $3, $5, 3),
+       ($2, $4, $6, 3)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.INSTALLMENT_PLAN_A, F.INSTALLMENT_PLAN_B,
+     F.ENTRY_A, F.ENTRY_B],
+  );
+
+  await admin.query(
+    `INSERT INTO fin.recurring_template
+       (tenant_id, id, description, kind, category_id, amount_cents, clinic_id,
+        frequency, next_due_date) VALUES
+       ($1, $3, 'Aluguel mensal', 'despesa', $5, 500000, $7,
+        'monthly', DATE '2026-09-01'),
+       ($2, $4, 'Aluguel mensal', 'despesa', $6, 400000, $8,
+        'monthly', DATE '2026-09-01')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECURRING_TEMPLATE_A, F.RECURRING_TEMPLATE_B,
+     F.CATEGORY_A, F.CATEGORY_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  // A transferencia precisa de from <> to e de dois lancamentos (debito e credito).
+  // O "Caixa Geral" (criado pelo trigger) e a origem; a segunda conta e o destino.
+  // Usamos subquery para pegar o id da conta default (gen_random_uuid pelo trigger).
+  await admin.query(
+    `INSERT INTO fin.transfer
+       (tenant_id, id, from_bank_account_id, to_bank_account_id,
+        amount_cents, description, debit_entry_id, credit_entry_id) VALUES
+       ($1, $3,
+        (SELECT id FROM fin.bank_account WHERE tenant_id = $1 AND is_default LIMIT 1),
+        $5, 5000, 'Transferencia seed', $7, $9),
+       ($2, $4,
+        (SELECT id FROM fin.bank_account WHERE tenant_id = $2 AND is_default LIMIT 1),
+        $6, 5000, 'Transferencia seed', $8, $10)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.TRANSFER_A, F.TRANSFER_B,
+     F.BANK_ACCOUNT_2_A, F.BANK_ACCOUNT_2_B,
+     F.ENTRY_XFER_DEBIT_A, F.ENTRY_XFER_DEBIT_B,
+     F.ENTRY_XFER_CREDIT_A, F.ENTRY_XFER_CREDIT_B],
+  );
+
+  await admin.query(
+    `INSERT INTO fin.split_rule
+       (tenant_id, id, professional_id, percentage) VALUES
+       ($1, $3, $5, 60.00),
+       ($2, $4, $6, 55.00)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SPLIT_RULE_A, F.SPLIT_RULE_B,
+     F.PROF_A_ANA, F.PROF_B_DIEGO],
+  );
+
+  // O trigger check_split_sum exige clinic_share + professional_share = entry.amount.
+  // ENTRY_A = 25000, ENTRY_B = 30000.
+  await admin.query(
+    `INSERT INTO fin.split
+       (tenant_id, id, entry_id, split_rule_id, professional_id,
+        clinic_share_cents, professional_share_cents) VALUES
+       ($1, $3, $5, $7, $9,  10000, 15000),
+       ($2, $4, $6, $8, $10, 13500, 16500)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SPLIT_A, F.SPLIT_B,
+     F.ENTRY_A, F.ENTRY_B,
+     F.SPLIT_RULE_A, F.SPLIT_RULE_B,
+     F.PROF_A_ANA, F.PROF_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO fin.repasse_statement
+       (tenant_id, id, professional_id, clinic_id, period_start, period_end,
+        total_entries, total_professional_share, total_clinic_share) VALUES
+       ($1, $3, $5, $7, DATE '2026-08-01', DATE '2026-08-31', 1, 15000, 10000),
+       ($2, $4, $6, $8, DATE '2026-08-01', DATE '2026-08-31', 1, 16500, 13500)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.REPASSE_STATEMENT_A, F.REPASSE_STATEMENT_B,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  // ── Estoque (inv) ─────────────────────────────────────────────────────────
+  //
+  // As tabelas inv.* nasceram na Fase 3 (Bloco 09). Como toda tabela
+  // multi-tenant, precisam de linha do tenant B.
+
+  await admin.query(
+    `INSERT INTO inv.supplier (tenant_id, id, name) VALUES
+       ($1, $3, 'Distribuidora Medica Aurora'),
+       ($2, $4, 'Farmacia Norte Ltda')`,
+    [F.TENANT_A, F.TENANT_B, F.INV_SUPPLIER_A, F.INV_SUPPLIER_B],
+  );
+
+  await admin.query(
+    `INSERT INTO inv.product
+       (tenant_id, id, name, sku, unit, min_stock, supplier_id) VALUES
+       ($1, $3, 'Luva descartavel M', 'LUV-M-001', 'cx', 5, $5),
+       ($2, $4, 'Luva descartavel M', 'LUV-M-001', 'cx', 5, $6)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.PRODUCT_A, F.PRODUCT_B,
+     F.INV_SUPPLIER_A, F.INV_SUPPLIER_B],
+  );
+
+  // O trigger fn_update_current_stock atualiza inv.product.current_stock
+  // apos cada INSERT em stock_movement.
+  await admin.query(
+    `INSERT INTO inv.stock_movement
+       (tenant_id, id, product_id, kind, quantity, reason,
+        reference_type, moved_by) VALUES
+       ($1, $3, $5, 'entrada', 10, 'Compra inicial', 'compra', $7),
+       ($2, $4, $6, 'entrada', 10, 'Compra inicial', 'compra', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.STOCK_MOVEMENT_A, F.STOCK_MOVEMENT_B,
+     F.PRODUCT_A, F.PRODUCT_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO inv.stock_alert
+       (tenant_id, id, product_id, threshold) VALUES
+       ($1, $3, $5, 5),
+       ($2, $4, $6, 5)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.STOCK_ALERT_A, F.STOCK_ALERT_B,
+     F.PRODUCT_A, F.PRODUCT_B],
+  );
+
   // tiss.operadora nasceu na Task 1 da Fase 4: cadastro da operadora de plano de
   // saude por tenant. Como toda tabela multi-tenant, precisa de linha do tenant B,
   // senao o teste meta ("o seed realmente criou linha do tenant B em toda tabela

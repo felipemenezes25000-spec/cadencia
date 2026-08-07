@@ -6,7 +6,7 @@
 -- Cada contrato representa o vinculo de uma clinica com uma operadora: o codigo
 -- do prestador na operadora, o tipo de acomodacao, abrangencia, vigencia e
 -- referencia de tabela de precos acordada (que pode divergir da TUSS publica).
--- Nenhuma ocorrencia de now() ou current_date no schema tiss — invariante de CI.
+-- Nenhuma leitura do relogio de quem executa neste schema — invariante de CI.
 
 CREATE TABLE tiss.contrato (
   tenant_id                     uuid NOT NULL DEFAULT app.require_tenant_id(),

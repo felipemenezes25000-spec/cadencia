@@ -1,6 +1,6 @@
 // packages/authz/src/actions-fase4.test.ts
 import { describe, expect, it } from 'vitest';
-import { ACTIONS, ACTION_BY_KEY } from './actions';
+import { ACTIONS, ACTION_BY_KEY, type ActionDef } from './actions';
 
 describe('acoes de TISS — Fase 4', () => {
   it('tiss.operadora.read existe e permite admin_clinico e financeiro', () => {
@@ -49,7 +49,7 @@ describe('acoes de TISS — Fase 4', () => {
   it('nenhuma acao TISS exige MFA', () => {
     const tissActions = ACTIONS.filter((a) => a.key.startsWith('tiss.'));
     for (const action of tissActions) {
-      expect(action.requiresMfa, `${action.key} nao deve exigir MFA`).toBeUndefined();
+      expect((action as ActionDef).requiresMfa, `${action.key} nao deve exigir MFA`).toBeUndefined();
     }
   });
 });

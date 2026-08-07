@@ -4,7 +4,7 @@
 --
 -- §3.9 e §8 Fase 4: operadora de plano de saude por tenant.
 -- Registro ANS e char(6) com CHECK de 6 digitos. CNPJ alfanumerico (IN RFB 2.229/2024).
--- Nenhuma ocorrencia de now() ou current_date no schema tiss — invariante de CI.
+-- Nenhuma leitura do relogio de quem executa neste schema — invariante de CI.
 
 CREATE TABLE tiss.operadora (
   tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),

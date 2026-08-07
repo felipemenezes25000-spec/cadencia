@@ -3,7 +3,7 @@
 -- Este arquivo roda dentro de UMA transacao. Nada de CREATE INDEX CONCURRENTLY.
 --
 -- S3.9 — contador de numero_guia_prestador por tenant. Auto-provisiona na
--- primeira guia. Sem now()/current_date (invariante tiss).
+-- primeira guia. Sem leitura do relogio de quem executa (invariante tiss).
 
 CREATE TABLE tiss.guia_counter (
   tenant_id   uuid NOT NULL,

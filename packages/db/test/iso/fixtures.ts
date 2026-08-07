@@ -170,6 +170,116 @@ export const GUIA_CONSULTA_B = '01930000-0000-7000-8000-0000000000f9';
 export const GUIA_AJUSTE_A = '01930000-0000-7000-8000-0000000000fa';
 export const GUIA_AJUSTE_B = '01930000-0000-7000-8000-0000000000fb';
 
+/** Procedimento da agenda: um em cada tenant. */
+export const SCHED_PROCEDURE_A = '01930000-0000-7000-8000-000000001001';
+export const SCHED_PROCEDURE_B = '01930000-0000-7000-8000-000000001002';
+
+/** Agendamento: um em cada tenant. */
+export const SCHED_APPOINTMENT_A = '01930000-0000-7000-8000-000000001003';
+export const SCHED_APPOINTMENT_B = '01930000-0000-7000-8000-000000001004';
+
+/** Bloqueio de agenda: um em cada tenant. */
+export const SCHED_BLOCK_A = '01930000-0000-7000-8000-000000001005';
+export const SCHED_BLOCK_B = '01930000-0000-7000-8000-000000001006';
+
+/** Recorrencia de agendamento: uma em cada tenant. */
+export const SCHED_RECURRENCE_A = '01930000-0000-7000-8000-000000001007';
+export const SCHED_RECURRENCE_B = '01930000-0000-7000-8000-000000001008';
+
+/** Lista de espera: uma em cada tenant. */
+export const SCHED_WAITLIST_A = '01930000-0000-7000-8000-000000001009';
+export const SCHED_WAITLIST_B = '01930000-0000-7000-8000-00000000100a';
+
+/** Canal de mensageria: um em cada tenant. */
+export const CHANNEL_A = '01930000-0000-7000-8000-000000001011';
+export const CHANNEL_B = '01930000-0000-7000-8000-000000001012';
+
+/** Template de mensagem: um em cada tenant. */
+export const MSG_TEMPLATE_A = '01930000-0000-7000-8000-000000001013';
+export const MSG_TEMPLATE_B = '01930000-0000-7000-8000-000000001014';
+
+/** Conversa: uma em cada tenant. */
+export const CONVERSATION_A = '01930000-0000-7000-8000-000000001015';
+export const CONVERSATION_B = '01930000-0000-7000-8000-000000001016';
+
+/** Mensagem: uma em cada tenant. */
+export const MESSAGE_A = '01930000-0000-7000-8000-000000001017';
+export const MESSAGE_B = '01930000-0000-7000-8000-000000001018';
+
+/** Evento de entrada (webhook): um em cada tenant. */
+export const INBOUND_EVENT_A = '01930000-0000-7000-8000-000000001019';
+export const INBOUND_EVENT_B = '01930000-0000-7000-8000-00000000101a';
+
+/** Regra de automacao: uma em cada tenant. */
+export const AUTOMATION_RULE_A = '01930000-0000-7000-8000-00000000101b';
+export const AUTOMATION_RULE_B = '01930000-0000-7000-8000-00000000101c';
+
+/** Resposta NPS: uma em cada tenant. */
+export const NPS_RESPONSE_A = '01930000-0000-7000-8000-00000000101d';
+export const NPS_RESPONSE_B = '01930000-0000-7000-8000-00000000101e';
+
+/** Lembrete enviado: um em cada tenant. */
+export const SENT_REMINDER_A = '01930000-0000-7000-8000-00000000101f';
+export const SENT_REMINDER_B = '01930000-0000-7000-8000-000000001020';
+
+/** Centro de custo: um em cada tenant. */
+export const COST_CENTER_A = '01930000-0000-7000-8000-000000001031';
+export const COST_CENTER_B = '01930000-0000-7000-8000-000000001032';
+
+/** Fornecedor financeiro: um em cada tenant. */
+export const FIN_SUPPLIER_A = '01930000-0000-7000-8000-000000001033';
+export const FIN_SUPPLIER_B = '01930000-0000-7000-8000-000000001034';
+
+/** Segunda conta bancaria (para transferencias): uma em cada tenant. */
+export const BANK_ACCOUNT_2_A = '01930000-0000-7000-8000-000000001035';
+export const BANK_ACCOUNT_2_B = '01930000-0000-7000-8000-000000001036';
+
+/** Lancamentos extras para transferencia: debito e credito em cada tenant. */
+export const ENTRY_XFER_DEBIT_A = '01930000-0000-7000-8000-000000001037';
+export const ENTRY_XFER_DEBIT_B = '01930000-0000-7000-8000-000000001038';
+export const ENTRY_XFER_CREDIT_A = '01930000-0000-7000-8000-000000001039';
+export const ENTRY_XFER_CREDIT_B = '01930000-0000-7000-8000-00000000103a';
+
+/** Plano de parcelamento: um em cada tenant. */
+export const INSTALLMENT_PLAN_A = '01930000-0000-7000-8000-00000000103b';
+export const INSTALLMENT_PLAN_B = '01930000-0000-7000-8000-00000000103c';
+
+/** Template de lancamento recorrente: um em cada tenant. */
+export const RECURRING_TEMPLATE_A = '01930000-0000-7000-8000-00000000103d';
+export const RECURRING_TEMPLATE_B = '01930000-0000-7000-8000-00000000103e';
+
+/** Transferencia entre contas: uma em cada tenant. */
+export const TRANSFER_A = '01930000-0000-7000-8000-00000000103f';
+export const TRANSFER_B = '01930000-0000-7000-8000-000000001040';
+
+/** Regra de repasse: uma em cada tenant. */
+export const SPLIT_RULE_A = '01930000-0000-7000-8000-000000001041';
+export const SPLIT_RULE_B = '01930000-0000-7000-8000-000000001042';
+
+/** Divisao de lancamento: uma em cada tenant. */
+export const SPLIT_A = '01930000-0000-7000-8000-000000001043';
+export const SPLIT_B = '01930000-0000-7000-8000-000000001044';
+
+/** Extrato de repasse: um em cada tenant. */
+export const REPASSE_STATEMENT_A = '01930000-0000-7000-8000-000000001045';
+export const REPASSE_STATEMENT_B = '01930000-0000-7000-8000-000000001046';
+
+/** Fornecedor de estoque: um em cada tenant. */
+export const INV_SUPPLIER_A = '01930000-0000-7000-8000-000000001051';
+export const INV_SUPPLIER_B = '01930000-0000-7000-8000-000000001052';
+
+/** Produto de estoque: um em cada tenant. */
+export const PRODUCT_A = '01930000-0000-7000-8000-000000001053';
+export const PRODUCT_B = '01930000-0000-7000-8000-000000001054';
+
+/** Movimentacao de estoque: uma em cada tenant. */
+export const STOCK_MOVEMENT_A = '01930000-0000-7000-8000-000000001055';
+export const STOCK_MOVEMENT_B = '01930000-0000-7000-8000-000000001056';
+
+/** Alerta de estoque: um em cada tenant. */
+export const STOCK_ALERT_A = '01930000-0000-7000-8000-000000001057';
+export const STOCK_ALERT_B = '01930000-0000-7000-8000-000000001058';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

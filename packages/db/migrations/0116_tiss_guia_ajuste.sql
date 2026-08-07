@@ -4,7 +4,7 @@
 --
 -- S3.9 — ajuste de faturamento da guia de consulta. Append-only: a guia
 -- original nao e sobrescrita; o ajuste carrega campo alterado, valor anterior,
--- valor novo, motivo e autor. Sem now()/current_date (invariante tiss).
+-- valor novo, motivo e autor. Sem leitura do relogio de quem executa (invariante tiss).
 
 CREATE TABLE tiss.guia_ajuste (
   tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
