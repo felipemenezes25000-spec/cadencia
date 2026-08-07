@@ -30,3 +30,9 @@ export {
   type PacienteConvenioRow,
   type PacienteConvenioFailure,
 } from './paciente-convenio';
+
+export type {
+  ProjectionResult, ProjectedResult, SkippedResult,
+  ProjectionError, DadosAusentesError, TussNaoVigenteError,
+} from './project-guia';
+export { projectGuiaConsulta } from './project-guia';
