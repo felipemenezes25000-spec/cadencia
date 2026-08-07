@@ -955,5 +955,17 @@
         "SELECT"
       ]
     }
+  },
+  "tiss.contrato": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
   }
 }
