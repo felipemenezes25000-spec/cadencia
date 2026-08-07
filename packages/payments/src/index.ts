@@ -37,3 +37,7 @@ export {
   createTransfer,
   type CreateTransferInput, type TransferCreated, type TransferFailure,
 } from './transfer';
+export {
+  getCashFlowProjection,
+  type CashFlowInput, type CashFlowProjection, type CashFlowWeek,
+} from './cash-flow';
