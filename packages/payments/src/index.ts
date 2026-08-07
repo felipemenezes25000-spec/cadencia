@@ -29,3 +29,7 @@ export {
   type CreateRecurringTemplateInput, type RecurringFailure,
   type RecurringTemplateCreated, type RecurrenceFrequency,
 } from './recurring';
+export {
+  materializeRecurringEntries,
+  type MaterializeResult,
+} from './materialize-recurring';
