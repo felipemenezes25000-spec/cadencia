@@ -16,4 +16,12 @@ export {
   type PaymentLinkCreatedPayload,
   type InboundMessageReceived,
   type InboundMessageReceivedPayload,
+  type SplitCalculated,
+  type SplitCalculatedPayload,
+  type StockAlertTriggered,
+  type StockAlertTriggeredPayload,
+  type RepasseClosed,
+  type RepasseClosedPayload,
+  type RecurringEntryMaterialized,
+  type RecurringEntryMaterializedPayload,
 } from './domain-events';

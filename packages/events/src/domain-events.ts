@@ -20,7 +20,9 @@ export const EVENT_TYPES = [
   'PAYMENT_LINK_CREATED',
   'INBOUND_MESSAGE_RECEIVED',
   'SPLIT_CALCULATED',
-  'STOCK_LOW',
+  'STOCK_ALERT_TRIGGERED',
+  'REPASSE_CLOSED',
+  'RECURRING_ENTRY_MATERIALIZED',
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -86,17 +88,33 @@ export interface InboundMessageReceivedPayload {
 
 export interface SplitCalculatedPayload {
   readonly entryId: string;
-  readonly splitId: string;
   readonly professionalId: string;
-  readonly professionalShareCents: number;
-  readonly clinicShareCents: number;
+  readonly grossCents: number;
+  readonly netCents: number;
+  /** Percentual do profissional (0-100) */
+  readonly splitPct: number;
 }
 
-export interface StockLowPayload {
+export interface StockAlertTriggeredPayload {
   readonly productId: string;
-  readonly productName: string;
-  readonly currentStock: number;
-  readonly threshold: number;
+  readonly currentQty: number;
+  readonly minimumQty: number;
+  readonly clinicId: string;
+}
+
+export interface RepasseClosedPayload {
+  readonly repasseId: string;
+  readonly professionalId: string;
+  readonly periodStart: string;
+  readonly periodEnd: string;
+  readonly totalCents: number;
+}
+
+export interface RecurringEntryMaterializedPayload {
+  readonly recurringRuleId: string;
+  readonly entryId: string;
+  readonly amountCents: number;
+  readonly dueDate: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,7 +128,9 @@ export type PaymentReceived = DomainEventBase<'PAYMENT_RECEIVED', PaymentReceive
 export type PaymentLinkCreated = DomainEventBase<'PAYMENT_LINK_CREATED', PaymentLinkCreatedPayload>;
 export type InboundMessageReceived = DomainEventBase<'INBOUND_MESSAGE_RECEIVED', InboundMessageReceivedPayload>;
 export type SplitCalculated = DomainEventBase<'SPLIT_CALCULATED', SplitCalculatedPayload>;
-export type StockLow = DomainEventBase<'STOCK_LOW', StockLowPayload>;
+export type StockAlertTriggered = DomainEventBase<'STOCK_ALERT_TRIGGERED', StockAlertTriggeredPayload>;
+export type RepasseClosed = DomainEventBase<'REPASSE_CLOSED', RepasseClosedPayload>;
+export type RecurringEntryMaterialized = DomainEventBase<'RECURRING_ENTRY_MATERIALIZED', RecurringEntryMaterializedPayload>;
 
 // ---------------------------------------------------------------------------
 // Uniao discriminada
@@ -124,4 +144,6 @@ export type DomainEvent =
   | PaymentLinkCreated
   | InboundMessageReceived
   | SplitCalculated
-  | StockLow;
+  | StockAlertTriggered
+  | RepasseClosed
+  | RecurringEntryMaterialized;
