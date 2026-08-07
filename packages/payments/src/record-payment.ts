@@ -23,6 +23,8 @@ export interface RecordPaymentInput {
   readonly dueDate?: string;
   readonly externalRef?: string;
   readonly idempotencyKey: string;
+  readonly bankAccountId?: string;
+  readonly costCenterId?: string;
 }
 
 export interface RecordedPayment {
@@ -56,15 +58,17 @@ export async function recordPayment(
        (tenant_id, id, kind, category_id, patient_id, appointment_id,
         professional_id, clinic_id, description, amount_cents,
         payment_method_id, paid_at, due_date, status, external_ref,
-        idempotency_key, created_by)
+        idempotency_key, created_by, bank_account_id, cost_center_id)
      VALUES (app.require_tenant_id(), $1, 'receita', $2, $3, $4,
              $5, $6, $7, $8, $9,
              CASE WHEN $10::boolean THEN clock_timestamp() ELSE NULL END,
-             $11::date, $12::fin.entry_status, $13, $14, app.current_user_id())`,
+             $11::date, $12::fin.entry_status, $13, $14, app.current_user_id(),
+             $15, $16)`,
     [entryId, i.categoryId ?? null, i.patientId ?? null, i.appointmentId ?? null,
      i.professionalId, i.clinicId, i.description, i.amountCents,
      i.paymentMethodId, i.paidNow, i.dueDate ?? null, status,
-     i.externalRef ?? null, i.idempotencyKey]);
+     i.externalRef ?? null, i.idempotencyKey,
+     i.bankAccountId ?? null, i.costCenterId ?? null]);
 
   await tx.query(
     `SELECT audit.log('PAYMENT_RECORD', 'fin', 'entry', $1, 'sucesso',
