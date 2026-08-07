@@ -584,6 +584,20 @@
       ]
     }
   },
+  "fin.repasse_statement": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "fin.recurring_template": {
     "table": {
       "app_rw": [
