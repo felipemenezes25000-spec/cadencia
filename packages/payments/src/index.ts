@@ -41,3 +41,7 @@ export {
   getCashFlowProjection,
   type CashFlowInput, type CashFlowProjection, type CashFlowWeek,
 } from './cash-flow';
+export {
+  getBankStatement,
+  type BankStatementInput, type BankStatement, type StatementLine,
+} from './bank-statement';
