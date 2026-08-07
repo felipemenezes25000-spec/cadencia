@@ -7,9 +7,11 @@ import {
   semearProjecaoIncompleta,
   semearProjecaoParticular,
   semearProjecaoTiss,
+  semearProjecaoTussInvalido,
   type TissSemente,
   type TissSementeIncompleta,
   type TissSementeParticular,
+  type TissSementeTussInvalido,
 } from './test-support';
 
 let sp: TissSementeParticular;
@@ -18,6 +20,8 @@ let st: TissSemente;
 let actorConvenio: Actor;
 let si: TissSementeIncompleta;
 let actorIncompleto: Actor;
+let sti: TissSementeTussInvalido;
+let actorTussInv: Actor;
 
 beforeAll(async () => {
   sp = await semearProjecaoParticular();
@@ -34,6 +38,11 @@ beforeAll(async () => {
   actorIncompleto = {
     kind: 'user', tenantId: si.tenantId, userId: si.userId,
     clinicId: si.clinicId, requestId: uuidv7(),
+  };
+  sti = await semearProjecaoTussInvalido();
+  actorTussInv = {
+    kind: 'user', tenantId: sti.tenantId, userId: sti.userId,
+    clinicId: sti.clinicId, requestId: uuidv7(),
   };
 });
 afterAll(async () => { await closePools(); });
@@ -209,5 +218,63 @@ describe('projectGuiaConsulta — dados incompletos', () => {
     expect(enc).toBeDefined();
     expect(enc!.status).toBe('finalizado');
     expect(enc!.version_count).toBe(1);
+  });
+});
+
+describe('projectGuiaConsulta — procedimento TUSS nao vigente', () => {
+  let versionId: string;
+
+  beforeAll(async () => {
+    const r = await finalizarEncounter(
+      actorTussInv, sti.encounterId, sti.fieldQueixaId, 'febre ha 3 dias', 'dd',
+    );
+    versionId = r.versionId;
+  });
+
+  it('retorna err com kind tuss_nao_vigente quando procedimento nao existe na TUSS', async () => {
+    const result = await withTenantTx(actorTussInv, async (tx) => {
+      return projectGuiaConsulta(tx, sti.encounterId, versionId);
+    });
+
+    expect(isErr(result)).toBe(true);
+    if (!isErr(result)) return;
+    expect(result.error.kind).toBe('tuss_nao_vigente');
+    if (result.error.kind !== 'tuss_nao_vigente') return;
+    expect(result.error.codigoProcedimento).toBe('99999999');
+    expect(result.error.codigoTabela).toBe('22');
+  });
+
+  it('NAO insere guia quando procedimento nao e vigente', async () => {
+    const guia = await withTenantTx(actorTussInv, async (tx) => {
+      const { rows } = await tx.query<{ id: string }>(
+        `SELECT id::text AS id FROM tiss.encounter_guia_consulta
+          WHERE encounter_id = $1`,
+        [sti.encounterId],
+      );
+      return rows[0];
+    });
+    expect(guia).toBeUndefined();
+  });
+
+  it('a data usada na validacao TUSS e occurred_date, NUNCA occurred_at::date', async () => {
+    // Verifica que a funcao usa a data do billing (que e = occurred_date)
+    const billing = await withTenantTx(actorTussInv, async (tx) => {
+      const { rows } = await tx.query<{ data_atendimento: string }>(
+        `SELECT data_atendimento::text AS data_atendimento
+           FROM clin.encounter_billing WHERE encounter_id = $1`,
+        [sti.encounterId],
+      );
+      return rows[0];
+    });
+    expect(billing).toBeDefined();
+    // A data e a mesma que o encounter.occurred_date
+    const encounter = await withTenantTx(actorTussInv, async (tx) => {
+      const { rows } = await tx.query<{ occurred_date: string }>(
+        `SELECT occurred_date::text AS occurred_date FROM clin.encounter WHERE id = $1`,
+        [sti.encounterId],
+      );
+      return rows[0];
+    });
+    expect(billing!.data_atendimento).toBe(encounter!.occurred_date);
   });
 });

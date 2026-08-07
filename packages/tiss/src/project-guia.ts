@@ -147,11 +147,13 @@ export async function projectGuiaConsulta(
   );
 
   // 6. Valida TUSS vigente na data do atendimento
-  const { rows: tussRows } = await tx.query<{ codigo: string }>(
+  // ref.tuss_at retorna RETURNS ref.tuss_term (nao SETOF), portanto sempre
+  // devolve exatamente uma linha — com colunas NULL quando nao ha termo vigente.
+  const { rows: tussRows } = await tx.query<{ codigo: string | null }>(
     `SELECT codigo FROM ref.tuss_at($1::smallint, $2, $3::date)`,
     [billing.codigo_tabela, billing.codigo_procedimento, billing.data_atendimento],
   );
-  if (tussRows.length === 0) {
+  if (tussRows.length === 0 || tussRows[0]!.codigo === null) {
     return err({
       kind: 'tuss_nao_vigente',
       codigoTabela: billing.codigo_tabela,
