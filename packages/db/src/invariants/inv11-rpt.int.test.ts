@@ -286,6 +286,59 @@ describe('matviews rpt.mv_financeiro, rpt.mv_pacientes e rpt.mv_satisfacao (migr
   });
 });
 
+describe('views security_barrier em app_rpt (migration 0108)', () => {
+  const VIEWS = [
+    'atendimentos',
+    'financeiro',
+    'agenda',
+    'pacientes',
+    'satisfacao',
+  ] as const;
+
+  for (const view of VIEWS) {
+    it(`app_rpt.${view} existe como view com security_barrier = true`, async () => {
+      const { rows } = await catalogPool().query<{
+        relkind: string;
+        owner: string;
+        has_barrier: boolean;
+      }>(`
+        SELECT
+          c.relkind::text,
+          r.rolname AS owner,
+          EXISTS (
+            SELECT 1 FROM unnest(coalesce(c.reloptions, '{}'::text[])) AS o(opt)
+             WHERE lower(o.opt) = 'security_barrier=true'
+          ) AS has_barrier
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_roles r ON r.oid = c.relowner
+        WHERE n.nspname = 'app_rpt' AND c.relname = $1`, [view]);
+      expect(rows, `view app_rpt.${view} nao encontrada`).toHaveLength(1);
+      expect(rows[0]!.relkind).toBe('v');
+      expect(rows[0]!.owner).toBe('rpt_owner');
+      expect(rows[0]!.has_barrier).toBe(true);
+    });
+
+    it(`app_rw tem SELECT em app_rpt.${view}`, async () => {
+      const { rows } = await catalogPool().query<{ has_select: boolean }>(`
+        SELECT has_table_privilege('app_rw', 'app_rpt.${view}', 'SELECT') AS has_select`);
+      expect(rows[0]!.has_select).toBe(true);
+    });
+  }
+
+  it('nenhuma view em app_rpt e security_invoker (executa com privilegios do dono)', async () => {
+    const { rows } = await catalogPool().query<{ relname: string }>(`
+      SELECT c.relname FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'app_rpt' AND c.relkind = 'v'
+        AND EXISTS (
+          SELECT 1 FROM unnest(coalesce(c.reloptions, '{}'::text[])) AS o(opt)
+           WHERE lower(o.opt) IN ('security_invoker=true', 'security_invoker=on')
+        )`);
+    expect(rows, 'views em app_rpt nao devem ser security_invoker').toHaveLength(0);
+  });
+});
+
 describe('funcoes de refresh rpt.refresh_mv_* (migration 0107)', () => {
   const MATVIEWS = [
     'mv_atendimentos',
