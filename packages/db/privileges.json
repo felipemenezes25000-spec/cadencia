@@ -943,5 +943,17 @@
         "UPDATE"
       ]
     }
+  },
+  "tiss.operadora": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
   }
 }
