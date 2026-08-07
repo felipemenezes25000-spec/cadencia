@@ -1061,6 +1061,17 @@
       }
     }
   },
+  "tiss.guia_ajuste": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    }
+  },
   "tiss.operadora": {
     "table": {
       "app_rw": [
