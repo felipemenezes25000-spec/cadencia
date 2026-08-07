@@ -63,6 +63,9 @@
       ],
       "clin_writer": [
         "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
       ]
     }
   },
@@ -500,7 +503,25 @@
       ]
     }
   },
+  "fin.bank_account": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "fin.category": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.cost_center": {
     "table": {
       "app_rw": [
         "INSERT",
@@ -532,7 +553,22 @@
         "UPDATE"
       ],
       "jobs": [
+        "INSERT",
         "SELECT"
+      ]
+    }
+  },
+  "fin.installment_plan": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
@@ -554,6 +590,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
       ]
     }
   },
@@ -584,6 +623,19 @@
       ]
     }
   },
+  "fin.recurring_template": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "fin.repasse_statement": {
     "table": {
       "app_rw": [
@@ -598,7 +650,7 @@
       ]
     }
   },
-  "fin.recurring_template": {
+  "fin.split": {
     "table": {
       "app_rw": [
         "INSERT",
@@ -606,6 +658,21 @@
         "UPDATE"
       ],
       "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "fin.split_rule": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
         "SELECT",
         "UPDATE"
       ]

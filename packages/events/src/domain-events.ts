@@ -20,6 +20,7 @@ export const EVENT_TYPES = [
   'PAYMENT_LINK_CREATED',
   'INBOUND_MESSAGE_RECEIVED',
   'SPLIT_CALCULATED',
+  'STOCK_LOW',
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -91,6 +92,13 @@ export interface SplitCalculatedPayload {
   readonly clinicShareCents: number;
 }
 
+export interface StockLowPayload {
+  readonly productId: string;
+  readonly productName: string;
+  readonly currentStock: number;
+  readonly threshold: number;
+}
+
 // ---------------------------------------------------------------------------
 // Tipos concretos
 // ---------------------------------------------------------------------------
@@ -102,6 +110,7 @@ export type PaymentReceived = DomainEventBase<'PAYMENT_RECEIVED', PaymentReceive
 export type PaymentLinkCreated = DomainEventBase<'PAYMENT_LINK_CREATED', PaymentLinkCreatedPayload>;
 export type InboundMessageReceived = DomainEventBase<'INBOUND_MESSAGE_RECEIVED', InboundMessageReceivedPayload>;
 export type SplitCalculated = DomainEventBase<'SPLIT_CALCULATED', SplitCalculatedPayload>;
+export type StockLow = DomainEventBase<'STOCK_LOW', StockLowPayload>;
 
 // ---------------------------------------------------------------------------
 // Uniao discriminada
@@ -114,4 +123,5 @@ export type DomainEvent =
   | PaymentReceived
   | PaymentLinkCreated
   | InboundMessageReceived
-  | SplitCalculated;
+  | SplitCalculated
+  | StockLow;

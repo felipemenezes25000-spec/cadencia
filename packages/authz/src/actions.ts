@@ -109,6 +109,8 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'inventory.write', description: 'Cadastrar produto e registrar movimentacao',
     roles: ['admin_clinico', 'financeiro'] },
+  { key: 'inventory.adjust', description: 'Ajustar estoque manualmente',
+    roles: ['admin_clinico', 'financeiro'] },
   // ── Fase 3 · Relatorios (Bloco 09) ─────────────────────────────────────
   { key: 'report.read', description: 'Acessar painel de desempenho e exportar relatorios',
     roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
