@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { BarraDeNavegacao } from './BarraDeNavegacao';
-import { ITENS_NAV } from './nav';
+import { ITENS_NAV, FASE_ATUAL } from './nav';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/hoje',
@@ -19,21 +19,24 @@ describe('barra de navegacao', () => {
       'Hoje', 'Agenda', 'Conversas', 'Pacientes', 'Financeiro', 'Desempenho']);
   });
 
-  it('na Fase 2 so Desempenho esta marcado como futuro', () => {
-    const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > 2);
-    expect(futuros.map((i) => i.rotulo)).toEqual(['Desempenho']);
-    for (const f of futuros) expect(f.motivo).toMatch(/Fase \d/);
+  it('na Fase 3 nenhum item esta marcado como futuro', () => {
+    expect(FASE_ATUAL).toBe(3);
+    const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > FASE_ATUAL);
+    expect(futuros).toEqual([]);
   });
 
-  it('Conversas e Financeiro agora sao links navegaveis', () => {
+  it('todos os itens sao links navegaveis, incluindo Desempenho', () => {
     render(<BarraDeNavegacao />);
-    expect(screen.getByRole('link', { name: 'Conversas' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Financeiro' })).toBeInTheDocument();
+    for (const item of ITENS_NAV) {
+      expect(screen.getByRole('link', { name: item.rotulo })).toBeInTheDocument();
+    }
   });
 
-  it('Desempenho agora e um link navegavel na Fase 3', () => {
+  it('nenhum item aparece como botao desabilitado', () => {
     render(<BarraDeNavegacao />);
-    expect(screen.getByRole('link', { name: 'Desempenho' })).toBeInTheDocument();
+    const botoesDesabilitados = screen.queryAllByRole('button')
+      .filter((b) => b.hasAttribute('disabled'));
+    expect(botoesDesabilitados).toHaveLength(0);
   });
 
   it('a navegacao e um <nav> com rotulo e nao tem violacao de acessibilidade', async () => {
