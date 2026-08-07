@@ -285,3 +285,39 @@ describe('matviews rpt.mv_financeiro, rpt.mv_pacientes e rpt.mv_satisfacao (migr
     expect(Number(idx[0]!.cnt)).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('funcoes de refresh rpt.refresh_mv_* (migration 0107)', () => {
+  const MATVIEWS = [
+    'mv_atendimentos',
+    'mv_financeiro',
+    'mv_agenda',
+    'mv_pacientes',
+    'mv_satisfacao',
+  ] as const;
+
+  for (const mv of MATVIEWS) {
+    const fnName = `rpt.refresh_${mv}`;
+
+    it(`${fnName} existe como SECURITY DEFINER pertencente a rpt_owner`, async () => {
+      const { rows } = await catalogPool().query<{
+        proname: string;
+        owner: string;
+        prosecdef: boolean;
+      }>(`
+        SELECT p.proname, r.rolname AS owner, p.prosecdef
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+          JOIN pg_roles r ON r.oid = p.proowner
+         WHERE n.nspname = 'rpt' AND p.proname = $1`, [`refresh_${mv}`]);
+      expect(rows, `funcao ${fnName} nao encontrada`).toHaveLength(1);
+      expect(rows[0]!.owner).toBe('rpt_owner');
+      expect(rows[0]!.prosecdef).toBe(true);
+    });
+
+    it(`jobs tem EXECUTE em ${fnName}`, async () => {
+      const { rows } = await catalogPool().query<{ has_exec: boolean }>(`
+        SELECT has_function_privilege('jobs', '${fnName}()', 'EXECUTE') AS has_exec`);
+      expect(rows[0]!.has_exec).toBe(true);
+    });
+  }
+});
