@@ -33,3 +33,7 @@ export {
   materializeRecurringEntries,
   type MaterializeResult,
 } from './materialize-recurring';
+export {
+  createTransfer,
+  type CreateTransferInput, type TransferCreated, type TransferFailure,
+} from './transfer';
