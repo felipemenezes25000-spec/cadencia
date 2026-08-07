@@ -119,6 +119,19 @@ export const ACTIONS = [
   // -- Fase 3 . Desempenho ────────────────────────────────────────────────
   { key: 'report.variation.read', description: 'Consultar decomposicao de variacao de receita',
     roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
+  // ── Fase 4 · Convenios (TISS) ──────────────────────────────────────────
+  { key: 'tiss.operadora.read', description: 'Listar operadoras de convenio',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro', 'recepcao'] },
+  { key: 'tiss.operadora.write', description: 'Criar ou editar operadora de convenio',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.contrato.read', description: 'Listar contratos com operadoras',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro'] },
+  { key: 'tiss.contrato.write', description: 'Criar ou editar contrato com operadora',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.paciente_convenio.read', description: 'Listar convenios do paciente',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  { key: 'tiss.paciente_convenio.write', description: 'Vincular paciente a convenio',
+    roles: ['admin_clinico', 'recepcao'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
