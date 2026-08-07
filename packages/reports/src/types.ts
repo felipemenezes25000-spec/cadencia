@@ -75,3 +75,101 @@ export interface RefreshLogEntry {
   readonly success: boolean;
   readonly errorMessage: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Tipos do Explorar — query builder sobre app_rpt views.
+//
+// Cada view em app_rpt expoe colunas desnormalizadas (tenant_id ja filtrado
+// pela security_barrier). O Explorar monta SELECT/WHERE/ORDER dinamicamente
+// a partir de filtros combinaveis: periodo, profissional, clinica, procedimento,
+// convenio, status, CID, faixa etaria, genero, fonte.
+// ---------------------------------------------------------------------------
+
+/** Nomes das views expostas em app_rpt. Cada view mapeia um eixo de analise. */
+export type ReportView =
+  | 'atendimentos'
+  | 'financeiro'
+  | 'pacientes'
+  | 'mensagens';
+
+/** Operadores de comparacao suportados pelo query builder. */
+export type FilterOp =
+  | 'eq'
+  | 'neq'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'in'
+  | 'between'
+  | 'like';
+
+/** Um filtro individual do Explorar. */
+export interface ReportFilter {
+  readonly column: string;
+  readonly op: FilterOp;
+  readonly value: unknown;
+}
+
+/** Direcao de ordenacao. */
+export type SortDir = 'asc' | 'desc';
+
+/** Definicao de ordenacao. */
+export interface ReportSort {
+  readonly column: string;
+  readonly dir: SortDir;
+}
+
+/** Tipo de grafico para visualizacao. */
+export type ChartKind = 'bar' | 'line' | 'pie' | 'table';
+
+/** Colunas selecionadas para exibicao. */
+export interface ReportColumns {
+  readonly visible: readonly string[];
+  readonly groupBy?: string;
+  readonly aggregate?: {
+    readonly column: string;
+    readonly fn: 'count' | 'sum' | 'avg' | 'min' | 'max';
+  };
+}
+
+/** Configuracao completa de uma consulta do Explorar. */
+export interface ReportQuery {
+  readonly view: ReportView;
+  readonly filters: readonly ReportFilter[];
+  readonly columns: ReportColumns;
+  readonly sort: readonly ReportSort[];
+  readonly limit: number;
+  readonly offset: number;
+}
+
+/** Resultado tipado de buildQuery — SQL parametrizado pronto para execucao. */
+export interface BuiltQuery {
+  readonly sql: string;
+  readonly params: readonly unknown[];
+}
+
+/** Formato de exportacao. */
+export type ExportFormat = 'csv' | 'xlsx';
+
+/** Definicao de uma visao salva (filtros pre-configurados). */
+export interface SavedView {
+  readonly id: string;
+  readonly name: string;
+  readonly builtIn: boolean;
+  readonly view: ReportView;
+  readonly filters: readonly ReportFilter[];
+  readonly columns: ReportColumns;
+  readonly sort: readonly ReportSort[];
+  readonly chartKind: ChartKind;
+}
+
+/** Definicao de visao customizada do usuario. */
+export interface CustomViewInput {
+  readonly name: string;
+  readonly view: ReportView;
+  readonly filters: readonly ReportFilter[];
+  readonly columns: ReportColumns;
+  readonly sort: readonly ReportSort[];
+  readonly chartKind: ChartKind;
+}

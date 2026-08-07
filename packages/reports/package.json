@@ -9,10 +9,10 @@
     "./test-support": "./src/test-support.ts"
   },
   "dependencies": {
-    "@cadencia/db": "workspace:*"
+    "@cadencia/db": "workspace:*",
+    "@cadencia/kernel": "workspace:*"
   },
   "devDependencies": {
-    "@cadencia/kernel": "workspace:*",
     "pg": "^8.16.0",
     "vitest": "^3.2.1"
   }

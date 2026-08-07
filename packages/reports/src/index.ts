@@ -9,7 +9,20 @@ export type {
   PacienteRow,
   SatisfacaoRow,
   RefreshLogEntry,
+  ReportView,
+  FilterOp,
+  ReportFilter,
+  SortDir,
+  ReportSort,
+  ChartKind,
+  ReportColumns,
+  ReportQuery,
+  BuiltQuery,
+  ExportFormat,
+  SavedView,
+  CustomViewInput,
 } from './types';
+export { buildQuery } from './query-builder';
 export {
   factorsAddUp,
   type DrillDownGroup,
