@@ -584,6 +584,18 @@
       ]
     }
   },
+  "fin.supplier": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
   "fin.webhook_event": {
     "table": {
       "app_rw": [
