@@ -20,3 +20,7 @@ export {
   type CostCenterFailure, type CostCenterRow,
   type CreateCostCenterInput, type UpdateCostCenterInput,
 } from './cost-center';
+export {
+  createInstallmentPlan,
+  type CreateInstallmentPlanInput, type InstallmentFailure, type InstallmentPlanCreated,
+} from './installment-plan';
