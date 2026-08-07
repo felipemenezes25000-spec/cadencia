@@ -1,12 +1,14 @@
 // packages/tiss/src/project-guia.int.test.ts
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
-import { isOk, uuidv7 } from '@cadencia/kernel';
+import { isOk, isErr, uuidv7 } from '@cadencia/kernel';
 import { projectGuiaConsulta } from './project-guia';
 import {
+  semearProjecaoIncompleta,
   semearProjecaoParticular,
   semearProjecaoTiss,
   type TissSemente,
+  type TissSementeIncompleta,
   type TissSementeParticular,
 } from './test-support';
 
@@ -14,6 +16,8 @@ let sp: TissSementeParticular;
 let actorParticular: Actor;
 let st: TissSemente;
 let actorConvenio: Actor;
+let si: TissSementeIncompleta;
+let actorIncompleto: Actor;
 
 beforeAll(async () => {
   sp = await semearProjecaoParticular();
@@ -25,6 +29,11 @@ beforeAll(async () => {
   actorConvenio = {
     kind: 'user', tenantId: st.tenantId, userId: st.userId,
     clinicId: st.clinicId, requestId: uuidv7(),
+  };
+  si = await semearProjecaoIncompleta();
+  actorIncompleto = {
+    kind: 'user', tenantId: si.tenantId, userId: si.userId,
+    clinicId: si.clinicId, requestId: uuidv7(),
   };
 });
 afterAll(async () => { await closePools(); });
@@ -164,5 +173,41 @@ describe('projectGuiaConsulta — atendimento com convenio', () => {
     expect(evento!.event_type).toBe('ENCOUNTER_FINALIZED');
     expect(evento!.payload).toHaveProperty('encounterId', st.encounterId);
     expect(evento!.payload).toHaveProperty('patientId', st.patientId);
+  });
+});
+
+describe('projectGuiaConsulta — dados incompletos', () => {
+  let versionId: string;
+
+  beforeAll(async () => {
+    const r = await finalizarEncounter(
+      actorIncompleto, si.encounterId, si.fieldQueixaId, 'tosse persistente', 'cc',
+    );
+    versionId = r.versionId;
+  });
+
+  it('retorna err com lista de campos ausentes quando operadora nao cadastrada', async () => {
+    const result = await withTenantTx(actorIncompleto, async (tx) => {
+      return projectGuiaConsulta(tx, si.encounterId, versionId);
+    });
+
+    expect(isErr(result)).toBe(true);
+    if (!isErr(result)) return;
+    expect(result.error.kind).toBe('dados_obrigatorios_ausentes');
+    if (result.error.kind !== 'dados_obrigatorios_ausentes') return;
+    expect(result.error.missingFields).toContain('operadora_nao_cadastrada');
+  });
+
+  it('a finalizacao NAO falha mesmo com projecao incompleta — o atendimento esta selado', async () => {
+    const enc = await withTenantTx(actorIncompleto, async (tx) => {
+      const { rows } = await tx.query<{ status: string; version_count: number }>(
+        `SELECT status::text AS status, version_count FROM clin.encounter WHERE id = $1`,
+        [si.encounterId],
+      );
+      return rows[0];
+    });
+    expect(enc).toBeDefined();
+    expect(enc!.status).toBe('finalizado');
+    expect(enc!.version_count).toBe(1);
   });
 });
