@@ -584,6 +584,19 @@
       ]
     }
   },
+  "fin.recurring_template": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "fin.supplier": {
     "table": {
       "app_rw": [
