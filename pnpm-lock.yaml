@@ -77,6 +77,9 @@ importers:
       '@cadencia/prescriptions':
         specifier: workspace:*
         version: link:../../packages/prescriptions
+      '@cadencia/reports':
+        specifier: workspace:*
+        version: link:../../packages/reports
       '@cadencia/scheduling':
         specifier: workspace:*
         version: link:../../packages/scheduling

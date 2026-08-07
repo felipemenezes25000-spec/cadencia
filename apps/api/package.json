@@ -17,6 +17,7 @@
     "@cadencia/integrations": "workspace:*",
     "@cadencia/prescriptions": "workspace:*",
     "@cadencia/export": "workspace:*",
+    "@cadencia/reports": "workspace:*",
     "@cadencia/documents": "workspace:*",
     "@cadencia/emr": "workspace:*",
     "@cadencia/scheduling": "workspace:*",
