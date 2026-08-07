@@ -1043,6 +1043,24 @@
       ]
     }
   },
+  "tiss.encounter_guia_consulta": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "live": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "tiss.operadora": {
     "table": {
       "app_rw": [
