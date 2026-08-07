@@ -168,3 +168,120 @@ describe('matviews rpt.mv_atendimentos e rpt.mv_agenda (migration 0102)', () => 
     expect(rows.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('matviews rpt.mv_financeiro, rpt.mv_pacientes e rpt.mv_satisfacao (migration 0103)', () => {
+  it('rpt.mv_financeiro existe como matview com colunas corretas', async () => {
+    const { rows: kind } = await catalogPool().query<{ relkind: string }>(`
+      SELECT c.relkind::text FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_financeiro'`);
+    expect(kind).toHaveLength(1);
+    expect(kind[0]!.relkind).toBe('m');
+
+    const { rows } = await catalogPool().query<{ column_name: string }>(`
+      SELECT a.attname AS column_name FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'rpt' AND c.relname = 'mv_financeiro'
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum`);
+    const colunas = rows.map((r) => r.column_name);
+    expect(colunas).toEqual([
+      'entry_id', 'kind', 'category', 'method', 'amount_cents',
+      'paid_at', 'due_date', 'status', 'professional_id', 'clinic_id',
+      'bank_account_id', 'cost_center_id', 'tenant_id',
+    ]);
+  });
+
+  it('rpt.mv_financeiro pertence a rpt_owner e tem indice unico', async () => {
+    const { rows: owner } = await catalogPool().query<{ owner: string }>(`
+      SELECT r.rolname AS owner FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_roles r ON r.oid = c.relowner
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_financeiro'`);
+    expect(owner[0]!.owner).toBe('rpt_owner');
+
+    const { rows: idx } = await catalogPool().query<{ cnt: string }>(`
+      SELECT count(*)::text AS cnt FROM pg_index ix
+      JOIN pg_class c ON c.oid = ix.indrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_financeiro' AND ix.indisunique`);
+    expect(Number(idx[0]!.cnt)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('rpt.mv_pacientes existe como matview com colunas corretas', async () => {
+    const { rows: kind } = await catalogPool().query<{ relkind: string }>(`
+      SELECT c.relkind::text FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_pacientes'`);
+    expect(kind).toHaveLength(1);
+    expect(kind[0]!.relkind).toBe('m');
+
+    const { rows } = await catalogPool().query<{ column_name: string }>(`
+      SELECT a.attname AS column_name FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'rpt' AND c.relname = 'mv_pacientes'
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum`);
+    const colunas = rows.map((r) => r.column_name);
+    expect(colunas).toEqual([
+      'patient_id', 'age_bracket', 'gender', 'source',
+      'first_visit', 'last_visit', 'visit_count', 'tenant_id',
+    ]);
+  });
+
+  it('rpt.mv_pacientes pertence a rpt_owner e tem indice unico', async () => {
+    const { rows: owner } = await catalogPool().query<{ owner: string }>(`
+      SELECT r.rolname AS owner FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_roles r ON r.oid = c.relowner
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_pacientes'`);
+    expect(owner[0]!.owner).toBe('rpt_owner');
+
+    const { rows: idx } = await catalogPool().query<{ cnt: string }>(`
+      SELECT count(*)::text AS cnt FROM pg_index ix
+      JOIN pg_class c ON c.oid = ix.indrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_pacientes' AND ix.indisunique`);
+    expect(Number(idx[0]!.cnt)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('rpt.mv_satisfacao existe como matview com colunas corretas', async () => {
+    const { rows: kind } = await catalogPool().query<{ relkind: string }>(`
+      SELECT c.relkind::text FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_satisfacao'`);
+    expect(kind).toHaveLength(1);
+    expect(kind[0]!.relkind).toBe('m');
+
+    const { rows } = await catalogPool().query<{ column_name: string }>(`
+      SELECT a.attname AS column_name FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'rpt' AND c.relname = 'mv_satisfacao'
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum`);
+    const colunas = rows.map((r) => r.column_name);
+    expect(colunas).toEqual([
+      'nps_response_id', 'score', 'category', 'professional_id',
+      'clinic_id', 'responded_at', 'tenant_id',
+    ]);
+  });
+
+  it('rpt.mv_satisfacao pertence a rpt_owner e tem indice unico', async () => {
+    const { rows: owner } = await catalogPool().query<{ owner: string }>(`
+      SELECT r.rolname AS owner FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_roles r ON r.oid = c.relowner
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_satisfacao'`);
+    expect(owner[0]!.owner).toBe('rpt_owner');
+
+    const { rows: idx } = await catalogPool().query<{ cnt: string }>(`
+      SELECT count(*)::text AS cnt FROM pg_index ix
+      JOIN pg_class c ON c.oid = ix.indrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'rpt' AND c.relname = 'mv_satisfacao' AND ix.indisunique`);
+    expect(Number(idx[0]!.cnt)).toBeGreaterThanOrEqual(1);
+  });
+});
