@@ -44,11 +44,11 @@ export async function runStockAlertJob(jobsPool: Pool): Promise<AlertJobResult> 
 
     created = newAlerts.length;
 
-    // 2. Enfileirar eventos STOCK_LOW no outbox para cada novo alerta
+    // 2. Enfileirar eventos STOCK_ALERT_TRIGGERED no outbox para cada novo alerta
     for (const alert of newAlerts) {
       await c.query(
         `INSERT INTO app.outbox (tenant_id, event_type, aggregate_id, payload)
-         VALUES ($1, 'STOCK_LOW', $2,
+         VALUES ($1, 'STOCK_ALERT_TRIGGERED', $2,
                  jsonb_build_object(
                    'productId', $3::text,
                    'productName', $4::text,

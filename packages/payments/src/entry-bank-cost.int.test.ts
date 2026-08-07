@@ -57,10 +57,11 @@ async function semearEntryBankCost(): Promise<SementeEntryBankCost> {
       `INSERT INTO fin.payment_method (tenant_id, id, kind, name)
        VALUES ($1, $2, 'dinheiro', 'Dinheiro BC')`,
       [s.tenantId, s.paymentMethodId]);
-    await c.query(
-      `INSERT INTO fin.bank_account (tenant_id, id, name, is_default)
-       VALUES ($1, $2, 'Caixa Geral', true)`,
-      [s.tenantId, s.bankAccountId]);
+    const { rows: autoBank } = await c.query<{ id: string }>(
+      `SELECT id::text FROM fin.bank_account
+        WHERE tenant_id = $1 AND is_default = true LIMIT 1`,
+      [s.tenantId]);
+    s.bankAccountId = autoBank[0]!.id;
     await c.query(
       `INSERT INTO fin.cost_center (tenant_id, id, code, name)
        VALUES ($1, $2, 'CLIN', 'Clinico')`,

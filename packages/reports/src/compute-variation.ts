@@ -93,7 +93,6 @@ export async function computeVariation(
 
   const deltaTotalCents = totalBCents - totalACents;
   const ticketMedioA = qtdA > 0 ? totalACents / qtdA : 0;
-  const ticketMedioB = qtdB > 0 ? totalBCents / qtdB : 0;
 
   // -----------------------------------------------------------------------
   // 2. Receita por procedimento em cada periodo (para mix de procedimento)

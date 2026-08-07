@@ -892,5 +892,56 @@
         "UPDATE"
       ]
     }
+  },
+  "inv.supplier": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "inv.product": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "inv.stock_movement": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "jobs": [
+        "SELECT"
+      ]
+    }
+  },
+  "inv.stock_alert": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }

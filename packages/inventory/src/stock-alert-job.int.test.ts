@@ -136,7 +136,7 @@ describe('runStockAlertJob — job diario de alerta de estoque', () => {
     expect(rows[0]!.resolved_at).not.toBeNull();
   });
 
-  it('enfileira evento STOCK_LOW no outbox para alertas novos', async () => {
+  it('enfileira evento STOCK_ALERT_TRIGGERED no outbox para alertas novos', async () => {
     // Baixar estoque de volta para disparar novo alerta
     const c = await admin.connect();
     try {
@@ -152,11 +152,11 @@ describe('runStockAlertJob — job diario de alerta de estoque', () => {
     const { rows } = await admin.query<{ event_type: string; aggregate_id: string }>(
       `SELECT event_type, aggregate_id::text
          FROM app.outbox
-        WHERE tenant_id = $1 AND event_type = 'STOCK_LOW' AND aggregate_id = $2
+        WHERE tenant_id = $1 AND event_type = 'STOCK_ALERT_TRIGGERED' AND aggregate_id = $2
         ORDER BY created_at DESC LIMIT 1`,
       [tenantId, productBelowId]);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.event_type).toBe('STOCK_LOW');
+    expect(rows[0]!.event_type).toBe('STOCK_ALERT_TRIGGERED');
   });
 });

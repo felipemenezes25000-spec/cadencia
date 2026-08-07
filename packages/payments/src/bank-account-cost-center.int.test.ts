@@ -102,14 +102,8 @@ describe('schema fin.bank_account — RLS, unicidade e default', () => {
   });
 
   it('permite no maximo UMA conta default por tenant', async () => {
-    const defaultId = uuidv7();
-    await withTenantTx(actor, (tx) =>
-      tx.query(
-        `INSERT INTO fin.bank_account
-           (tenant_id, id, name, is_default)
-         VALUES (app.require_tenant_id(), $1, 'Conta Default', true)`,
-        [defaultId]));
-
+    // O trigger trg_tenant_default_bank_account ja criou "Caixa Geral" (is_default=true)
+    // Tentar inserir outra default deve falhar pelo indice parcial unico
     await expect(
       withTenantTx(actor, (tx) =>
         tx.query(

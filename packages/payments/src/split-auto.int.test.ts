@@ -80,12 +80,9 @@ async function semearAuto(): Promise<SementeAuto> {
       `INSERT INTO fin.receipt_counter (tenant_id, next_value) VALUES ($1, 1)`,
       [s.tenantId]);
     // Regra de repasse: 50% para consulta
-    await c.query(
-      `SET LOCAL app.tenant_id = '${s.tenantId}'`);
-    await c.query(
-      `SET LOCAL app.user_id = '${s.userId}'`);
-    await c.query(
-      `SET LOCAL app.actor_kind = 'user'`);
+    await c.query(`SELECT set_config('app.tenant_id', $1, true)`, [s.tenantId]);
+    await c.query(`SELECT set_config('app.user_id', $1, true)`, [s.userId]);
+    await c.query(`SELECT set_config('app.actor_kind', 'user', true)`);
     await c.query(
       `INSERT INTO fin.split_rule
          (tenant_id, id, professional_id, procedure_id, percentage, priority)

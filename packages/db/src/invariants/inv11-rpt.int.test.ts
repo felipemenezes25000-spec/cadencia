@@ -99,9 +99,12 @@ describe('matviews rpt.mv_atendimentos e rpt.mv_agenda (migration 0102)', () => 
     expect(kind[0]!.relkind).toBe('m');
 
     const { rows } = await catalogPool().query<{ column_name: string }>(`
-      SELECT column_name FROM information_schema.columns
-       WHERE table_schema = 'rpt' AND table_name = 'mv_atendimentos'
-       ORDER BY ordinal_position`);
+      SELECT a.attname AS column_name FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'rpt' AND c.relname = 'mv_atendimentos'
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum`);
     const colunas = rows.map((r) => r.column_name);
     expect(colunas).toEqual([
       'encounter_id', 'patient_id', 'professional_id', 'clinic_id',
@@ -138,9 +141,12 @@ describe('matviews rpt.mv_atendimentos e rpt.mv_agenda (migration 0102)', () => 
     expect(kind[0]!.relkind).toBe('m');
 
     const { rows } = await catalogPool().query<{ column_name: string }>(`
-      SELECT column_name FROM information_schema.columns
-       WHERE table_schema = 'rpt' AND table_name = 'mv_agenda'
-       ORDER BY ordinal_position`);
+      SELECT a.attname AS column_name FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'rpt' AND c.relname = 'mv_agenda'
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum`);
     const colunas = rows.map((r) => r.column_name);
     expect(colunas).toEqual([
       'appointment_date', 'professional_id', 'clinic_id',
