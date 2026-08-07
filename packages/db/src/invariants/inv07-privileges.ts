@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { TENANT_SCHEMAS } from './catalog';
+import { PRIVILEGE_SCHEMAS } from './catalog';
 import type { Queryable } from '../queryable';
 
 /** packages/db/privileges.json — resolvido pelo modulo, nao pelo cwd de quem chama. */
@@ -64,13 +64,13 @@ SELECT n.nspname || '.' || c.relname AS relation
 export async function readEffectiveGrants(db: Queryable): Promise<GrantMap> {
   const mapa: GrantMap = {};
 
-  const relacoes = await db.query<{ relation: string }>(RELATIONS_SQL, [[...TENANT_SCHEMAS]]);
+  const relacoes = await db.query<{ relation: string }>(RELATIONS_SQL, [[...PRIVILEGE_SCHEMAS]]);
   for (const row of relacoes.rows) {
     mapa[row.relation] = { table: {} };
   }
 
   const tabela = await db.query<{ relation: string; grantee: string; privilege: string }>(TABLE_GRANTS_SQL, [
-    [...TENANT_SCHEMAS],
+    [...PRIVILEGE_SCHEMAS],
   ]);
   for (const row of tabela.rows) {
     const entrada = (mapa[row.relation] ??= { table: {} });
@@ -82,7 +82,7 @@ export async function readEffectiveGrants(db: Queryable): Promise<GrantMap> {
     grantee: string;
     column_name: string;
     privilege: string;
-  }>(COLUMN_GRANTS_SQL, [[...TENANT_SCHEMAS]]);
+  }>(COLUMN_GRANTS_SQL, [[...PRIVILEGE_SCHEMAS]]);
   for (const row of coluna.rows) {
     const entrada = (mapa[row.relation] ??= { table: {} });
     const colunas = (entrada.columns ??= {});

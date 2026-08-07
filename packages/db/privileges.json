@@ -896,6 +896,85 @@
       ]
     }
   },
+  "ref.action": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "ref.cid10_term": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "ref.observation_code": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "SELECT"
+      ]
+    }
+  },
+  "ref.record_template": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "clin_writer": [
+        "SELECT"
+      ]
+    }
+  },
+  "ref.tuss_load_log": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "ref.tuss_staging": {
+    "table": {
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "TRUNCATE"
+      ]
+    }
+  },
+  "ref.tuss_term": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "sched.appointment": {
     "table": {
       "app_rw": [

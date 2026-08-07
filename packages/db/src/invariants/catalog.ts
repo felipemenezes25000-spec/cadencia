@@ -11,6 +11,13 @@ export type { Queryable } from '../queryable';
  */
 export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'sched', 'msg', 'inv'] as const;
 
+/**
+ * Schemas cujos privilegios sao declarados em privileges.json.
+ * Inclui os tenant schemas e `ref` (referencia global sem RLS, mas com GRANTs
+ * explícitos para staging/load_log do TUSS).
+ */
+export const PRIVILEGE_SCHEMAS = [...TENANT_SCHEMAS, 'ref'] as const;
+
 let pool: Pool | undefined;
 
 function requireEnv(name: string): string {
