@@ -45,3 +45,8 @@ export {
   getBankStatement,
   type BankStatementInput, type BankStatement, type StatementLine,
 } from './bank-statement';
+export {
+  createSplitRule, calculateSplits,
+  type CreateSplitRuleInput, type SplitRuleCreated, type SplitRuleFailure,
+  type CalculateSplitsFailure, type CalculateSplitsResult,
+} from './split-rule';
