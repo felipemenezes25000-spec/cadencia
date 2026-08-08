@@ -23,6 +23,7 @@ import { cn } from "../lib/cn";
 import { Tooltip } from "../ui/Tooltip";
 import { Icone } from "../ui/Icone";
 import { ATALHOS_DO_ATENDIMENTO } from "./atalhos";
+import { SlashCommandExtension } from "./EditorSlashCommands";
 
 /* ── tipos exportados (backward-compat) ──────────────────────────────── */
 
@@ -112,6 +113,7 @@ export function EditorClinico(p: EditorClinicoProps) {
       Placeholder.configure({
         placeholder: "Comece a digitar o registro clinico...",
       }),
+      SlashCommandExtension,
     ],
     content: conteudoInicial ?? "",
     editable: !readOnly,
