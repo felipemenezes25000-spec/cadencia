@@ -44,3 +44,8 @@ export {
   addGuiaToLote, removeGuiaFromLote,
   type AddGuiaInput, type AddedGuia, type AddGuiaFailure, type RemoveGuiaFailure,
 } from './lote-guias';
+export {
+  markLoteReady, markLoteSent, receiveLoteReturn, cancelLote,
+  type LoteLifecycleFailure, type LoteReadyResult, type LoteSentResult,
+  type LoteReturnedResult, type LoteCancelledResult,
+} from './lote-lifecycle';
