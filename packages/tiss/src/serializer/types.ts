@@ -93,3 +93,51 @@ export interface LoteConsultaInput {
   /** Guias do lote. Minimo 1, maximo 100. */
   readonly guias: readonly GuiaConsultaInput[];
 }
+
+/** Um item de recurso de glosa individual — tag <ans:itemRecursoGlosa>. */
+export interface ItemRecursoGlosaInput {
+  /** Numero sequencial do item dentro do recurso. */
+  readonly sequencialItem: string;
+  /** Data do atendimento original, formato 'YYYY-MM-DD'. */
+  readonly dataAtendimento: string;
+  /** Numero da guia referenciada pelo recurso (guia do prestador). */
+  readonly numeroGuiaPrestador: string;
+  /** Numero da guia atribuido pela operadora, opcional. */
+  readonly numeroGuiaOperadora?: string;
+  /** Codigo do procedimento TUSS contestado. */
+  readonly codigoProcedimento: string;
+  /** Codigo da glosa atribuido pela operadora (tabela TUSS de motivo de glosa). */
+  readonly codigoGlosa: string;
+  /** Valor recursado em centavos inteiros (Money.cents). */
+  readonly valorRecursadoCentavos: number;
+  /** Justificativa textual do prestador para o recurso, ate 500 caracteres. */
+  readonly justificativa: string;
+}
+
+/** Dados do prestador contratado para o recurso — tag <ans:dadosContratado>. */
+export interface ContratadoRecursoInput {
+  /** Codigo do prestador na operadora. Exatamente um dos tres identificadores. */
+  readonly codigoPrestadorNaOperadora?: string;
+  readonly cpfContratado?: string;
+  readonly cnpjContratado?: string;
+  /** CNES do estabelecimento, 7 digitos. */
+  readonly cnes: string;
+}
+
+/** Entrada completa para serializar um recurso de glosa TISS. */
+export interface RecursoGlosaInput {
+  /** Cabecalho do XML TISS. Reutiliza o mesmo tipo do lote. */
+  readonly cabecalho: CabecalhoInput;
+  /** Registro ANS da operadora destino, 6 digitos. */
+  readonly registroANS: string;
+  /** Numero do lote original que sofreu a glosa. */
+  readonly numeroLoteOriginal: string;
+  /** Numero do recurso de glosa, unico por prestador. */
+  readonly numeroRecursoGlosa: string;
+  /** Dados do prestador contratado. */
+  readonly contratado: ContratadoRecursoInput;
+  /** Itens do recurso. Minimo 1. */
+  readonly itens: readonly ItemRecursoGlosaInput[];
+  /** ID da versao do encounter usada para gerar o recurso (§3.9). Nao vai no XML, mas e obrigatorio no input. */
+  readonly encounterVersionId: string;
+}
