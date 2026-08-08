@@ -20,6 +20,7 @@ import { financeSettingsRoutes } from './routes/finance-settings';
 import { financeOperationsRoutes } from './routes/finance-operations';
 import { inventoryRoutes } from './routes/inventory';
 import { reportRoutes } from './routes/reports';
+import { operadoraRoutes } from './routes/tiss/operadoras';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -95,6 +96,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(financeOperationsRoutes);
   await app.register(inventoryRoutes);
   await app.register(reportRoutes);
+  await app.register(operadoraRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
