@@ -141,6 +141,19 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'recepcao', 'financeiro'] },
   { key: 'tiss.lote.send', description: 'Enviar lote TISS para operadora (gera XML)',
     roles: ['admin_clinico', 'financeiro'] },
+  // ── Fase 5 · Demonstrativo, glosa e recurso ──────────────────────────
+  { key: 'tiss.demonstrativo.import', description: 'Importar demonstrativo XML da operadora',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.demonstrativo.read', description: 'Listar e visualizar demonstrativos de retorno',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro', 'recepcao'] },
+  { key: 'tiss.glosa.read', description: 'Listar e visualizar glosas',
+    roles: ['admin_clinico', 'diretor_tecnico', 'financeiro', 'recepcao'] },
+  { key: 'tiss.glosa.manage', description: 'Aceitar glosa individual',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.recurso.manage', description: 'Criar, montar e gerenciar recursos de glosa',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.recurso.send', description: 'Enviar recurso de glosa para operadora',
+    roles: ['admin_clinico', 'financeiro'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
