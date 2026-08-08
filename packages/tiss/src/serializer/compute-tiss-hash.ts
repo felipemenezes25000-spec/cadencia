@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CabecalhoInput, GuiaConsultaInput } from './types';
+import type { CabecalhoInput, GuiaConsultaInput, ItemRecursoGlosaInput } from './types';
 
 /**
  * Calcula o hash MD5 proprietario do padrao TISS.
@@ -37,6 +37,45 @@ export function computeTissHash(
     parts.push(guia.dataAtendimento);
     parts.push(guia.codigoProcedimento);
     parts.push(formatValorReais(guia.valorProcedimentoCentavos));
+  }
+
+  const concatenated = parts.join('');
+  return createHash('md5').update(concatenated, 'utf8').digest('hex');
+}
+
+/**
+ * Calcula o hash MD5 proprietario do recurso de glosa TISS.
+ *
+ * Campos concatenados (ordem do XSD):
+ *   cabecalho: registroANS + dataGeracao + horaGeracao + sequencialTransacao
+ *   recurso: numeroLoteOriginal + numeroRecursoGlosa
+ *   por item: sequencialItem + codigoProcedimento + valorRecursado
+ *
+ * O valor recursado e formatado como reais com 2 casas decimais.
+ */
+export function computeRecursoGlosaHash(
+  cabecalho: CabecalhoInput,
+  numeroLoteOriginal: string,
+  numeroRecursoGlosa: string,
+  itens: readonly ItemRecursoGlosaInput[],
+): string {
+  const parts: string[] = [];
+
+  // Campos do cabecalho
+  parts.push(cabecalho.registroANS);
+  parts.push(cabecalho.dataGeracao);
+  parts.push(cabecalho.horaGeracao);
+  parts.push(cabecalho.sequencialTransacao);
+
+  // Identificacao do recurso
+  parts.push(numeroLoteOriginal);
+  parts.push(numeroRecursoGlosa);
+
+  // Campos de cada item na ordem de insercao
+  for (const item of itens) {
+    parts.push(item.sequencialItem);
+    parts.push(item.codigoProcedimento);
+    parts.push(formatValorReais(item.valorRecursadoCentavos));
   }
 
   const concatenated = parts.join('');
