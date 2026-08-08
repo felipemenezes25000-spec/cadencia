@@ -478,6 +478,158 @@ export async function semearProjecaoIncompleta(): Promise<TissSementeIncompleta>
   return s;
 }
 
+/* ---------- Semente para reprojecao/retificacao (Task 30) ---------- */
+
+export interface TissSementeRetificacao {
+  tenantId: string;
+  clinicId: string;
+  userId: string;
+  professionalId: string;
+  patientId: string;
+  encounterId: string;
+  versionId: string;
+  operadoraId: string;
+  contratoId: string;
+  pacienteConvenioId: string;
+  billingId: string;
+}
+
+/**
+ * Semeia um tenant completo para testes de integracao de reprojecao TISS:
+ * - tenant, clinica, usuario, profissional, paciente
+ * - atendimento FINALIZADO (status='finalizado', version_no=1)
+ * - encounter_billing com dados de convenio (registro_ans, carteirinha)
+ * - tiss.operadora e tiss.contrato
+ * - tiss.paciente_convenio
+ *
+ * O atendimento PRECISA estar finalizado porque a guia e projecao da
+ * versao finalizada — nunca de rascunho.
+ */
+export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
+  const s: TissSementeRetificacao = {
+    tenantId: uuidv7(), clinicId: uuidv7(), userId: uuidv7(),
+    professionalId: uuidv7(), patientId: uuidv7(),
+    encounterId: uuidv7(), versionId: uuidv7(),
+    operadoraId: uuidv7(), contratoId: uuidv7(),
+    pacienteConvenioId: uuidv7(), billingId: uuidv7(),
+  };
+  const admin = new Pool({ connectionString: adminUrl(), max: 1 });
+  const c = await admin.connect();
+  try {
+    await c.query('BEGIN');
+
+    await c.query(
+      `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
+       VALUES ($1, $2, 'Clinica TISS Retif', '12ABC34501DE35')`,
+      [s.tenantId, `tiss-${s.tenantId}`]);
+
+    await c.query(
+      `INSERT INTO app.clinic (tenant_id, id, nome, cnpj, cnes, timezone)
+       VALUES ($1, $2, 'Unidade TISS Retif', '12ABC34501DE35', '1234567', 'America/Sao_Paulo')`,
+      [s.tenantId, s.clinicId]);
+
+    await c.query(
+      `INSERT INTO id."user" (id, email, full_name)
+       VALUES ($1, $2, 'Dra. TISS Retif')`,
+      [s.userId, `${s.userId}@tiss.test`]);
+
+    await c.query(
+      `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+       VALUES ($1, gen_random_uuid(), $2, $3, 'profissional')`,
+      [s.tenantId, s.userId, s.clinicId]);
+
+    await c.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho, cbos)
+       VALUES ($1, $2, $3, '06', '999888', 'SP', '225125')`,
+      [s.tenantId, s.professionalId, s.userId]);
+
+    await c.query(
+      `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
+       VALUES ($1, $2, 'Pedro Teste Convenio', 'completo', '1990-05-20')`,
+      [s.tenantId, s.patientId]);
+
+    // Operadora
+    await c.query(
+      `INSERT INTO tiss.operadora (tenant_id, id, registro_ans, razao_social, cnpj, active, created_by)
+       VALUES ($1, $2, '326305', 'Operadora Teste', '98ABC765432109', true, $3)`,
+      [s.tenantId, s.operadoraId, s.userId]);
+
+    // Contrato prestador x operadora
+    await c.query(
+      `INSERT INTO tiss.contrato
+         (tenant_id, id, operadora_id, clinic_id, codigo_prestador_na_operadora, vigencia_inicio, created_by)
+       VALUES ($1, $2, $3, $4, '900123', DATE '2026-01-01', $5)`,
+      [s.tenantId, s.contratoId, s.operadoraId, s.clinicId, s.userId]);
+
+    // Vinculo paciente x convenio
+    await c.query(
+      `INSERT INTO tiss.paciente_convenio
+         (tenant_id, id, patient_id, operadora_id, numero_carteira, nome_plano, created_by)
+       VALUES ($1, $2, $3, $4, '00998877665544', 'Basico', $5)`,
+      [s.tenantId, s.pacienteConvenioId, s.patientId, s.operadoraId, s.userId]);
+
+    // Atendimento finalizado
+    await c.query(
+      `INSERT INTO clin.encounter
+         (tenant_id, id, patient_id, professional_id, clinic_id,
+          occurred_at, occurred_date, status)
+       VALUES ($1, $2, $3, $4, $5, clock_timestamp(),
+               app.local_date(clock_timestamp(), 'America/Sao_Paulo'),
+               'finalizado'::clin.encounter_status)`,
+      [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId]);
+
+    // Versao original (como superusuario)
+    await c.query(
+      `INSERT INTO clin.encounter_version
+         (tenant_id, id, encounter_id, version_no, kind, author_user_id,
+          author_professional_id, content_hash, serializer_version)
+       VALUES ($1, $2, $3, 1, 'original', $4, $5,
+               sha256('tiss test v1'::bytea), 'jcs-1')`,
+      [s.tenantId, s.versionId, s.encounterId, s.userId, s.professionalId]);
+
+    // Atualizar head_version_id e version_count
+    await c.query(
+      `UPDATE clin.encounter SET head_version_id = $1, version_count = 1
+        WHERE id = $2`,
+      [s.versionId, s.encounterId]);
+
+    // Encounter billing com dados de convenio
+    await c.query(
+      `INSERT INTO clin.encounter_billing
+         (tenant_id, id, encounter_id, operadora_nome, registro_ans,
+          numero_carteira, codigo_prestador_na_operadora, cnes,
+          conselho_profissional, numero_conselho, uf_conselho, cbos,
+          tipo_consulta, data_atendimento, codigo_tabela,
+          codigo_procedimento, valor_centavos, created_by)
+       SELECT $1, $2, $3, 'Operadora Teste', '326305', '00998877665544',
+              '900123', c.cnes, p.conselho_profissional, p.numero_conselho,
+              p.uf_conselho, p.cbos, '1',
+              app.local_date(clock_timestamp(), 'America/Sao_Paulo'),
+              '22', '10101012', 25000, $6
+         FROM app.clinic c, app.professional p
+        WHERE c.id = $4 AND p.id = $5`,
+      [s.tenantId, s.billingId, s.encounterId,
+       s.clinicId, s.professionalId, s.userId]);
+
+    // Termo TUSS vigente (global, pode ja existir)
+    await c.query(
+      `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
+       VALUES (22, '10101012', 'Consulta em consultorio', '[2020-01-01,)', '202001', 'inclusao')
+       ON CONFLICT DO NOTHING`,
+    );
+
+    await c.query('COMMIT');
+  } catch (e) {
+    await c.query('ROLLBACK');
+    throw e;
+  } finally {
+    c.release();
+    await admin.end();
+  }
+  return s;
+}
+
 /* ---------- Semente com TUSS invalido (Task 27) ---------- */
 
 /** Semente com convenio mas procedimento TUSS nao vigente na data do atendimento. */
