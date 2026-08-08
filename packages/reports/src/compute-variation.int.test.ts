@@ -237,5 +237,92 @@ describe('computeVariation', () => {
       // Propriedade matematica ainda vale
       expect(factorsAddUp(result.factors)).toBe(true);
     });
+
+    it('glosas no periodo B e nenhuma no A → fator negativo (glosas aumentaram)', async () => {
+      // Cenario: usar tenant separado para isolamento
+      const sInv = await semearVariacao();
+      const poolInv = new Pool({
+        connectionString: process.env['DATABASE_URL'],
+        max: 2,
+      });
+      poolInv.on('connect', (client) => {
+        void client.query('SET ROLE app_rw').catch(() => undefined);
+      });
+
+      try {
+        // Periodo A (junho 2026): 3 consultas pagas, sem glosas
+        for (let i = 0; i < 3; i++) {
+          await criarAtendimentoComLancamento({
+            tenantId: sInv.tenantId, clinicId: sInv.clinicId,
+            patientId: sInv.patientIds[i]!,
+            professionalId: sInv.professionalIdA,
+            procedureId: sInv.procedureIdConsulta,
+            userId: sInv.userId, paymentMethodId: sInv.paymentMethodId,
+            categoryId: sInv.categoryId,
+            amountCents: 25000, date: `2026-06-${String(10 + i).padStart(2, '0')}`,
+            status: 'atendido', operadoraNome: null, pago: true,
+          });
+        }
+
+        // Periodo B (julho 2026): 3 consultas pagas + 1 glosa aceita de R$150
+        for (let i = 0; i < 3; i++) {
+          await criarAtendimentoComLancamento({
+            tenantId: sInv.tenantId, clinicId: sInv.clinicId,
+            patientId: sInv.patientIds[i]!,
+            professionalId: sInv.professionalIdA,
+            procedureId: sInv.procedureIdConsulta,
+            userId: sInv.userId, paymentMethodId: sInv.paymentMethodId,
+            categoryId: sInv.categoryId,
+            amountCents: 25000, date: `2026-07-${String(10 + i).padStart(2, '0')}`,
+            status: 'atendido', operadoraNome: 'Operadora Var', pago: true,
+          });
+        }
+        await criarGlosaAceita({
+          tenantId: sInv.tenantId, clinicId: sInv.clinicId,
+          patientId: sInv.patientIds[4]!,
+          professionalId: sInv.professionalIdA,
+          userId: sInv.userId, operadoraId: sInv.operadoraId,
+          valorGlosadoCents: 15000, dataAtendimento: '2026-07-20',
+        });
+
+        const actor: Actor = {
+          kind: 'user', tenantId: sInv.tenantId, userId: sInv.userId,
+          clinicId: sInv.clinicId, requestId: 'test-glosa-inv-1',
+        };
+        const result = await withTenantTx(actor, async (tx) => {
+          return computeVariation(tx, sInv.tenantId, sInv.clinicId,
+            { start: '2026-06-01', end: '2026-06-30' },
+            { start: '2026-07-01', end: '2026-07-31' },
+          );
+        }, poolInv);
+
+        // Glosas: A teve R$0, B teve R$150 aceita
+        // Fator = -(15000 - 0) = -15000 (aumento de glosas e negativo)
+        expect(result.factors.glosas_cents).toBe(-15000);
+        // Propriedade matematica: soma dos fatores = delta
+        expect(factorsAddUp(result.factors)).toBe(true);
+        // O fator "glosas nao recuperadas" esta destacado (nao absorvido pelo ticket)
+        expect(result.factors.glosas_cents).not.toBe(0);
+      } finally {
+        await poolInv.end();
+      }
+    });
+
+    it('sem glosas em nenhum periodo → fator continua zero', async () => {
+      // Reutiliza o dataset original (s) que nao tem glosas
+      const actor: Actor = {
+        kind: 'user', tenantId: s.tenantId, userId: s.userId,
+        clinicId: s.clinicId, requestId: 'test-glosa-zero',
+      };
+      const result = await withTenantTx(actor, async (tx) => {
+        return computeVariation(tx, s.tenantId, s.clinicId,
+          { start: '2026-06-01', end: '2026-06-30' },
+          { start: '2026-07-01', end: '2026-07-31' },
+        );
+      }, pool);
+
+      expect(result.factors.glosas_cents).toBe(0);
+      expect(factorsAddUp(result.factors)).toBe(true);
+    });
   });
 });
