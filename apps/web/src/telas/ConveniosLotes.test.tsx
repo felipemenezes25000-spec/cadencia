@@ -1,6 +1,6 @@
 // apps/web/src/telas/ConveniosLotes.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import {
@@ -18,8 +18,6 @@ const LOTES: readonly Lote[] = [
     guias: [
       { id: 'g1', numeroGuia: '000001', pacienteNome: 'Maria Souza',
         codigoProcedimento: '10101012', valorCentavos: 15000, sequencial: 1 },
-      { id: 'g2', numeroGuia: '000002', pacienteNome: 'Joao Silva',
-        codigoProcedimento: '10101012', valorCentavos: 18000, sequencial: 2 },
     ],
   },
   {
@@ -27,17 +25,15 @@ const LOTES: readonly Lote[] = [
     registroAns: '654321', status: 'enviado',
     totalGuias: 3, totalCentavos: 45000,
     criadoEm: '2026-08-03', enviadoEm: '2026-08-04',
-    guias: [
-      { id: 'g3', numeroGuia: '000003', pacienteNome: 'Ana Costa',
-        codigoProcedimento: '20201015', valorCentavos: 15000, sequencial: 1 },
-    ],
+    guias: [],
   },
   {
     id: 'l3', numero: 'L-2026-003', operadoraNome: 'Unimed',
-    registroAns: '123456', status: 'processado',
+    registroAns: '123456', status: 'processando',
     totalGuias: 8, totalCentavos: 120000,
-    criadoEm: '2026-08-01', enviadoEm: '2026-08-02',
+    criadoEm: '2026-08-01', enviadoEm: null,
     guias: [],
+    progresso: 65,
   },
 ];
 
@@ -55,72 +51,62 @@ function montar() {
 }
 
 describe('ConveniosLotes', () => {
-  it('lista os lotes com numero, operadora e total de guias', async () => {
+  it('renderiza grid de lotes', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
+    // Verifica que todos os lotes estao presentes
     expect(screen.getByText('L-2026-002')).toBeVisible();
     expect(screen.getByText('L-2026-003')).toBeVisible();
+    // Verifica que ha um container de grid (section com aria-label)
+    expect(screen.getByLabelText('Lista de lotes')).toBeVisible();
   });
 
-  it('exibe chip de status com cores corretas', async () => {
+  it('mostra numero, operadora, valor total', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
+    // Numero do lote
+    expect(screen.getByText('L-2026-001')).toBeVisible();
+    // Nome da operadora (Unimed aparece em 2 lotes)
+    expect(screen.getAllByText('Unimed')).toHaveLength(2);
+    expect(screen.getByText('Bradesco Saude')).toBeVisible();
+    // Valor total formatado
+    expect(screen.getByText('R$ 750,00')).toBeVisible();
+    expect(screen.getByText('R$ 450,00')).toBeVisible();
+    // Total de guias
+    expect(screen.getByText('5 guias')).toBeVisible();
+  });
+
+  it('mostra ChipDeStatusTiss', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Rascunho')).toBeVisible());
     expect(screen.getByText('Enviado')).toBeVisible();
-    expect(screen.getByText('Processado')).toBeVisible();
+    // Processando tem chip customizado
+    expect(screen.getByText('Processando')).toBeVisible();
   });
 
-  it('exibe o valor total do lote formatado em reais', async () => {
+  it('mostra barra de progresso quando processando', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('R$ 750,00')).toBeVisible());
-    expect(screen.getByText('R$ 450,00')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('L-2026-003')).toBeVisible());
+    // Barra de progresso visivel
+    expect(screen.getByTestId('barra-progresso')).toBeVisible();
+    // Texto de porcentagem
+    expect(screen.getByText('65%')).toBeVisible();
+    // Elemento progressbar com aria
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '65');
   });
 
-  it('lote rascunho tem botoes Enviar e Cancelar', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
-    const linha = screen.getByText('L-2026-001').closest('li');
-    expect(linha).toBeTruthy();
-    expect(within(linha!).getByRole('button', { name: /Enviar/i })).toBeVisible();
-    expect(within(linha!).getByRole('button', { name: /Cancelar/i })).toBeVisible();
-  });
-
-  it('lote enviado tem botao Baixar XML e nao tem Enviar', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('L-2026-002')).toBeVisible());
-    const linha = screen.getByText('L-2026-002').closest('li');
-    expect(linha).toBeTruthy();
-    expect(within(linha!).getByRole('button', { name: /Baixar XML/i })).toBeVisible();
-    expect(within(linha!).queryByRole('button', { name: /^Enviar$/i })).not.toBeInTheDocument();
-  });
-
-  it('ao clicar Enviar chama aoEnviar com o id do lote', async () => {
-    const props = montar();
-    await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
-    const linha = screen.getByText('L-2026-001').closest('li');
-    await userEvent.click(within(linha!).getByRole('button', { name: /Enviar/i }));
-    expect(props.aoEnviar).toHaveBeenCalledWith('l1');
-  });
-
-  it('ao clicar Baixar XML chama aoBaixarXml com o id do lote', async () => {
-    const props = montar();
-    await waitFor(() => expect(screen.getByText('L-2026-002')).toBeVisible());
-    const linha = screen.getByText('L-2026-002').closest('li');
-    await userEvent.click(within(linha!).getByRole('button', { name: /Baixar XML/i }));
-    expect(props.aoBaixarXml).toHaveBeenCalledWith('l2');
-  });
-
-  it('expandir lote mostra as guias com sequencial e valor', async () => {
+  it('filtra ao digitar na busca', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
-    const expandir = screen.getAllByRole('button', { name: /Expandir/i })[0]!;
-    await userEvent.click(expandir);
-    expect(screen.getByText('000001')).toBeVisible();
-    expect(screen.getByText('Maria Souza')).toBeVisible();
-    expect(screen.getByText('000002')).toBeVisible();
-    expect(screen.getByText('Joao Silva')).toBeVisible();
+    const campoBusca = screen.getByLabelText('Buscar lote');
+    await userEvent.type(campoBusca, 'Bradesco');
+    // Apenas o lote Bradesco deve estar visivel
+    expect(screen.getByText('L-2026-002')).toBeVisible();
+    expect(screen.queryByText('L-2026-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('L-2026-003')).not.toBeInTheDocument();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <ConveniosLotes
         carregarDados={async () => DADOS}

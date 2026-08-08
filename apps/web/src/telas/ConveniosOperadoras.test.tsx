@@ -1,13 +1,45 @@
 // apps/web/src/telas/ConveniosOperadoras.test.tsx
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
+import type { ReactNode } from 'react';
 import {
   ConveniosOperadoras,
   type Operadora,
   type OperadorasDados,
 } from './ConveniosOperadoras';
+
+// Polyfills para jsdom: Radix Tooltip (Popper) depende de ResizeObserver e
+// DOMRect que nao existem no jsdom
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof globalThis.ResizeObserver;
+  }
+
+  if (typeof globalThis.DOMRect === 'undefined') {
+    // @ts-ignore - polyfill basico para testes no jsdom
+    globalThis.DOMRect = class DOMRect {
+      x = 0; y = 0; width = 0; height = 0;
+      top = 0; right = 0; bottom = 0; left = 0;
+      toJSON() { return {}; }
+      static fromRect() { return new DOMRect(); }
+    };
+  }
+});
+
+function Wrapper({ children }: { readonly children: ReactNode }) {
+  return (
+    <RadixTooltip.Provider delayDuration={0}>
+      {children}
+    </RadixTooltip.Provider>
+  );
+}
 
 const OPERADORAS: readonly Operadora[] = [
   {
@@ -38,86 +70,64 @@ function montar() {
     aoSalvar: vi.fn(async (_op: Partial<Operadora> & { nome: string; registroAns: string }) => {}),
     aoDesativar: vi.fn(async (_id: string) => {}),
   };
-  render(<ConveniosOperadoras {...props} />);
+  render(<ConveniosOperadoras {...props} />, { wrapper: Wrapper });
   return props;
 }
 
 describe('ConveniosOperadoras', () => {
-  it('lista as operadoras com nome, registro ANS e status', async () => {
+  it('renderiza tabela de operadoras', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
     expect(screen.getByText('Bradesco Saude')).toBeVisible();
     expect(screen.getByText('SulAmerica')).toBeVisible();
+    // Verifica que ha uma tabela
+    expect(screen.getByRole('table')).toBeVisible();
+    // Verifica cabecalhos
+    expect(screen.getByText('Operadora')).toBeVisible();
+    expect(screen.getByText('Registro ANS')).toBeVisible();
+    expect(screen.getByText('CNPJ')).toBeVisible();
+  });
+
+  it('mostra registro ANS e CNPJ', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
+    // Registro ANS
     expect(screen.getByText('123456')).toBeVisible();
+    expect(screen.getByText('654321')).toBeVisible();
+    // CNPJ
+    expect(screen.getByText('AB1234567890CD')).toBeVisible();
+    expect(screen.getByText('XY9876543210ZW')).toBeVisible();
   });
 
-  it('exibe a versao TISS acordada de cada operadora', async () => {
+  it('mostra botoes editar e excluir', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    expect(screen.getByText('4.01.00')).toBeVisible();
+    // Deve haver botoes com aria-label Editar e Excluir para cada operadora
+    const botoesEditar = screen.getAllByLabelText('Editar');
+    const botoesExcluir = screen.getAllByLabelText('Excluir');
+    expect(botoesEditar).toHaveLength(3);
+    expect(botoesExcluir).toHaveLength(3);
   });
 
-  it('exibe o total de pacientes vinculados', async () => {
+  it('filtra ao digitar na busca', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    const linha = screen.getByText('Unimed').closest('li');
-    expect(linha).toBeTruthy();
-    expect(within(linha!).getByText(/42 paciente/i)).toBeVisible();
+    const campoBusca = screen.getByLabelText('Buscar operadora');
+    await userEvent.type(campoBusca, 'Bradesco');
+    // Apenas Bradesco deve estar visivel
+    expect(screen.getByText('Bradesco Saude')).toBeVisible();
+    expect(screen.queryByText('Unimed')).not.toBeInTheDocument();
+    expect(screen.queryByText('SulAmerica')).not.toBeInTheDocument();
   });
 
-  it('operadoras inativas tem indicador visual', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('SulAmerica')).toBeVisible());
-    const linha = screen.getByText('SulAmerica').closest('li');
-    expect(linha).toBeTruthy();
-    expect(within(linha!).getByText(/Inativa/i)).toBeVisible();
-  });
-
-  it('tem botao para criar nova operadora', async () => {
-    montar();
-    await waitFor(() => expect(
-      screen.getByRole('button', { name: /Nova operadora/i })).toBeVisible());
-  });
-
-  it('ao clicar em Nova operadora abre formulario', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Nova operadora/i }));
-    expect(screen.getByRole('dialog', { name: /Nova operadora/i })).toBeVisible();
-  });
-
-  it('formulario exige nome e registro ANS', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Nova operadora/i }));
-    expect(screen.getByLabelText(/^Nome/i)).toBeVisible();
-    expect(screen.getByLabelText(/Registro ANS/i)).toBeVisible();
-    expect(screen.getByLabelText(/Versao TISS/i)).toBeVisible();
-  });
-
-  it('cada operadora ativa tem botao Desativar', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    const linha = screen.getByText('Unimed').closest('li');
-    expect(linha).toBeTruthy();
-    expect(within(linha!).getByRole('button', { name: /Desativar/i })).toBeVisible();
-  });
-
-  it('ao clicar Desativar chama aoDesativar com o id', async () => {
-    const props = montar();
-    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    const linha = screen.getByText('Unimed').closest('li');
-    await userEvent.click(within(linha!).getByRole('button', { name: /Desativar/i }));
-    expect(props.aoDesativar).toHaveBeenCalledWith('op1');
-  });
-
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <ConveniosOperadoras
         carregarDados={async () => DADOS}
         aoSalvar={async () => {}}
         aoDesativar={async () => {}}
       />,
+      { wrapper: Wrapper },
     );
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();

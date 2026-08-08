@@ -1,10 +1,21 @@
 // apps/web/src/telas/ConveniosOperadoras.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, type ChangeEvent } from 'react';
+import {
+  MagnifyingGlass,
+  Plus,
+  PencilSimple,
+  Trash,
+  Buildings,
+} from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
 import { PainelLateral } from '../ui/PainelLateral';
+import { Skeleton } from '../ui/Skeleton';
+import { Tooltip } from '../ui/Tooltip';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -30,11 +41,64 @@ export interface ConveniosOperadorasProps {
   readonly aoDesativar: (operadoraId: string) => Promise<void>;
 }
 
+// ── Skeleton de carregamento ──────────────────────────────────────────────
+
+function TabelaSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Carregando operadoras..."
+      className="rounded-lg border border-line overflow-hidden"
+    >
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-line bg-surface-raised">
+            <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="80px" /></th>
+            <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="80px" /></th>
+            <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="100px" /></th>
+            <th className="px-4 py-2.5 text-right"><Skeleton variant="text" width="60px" /></th>
+            <th className="px-4 py-2.5 w-20" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {Array.from({ length: 4 }, (_, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3"><Skeleton variant="text" width="120px" /></td>
+              <td className="px-4 py-3"><Skeleton variant="text" width="60px" /></td>
+              <td className="px-4 py-3"><Skeleton variant="text" width="110px" /></td>
+              <td className="px-4 py-3"><Skeleton variant="text" width="40px" /></td>
+              <td className="px-4 py-3"><Skeleton variant="text" width="50px" /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Estado vazio ──────────────────────────────────────────────────────────
+
+function EstadoVazioOperadoras() {
+  return (
+    <div className="rounded-lg border border-line bg-surface p-8 text-center">
+      <Buildings size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
+      <p className="text-sm font-medium text-text">Nenhuma operadora cadastrada</p>
+      <p className="mt-1 text-xs text-text-muted">
+        Cadastre a primeira operadora para comecar a faturar.
+      </p>
+    </div>
+  );
+}
+
 // ── Componente ─────────────────────────────────────────────────────────────
 
 export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
   const [dados, setDados] = useState<OperadorasDados | null>(null);
   const [formAberto, setFormAberto] = useState(false);
+  const [busca, setBusca] = useState('');
+
+  // Form state
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [registroAns, setRegistroAns] = useState('');
   const [versaoTiss, setVersaoTiss] = useState('4.01.00');
@@ -46,7 +110,20 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
     void p.carregarDados().then(setDados);
   }, [p]);
 
+  const operadorasFiltradas = useMemo(() => {
+    if (!dados) return [];
+    if (busca.trim() === '') return [...dados.operadoras];
+    const termo = busca.toLowerCase();
+    return dados.operadoras.filter(
+      (op) =>
+        op.nome.toLowerCase().includes(termo) ||
+        op.registroAns.toLowerCase().includes(termo) ||
+        op.cnpj.toLowerCase().includes(termo),
+    );
+  }, [dados, busca]);
+
   function limparForm(): void {
+    setEditandoId(null);
     setNome('');
     setRegistroAns('');
     setVersaoTiss('4.01.00');
@@ -55,9 +132,29 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
     setTelefone('');
   }
 
+  function abrirNovaOperadora(): void {
+    limparForm();
+    setFormAberto(true);
+  }
+
+  function abrirEdicao(op: Operadora): void {
+    setEditandoId(op.id);
+    setNome(op.nome);
+    setRegistroAns(op.registroAns);
+    setVersaoTiss(op.versaoTiss);
+    setCnpj(op.cnpj);
+    setEmail(op.email ?? '');
+    setTelefone(op.telefone ?? '');
+    setFormAberto(true);
+  }
+
   function salvar(): void {
     void p.aoSalvar({
-      nome, registroAns, versaoTiss, cnpj,
+      ...(editandoId != null ? { id: editandoId } : {}),
+      nome,
+      registroAns,
+      versaoTiss,
+      cnpj,
       email: email === '' ? null : email,
       telefone: telefone === '' ? null : telefone,
     }).then(() => {
@@ -66,118 +163,193 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
     });
   }
 
-  if (dados === null) return null;
+  // Estado de carregamento
+  if (dados === null) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton variant="text" width="240px" height="36px" />
+          <Skeleton variant="text" width="130px" height="36px" />
+        </div>
+        <TabelaSkeleton />
+      </div>
+    );
+  }
+
+  const tituloForm = editandoId != null ? 'Editar operadora' : 'Nova operadora';
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-      {/* Cabecalho */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-          Operadoras
-        </h2>
-        <Botao variante="primario" altura={32}
-          onClick={() => { limparForm(); setFormAberto(true); }}>
+    <div className="space-y-4">
+      {/* Acoes */}
+      <div className="flex items-center justify-between gap-3">
+        <Campo
+          prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+          placeholder="Buscar operadora..."
+          className="max-w-xs"
+          value={busca}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setBusca(e.target.value)}
+          aria-label="Buscar operadora"
+        />
+        <Botao variante="primario" iconeEsquerda={Plus} onClick={abrirNovaOperadora}>
           Nova operadora
         </Botao>
       </div>
 
-      {/* Versoes TISS em uso */}
-      <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'center' }}>
-        <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)' }}>
-          Versoes TISS:
-        </span>
-        {[...new Set(dados.operadoras.map((op) => op.versaoTiss))].map((v) => (
-          <span key={v} style={{
-            fontSize: 'var(--fs-12)', fontFamily: 'var(--font-mono)',
-            fontVariantNumeric: 'tabular-nums', padding: 'var(--s-1) var(--s-3)',
-            borderRadius: 'var(--r-sm)', background: 'var(--surface-sunken)',
-            color: 'var(--text-muted)',
-          }}>
-            {v}
-          </span>
-        ))}
-      </div>
+      {/* Estado vazio ou tabela */}
+      {operadorasFiltradas.length === 0 ? (
+        <EstadoVazioOperadoras />
+      ) : (
+        <section aria-label="Operadoras cadastradas">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Operadora
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Registro ANS
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      CNPJ
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                      Pacientes
+                    </th>
+                    <th className="px-4 py-2.5 w-20">
+                      <span className="sr-only">Acoes</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {operadorasFiltradas.map((op) => (
+                    <tr
+                      key={op.id}
+                      className={cn(
+                        'hover:bg-surface-raised transition-colors-fast',
+                        !op.ativa && 'opacity-60',
+                      )}
+                    >
+                      <td className="px-4 py-3 font-medium text-text">
+                        <div className="flex items-center gap-2">
+                          {op.nome}
+                          {!op.ativa && (
+                            <span
+                              className={cn(
+                                'inline-flex items-center',
+                                'text-[length:var(--fs-11)] uppercase tracking-[.04em]',
+                                'font-medium px-[var(--s-4)] py-[var(--s-1)]',
+                                'rounded-full text-text-faint bg-surface-sunken',
+                              )}
+                            >
+                              Inativa
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-text-muted tabular-nums">
+                        {op.registroAns}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-text-muted tabular-nums">
+                        {op.cnpj}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {op.totalPacientes}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <Tooltip conteudo="Editar">
+                            <button
+                              type="button"
+                              aria-label="Editar"
+                              className={cn(
+                                'rounded-md p-1 text-text-muted',
+                                'hover:bg-surface-raised hover:text-text',
+                                'transition-colors-fast',
+                                'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+                              )}
+                              onClick={() => abrirEdicao(op)}
+                            >
+                              <Icone icon={PencilSimple} size="sm" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip conteudo="Excluir">
+                            <button
+                              type="button"
+                              aria-label="Excluir"
+                              className={cn(
+                                'rounded-md p-1 text-text-muted',
+                                'hover:text-danger',
+                                'transition-colors-fast',
+                                'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+                              )}
+                              onClick={() => { void p.aoDesativar(op.id); }}
+                            >
+                              <Icone icon={Trash} size="sm" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
-      {/* Lista de operadoras */}
-      <section aria-label="Operadoras cadastradas">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.operadoras.map((op) => (
-            <li key={op.id} style={{
-              display: 'grid', gridTemplateColumns: '1fr auto',
-              alignItems: 'center', gap: 'var(--s-4)',
-              padding: 'var(--s-5) var(--s-5)',
-              borderBottom: 'var(--border)', minHeight: 56,
-            }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                  <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-15)' }}>
-                    {op.nome}
-                  </span>
-                  <span className="num" style={{
-                    fontSize: 'var(--fs-12)', fontFamily: 'var(--font-mono)',
-                    fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)',
-                  }}>
-                    {op.registroAns}
-                  </span>
-                  {!op.ativa ? (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-                      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-                      fontWeight: 'var(--fw-medium)', padding: 'var(--s-1) var(--s-4)',
-                      borderRadius: 'var(--r-full)',
-                      color: 'var(--text-faint)', background: 'var(--surface-sunken)',
-                    }}>
-                      Inativa
-                    </span>
-                  ) : null}
-                </div>
-                <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                               color: 'var(--text-muted)' }}>
-                  TISS {op.versaoTiss} — {op.totalPacientes} paciente(s) vinculado(s)
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 'var(--s-2)' }}>
-                {op.ativa ? (
-                  <Botao variante="fantasma" altura={28}
-                    onClick={() => { void p.aoDesativar(op.id); }}>
-                    Desativar
-                  </Botao>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Formulario de nova operadora */}
+      {/* Formulario de nova/editar operadora */}
       <PainelLateral
         aberto={formAberto}
-        titulo="Nova operadora"
+        titulo={tituloForm}
         aoFechar={() => setFormAberto(false)}
       >
-        <div style={{ display: 'grid', gap: 'var(--s-5)', marginTop: 'var(--s-4)' }}>
-          <Campo rotulo="Nome" value={nome}
+        <div className="grid gap-[var(--s-5)] mt-[var(--s-4)]">
+          <Campo
+            rotulo="Nome"
+            value={nome}
             onChange={(e) => setNome(e.target.value)}
-            aria-label="Nome" required />
-          <Campo rotulo="Registro ANS" value={registroAns}
+            aria-label="Nome"
+            required
+          />
+          <Campo
+            rotulo="Registro ANS"
+            value={registroAns}
             onChange={(e) => setRegistroAns(e.target.value)}
-            aria-label="Registro ANS" maxLength={6} required />
-          <Campo rotulo="Versao TISS" value={versaoTiss}
+            aria-label="Registro ANS"
+            maxLength={6}
+            required
+          />
+          <Campo
+            rotulo="Versao TISS"
+            value={versaoTiss}
             onChange={(e) => setVersaoTiss(e.target.value)}
-            aria-label="Versao TISS" />
-          <Campo rotulo="CNPJ" value={cnpj}
+            aria-label="Versao TISS"
+          />
+          <Campo
+            rotulo="CNPJ"
+            value={cnpj}
             onChange={(e) => setCnpj(e.target.value)}
-            aria-label="CNPJ" maxLength={14} />
-          <Campo rotulo="E-mail" type="email" value={email}
+            aria-label="CNPJ"
+            maxLength={14}
+          />
+          <Campo
+            rotulo="E-mail"
+            type="email"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
-            aria-label="E-mail" />
-          <Campo rotulo="Telefone" type="tel" value={telefone}
+            aria-label="E-mail"
+          />
+          <Campo
+            rotulo="Telefone"
+            type="tel"
+            value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
-            aria-label="Telefone" />
-          <Botao variante="primario" altura={40} onClick={salvar}>
+            aria-label="Telefone"
+          />
+          <Botao variante="primario" tamanho="lg" onClick={salvar} fullWidth>
             Salvar
           </Botao>
         </div>

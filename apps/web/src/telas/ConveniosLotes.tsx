@@ -1,12 +1,18 @@
 // apps/web/src/telas/ConveniosLotes.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, type ChangeEvent } from 'react';
+import { MagnifyingGlass, Plus, Package } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
+import { Campo } from '../ui/Campo';
+import { ChipDeStatusTiss } from '../ui/ChipDeStatusTiss';
+import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
-export type StatusLote = 'rascunho' | 'enviado' | 'processado' | 'glosado';
+export type StatusLote = 'rascunho' | 'enviado' | 'processado' | 'glosado' | 'processando';
 
 export interface GuiaDoLote {
   readonly id: string;
@@ -28,6 +34,7 @@ export interface Lote {
   readonly criadoEm: string;
   readonly enviadoEm: string | null;
   readonly guias: readonly GuiaDoLote[];
+  readonly progresso?: number;
 }
 
 export interface LotesDados {
@@ -51,172 +58,179 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
-const STATUS_CHIP: Record<StatusLote, { rotulo: string; glifo: string; cor: string; bg: string }> = {
-  rascunho:   { rotulo: 'Rascunho',   glifo: '●', cor: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
-  enviado:    { rotulo: 'Enviado',    glifo: '↑', cor: 'var(--accent)',      bg: 'var(--accent-soft)' },
-  processado: { rotulo: 'Processado', glifo: '✓', cor: 'var(--ok)',          bg: 'var(--ok-soft)' },
-  glosado:    { rotulo: 'Glosado',    glifo: '!', cor: 'var(--danger)',      bg: 'var(--danger-soft)' },
-};
+function formatarData(data: string): string {
+  const partes = data.split('-');
+  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return data;
+}
+
+// ── Skeleton de carregamento ──────────────────────────────────────────────
+
+function LotesSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Carregando lotes..."
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+    >
+      {Array.from({ length: 6 }, (_, i) => (
+        <div
+          key={i}
+          className="rounded-lg border border-line bg-surface p-4 space-y-3"
+        >
+          <div className="flex items-center justify-between">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="70px" height="20px" />
+          </div>
+          <Skeleton variant="text" width="120px" />
+          <Skeleton variant="text" width="60px" />
+          <Skeleton variant="text" width="100px" height="24px" />
+          <Skeleton variant="text" width="90px" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Estado vazio ──────────────────────────────────────────────────────────
+
+function EstadoVazioLotes() {
+  return (
+    <div className="rounded-lg border border-line bg-surface p-8 text-center">
+      <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
+      <p className="text-sm font-medium text-text">Nenhum lote encontrado</p>
+      <p className="mt-1 text-xs text-text-muted">
+        Crie um novo lote para comecar a faturar.
+      </p>
+    </div>
+  );
+}
 
 // ── Componente ─────────────────────────────────────────────────────────────
 
 export function ConveniosLotes(p: ConveniosLotesProps) {
   const [dados, setDados] = useState<LotesDados | null>(null);
-  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  const [busca, setBusca] = useState('');
 
   useEffect(() => {
     void p.carregarDados().then(setDados);
   }, [p]);
 
-  function alternarExpandir(id: string): void {
-    setExpandidos((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  const lotesFiltrados = useMemo(() => {
+    if (!dados) return [];
+    if (busca.trim() === '') return [...dados.lotes];
+    const termo = busca.toLowerCase();
+    return dados.lotes.filter(
+      (lote) =>
+        lote.numero.toLowerCase().includes(termo) ||
+        lote.operadoraNome.toLowerCase().includes(termo),
+    );
+  }, [dados, busca]);
+
+  // Estado de carregamento
+  if (dados === null) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton variant="text" width="240px" height="36px" />
+          <Skeleton variant="text" width="100px" height="36px" />
+        </div>
+        <LotesSkeleton />
+      </div>
+    );
   }
 
-  if (dados === null) return null;
-
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-      <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-        Lotes
-      </h2>
+    <div className="space-y-4">
+      {/* Acoes */}
+      <div className="flex items-center justify-between gap-3">
+        <Campo
+          prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+          placeholder="Buscar lote..."
+          className="max-w-xs"
+          value={busca}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setBusca(e.target.value)}
+          aria-label="Buscar lote"
+        />
+        <Botao variante="primario" iconeEsquerda={Plus}>
+          Novo lote
+        </Botao>
+      </div>
 
-      <section aria-label="Lista de lotes">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.lotes.map((lote) => {
-            const chip = STATUS_CHIP[lote.status];
-            const expandido = expandidos.has(lote.id);
-
-            return (
-              <li key={lote.id} style={{ borderBottom: 'var(--border)' }}>
-                {/* Cabecalho do lote */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto auto',
-                  alignItems: 'center', gap: 'var(--s-4)',
-                  padding: 'var(--s-5) var(--s-5)', minHeight: 56,
-                }}>
-                  {/* Expandir */}
-                  <button
-                    type="button"
-                    onClick={() => alternarExpandir(lote.id)}
-                    aria-expanded={expandido}
-                    aria-label="Expandir"
-                    style={{
-                      border: 0, background: 'transparent', cursor: 'pointer',
-                      fontSize: 'var(--fs-14)', color: 'var(--text-muted)',
-                      width: 24, height: 24, display: 'flex', alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {expandido ? '▾' : '▸'}
-                  </button>
-
-                  {/* Info do lote */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                      <span className="num" style={{
-                        fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)',
-                        fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-                      }}>
-                        {lote.numero}
-                      </span>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-                        fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-                        fontWeight: 'var(--fw-medium)', padding: 'var(--s-1) var(--s-4)',
-                        borderRadius: 'var(--r-full)',
-                        color: chip.cor, background: chip.bg,
-                      }}>
-                        <span aria-hidden="true">{chip.glifo}</span>{chip.rotulo}
-                      </span>
-                    </div>
-                    <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                                   color: 'var(--text-muted)' }}>
-                      {lote.operadoraNome} — {lote.totalGuias} guia(s) — Criado em {lote.criadoEm}
-                      {lote.enviadoEm !== null ? ` — Enviado em ${lote.enviadoEm}` : ''}
-                    </span>
-                  </div>
-
-                  {/* Valor total */}
-                  <span className="num" style={{
-                    fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    {centavosParaReais(lote.totalCentavos)}
+      {/* Estado vazio ou grid */}
+      {lotesFiltrados.length === 0 ? (
+        <EstadoVazioLotes />
+      ) : (
+        <section aria-label="Lista de lotes">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {lotesFiltrados.map((lote) => (
+              <div
+                key={lote.id}
+                className={cn(
+                  'rounded-lg border border-line bg-surface p-4 cursor-pointer',
+                  'hover:bg-surface-raised transition-colors-fast',
+                )}
+              >
+                {/* Cabecalho */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-mono font-medium text-text tabular-nums">
+                    {lote.numero}
                   </span>
-
-                  {/* Acoes */}
-                  <div style={{ display: 'flex', gap: 'var(--s-2)' }}>
-                    {lote.status === 'rascunho' ? (
-                      <>
-                        <Botao variante="primario" altura={28}
-                          onClick={() => { void p.aoEnviar(lote.id); }}>
-                          Enviar
-                        </Botao>
-                        <Botao variante="fantasma" altura={28}
-                          onClick={() => { void p.aoCancelar(lote.id); }}>
-                          Cancelar
-                        </Botao>
-                      </>
-                    ) : null}
-                    {lote.status === 'enviado' || lote.status === 'processado' ? (
-                      <Botao variante="secundario" altura={28}
-                        onClick={() => { void p.aoBaixarXml(lote.id); }}>
-                        Baixar XML
-                      </Botao>
-                    ) : null}
-                  </div>
+                  {lote.status === 'processando' ? (
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-[var(--s-2)]',
+                        'text-[length:var(--fs-11)] uppercase tracking-[.04em]',
+                        'font-medium px-[var(--s-4)] py-[var(--s-1)]',
+                        'rounded-full text-accent bg-accent-soft',
+                      )}
+                    >
+                      Processando
+                    </span>
+                  ) : (
+                    <ChipDeStatusTiss status={lote.status} />
+                  )}
                 </div>
 
-                {/* Guias expandidas */}
-                {expandido && lote.guias.length > 0 ? (
-                  <div style={{ padding: '0 var(--s-5) var(--s-5)',
-                                paddingInlineStart: 'calc(var(--s-5) + 24px + var(--s-4))' }}>
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                                 border: 'var(--border)', borderRadius: 'var(--r-sm)',
-                                 overflow: 'hidden', background: 'var(--surface-sunken)' }}>
-                      {lote.guias.map((g) => (
-                        <li key={g.id} style={{
-                          display: 'grid', gridTemplateColumns: 'auto 1fr auto',
-                          alignItems: 'center', gap: 'var(--s-4)',
-                          padding: 'var(--s-3) var(--s-4)',
-                          borderBottom: 'var(--border)', fontSize: 'var(--fs-13)',
-                        }}>
-                          <span className="num" style={{
-                            fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-                            color: 'var(--text-muted)', minWidth: '3ch', textAlign: 'right',
-                          }}>
-                            {g.sequencial}
-                          </span>
-                          <div>
-                            <span className="num" style={{
-                              fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-                              color: 'var(--text-muted)',
-                            }}>
-                              {g.numeroGuia}
-                            </span>
-                            {' '}
-                            <span>{g.pacienteNome}</span>
-                          </div>
-                          <span className="num" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                            {centavosParaReais(g.valorCentavos)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                {/* Info */}
+                <p className="text-sm text-text mb-1">{lote.operadoraNome}</p>
+                <p className="text-xs text-text-muted">{lote.totalGuias} guias</p>
+
+                {/* Valor */}
+                <p className="text-lg font-bold text-text mt-3 tabular-nums">
+                  {centavosParaReais(lote.totalCentavos)}
+                </p>
+
+                {/* Barra de progresso (se processando) */}
+                {lote.status === 'processando' && lote.progresso != null && (
+                  <div className="mt-3" data-testid="barra-progresso">
+                    <div className="flex items-center justify-between text-xs text-text-muted mb-1">
+                      <span>Processando...</span>
+                      <span>{lote.progresso}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-line overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-accent transition-[width] duration-300"
+                        role="progressbar"
+                        aria-valuenow={lote.progresso}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label="Progresso do lote"
+                        style={{ width: `${lote.progresso}%` }}
+                      />
+                    </div>
                   </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+                )}
+
+                {/* Data */}
+                <p className="text-[10px] text-text-muted mt-3">
+                  Criado em {formatarData(lote.criadoEm)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
