@@ -119,4 +119,34 @@ describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
     });
     expect(violacoes).toContain('tiss.__com_now.criado_em (default): le o relogio dentro do schema tiss');
   });
+
+  it('nenhuma violacao de relogio no schema tiss apos a Fase 5 — demonstrativo, glosa e recurso nao usam now()', async () => {
+    const violacoes = await ddlLintViolations(catalogPool());
+    const tissClock = violacoes.filter((v) => v.includes('tiss.') && v.includes('le o relogio'));
+    expect(tissClock, `violacoes de relogio no schema tiss: ${tissClock.join('; ')}`).toEqual([]);
+  });
+
+  it('nenhuma violacao de DDL lint no schema inteiro apos a Fase 5', async () => {
+    const violacoes = await ddlLintViolations(catalogPool());
+    expect(violacoes).toEqual([]);
+  });
+
+  it('reprova default now() em tabela demonstrativo — clock_timestamp() e a fonte correta', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE tiss.__demo_com_now (
+        tenant_id uuid NOT NULL, id uuid NOT NULL,
+        importado_em timestamptz NOT NULL DEFAULT now())`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain('tiss.__demo_com_now.importado_em (default): le o relogio dentro do schema tiss');
+  });
+
+  it('reprova funcao que usa current_date dentro de tiss para calcular prazo de recurso', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE FUNCTION tiss.__prazo_recurso() RETURNS date
+                     LANGUAGE sql STABLE AS $fn$ SELECT current_date + 30 $fn$`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain('tiss.__prazo_recurso (function): le o relogio dentro do schema tiss');
+  });
 });
