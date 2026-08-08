@@ -31,7 +31,8 @@ import { factorsAddUp } from './variation-types';
  * 5. Faltas: receita estimada dos atendimentos faltados/cancelados em B
  *            menos a dos faltados em A.
  *
- * 6. Glosas: zero ate a Fase 4 (TISS).
+ * 6. Glosas: valor de glosas aceitas (nao recuperadas) por periodo,
+ *    consultando tiss.glosa via encounter_guia_consulta.
  *
  * O residuo (arredondamento inteiro) e absorvido pelo fator de ticket para
  * garantir a igualdade exata.
@@ -271,8 +272,56 @@ export async function computeVariation(
   // Faltas: diferenca de receita estimada perdida (B - A, negativo = mais faltas em B)
   const faltasCents = -(faltasBCents - faltasACents);
 
-  // Glosas: zero ate Fase 4 (TISS)
-  const glosasCents = 0;
+  // -----------------------------------------------------------------------
+  // 5b. Glosas nao recuperadas (aceitas) por periodo
+  // -----------------------------------------------------------------------
+  const glosas = await tx.query<{
+    periodo: string; total_glosado_cents: string;
+  }>(
+    `SELECT 'A' AS periodo,
+            coalesce(sum(rg.valor_glosado_cents), 0)::text AS total_glosado_cents
+       FROM tiss.glosa rg
+       JOIN tiss.encounter_guia_consulta gc
+         ON gc.tenant_id = rg.tenant_id AND gc.id = rg.guia_id
+       JOIN clin.encounter enc
+         ON enc.tenant_id = gc.tenant_id AND enc.id = gc.encounter_id
+      WHERE rg.tenant_id = $1
+        AND enc.clinic_id = $2
+        AND gc.data_atendimento >= $3::date
+        AND gc.data_atendimento <= $4::date
+        AND rg.status = 'aceita'
+     UNION ALL
+     SELECT 'B' AS periodo,
+            coalesce(sum(rg.valor_glosado_cents), 0)::text AS total_glosado_cents
+       FROM tiss.glosa rg
+       JOIN tiss.encounter_guia_consulta gc
+         ON gc.tenant_id = rg.tenant_id AND gc.id = rg.guia_id
+       JOIN clin.encounter enc
+         ON enc.tenant_id = gc.tenant_id AND enc.id = gc.encounter_id
+      WHERE rg.tenant_id = $1
+        AND enc.clinic_id = $2
+        AND gc.data_atendimento >= $5::date
+        AND gc.data_atendimento <= $6::date
+        AND rg.status = 'aceita'`,
+    [tenantId, clinicId,
+     periodA.start, periodA.end,
+     periodB.start, periodB.end],
+  );
+
+  let glosasACents = 0;
+  let glosasBCents = 0;
+  for (const row of glosas.rows) {
+    if (row.periodo === 'A') {
+      glosasACents = Number(row.total_glosado_cents);
+    } else {
+      glosasBCents = Number(row.total_glosado_cents);
+    }
+  }
+
+  // Glosas: receita perdida por glosas aceitas (nao recuperadas).
+  // Mais glosas em B do que em A = fator negativo (perda).
+  // Menos glosas em B do que em A = fator positivo (recuperacao).
+  const glosasCents = -(glosasBCents - glosasACents) || 0;
 
   // Ticket: residuo para garantir soma exata
   // delta = volume + mixProc + mixConv + ticket + faltas + glosas
