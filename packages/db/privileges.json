@@ -1084,6 +1084,24 @@
       ]
     }
   },
+  "tiss.guia_pendencia": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "resolved_at": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "tiss.operadora": {
     "table": {
       "app_rw": [

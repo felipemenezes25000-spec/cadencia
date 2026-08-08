@@ -1208,4 +1208,21 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($2, 2)`,
     [F.TENANT_A, F.TENANT_B],
   );
+
+  // tiss.guia_pendencia nasceu na Fase 4 (bloco 05, migration 0120): pendencia
+  // criada quando guia pertence a lote ja enviado e o prontuario e retificado.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste
+  // meta ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
+  // reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO tiss.guia_pendencia
+       (tenant_id, id, guia_id, encounter_version_id, tipo)
+     VALUES
+       ($1, $3, $5, $7, 'reprojecao_pos_envio'),
+       ($2, $4, $6, $8, 'reprojecao_pos_envio')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.GUIA_PENDENCIA_A, F.GUIA_PENDENCIA_B,
+     F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL],
+  );
 }
