@@ -290,3 +290,9 @@ body {
   transition-duration: 150ms;
   transition-timing-function: ease;
 }
+
+/* ── impressao: task-26 (editor clinico) ───────────────────────────────── */
+@media print {
+  .print\:hidden, [role="toolbar"], nav { display: none !important; }
+  .ProseMirror, .tiptap { font-size: 12pt; line-height: 1.5; }
+}
