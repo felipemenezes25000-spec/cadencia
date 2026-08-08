@@ -103,16 +103,31 @@ describe('FakeTissArquivoTransport', () => {
     expect(result.error.kind).toBe('unsupported');
   });
 
-  it('submitRecursoGlosa retorna unsupported', async () => {
+  it('submitRecursoGlosa retorna sucesso com arquivo', async () => {
     const transport = createFakeTissArquivoTransport();
     const result = await transport.submitRecursoGlosa(ctx, {
       recursoId: 'rec-001',
       xml: new Uint8Array([1, 2, 3]),
       operadoraCnpj: '12ABC34503DE37',
     });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.kind).toBe('arquivo');
+    expect(transport.submittedRecursos).toHaveLength(1);
+    expect(transport.submittedRecursos[0]!.recursoId).toBe('rec-001');
+  });
+
+  it('submitRecursoGlosa retorna timeout quando modo e timeout', async () => {
+    const transport = createFakeTissArquivoTransport({ modo: 'timeout' });
+    const result = await transport.submitRecursoGlosa(ctx, {
+      recursoId: 'rec-002',
+      xml: new Uint8Array([4, 5, 6]),
+      operadoraCnpj: '12ABC34503DE37',
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error.kind).toBe('unsupported');
+    expect(result.error.kind).toBe('timeout');
+    expect(transport.submittedRecursos).toHaveLength(0);
   });
 
   it('health retorna up: true em modo ok e up: false em modo indisponivel', async () => {

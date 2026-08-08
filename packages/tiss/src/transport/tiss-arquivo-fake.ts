@@ -20,8 +20,15 @@ export interface SubmittedBatch {
   readonly prestadorCnes: string;
 }
 
+export interface SubmittedRecurso {
+  readonly recursoId: string;
+  readonly xml: Uint8Array;
+  readonly operadoraCnpj: string;
+}
+
 export interface FakeTissArquivoTransport extends TissTransport {
   readonly submittedBatches: readonly SubmittedBatch[];
+  readonly submittedRecursos: readonly SubmittedRecurso[];
 }
 
 function agora(): Rfc3339 {
@@ -33,6 +40,7 @@ export function createFakeTissArquivoTransport(
 ): FakeTissArquivoTransport {
   const modo = opts.modo ?? 'ok';
   const batches: SubmittedBatch[] = [];
+  const submittedRecursos: SubmittedRecurso[] = [];
 
   function talvezFalhar<T>() {
     if (modo === 'indisponivel') {
@@ -62,6 +70,10 @@ export function createFakeTissArquivoTransport(
 
     get submittedBatches(): readonly SubmittedBatch[] {
       return batches;
+    },
+
+    get submittedRecursos(): readonly SubmittedRecurso[] {
+      return submittedRecursos;
     },
 
     async health() {
@@ -108,11 +120,35 @@ export function createFakeTissArquivoTransport(
       });
     },
 
-    async submitRecursoGlosa(_ctx: ProviderCtx, _i) {
-      return failure({
-        kind: 'unsupported', retrySafe: false,
-        detail: 'submitRecursoGlosa nao disponivel no fake (Fase 5)',
+    async submitRecursoGlosa(ctx: ProviderCtx, i) {
+      const f = talvezFalhar<TissSubmissionReceipt>();
+      if (f) return f;
+
+      const iso = isoFromMs(systemClock.nowMs());
+      const ano = iso.slice(0, 4);
+      const mes = iso.slice(5, 7);
+      const seq = submittedRecursos.length + 1;
+      const fileName = `recurso_${i.operadoraCnpj}_${ano}_${mes}_${seq}.xml`;
+      const sha256 = createHash('sha256').update(i.xml).digest('hex');
+      const storageKey = asStorageKey(`tiss-fake/${ctx.tenantId}/${fileName}`);
+
+      submittedRecursos.push({
+        recursoId: i.recursoId,
+        xml: new Uint8Array(i.xml),
+        operadoraCnpj: i.operadoraCnpj,
       });
+
+      const receipt: TissSubmissionReceipt = {
+        kind: 'arquivo',
+        storageKey,
+        fileName,
+        sha256,
+        instructions:
+          `Acesse o portal da operadora ${i.operadoraCnpj}, ` +
+          `menu Recurso de Glosa, importe o arquivo ${fileName}.`,
+      };
+
+      return success(receipt, `tiss-fake-recurso-${i.recursoId}`);
     },
   };
 }
