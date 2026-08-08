@@ -55,9 +55,12 @@ export async function resolveRecurso(
     return err({ kind: 'transicao_invalida', statusAtual: recurso.status });
   }
 
-  // 2. Atualiza o status do recurso
+  // 2. Atualiza o status do recurso (resolved_at obrigatorio por ck_recurso_glosa_resolved_at)
   await tx.query(
-    `UPDATE tiss.recurso_glosa SET status = $2::tiss.recurso_glosa_status WHERE id = $1`,
+    `UPDATE tiss.recurso_glosa
+        SET status = $2::tiss.recurso_glosa_status,
+            resolved_at = clock_timestamp()
+      WHERE id = $1`,
     [recursoId, resultado.resultado],
   );
 
