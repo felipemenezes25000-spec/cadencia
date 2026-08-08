@@ -1200,5 +1200,38 @@
         "SELECT"
       ]
     }
+  },
+  "tiss.recurso_glosa": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    }
+  },
+  "tiss.recurso_glosa_item": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    }
+  },
+  "tiss.recurso_number_counter": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }
