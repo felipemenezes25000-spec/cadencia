@@ -10,6 +10,9 @@ import type {
   RecursoReadyResult,
   SubmitRecursoFailure,
   RecursoSentResult,
+  ResolveRecursoFailure,
+  ResolveRecursoInput,
+  RecursoResolvedResult,
 } from './types';
 
 /**
@@ -221,4 +224,76 @@ function formatCentsAsReais(centavos: number): string {
   const reais = Math.trunc(centavos / 100);
   const cents = centavos % 100;
   return `${reais}.${String(cents).padStart(2, '0')}`;
+}
+
+/**
+ * Resolve o recurso de glosa com o resultado da operadora.
+ * Transicao permitida: enviado -> (deferido | indeferido | parcial).
+ * Tambem aceita resolver recurso em status 'indeterminado' (apos reconciliacao).
+ * Atualiza o resultado individual de cada item vinculado.
+ */
+export async function resolveRecurso(
+  tx: TxClient,
+  recursoId: string,
+  input: ResolveRecursoInput,
+): Promise<Result<RecursoResolvedResult, ResolveRecursoFailure>> {
+  // 1. Busca o recurso
+  const { rows } = await tx.query<{
+    id: string;
+    status: string;
+  }>(
+    `SELECT id, status FROM tiss.recurso_glosa WHERE id = $1 FOR UPDATE`,
+    [recursoId],
+  );
+  if (rows.length === 0) {
+    return err({ kind: 'recurso_nao_encontrado' });
+  }
+  const recurso = rows[0]!;
+
+  // Transicao permitida: enviado ou indeterminado -> resultado final
+  if (recurso.status !== 'enviado' && recurso.status !== 'indeterminado') {
+    return err({ kind: 'transicao_invalida', de: recurso.status, para: input.resultado });
+  }
+
+  // 2. Valida que todos os itens pertencem ao recurso
+  for (const item of input.itensResolvidos) {
+    const { rows: itemRows } = await tx.query<{ glosa_id: string }>(
+      `SELECT glosa_id FROM tiss.recurso_glosa_item
+        WHERE recurso_id = $1 AND glosa_id = $2`,
+      [recursoId, item.glosaId],
+    );
+    if (itemRows.length === 0) {
+      return err({ kind: 'item_nao_encontrado', glosaId: item.glosaId });
+    }
+  }
+
+  // 3. Atualiza resultado de cada item
+  let deferidos = 0;
+  let indeferidos = 0;
+  for (const item of input.itensResolvidos) {
+    await tx.query(
+      `UPDATE tiss.recurso_glosa_item
+          SET resultado = $3
+        WHERE recurso_id = $1 AND glosa_id = $2`,
+      [recursoId, item.glosaId, item.resultado],
+    );
+    if (item.resultado === 'deferido') deferidos++;
+    if (item.resultado === 'indeferido') indeferidos++;
+  }
+
+  // 4. Atualiza status e resolved_at do recurso
+  await tx.query(
+    `UPDATE tiss.recurso_glosa
+        SET status = $2::tiss.recurso_glosa_status,
+            resolved_at = clock_timestamp()
+      WHERE id = $1`,
+    [recursoId, input.resultado],
+  );
+
+  return ok({
+    recursoId: recurso.id,
+    resultado: input.resultado,
+    itensDeferidos: deferidos,
+    itensIndeferidos: indeferidos,
+  });
 }
