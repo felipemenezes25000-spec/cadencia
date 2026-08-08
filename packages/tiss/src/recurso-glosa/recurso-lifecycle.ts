@@ -190,8 +190,8 @@ export async function submitRecurso(
 
     return ok({
       recursoId,
-      protocoloOperadora: protocolo,
-      storageKey: storageKey as string | undefined,
+      ...(protocolo !== undefined && { protocoloOperadora: protocolo }),
+      ...(storageKey !== undefined && { storageKey }),
     });
   }
 

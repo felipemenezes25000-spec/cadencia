@@ -113,8 +113,6 @@ beforeAll(async () => {
 afterAll(async () => { await closePools(); });
 
 describe('rotas de demonstrativos TISS', () => {
-  let demoIdImported: string;
-
   it('POST /v1/tiss/demonstrativos/importar importa XML via multipart', async () => {
     const app = await buildApp();
     const boundary = '----TestBoundary7MA4YWxkTrZu0gW';
@@ -147,7 +145,6 @@ describe('rotas de demonstrativos TISS', () => {
     const body = r.json() as { demonstrativoId: string; itemCount: number };
     expect(body.demonstrativoId).toBeTruthy();
     expect(body.itemCount).toBe(1);
-    demoIdImported = body.demonstrativoId;
     expect(r.headers['cache-control']).toBe('no-store');
     await app.close();
   });

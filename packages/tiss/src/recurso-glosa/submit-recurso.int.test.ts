@@ -44,7 +44,7 @@ describe('submitRecurso', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[0], justificativa: 'Necessario', valorRecursadoCents: 1000 },
+          { glosaId: s.glosaIds[0]!, justificativa: 'Necessario', valorRecursadoCents: 1000 },
         ],
       }),
     );
@@ -96,7 +96,7 @@ describe('submitRecurso', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[1], justificativa: 'Procedimento indicado', valorRecursadoCents: 2000 },
+          { glosaId: s.glosaIds[1]!, justificativa: 'Procedimento indicado', valorRecursadoCents: 2000 },
         ],
       }),
     );
@@ -141,7 +141,7 @@ describe('submitRecurso', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[2], justificativa: 'Teste', valorRecursadoCents: 500 },
+          { glosaId: s.glosaIds[2]!, justificativa: 'Teste', valorRecursadoCents: 500 },
         ],
       }),
     );

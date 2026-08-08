@@ -32,7 +32,7 @@ describe('markRecursoReady', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[0], justificativa: 'Motivo 1', valorRecursadoCents: 1000 },
+          { glosaId: s.glosaIds[0]!, justificativa: 'Motivo 1', valorRecursadoCents: 1000 },
         ],
       }),
     );
@@ -72,7 +72,7 @@ describe('markRecursoReady', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[1], justificativa: 'Motivo 2', valorRecursadoCents: 2000 },
+          { glosaId: s.glosaIds[1]!, justificativa: 'Motivo 2', valorRecursadoCents: 2000 },
         ],
       }),
     );
@@ -94,7 +94,7 @@ describe('markRecursoReady', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[2], justificativa: 'Motivo 3', valorRecursadoCents: 3000 },
+          { glosaId: s.glosaIds[2]!, justificativa: 'Motivo 3', valorRecursadoCents: 3000 },
         ],
       }),
     );
@@ -103,7 +103,7 @@ describe('markRecursoReady', () => {
 
     // Remove o unico item
     await withTenantTx(actor, (tx) =>
-      removeGlosaFromRecurso(tx, create.value.recursoId, s.glosaIds[2]),
+      removeGlosaFromRecurso(tx, create.value.recursoId, s.glosaIds[2]!),
     );
 
     // Preenche justificativa geral
@@ -128,7 +128,7 @@ describe('markRecursoReady', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[3], justificativa: 'Motivo R', valorRecursadoCents: 500 },
+          { glosaId: s.glosaIds[3]!, justificativa: 'Motivo R', valorRecursadoCents: 500 },
         ],
       }),
     );
