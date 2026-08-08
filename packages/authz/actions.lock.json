@@ -1,5 +1,5 @@
 {
-  "checksum": "f446165cbb737fd57e5e739f62289f8b44aea32a86baf43435f33325687988e2",
+  "checksum": "15a40982680ff3ac850384529433ee54b0db6de5728c4efe9b6e760faee555a4",
   "rows": [
     {
       "key": "appointment.checkin",
@@ -450,6 +450,46 @@
       "requiresMfa": false
     },
     {
+      "key": "tiss.demonstrativo.import",
+      "description": "Importar demonstrativo XML da operadora",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.demonstrativo.read",
+      "description": "Listar e visualizar demonstrativos de retorno",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.glosa.manage",
+      "description": "Aceitar glosa individual",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.glosa.read",
+      "description": "Listar e visualizar glosas",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
       "key": "tiss.guia.adjust",
       "description": "Ajustar codigo de procedimento na guia para faturamento",
       "roles": [
@@ -527,6 +567,24 @@
       "roles": [
         "admin_clinico",
         "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.recurso.manage",
+      "description": "Criar, montar e gerenciar recursos de glosa",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.recurso.send",
+      "description": "Enviar recurso de glosa para operadora",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
       ],
       "requiresMfa": false
     },
