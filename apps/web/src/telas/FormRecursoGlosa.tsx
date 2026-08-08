@@ -3,8 +3,9 @@
 
 import { useState } from 'react';
 import { Botao } from '../ui/Botao';
+import { cn } from '../lib/cn';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────
+// -- Tipos ------------------------------------------------------------------
 
 export interface GlosaParaRecurso {
   readonly id: string;
@@ -26,7 +27,7 @@ export interface FormRecursoGlosaProps {
   readonly aoCancelar: () => void;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 function centavosParaReais(centavos: number): string {
   const abs = Math.abs(centavos);
@@ -36,7 +37,7 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
-// ── Componente ─────────────────────────────────────────────────────────────
+// -- Componente -------------------------------------------------------------
 
 export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
   const [passo, setPasso] = useState<1 | 2>(1);
@@ -69,48 +70,39 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
 
   if (passo === 1) {
     return (
-      <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+      <div className="grid gap-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-[length:var(--fs-15)] font-semibold m-0">
             Passo 1 de 2 — Justificativas individuais
           </h3>
         </div>
 
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     display: 'grid', gap: 'var(--s-5)' }}>
+        <ul className="list-none m-0 p-0 grid gap-3">
           {p.glosas.map((g) => (
-            <li key={g.id} style={{
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              padding: 'var(--s-5)', background: 'var(--surface)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)',
-                            marginBottom: 'var(--s-3)' }}>
-                <span className="num" style={{
-                  fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-                  color: 'var(--text-muted)', fontSize: 'var(--fs-13)',
-                }}>
+            <li
+              key={g.id}
+              className="border border-line rounded-md p-3 bg-surface"
+            >
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="font-mono tabular-nums text-text-muted text-[length:var(--fs-13)]">
                   {g.guiaNumero}
                 </span>
-                <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
+                <span className="font-medium text-sm">
                   {g.pacienteNome}
                 </span>
-                <span className="num" style={{
-                  fontSize: 'var(--fs-13)', fontVariantNumeric: 'tabular-nums',
-                  color: 'var(--danger)', marginInlineStart: 'auto',
-                }}>
+                <span className="text-[length:var(--fs-13)] tabular-nums text-danger ml-auto">
                   {centavosParaReais(g.valorGlosadoCentavos)}
                 </span>
               </div>
-              <div style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                            marginBottom: 'var(--s-3)' }}>
-                <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{g.codigoGlosa}</span>
+              <div className="text-xs text-text-muted mb-1.5">
+                <span className="font-mono">{g.codigoGlosa}</span>
                 {' '}{g.descricaoGlosa}
               </div>
-              <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-                <label htmlFor={`just-${g.id}`} style={{
-                  fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-                  lineHeight: 1.3, color: 'var(--text-muted)',
-                }}>
+              <div className="grid gap-1">
+                <label
+                  htmlFor={`just-${g.id}`}
+                  className="text-xs font-medium leading-tight text-text-muted"
+                >
                   Justificativa
                 </label>
                 <textarea
@@ -119,26 +111,28 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
                   value={justificativas[g.id] ?? ''}
                   onChange={(e) => atualizarJustificativa(g.id, e.target.value)}
                   rows={3}
-                  style={{
-                    padding: 'var(--s-3) var(--s-4)',
-                    border: 'var(--border)', borderRadius: 'var(--r-md)',
-                    background: 'var(--surface)', color: 'var(--text)',
-                    fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-                    resize: 'vertical',
-                  }}
+                  className={cn(
+                    'px-2 py-1.5 border border-line rounded-md',
+                    'bg-surface text-text text-sm font-sans',
+                    'resize-y',
+                    'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
+                  )}
                 />
               </div>
             </li>
           ))}
         </ul>
 
-        <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'flex-end' }}>
-          <Botao variante="fantasma" altura={32} onClick={p.aoCancelar}>
+        <div className="flex gap-1.5 justify-end">
+          <Botao variante="fantasma" tamanho="md" onClick={p.aoCancelar}>
             Cancelar
           </Botao>
-          <Botao variante="primario" altura={32}
+          <Botao
+            variante="primario"
+            tamanho="md"
             disabled={!todasPreenchidas}
-            onClick={() => setPasso(2)}>
+            onClick={() => setPasso(2)}
+          >
             Proximo
           </Botao>
         </div>
@@ -147,35 +141,29 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-      <h3 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+    <div className="grid gap-4">
+      <h3 className="text-[length:var(--fs-15)] font-semibold m-0">
         Passo 2 de 2 — Revisar e submeter
       </h3>
 
       {/* Resumo */}
-      <div style={{
-        border: 'var(--border)', borderRadius: 'var(--r-md)',
-        padding: 'var(--s-5)', background: 'var(--surface)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
-          <span style={{ fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)' }}>
+      <div className="border border-line rounded-md p-3 bg-surface">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">
             {p.glosas.length} glosa(s)
           </span>
-          <span className="num" style={{
-            fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-            fontVariantNumeric: 'tabular-nums', color: 'var(--danger)',
-          }}>
+          <span className="text-[length:var(--fs-15)] font-semibold tabular-nums text-danger">
             {centavosParaReais(totalCentavos)}
           </span>
         </div>
       </div>
 
       {/* Justificativa geral */}
-      <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-        <label htmlFor="justificativa-geral" style={{
-          fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-          lineHeight: 1.3, color: 'var(--text-muted)',
-        }}>
+      <div className="grid gap-1">
+        <label
+          htmlFor="justificativa-geral"
+          className="text-xs font-medium leading-tight text-text-muted"
+        >
           Justificativa geral
         </label>
         <textarea
@@ -184,55 +172,48 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
           value={justificativaGeral}
           onChange={(e) => setJustificativaGeral(e.target.value)}
           rows={4}
-          style={{
-            padding: 'var(--s-3) var(--s-4)',
-            border: 'var(--border)', borderRadius: 'var(--r-md)',
-            background: 'var(--surface)', color: 'var(--text)',
-            fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-            resize: 'vertical',
-          }}
+          className={cn(
+            'px-2 py-1.5 border border-line rounded-md',
+            'bg-surface text-text text-sm font-sans',
+            'resize-y',
+            'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
+          )}
         />
       </div>
 
       {/* Lista resumida das glosas com justificativas */}
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                   border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   overflow: 'hidden', background: 'var(--surface-sunken)' }}>
+      <ul className="list-none m-0 p-0 border border-line rounded-md overflow-hidden bg-surface-sunken">
         {p.glosas.map((g) => (
-          <li key={g.id} style={{
-            padding: 'var(--s-3) var(--s-4)',
-            borderBottom: 'var(--border)', fontSize: 'var(--fs-12)',
-          }}>
-            <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'center' }}>
-              <span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+          <li key={g.id} className="px-2 py-1.5 border-b border-line text-xs">
+            <div className="flex gap-1.5 items-center">
+              <span className="font-mono text-text-muted">
                 {g.guiaNumero}
               </span>
               <span>{g.pacienteNome}</span>
-              <span className="num" style={{
-                fontVariantNumeric: 'tabular-nums', color: 'var(--danger)',
-                marginInlineStart: 'auto',
-              }}>
+              <span className="tabular-nums text-danger ml-auto">
                 {centavosParaReais(g.valorGlosadoCentavos)}
               </span>
             </div>
-            <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-muted)',
-                        margin: 'var(--s-1) 0 0', lineHeight: 1.4 }}>
+            <p className="text-[length:var(--fs-11)] text-text-muted mt-0.5 mb-0 leading-snug">
               {justificativas[g.id]}
             </p>
           </li>
         ))}
       </ul>
 
-      <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'flex-end' }}>
-        <Botao variante="fantasma" altura={32} onClick={p.aoCancelar}>
+      <div className="flex gap-1.5 justify-end">
+        <Botao variante="fantasma" tamanho="md" onClick={p.aoCancelar}>
           Cancelar
         </Botao>
-        <Botao variante="secundario" altura={32} onClick={() => setPasso(1)}>
+        <Botao variante="secundario" tamanho="md" onClick={() => setPasso(1)}>
           Voltar
         </Botao>
-        <Botao variante="primario" altura={32}
+        <Botao
+          variante="primario"
+          tamanho="md"
           carregando={submetendo}
-          onClick={submeter}>
+          onClick={submeter}
+        >
           Submeter
         </Botao>
       </div>

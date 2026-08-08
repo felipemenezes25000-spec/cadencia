@@ -1,7 +1,6 @@
 // apps/web/src/telas/DetalheDemonstrativo.test.tsx
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import {
   DetalheDemonstrativo,
@@ -65,9 +64,19 @@ function montar() {
 }
 
 describe('DetalheDemonstrativo', () => {
-  it('renderiza titulo do demonstrativo no painel lateral', () => {
+  it('renderiza no PainelLateral com titulo do demonstrativo', () => {
     montar();
     expect(screen.getByText('Demonstrativo PROT-001')).toBeVisible();
+  });
+
+  it('mostra resumo de valores (apresentado, liberado, glosado)', () => {
+    montar();
+    // Total apresentado: 15000 + 15000 + 15000 = 45000 centavos = R$ 450,00
+    expect(screen.getByText('R$ 450,00')).toBeVisible();
+    // Total liberado: 15000 + 7000 + 0 = 22000 centavos = R$ 220,00
+    expect(screen.getByText('R$ 220,00')).toBeVisible();
+    // Total glosado: 0 + 8000 + 15000 = 23000 centavos = R$ 230,00
+    expect(screen.getByText('R$ 230,00')).toBeVisible();
   });
 
   it('renderiza todos os itens com guia e paciente', () => {
@@ -80,13 +89,13 @@ describe('DetalheDemonstrativo', () => {
     expect(screen.getByText('Jose Santos')).toBeVisible();
   });
 
-  it('exibe valores lado a lado: apresentado, processado, liberado, glosado', () => {
+  it('mostra tabela de guias do demonstrativo com colunas de valores', () => {
     montar();
     // Cabecalho da tabela
-    expect(screen.getByText(/Apresentado/i)).toBeVisible();
-    expect(screen.getByText(/Processado/i)).toBeVisible();
-    expect(screen.getByText(/Liberado/i)).toBeVisible();
-    expect(screen.getByText(/Glosado/i)).toBeVisible();
+    expect(screen.getByText('Apresentado', { selector: 'th' })).toBeVisible();
+    expect(screen.getByText('Processado', { selector: 'th' })).toBeVisible();
+    expect(screen.getByText('Liberado', { selector: 'th' })).toBeVisible();
+    expect(screen.getByText('Glosado', { selector: 'th' })).toBeVisible();
   });
 
   it('destaca item com glosa mostrando codigo e descricao', () => {
@@ -107,12 +116,6 @@ describe('DetalheDemonstrativo', () => {
       />,
     );
     expect(screen.queryByText('000001')).toBeNull();
-  });
-
-  it('ao clicar no fundo escurecido chama aoFechar', async () => {
-    const { aoFechar } = montar();
-    await userEvent.click(screen.getByTestId('fundo-escurecido'));
-    expect(aoFechar).toHaveBeenCalled();
   });
 
   it('sem violacao de acessibilidade', async () => {

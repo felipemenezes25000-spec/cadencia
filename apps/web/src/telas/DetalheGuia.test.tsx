@@ -43,16 +43,19 @@ function montar(aberto = true) {
 }
 
 describe('DetalheGuia', () => {
-  it('exibe o titulo com o numero da guia', () => {
+  it('renderiza no PainelLateral com titulo da guia', () => {
     montar();
     expect(screen.getByRole('dialog', { name: /Guia 000001/i })).toBeVisible();
   });
 
-  it('exibe os campos projetados: paciente, operadora, procedimento', () => {
+  it('mostra dados corretos: paciente, operadora, procedimento', () => {
     montar();
     expect(screen.getByText('Maria Souza')).toBeVisible();
     expect(screen.getByText('Unimed')).toBeVisible();
-    expect(screen.getByText('10102019')).toBeVisible();
+    // codigoProcedimento aparece tanto na info da guia quanto no historico de ajustes
+    const codigos = screen.getAllByText('10102019');
+    expect(codigos.length).toBeGreaterThanOrEqual(1);
+    expect(codigos[0]).toBeVisible();
     expect(screen.getByText('Consulta em consultorio')).toBeVisible();
   });
 
@@ -61,7 +64,7 @@ describe('DetalheGuia', () => {
     expect(screen.getByText('R$ 150,00')).toBeVisible();
   });
 
-  it('exibe dados do prestador: CNES, conselho, CBO', () => {
+  it('exibe dados TISS: CNES, conselho, CBO', () => {
     montar();
     expect(screen.getByText('1234567')).toBeVisible();
     expect(screen.getByText(/CRM/)).toBeVisible();
@@ -69,7 +72,7 @@ describe('DetalheGuia', () => {
     expect(screen.getByText('SP')).toBeVisible();
   });
 
-  it('exibe o historico de ajustes com campo, valores e motivo', () => {
+  it('mostra historico de ajustes com campo, valores e motivo', () => {
     montar();
     const secao = screen.getByRole('region', { name: /Historico de ajustes/i });
     expect(secao).toBeVisible();
@@ -80,7 +83,7 @@ describe('DetalheGuia', () => {
     expect(within(secao).getByText('Ana Financeiro')).toBeVisible();
   });
 
-  it('tem botao "Ajustar" que abre formulario', async () => {
+  it('tem botao Ajustar que abre formulario', async () => {
     montar();
     const botao = screen.getByRole('button', { name: /Ajustar/i });
     expect(botao).toBeVisible();

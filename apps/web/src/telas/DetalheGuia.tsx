@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { PainelLateral } from '../ui/PainelLateral';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { cn } from '../lib/cn';
 
 // -- Tipos ------------------------------------------------------------------
 
@@ -81,14 +82,11 @@ const CAMPOS_AJUSTAVEIS: readonly { value: string; label: string }[] = [
 
 function LinhaInfo({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between',
-                  padding: 'var(--s-2) 0', borderBottom: 'var(--border)' }}>
-      <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                     textTransform: 'uppercase', letterSpacing: '.04em' }}>
+    <div className="flex justify-between py-1 border-b border-line">
+      <span className="text-xs text-text-muted uppercase tracking-[0.04em]">
         {rotulo}
       </span>
-      <span className="num" style={{ fontSize: 'var(--fs-14)', fontFamily: 'var(--font-mono)',
-                                      fontVariantNumeric: 'tabular-nums' }}>
+      <span className="text-sm font-mono tabular-nums">
         {valor}
       </span>
     </div>
@@ -124,101 +122,77 @@ export function DetalheGuia(p: DetalheGuiaProps) {
       aberto={p.aberto}
       titulo={`Guia ${p.guia.numeroGuia}`}
       aoFechar={p.aoFechar}
+      largura="lg"
     >
-      <div style={{ display: 'grid', gap: 'var(--s-6)', marginTop: 'var(--s-4)' }}>
-        {/* Dados do paciente */}
-        <div>
-          <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                         textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Paciente
-          </span>
-          <p style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-medium)',
-                      margin: 'var(--s-1) 0 0' }}>
-            {p.guia.pacienteNome}
-          </p>
-        </div>
-
-        {/* Dados da operadora */}
-        <div>
-          <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                         textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Operadora
-          </span>
-          <p style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-medium)',
-                      margin: 'var(--s-1) 0 0' }}>
-            {p.guia.operadoraNome}
-          </p>
-        </div>
-
-        {/* Dados estruturados */}
-        <div style={{ display: 'grid', gap: 0 }}>
-          <LinhaInfo rotulo="Carteira" valor={p.guia.numeroCarteira} />
-          <div style={{ display: 'flex', justifyContent: 'space-between',
-                        padding: 'var(--s-2) 0', borderBottom: 'var(--border)' }}>
-            <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                           textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              Procedimento
-            </span>
-            <span style={{ fontSize: 'var(--fs-14)' }}>
-              {p.guia.nomeProcedimento}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between',
-                        padding: 'var(--s-2) 0', borderBottom: 'var(--border)' }}>
-            <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                           textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              Valor
-            </span>
-            <span className="num" style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                                            fontVariantNumeric: 'tabular-nums' }}>
+      <div className="grid gap-4 mt-1">
+        {/* Informacoes da guia */}
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-text">Informacoes da guia</h3>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <dt className="text-text-muted">Paciente</dt>
+            <dd className="text-text font-medium">{p.guia.pacienteNome}</dd>
+            <dt className="text-text-muted">Operadora</dt>
+            <dd className="text-text">{p.guia.operadoraNome}</dd>
+            <dt className="text-text-muted">Procedimento</dt>
+            <dd className="text-text">{p.guia.nomeProcedimento}</dd>
+            <dt className="text-text-muted">Codigo</dt>
+            <dd className="text-text font-mono text-xs tabular-nums">{p.guia.codigoProcedimento}</dd>
+            <dt className="text-text-muted">Data</dt>
+            <dd className="text-text font-mono text-xs tabular-nums">{p.guia.dataAtendimento}</dd>
+            <dt className="text-text-muted">Valor</dt>
+            <dd className="text-text font-mono font-semibold tabular-nums">
               {centavosParaReais(p.guia.valorCentavos)}
-            </span>
+            </dd>
+          </dl>
+        </section>
+
+        {/* Dados TISS */}
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-text">Dados TISS</h3>
+          <div className="rounded-md bg-surface-raised p-3 font-mono text-xs overflow-x-auto">
+            <div className="grid gap-0">
+              <LinhaInfo rotulo="Carteira" valor={p.guia.numeroCarteira} />
+              <LinhaInfo rotulo="CNES" valor={p.guia.cnes} />
+              <div className="flex justify-between py-1 border-b border-line">
+                <span className="text-xs text-text-muted uppercase tracking-[0.04em]">
+                  Conselho
+                </span>
+                <span className="text-sm font-mono tabular-nums">
+                  <span>{p.guia.conselhoProfissional}</span>{' '}
+                  <span>{p.guia.numeroConselho}</span>{' '}
+                  <span>{p.guia.ufConselho}</span>
+                </span>
+              </div>
+              <LinhaInfo rotulo="CBOS" valor={p.guia.cbos} />
+              <LinhaInfo rotulo="Tabela" valor={p.guia.codigoTabela} />
+            </div>
           </div>
-          <LinhaInfo rotulo="Data" valor={p.guia.dataAtendimento} />
-          <LinhaInfo rotulo="CNES" valor={p.guia.cnes} />
-          <div style={{ display: 'flex', justifyContent: 'space-between',
-                        padding: 'var(--s-2) 0', borderBottom: 'var(--border)' }}>
-            <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                           textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              Conselho
-            </span>
-            <span className="num" style={{ fontSize: 'var(--fs-14)', fontFamily: 'var(--font-mono)',
-                                            fontVariantNumeric: 'tabular-nums' }}>
-              <span>{p.guia.conselhoProfissional}</span>{' '}
-              <span>{p.guia.numeroConselho}</span>{' '}
-              <span>{p.guia.ufConselho}</span>
-            </span>
-          </div>
-          <LinhaInfo rotulo="CBOS" valor={p.guia.cbos} />
-          <LinhaInfo rotulo="Tabela" valor={p.guia.codigoTabela} />
-        </div>
+        </section>
 
         {/* Botao ajustar */}
         {!ajustando ? (
-          <Botao variante="secundario" altura={32} onClick={() => setAjustando(true)}>
+          <Botao variante="secundario" tamanho="md" onClick={() => setAjustando(true)}>
             Ajustar
           </Botao>
         ) : (
-          <div style={{ display: 'grid', gap: 'var(--s-4)',
-                        padding: 'var(--s-4)', border: 'var(--border)',
-                        borderRadius: 'var(--r-md)', background: 'var(--surface-sunken)' }}>
-            <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-              <label htmlFor="ajuste-campo" style={{
-                fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-                lineHeight: 1.3, color: 'var(--text-muted)',
-              }}>
+          <div className="grid gap-2 p-3 border border-line rounded-md bg-surface-sunken">
+            <div className="grid gap-1">
+              <label
+                htmlFor="ajuste-campo"
+                className="text-xs font-medium leading-tight text-text-muted"
+              >
                 Campo alterado
               </label>
               <select
-                id="ajuste-campo" value={campoAlterado}
+                id="ajuste-campo"
+                value={campoAlterado}
                 onChange={(e) => setCampoAlterado(e.target.value)}
                 aria-label="Campo alterado"
-                style={{
-                  height: 32, padding: '0 var(--s-4)',
-                  border: 'var(--border)', borderRadius: 'var(--r-md)',
-                  background: 'var(--surface)', color: 'var(--text)',
-                  fontSize: 'var(--fs-14)',
-                }}
+                className={cn(
+                  'h-8 px-2 border border-line rounded-md',
+                  'bg-surface text-text text-sm',
+                  'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
+                )}
               >
                 <option value="">Selecione</option>
                 {CAMPOS_AJUSTAVEIS.map((c) => (
@@ -226,35 +200,39 @@ export function DetalheGuia(p: DetalheGuiaProps) {
                 ))}
               </select>
             </div>
-            <Campo rotulo="Novo valor" value={valorNovo}
+            <Campo
+              rotulo="Novo valor"
+              value={valorNovo}
               onChange={(e) => setValorNovo(e.target.value)}
-              aria-label="Novo valor" />
-            <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-              <label htmlFor="ajuste-motivo" style={{
-                fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-                lineHeight: 1.3, color: 'var(--text-muted)',
-              }}>
+              aria-label="Novo valor"
+            />
+            <div className="grid gap-1">
+              <label
+                htmlFor="ajuste-motivo"
+                className="text-xs font-medium leading-tight text-text-muted"
+              >
                 Motivo
               </label>
               <textarea
-                id="ajuste-motivo" value={motivo}
+                id="ajuste-motivo"
+                value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
-                aria-label="Motivo" required
+                aria-label="Motivo"
+                required
                 rows={3}
-                style={{
-                  padding: 'var(--s-3) var(--s-4)',
-                  border: 'var(--border)', borderRadius: 'var(--r-md)',
-                  background: 'var(--surface)', color: 'var(--text)',
-                  fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-                  resize: 'vertical',
-                }}
+                className={cn(
+                  'px-2 py-1.5 border border-line rounded-md',
+                  'bg-surface text-text text-sm font-sans',
+                  'resize-y',
+                  'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
+                )}
               />
             </div>
-            <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
-              <Botao variante="primario" altura={32} onClick={confirmarAjuste}>
+            <div className="flex gap-1.5">
+              <Botao variante="primario" tamanho="md" onClick={confirmarAjuste}>
                 Confirmar ajuste
               </Botao>
-              <Botao variante="fantasma" altura={32} onClick={limparAjuste}>
+              <Botao variante="fantasma" tamanho="md" onClick={limparAjuste}>
                 Cancelar
               </Botao>
             </div>
@@ -263,43 +241,29 @@ export function DetalheGuia(p: DetalheGuiaProps) {
 
         {/* Historico de ajustes */}
         {p.guia.ajustes.length > 0 ? (
-          <section aria-label="Historico de ajustes" style={{ display: 'grid', gap: 'var(--s-3)' }}>
-            <h3 style={{ fontSize: 'var(--fs-13)', fontWeight: 'var(--fw-semibold)',
-                         textTransform: 'uppercase', letterSpacing: '.04em',
-                         color: 'var(--text-muted)', margin: 0 }}>
+          <section aria-label="Historico de ajustes" className="grid gap-1.5">
+            <h3 className="text-[length:var(--fs-13)] font-semibold uppercase tracking-[0.04em] text-text-muted m-0">
               Historico de ajustes
             </h3>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                         border: 'var(--border)', borderRadius: 'var(--r-sm)',
-                         overflow: 'hidden', background: 'var(--surface-sunken)' }}>
+            <ul className="list-none m-0 p-0 border border-line rounded-sm overflow-hidden bg-surface-sunken">
               {p.guia.ajustes.map((aj) => (
-                <li key={aj.id} style={{
-                  padding: 'var(--s-3) var(--s-4)', borderBottom: 'var(--border)',
-                  fontSize: 'var(--fs-13)',
-                }}>
-                  <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'baseline' }}>
-                    <span className="num" style={{ fontFamily: 'var(--font-mono)',
-                                                    fontVariantNumeric: 'tabular-nums',
-                                                    color: 'var(--accent)' }}>
+                <li key={aj.id} className="px-2 py-1.5 border-b border-line text-[length:var(--fs-13)]">
+                  <div className="flex gap-1.5 items-baseline">
+                    <span className="font-mono tabular-nums text-accent">
                       {aj.campoAlterado}
                     </span>
-                    <span className="num" style={{ fontFamily: 'var(--font-mono)',
-                                                    fontVariantNumeric: 'tabular-nums',
-                                                    textDecoration: 'line-through',
-                                                    color: 'var(--text-faint)' }}>
+                    <span className="font-mono tabular-nums line-through text-text-faint">
                       {aj.valorAnterior}
                     </span>
-                    <span style={{ color: 'var(--text-muted)' }}>&rarr;</span>
-                    <span className="num" style={{ fontFamily: 'var(--font-mono)',
-                                                    fontVariantNumeric: 'tabular-nums' }}>
+                    <span className="text-text-muted">&rarr;</span>
+                    <span className="font-mono tabular-nums">
                       {aj.valorNovo}
                     </span>
                   </div>
-                  <div style={{ color: 'var(--text-muted)', marginTop: 'var(--s-1)' }}>
+                  <div className="text-text-muted mt-0.5">
                     {aj.motivo}
                   </div>
-                  <div style={{ color: 'var(--text-faint)', fontSize: 'var(--fs-11)',
-                                marginTop: 'var(--s-1)' }}>
+                  <div className="text-text-faint text-[length:var(--fs-11)] mt-0.5">
                     <span>{aj.autorNome}</span>{' — '}<span>{aj.criadoEm}</span>
                   </div>
                 </li>

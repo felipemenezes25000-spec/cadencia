@@ -120,7 +120,7 @@ describe('FormRecursoGlosa', () => {
     expect(aoCancelar).toHaveBeenCalled();
   });
 
-  it('sem violacao de acessibilidade no passo 1', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <FormRecursoGlosa
         glosas={GLOSAS}
