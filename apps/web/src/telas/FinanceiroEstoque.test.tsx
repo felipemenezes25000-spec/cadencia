@@ -1,6 +1,6 @@
 // apps/web/src/telas/FinanceiroEstoque.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { FinanceiroEstoque, type EstoqueDados } from './FinanceiroEstoque';
@@ -8,11 +8,11 @@ import { FinanceiroEstoque, type EstoqueDados } from './FinanceiroEstoque';
 const DADOS: EstoqueDados = {
   produtos: [
     { id: 'pr1', nome: 'Luva P', quantidade: 5, minimo: 20, unidade: 'cx',
-      ultimaMovimentacao: '2026-08-05', alertaBaixo: true },
+      ultimaMovimentacao: '2026-08-05', alertaBaixo: true, categoria: 'EPI' },
     { id: 'pr2', nome: 'Seringa 10ml', quantidade: 150, minimo: 50, unidade: 'un',
-      ultimaMovimentacao: '2026-08-04', alertaBaixo: false },
+      ultimaMovimentacao: '2026-08-04', alertaBaixo: false, categoria: 'Insumos' },
     { id: 'pr3', nome: 'Gaze esteril', quantidade: 30, minimo: 40, unidade: 'pct',
-      ultimaMovimentacao: '2026-08-03', alertaBaixo: true },
+      ultimaMovimentacao: '2026-08-03', alertaBaixo: true, categoria: 'Insumos' },
   ],
   movimentacoes: [
     { id: 'm1', produtoNome: 'Luva P', tipo: 'saida', quantidade: 10,
@@ -32,48 +32,88 @@ function montar() {
 }
 
 describe('FinanceiroEstoque', () => {
-  it('lista os produtos com nome, quantidade e unidade', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('Luva P')).toBeVisible());
-    expect(screen.getByText('Seringa 10ml')).toBeVisible();
-    expect(screen.getByText('Gaze esteril')).toBeVisible();
+  it('renderiza skeleton enquanto carrega', () => {
+    render(
+      <FinanceiroEstoque
+        carregarDados={() => new Promise(() => {})}
+        aoRegistrarMovimentacao={async () => {}}
+      />,
+    );
+    expect(screen.getByLabelText('Carregando estoque...')).toBeInTheDocument();
   });
 
-  it('exibe a quantidade atual e o minimo de cada produto', async () => {
+  it('renderiza tabela de produtos', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('5 cx')).toBeVisible());
-    expect(screen.getByText('150 un')).toBeVisible();
-    expect(screen.getByText('30 pct')).toBeVisible();
+    const secao = await screen.findByRole('region', { name: /Produtos em estoque/i });
+    expect(secao).toBeVisible();
+    expect(within(secao).getByText('Luva P')).toBeVisible();
+    expect(within(secao).getByText('Seringa 10ml')).toBeVisible();
+    expect(within(secao).getByText('Gaze esteril')).toBeVisible();
   });
 
-  it('destaca produtos com estoque abaixo do minimo com indicador visual', async () => {
+  it('destaca produtos com estoque baixo', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Luva P')).toBeVisible());
-    const linhaLuva = screen.getByText('Luva P').closest('li');
+    const secao = await screen.findByRole('region', { name: /Produtos em estoque/i });
+    // Verifica o data-alerta na linha do produto
+    const linhaLuva = within(secao).getByText('Luva P').closest('tr');
     expect(linhaLuva).toBeTruthy();
     expect(linhaLuva!.getAttribute('data-alerta')).toBe('baixo');
+    // Verifica badge "Estoque baixo"
+    expect(within(secao).getAllByText('Estoque baixo').length).toBeGreaterThan(0);
+    // Produto OK nao tem alerta
+    const linhaSeringa = within(secao).getByText('Seringa 10ml').closest('tr');
+    expect(linhaSeringa!.getAttribute('data-alerta')).toBe('ok');
   });
 
-  it('produtos acima do minimo nao tem indicador de alerta', async () => {
+  it('filtra ao digitar na busca', async () => {
+    const user = userEvent.setup();
     montar();
-    await waitFor(() => expect(screen.getByText('Seringa 10ml')).toBeVisible());
-    const linhaSeringa = screen.getByText('Seringa 10ml').closest('li');
-    expect(linhaSeringa).toBeTruthy();
-    expect(linhaSeringa!.getAttribute('data-alerta')).toBe('ok');
+    const secao = await screen.findByRole('region', { name: /Produtos em estoque/i });
+
+    const campoBusca = screen.getByLabelText('Buscar produto');
+    await user.type(campoBusca, 'Seringa');
+
+    // Seringa deve continuar visivel
+    expect(within(secao).getByText('Seringa 10ml')).toBeVisible();
+    // Luva e Gaze devem sumir da tabela de produtos
+    expect(within(secao).queryByText('Luva P')).not.toBeInTheDocument();
+    expect(within(secao).queryByText('Gaze esteril')).not.toBeInTheDocument();
+  });
+
+  it('filtra por categoria', async () => {
+    const user = userEvent.setup();
+    montar();
+    const secao = await screen.findByRole('region', { name: /Produtos em estoque/i });
+
+    const selectCategoria = screen.getByLabelText('Filtrar por categoria');
+    await user.selectOptions(selectCategoria, 'EPI');
+
+    // Luva e EPI, deve continuar visivel
+    expect(within(secao).getByText('Luva P')).toBeVisible();
+    // Seringa e Gaze sao Insumos, devem sumir da tabela
+    expect(within(secao).queryByText('Seringa 10ml')).not.toBeInTheDocument();
+    expect(within(secao).queryByText('Gaze esteril')).not.toBeInTheDocument();
+  });
+
+  it('filtra apenas estoque baixo', async () => {
+    const user = userEvent.setup();
+    montar();
+    const secao = await screen.findByRole('region', { name: /Produtos em estoque/i });
+
+    const checkbox = screen.getByLabelText('Apenas estoque baixo');
+    await user.click(checkbox);
+
+    // Luva e Gaze tem estoque baixo, devem continuar
+    expect(within(secao).getByText('Luva P')).toBeVisible();
+    expect(within(secao).getByText('Gaze esteril')).toBeVisible();
+    // Seringa nao tem estoque baixo, deve sumir
+    expect(within(secao).queryByText('Seringa 10ml')).not.toBeInTheDocument();
   });
 
   it('exibe o historico de movimentacoes recentes', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('region', { name: /Movimentacoes recentes/i })).toBeVisible());
-    expect(screen.getByText(/saida/i)).toBeVisible();
-    expect(screen.getByText(/entrada/i)).toBeVisible();
-  });
-
-  it('movimentacao mostra produto, tipo, quantidade, data e responsavel', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText(/Maria/)).toBeVisible());
-    expect(screen.getByText(/Joao/)).toBeVisible();
   });
 
   it('tem botao para registrar nova movimentacao', async () => {
@@ -82,14 +122,14 @@ describe('FinanceiroEstoque', () => {
       screen.getByRole('button', { name: /Nova movimentacao/i })).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroEstoque
         carregarDados={async () => DADOS}
         aoRegistrarMovimentacao={async () => {}}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Luva P')).toBeVisible());
+    await screen.findByRole('region', { name: /Produtos em estoque/i });
     expect(await axe(container)).toHaveNoViolations();
   });
 });

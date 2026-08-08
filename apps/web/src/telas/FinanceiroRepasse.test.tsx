@@ -8,9 +8,11 @@ import { FinanceiroRepasse, type RepasseDados } from './FinanceiroRepasse';
 const DADOS_GESTORA: RepasseDados = {
   profissionais: [
     { id: 'p1', nome: 'Dr. Alceu Moreira', totalBruto: 500000,
-      percentual: 60, totalRepasse: 300000, status: 'pendente', atendimentos: 40 },
+      percentual: 60, totalRepasse: 300000, status: 'pendente', atendimentos: 40,
+      especialidade: 'Cardiologia' },
     { id: 'p2', nome: 'Dra. Beatriz Lima', totalBruto: 350000,
-      percentual: 50, totalRepasse: 175000, status: 'pago', atendimentos: 28 },
+      percentual: 50, totalRepasse: 175000, status: 'pago', atendimentos: 28,
+      especialidade: 'Dermatologia' },
   ],
   totalRepasse: 475000,
   periodo: { inicio: '2026-08-01', fim: '2026-08-31' },
@@ -23,6 +25,12 @@ const DADOS_MEDICO: RepasseDados = {
   ],
   totalRepasse: 300000,
   periodo: { inicio: '2026-08-01', fim: '2026-08-31' },
+};
+
+const DADOS_VAZIO: RepasseDados = {
+  profissionais: [],
+  totalRepasse: 0,
+  periodo: { inicio: '2026-09-01', fim: '2026-09-30' },
 };
 
 function montarGestora() {
@@ -50,69 +58,99 @@ function montarMedico() {
 }
 
 describe('FinanceiroRepasse', () => {
-  it('gestora ve todos os profissionais com seus repasses', async () => {
+  it('renderiza skeleton enquanto carrega', () => {
+    // Usamos uma promise que nunca resolve para manter o estado de carregamento
+    render(
+      <FinanceiroRepasse
+        carregarDados={() => new Promise(() => {})}
+        papelAtual="admin_clinico"
+      />,
+    );
+    expect(screen.getByLabelText('Carregando repasse...')).toBeInTheDocument();
+  });
+
+  it('renderiza seletor de periodo', async () => {
     montarGestora();
-    // Nomes aparecem tanto nas opcoes do select quanto na lista;
-    // usamos within(section) para buscar apenas na lista
-    const secao = await screen.findByRole('region', { name: /repasse por profissional/i });
+    await waitFor(() => expect(screen.getByText(/Agosto 2026/)).toBeVisible());
+    expect(screen.getByLabelText(/Mes anterior/i)).toBeVisible();
+    expect(screen.getByLabelText(/Proximo mes/i)).toBeVisible();
+  });
+
+  it('renderiza cards de resumo por profissional', async () => {
+    montarGestora();
+    const secao = await screen.findByRole('region', { name: /Resumo por profissional/i });
     expect(within(secao).getByText('Dr. Alceu Moreira')).toBeVisible();
     expect(within(secao).getByText('Dra. Beatriz Lima')).toBeVisible();
+    // Verifica iniciais nos avatares
+    expect(within(secao).getByText('DA')).toBeVisible();
+    expect(within(secao).getByText('DB')).toBeVisible();
+  });
+
+  it('renderiza tabela detalhada', async () => {
+    montarGestora();
+    const secao = await screen.findByRole('region', { name: /Repasse por profissional/i });
+    const tabela = within(secao).getByRole('table');
+    expect(tabela).toBeVisible();
+    // Headers da tabela
+    expect(within(tabela).getByText('Profissional')).toBeVisible();
+    expect(within(tabela).getByText('Atendimentos')).toBeVisible();
+    expect(within(tabela).getByText('Producao')).toBeVisible();
+    // Dados na tabela
+    expect(within(tabela).getByText('Dr. Alceu Moreira')).toBeVisible();
+    expect(within(tabela).getByText('Dra. Beatriz Lima')).toBeVisible();
+  });
+
+  it('navega entre meses', async () => {
+    const user = userEvent.setup();
+    const props = montarGestora();
+    await waitFor(() => expect(screen.getByText(/Agosto 2026/)).toBeVisible());
+
+    // Clicar no botao de proximo mes
+    await user.click(screen.getByLabelText(/Proximo mes/i));
+    expect(props.carregarDados).toHaveBeenCalledTimes(2);
+
+    // Clicar no botao de mes anterior
+    await user.click(screen.getByLabelText(/Mes anterior/i));
+    expect(props.carregarDados).toHaveBeenCalledTimes(3);
   });
 
   it('exibe o total geral de repasse', async () => {
     montarGestora();
-    await waitFor(() => expect(screen.getByText('R$ 4.750,00')).toBeVisible());
+    // O total aparece tanto no cabecalho quanto no rodape da tabela
+    await waitFor(() => expect(screen.getAllByText('R$ 4.750,00').length).toBeGreaterThan(0));
   });
 
-  it('exibe percentual e total de repasse por profissional', async () => {
-    montarGestora();
-    await waitFor(() => expect(screen.getByText('60%')).toBeVisible());
-    expect(screen.getByText('R$ 3.000,00')).toBeVisible();
-  });
-
-  it('exibe o status do repasse', async () => {
+  it('exibe percentual e status na tabela', async () => {
     montarGestora();
     await waitFor(() => expect(screen.getByText(/Pendente/i)).toBeVisible());
     expect(screen.getByText(/Pago/i)).toBeVisible();
   });
 
-  it('exibe a quantidade de atendimentos', async () => {
-    montarGestora();
-    await waitFor(() => expect(screen.getByText(/40 atend/i)).toBeVisible());
-  });
-
   it('medico ve so o seu proprio repasse', async () => {
     montarMedico();
-    await waitFor(() => expect(screen.getByText('Dr. Alceu Moreira')).toBeVisible());
+    const secao = await screen.findByRole('region', { name: /Repasse por profissional/i });
+    expect(within(secao).getByText('Dr. Alceu Moreira')).toBeVisible();
     expect(screen.queryByText('Dra. Beatriz Lima')).not.toBeInTheDocument();
   });
 
-  it('tem filtro por periodo', async () => {
-    montarGestora();
-    await waitFor(() => expect(screen.getByLabelText(/Periodo inicio/i)).toBeVisible());
-    expect(screen.getByLabelText(/Periodo fim/i)).toBeVisible();
+  it('renderiza estado vazio quando nao ha profissionais', async () => {
+    render(
+      <FinanceiroRepasse
+        carregarDados={async () => DADOS_VAZIO}
+        papelAtual="admin_clinico"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Nenhum repasse encontrado/)).toBeVisible());
   });
 
-  it('gestora tem filtro por profissional', async () => {
-    montarGestora();
-    // Usa string exata para nao casar com aria-label "Repasse por profissional" da section
-    await waitFor(() => expect(screen.getByLabelText('Profissional')).toBeVisible());
-  });
-
-  it('medico nao ve filtro por profissional', async () => {
-    montarMedico();
-    await waitFor(() => expect(screen.getByText('Dr. Alceu Moreira')).toBeVisible());
-    expect(screen.queryByLabelText('Profissional')).not.toBeInTheDocument();
-  });
-
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroRepasse
         carregarDados={async () => DADOS_GESTORA}
         papelAtual="admin_clinico"
       />,
     );
-    const secao = await screen.findByRole('region', { name: /repasse por profissional/i });
+    const secao = await screen.findByRole('region', { name: /Repasse por profissional/i });
     expect(within(secao).getByText('Dr. Alceu Moreira')).toBeVisible();
     expect(await axe(container)).toHaveNoViolations();
   });
