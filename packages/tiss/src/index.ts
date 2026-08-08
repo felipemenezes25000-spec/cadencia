@@ -62,3 +62,16 @@ export { serializeLoteConsulta, type SerializeLoteResult } from './serializer/se
 export { encodeIso8859, type EncodeResult } from './serializer/encode-iso8859';
 export { computeTissHash } from './serializer/compute-tiss-hash';
 export { XmlBuilder } from './serializer/xml-builder';
+
+export type { TissSubmissionReceipt, TissTransport } from './transport/types';
+export { createTissArquivoTransport, type TissArquivoOptions } from './transport/tiss-arquivo';
+export {
+  getTransportIds, getTransportFactory, TISS_TRANSPORT_REGISTRY,
+} from './transport/registry';
+export {
+  createFakeTissArquivoTransport,
+  type FakeTissArquivoOptions,
+  type FakeTissArquivoTransport,
+  type ModoFakeTiss,
+  type SubmittedBatch,
+} from './transport/tiss-arquivo-fake';
