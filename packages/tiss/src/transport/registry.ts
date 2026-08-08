@@ -1,18 +1,30 @@
 import type { TissTransport } from './types';
 import { createTissArquivoTransport, type TissArquivoOptions } from './tiss-arquivo';
+import {
+  createTissSoapTransport,
+  type TissSoapOptions,
+  type SoapNotConfigured,
+} from './tiss-soap';
+import type { Result } from '@cadencia/kernel';
 
 /**
  * Registry de transports TISS. Congelado em runtime.
  *
- * tiss-soap NAO existe ate haver credencial real de cliente (Fase 5).
- * Um teste de CI garante que este registry so conhece tiss-arquivo.
+ * tiss-arquivo: sempre disponivel — gera arquivo para upload manual no portal.
+ * tiss-soap: disponivel quando a operadora tem soap_endpoint configurado no
+ *   contrato. A factory retorna Result — se credenciais ausentes, o caller
+ *   recebe SoapNotConfigured em vez de exception.
  */
 
-type TransportFactory = (opts: TissArquivoOptions) => TissTransport;
+type ArquivoFactory = (opts: TissArquivoOptions) => TissTransport;
+type SoapFactory = (opts: TissSoapOptions) => Result<TissTransport, SoapNotConfigured>;
+
+export type TransportFactory = ArquivoFactory | SoapFactory;
 
 export const TISS_TRANSPORT_REGISTRY: Readonly<Record<string, TransportFactory>> =
   Object.freeze({
     'tiss-arquivo': createTissArquivoTransport,
+    'tiss-soap': createTissSoapTransport,
   });
 
 export function getTransportIds(): string[] {

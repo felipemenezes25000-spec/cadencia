@@ -81,6 +81,7 @@ export type { TissSubmissionReceipt, TissTransport } from './transport/types';
 export { createTissArquivoTransport, type TissArquivoOptions } from './transport/tiss-arquivo';
 export {
   getTransportIds, getTransportFactory, TISS_TRANSPORT_REGISTRY,
+  type TransportFactory,
 } from './transport/registry';
 export {
   createFakeTissArquivoTransport,
@@ -89,6 +90,11 @@ export {
   type ModoFakeTiss,
   type SubmittedBatch,
 } from './transport/tiss-arquivo-fake';
+export {
+  createTissSoapTransport,
+  type TissSoapOptions,
+  type SoapNotConfigured,
+} from './transport/tiss-soap';
 
 // Recurso de glosa (Fase 5)
 export {
