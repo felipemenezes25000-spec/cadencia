@@ -65,6 +65,9 @@ function resolveQueue(eventType: string): string {
   if (eventType.startsWith('APPOINTMENT_')) return `messaging.${eventType.toLowerCase()}`;
   if (eventType === 'ENCOUNTER_FINALIZED') return 'messaging.encounter_finalized';
 
+  // Eventos TISS
+  if (eventType === 'ENCOUNTER_AMENDED') return 'tiss.encounter_amended';
+
   // Eventos financeiros
   if (eventType === 'PAYMENT_RECEIVED') return 'payments.payment_received';
   if (eventType === 'PAYMENT_LINK_CREATED') return 'payments.payment_link_created';

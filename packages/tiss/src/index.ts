@@ -36,3 +36,5 @@ export type {
   ProjectionError, DadosAusentesError, TussNaoVigenteError,
 } from './project-guia';
 export { projectGuiaConsulta } from './project-guia';
+
+export { reprojectGuiaOnAmend, type ReprojectAction, type ReprojectError } from './reproject-guia';
