@@ -1,79 +1,111 @@
-// apps/web/src/telas/FinanceiroLayout.tsx
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "../lib/cn";
+import { PageHeader } from "../ui/PageHeader";
+import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
+
+/* ── Tipos exportados ──────────────────────────────────────────────── */
 
 export type AbaFinanceiro =
-  | 'visao' | 'caixa' | 'a-receber' | 'a-pagar'
-  | 'recebimentos' | 'repasse' | 'convenios' | 'estoque';
+  | "visao"
+  | "caixa"
+  | "a-receber"
+  | "a-pagar"
+  | "recebimentos"
+  | "repasse"
+  | "convenios"
+  | "estoque";
 
 export interface AbaConfig {
-  readonly slug: AbaFinanceiro;
+  readonly value: AbaFinanceiro;
   readonly rotulo: string;
   readonly href: string;
 }
 
 export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
-  { slug: 'visao',         rotulo: 'Visao',         href: '/financeiro/visao' },
-  { slug: 'caixa',         rotulo: 'Caixa',         href: '/financeiro/caixa' },
-  { slug: 'a-receber',     rotulo: 'A receber',     href: '/financeiro/a-receber' },
-  { slug: 'a-pagar',       rotulo: 'A pagar',       href: '/financeiro/a-pagar' },
-  { slug: 'recebimentos',  rotulo: 'Recebimentos',  href: '/financeiro/recebimentos' },
-  { slug: 'repasse',       rotulo: 'Repasse',       href: '/financeiro/repasse' },
-  { slug: 'convenios',     rotulo: 'Convenios',     href: '/financeiro/convenios' },
-  { slug: 'estoque',       rotulo: 'Estoque',       href: '/financeiro/estoque' },
+  { value: "visao", rotulo: "Visao geral", href: "/financeiro" },
+  { value: "caixa", rotulo: "Caixa", href: "/financeiro/caixa" },
+  { value: "a-receber", rotulo: "A receber", href: "/financeiro/a-receber" },
+  { value: "a-pagar", rotulo: "A pagar", href: "/financeiro/a-pagar" },
+  {
+    value: "recebimentos",
+    rotulo: "Recebimentos",
+    href: "/financeiro/recebimentos",
+  },
+  { value: "repasse", rotulo: "Repasse", href: "/financeiro/repasse" },
+  { value: "convenios", rotulo: "Convenios", href: "/financeiro/convenios" },
+  { value: "estoque", rotulo: "Estoque", href: "/financeiro/estoque" },
 ];
 
+/* ── Props ─────────────────────────────────────────────────────────── */
+
 export interface FinanceiroLayoutProps {
-  readonly abaAtiva: AbaFinanceiro;
-  readonly aoNavegar: (aba: AbaFinanceiro) => void;
   readonly children: ReactNode;
+  /** Contagem de recebimentos pendentes (badge na aba "A receber") */
+  readonly pendentesReceber?: number;
+  /** Contagem de pagamentos pendentes (badge na aba "A pagar") */
+  readonly pendentesPagar?: number;
+  /** Contagem de itens com estoque baixo (badge na aba "Estoque") */
+  readonly baixoEstoque?: number;
 }
 
-export function FinanceiroLayout({ abaAtiva, aoNavegar, children }: FinanceiroLayoutProps) {
+/* ── Componente ────────────────────────────────────────────────────── */
+
+export function FinanceiroLayout({
+  children,
+  pendentesReceber,
+  pendentesPagar,
+  baixoEstoque,
+}: FinanceiroLayoutProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  /* Determina aba ativa a partir do pathname */
+  const abaAtiva =
+    ABAS_FINANCEIRO.find((a) => a.href === pathname)?.value ?? "visao";
+
+  /* Mapa de badges por valor de aba */
+  const badges: Partial<Record<AbaFinanceiro, number | undefined>> = {
+    "a-receber": pendentesReceber,
+    "a-pagar": pendentesPagar,
+    estoque: baixoEstoque,
+  };
+
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)',
-                  maxWidth: 1120, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
-        Financeiro
-      </h1>
+    <div className="space-y-6 p-6 max-sm:p-4">
+      <PageHeader titulo="Financeiro" semBreadcrumb />
 
-      <nav aria-label="Sub-navegacao financeiro">
-        <ul style={{ display: 'flex', gap: 'var(--s-1)', listStyle: 'none',
-                     margin: 0, padding: 0, borderBottom: 'var(--border)',
-                     overflowX: 'auto' }}>
-          {ABAS_FINANCEIRO.map((aba) => {
-            const ativo = aba.slug === abaAtiva;
-            return (
-              <li key={aba.slug}>
-                <a
-                  href={aba.href}
-                  aria-current={ativo ? 'page' : undefined}
-                  onClick={(e) => { e.preventDefault(); aoNavegar(aba.slug); }}
-                  style={{
-                    display: 'inline-block',
-                    padding: `var(--s-4) var(--s-5)`,
-                    color: ativo ? 'var(--text)' : 'var(--text-muted)',
-                    fontWeight: ativo ? 'var(--fw-medium)' : 'var(--fw-regular)',
-                    fontSize: 'var(--fs-14)',
-                    textDecoration: 'none',
-                    borderBottom: ativo
-                      ? '2px solid var(--accent)'
-                      : '2px solid transparent',
-                    whiteSpace: 'nowrap',
-                    minHeight: 24,
-                  }}
-                >
-                  {aba.rotulo}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <Tabs
+        value={abaAtiva}
+        onValueChange={(value: string) => {
+          const aba = ABAS_FINANCEIRO.find((a) => a.value === value);
+          if (aba) router.push(aba.href);
+        }}
+      >
+        <div
+          className={cn(
+            "overflow-x-auto scrollbar-thin",
+            "-mx-6 px-6 max-sm:-mx-4 max-sm:px-4",
+          )}
+        >
+          <TabsList className="min-w-max">
+            {ABAS_FINANCEIRO.map((aba) => (
+              <TabsTrigger
+                key={aba.value}
+                value={aba.value}
+                badge={badges[aba.value]}
+              >
+                {aba.rotulo}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      </Tabs>
 
-      <div>{children}</div>
+      {/* Conteudo da rota filha */}
+      {children}
     </div>
   );
 }
