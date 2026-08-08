@@ -1,6 +1,6 @@
 export const meta = {
-  name: 'executa-fase1-cadencia',
-  description: 'Executa as 79 tarefas da Fase 1 (O dia) em sequencia, SO implementacao: um agente por tarefa. Verificacao pela suite de testes de cada tarefa. Para no primeiro BLOCKED.',
+  name: 'executa-fase4-cadencia',
+  description: 'Executa as 72 tarefas da Fase 4 (Os convenios) em sequencia, SO implementacao: um agente por tarefa. Para no primeiro BLOCKED.',
   phases: [
     { title: 'Execucao', detail: 'uma tarefa por vez, so implementacao' },
     { title: 'Relatorio', detail: 'consolidar o que aconteceu' },
@@ -9,48 +9,60 @@ export const meta = {
 
 const RAIZ = 'C:/Users/Felipe/Downloads/novo projeto'
 
-// Fase 1 — retomada na 21. As tarefas 1 a 20 ja estao commitadas e verdes; a 20
-// foi desbloqueada com as migrations 0038 (version_id ambiguo em finalize_encounter)
-// e 0039 (excecao append-only da ai_assistance declarada por COMMENT).
-// Numeradas ate 79 sem lacuna, ja ordenadas por dependencia
-// no proprio plano. Sequencial: cada uma commita e a seguinte enxerga o resultado.
 const TAREFAS = []
-for (let n = 38; n <= 79; n++) TAREFAS.push(String(n))
+for (let n = 1; n <= 72; n++) TAREFAS.push(String(n))
 
 const CONTEXTO = [
-'# PROJETO CADENCIA — Fase 1 ("O dia")',
+'# PROJETO CADENCIA — Fase 4 ("Os convenios")',
 '',
-'Cadencia e um SaaS multi-tenant brasileiro de prontuario eletronico e gestao para clinicas medicas. Voce trabalha na **Fase 1**, a primeira com telas e a primeira vendavel sozinha: ao fim dela uma clinica particular de 1 a 5 medicos substitui papel, planilha e agenda de parede, emite receita e atestado assinados digitalmente, e atende pedido judicial de prontuario integral com um comando.',
+'Cadencia e um SaaS multi-tenant brasileiro de prontuario eletronico e gestao para clinicas medicas. Voce trabalha na **Fase 4**, que entrega a integracao TISS: operadora de convenio, guia como projecao do atendimento, lote XML ISO-8859-1 com hash MD5 proprietario, exportacao de arquivo, telas de Convenios.',
 '',
 '**Diretorio:** `' + RAIZ + '` · **Branch:** `fase-0-fundacao`',
 '',
-'## A Fase 0 esta CONSTRUIDA e verde',
+'## As Fases 0, 1, 2 e 3 estao CONSTRUIDAS e verdes',
 '',
-'65 commits, 23 migrations, 433 testes passando (142 unidade, 214 integracao, 77 isolamento). Ela entregou:',
+'- **Fase 0** (Fundacao): 48 tarefas, 23 migrations, kernel/db/audit/authn/authz/catalogs/isolamento',
+'- **Fase 1** ("O dia"): 79 tarefas, 44 migrations (0024-0067), prontuario/agenda/pacientes/assinatura/documentos/prescricao/app shell/design system/API',
+'- **Fase 2** ("A conversa e o caixa"): 60 tarefas, 18 migrations (0068-0085), WhatsApp bidirecional, automacoes, financeiro basico',
+'- **Fase 3** ("O dinheiro"): 74 tarefas, 24 migrations (0086-0109), financeiro completo, repasse medico, estoque, Desempenho',
 '',
-'- **Isolamento multi-tenant** por RLS `FORCE` com verificacao de vinculo, FK sempre composta `(tenant_id, id)`, e a suite `test:iso` que descobre tabelas do catalogo e reprova quem esquecer',
-'- **`withTenantTx(actor, fn, pool?)`** em `packages/db/src/tx.ts` — o UNICO lugar do sistema que abre transacao, e o unico autorizado a gravar as GUCs de contexto (`app.tenant_id` e companhia). O comando `pnpm lint:session-guc` reprova qualquer atribuicao dessas GUCs fora desse arquivo. (Esta frase evita de proposito escrever o comando SQL literal: o lint varre o repositorio inteiro por texto, e ate um prompt que o cita seria reprovado — o que ja aconteceu uma vez.)',
-'- **`kernel`**: `Result`, erros de dominio, `uuidv7`, `Clock`, `Money` em centavos, canonicalizacao JCS (`canonicalHash`, `CANONICAL_VERSION = jcs-1`), validadores CPF/CNPJ/CNS/CRM',
-'- **Trilha de auditoria**: `audit.event` particionada e append-only por trigger, canal A (dentro da transacao), canal B (fora dela, sobrevive ao rollback), leitura deduplicada, selo diario',
-'- **authn/authz**: Argon2id, sessao opaca, TOTP, CSRF, catalogo de acoes com negacao por padrao',
-'- **catalogs**: CID-10 e TUSS versionados por data de vigencia, com `daterange` e `EXCLUDE USING gist`',
-'- **CI**: 10 invariantes de banco (`pnpm db:invariants`), `pnpm arch:check`, `pnpm restore:drill`',
+'Total: 109 migrations aplicadas, ~1200 testes passando. A Fase 3 entregou: fin.split_rule, fin.split, fin.repasse_batch, fin.bank_account, fin.cost_center, inv.supplier, inv.product, inv.stock_movement, inv.stock_alert, rpt.* (matviews, visoes salvas, variacao). O schema tiss existe vazio desde a migration 0002. O pacote `packages/tiss` tem so `export {}` em index.ts.',
 '',
-'**Leia o codigo real antes de consumir qualquer coisa da Fase 0.** As assinaturas verdadeiras estao nas migrations e nos pacotes, nao na sua memoria.',
+'**Construcoes da Fase 1 que a Fase 4 CONSOME:**',
+'- `clin.encounter_billing` (migration 0042) — JA captura os ~14 campos da guia TISS',
+'- `ref.tuss_term` — tabela GLOBAL com `daterange` + `EXCLUDE USING gist`, funcao `ref.tuss_at()`',
+'- `clin.finalize_encounter()` — passo 7 projeta guia se convenio',
+'- `clin.encounter_version` — ligacao de guia a versao do prontuario',
+'',
+'**Leia o codigo real antes de consumir qualquer coisa das fases anteriores.** As assinaturas verdadeiras estao nas migrations e nos pacotes, nao na sua memoria.',
 '',
 '## Comandos que existem',
 '',
-'`pnpm test` · `pnpm test:int` · `pnpm test:iso` · `pnpm typecheck` · `pnpm db:up` · `pnpm db:migrate` · `pnpm db:new` · `pnpm db:reset` · `pnpm db:invariants` · `pnpm arch:check` · `pnpm lint:session-guc` · `pnpm lint:terminology-clock` · `pnpm authz:seed` · `pnpm prepush`',
+'`pnpm test` · `pnpm test:int` · `pnpm test:iso` · `pnpm typecheck` · `pnpm db:up` · `pnpm db:migrate` · `pnpm db:new` · `pnpm db:reset` · `pnpm db:invariants` · `pnpm db:privileges` · `pnpm arch:check` · `pnpm lint:session-guc` · `pnpm lint:terminology-clock` · `pnpm authz:seed` · `pnpm prepush`',
 '',
 '## Regras de arquitetura vinculantes',
 '',
-'1. **Irmao nunca importa irmao.** L0 plataforma (`kernel db audit authn authz storage jobs outbox integrations events`) → L1 cadastros (`identity tenancy people patients catalogs`) → L2 operacao (`scheduling emr documents prescriptions billing payments tiss messaging inventory reports export retention`) → L3 apps. Setas so descem. `pnpm arch:check` reprova.',
-'2. **Migrations forward-only**, uma transacao por arquivo, sem `CREATE INDEX CONCURRENTLY`. A Fase 1 usa da **0024** em diante.',
-'3. **Toda tabela multi-tenant** nasce com `tenant_id`, RLS habilitada e **forcada**, ao menos uma policy, e FK composta. A `test:iso` descobre do catalogo e reprova quem esquecer. Tabela clinica com `patient_id` ou `version_id` precisa tambem de policy `RESTRICTIVE`.',
-'4. **Fonte de tempo persistido e o PostgreSQL** (`clock_timestamp()`). `performance.now()` para medicao; `Date.now()` so em `packages/kernel/src/clock.ts` e `uuid.ts`.',
-'5. **Data do evento** usa `app.local_date()` (criada na Task 1 desta fase), nunca `occurred_at::date` — o lint reprova.',
-'6. **Registro clinico finalizado e imutavel por REVOKE**, nao por convencao. Correcao cria versao nova; o verbo "Excluir" nao existe para registro finalizado.',
+'1. **Irmao nunca importa irmao.** L0 plataforma → L1 cadastros → L2 operacao → L3 apps. Setas so descem. `pnpm arch:check` reprova.',
+'2. **Comunicacao entre irmaos L2 e assincrona** via `packages/events`. Composicao sincrona e de L3.',
+'3. **Migrations forward-only**, uma transacao por arquivo, sem `CREATE INDEX CONCURRENTLY`.',
+'4. **Toda tabela multi-tenant** nasce com `tenant_id`, RLS habilitada e **forcada**, ao menos uma policy, e FK composta. A `test:iso` descobre do catalogo e reprova quem esquecer.',
+'5. **Fonte de tempo persistido e o PostgreSQL** (`clock_timestamp()`). `Date.now()` so em `clock.ts` e `uuid.ts`.',
+'6. **Data do evento** usa `app.local_date()`, nunca `occurred_at::date` — o lint reprova.',
 '7. **CNPJ alfanumerico**; `COLLATE "pt-BR-x-icu"` em coluna ordenada para humano.',
+'8. **Matviews** em `rpt`, propriedade de `rpt_owner`, SEM GRANT para `app_rw`. Expostas por views `security_barrier` em `app_rpt` com predicado de tenant e papel.',
+'9. **`reports` NAO le matview diretamente** — sempre via app_rpt.',
+'10. **Chamada a parceiro sai so do worker**, via outbox.',
+'',
+'## Regras especificas TISS (OBRIGATORIO)',
+'',
+'11. **Nenhuma ocorrencia de `now()` ou `current_date` dentro do schema `tiss`** — invariante de CI.',
+'12. **Terminologia versionada** por data do atendimento: usar `ref.tuss_at(tabela, codigo, data)`, NUNCA current_date.',
+'13. **Guia e projecao do atendimento**, NAO formulario separado — dados vem de `encounter_billing` + `encounter_version`.',
+'14. **XML usa ISO-8859-1**, NAO UTF-8. Hash MD5 proprietario embutido no XML.',
+'15. **`codigo_tabela` CHECK `<> \'18\'`** (tabela 18 e particular, nao entra em guia).',
+'16. **Sem coluna CID na guia**: item 32 do padrao proibe operadora de exigir CID.',
+'17. **`occurred_date`** (fuso da clinica) e a data do atendimento, nunca `occurred_at::date`.',
+'18. **tiss-soap NAO existe** ate haver credencial real. Teste garante que registry so conhece tiss-arquivo.',
 '',
 '## Convencoes',
 '',
@@ -58,9 +70,10 @@ const CONTEXTO = [
 '',
 '## Referencias no disco',
 '',
-'- Plano da Fase 1: `' + RAIZ + '/docs/superpowers/plans/2026-08-03-fase1-o-dia-plano.md`',
+'- Plano da Fase 4: `' + RAIZ + '/docs/superpowers/plans/2026-08-07-fase4-os-convenios-plano.md`',
 '- Design (a fonte da verdade): `' + RAIZ + '/docs/superpowers/specs/2026-08-03-design-sistema.md`',
-'- Sua tarefa isolada: `' + RAIZ + '/.tasks-fase1/task-<N>.md`',
+'- Sua tarefa isolada: `' + RAIZ + '/.tasks-fase4/task-<N>.md`',
+'- Contratos reconciliados: `' + RAIZ + '/docs/superpowers/plans/fase4/00-CONTRATOS.md`',
 ].join('\n')
 
 const IMPL_SCHEMA = {
@@ -77,29 +90,6 @@ const IMPL_SCHEMA = {
   required: ['status', 'resumo', 'testes', 'arquivos'],
 }
 
-const REVIEW_SCHEMA = {
-  type: 'object',
-  properties: {
-    veredito: { type: 'string', enum: ['aprovado', 'precisa-correcao'] },
-    verificacoesFeitas: { type: 'array', items: { type: 'string' }, description: 'Comandos que voce REALMENTE rodou e o que observou' },
-    problemas: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          gravidade: { type: 'string', enum: ['critico', 'importante', 'menor'] },
-          onde: { type: 'string', description: 'arquivo:linha' },
-          problema: { type: 'string' },
-          correcao: { type: 'string', description: 'A correcao pronta, nao a orientacao' },
-        },
-        required: ['gravidade', 'onde', 'problema', 'correcao'],
-      },
-    },
-    observacoes: { type: 'array', items: { type: 'string' }, description: 'Nao bloqueantes, registrados para o relatorio' },
-  },
-  required: ['veredito', 'problemas'],
-}
-
 const REGRAS_IMPL = [
 '## Como trabalhar',
 '',
@@ -107,19 +97,25 @@ const REGRAS_IMPL = [
 '',
 'Implemente **exatamente** o que a tarefa especifica. Nao construa alem (YAGNI). Se o texto da tarefa e o estado real do repositorio divergirem, prefira o estado real e registre a divergencia em `preocupacoes`.',
 '',
-'## Duas divergencias JA CONHECIDAS entre o plano e o repositorio',
+'## Divergencias CONHECIDAS entre plano e repositorio',
 '',
-'**1. Numeracao de migration.** O plano foi escrito quando a ultima migration era a 0023, e desde entao correcoes acrescentaram arquivos. **Nunca use o numero que a sua tarefa cita.** Rode `ls packages/db/migrations/` e use o proximo livre de verdade. Numero colidido nao produz erro claro: produz um banco que aplica na ordem errada em outra maquina.',
+'**1. Numeracao de migration.** O plano foi escrito com a faixa 0110-0121, mas tarefas anteriores podem ter acrescentado migrations extras. **Nunca use o numero que a sua tarefa cita.** Rode `ls packages/db/migrations/` e use o proximo livre de verdade.',
 '',
-'**2. Alvo de performance e sobre LATENCIA, nao sobre a forma do plano.** Se a tarefa mandar asserir a ausencia de um no especifico do EXPLAIN (por exemplo `Sort`) e voce medir que o alvo de tempo passa com folga mas o no aparece mesmo assim, **nao force o plano**. Verifique se o no e consequencia da RLS — que nao e negociavel — e assira o que sobrevive a escala: ausencia de `Seq Scan`, e numero de linhas lidas proporcional ao filtro e nao ao tamanho da tabela. Um teste de plano que passa com 20 linhas e nao diz nada sobre 200 mil e pior que nenhum, porque da falsa seguranca. Se precisar, semeie ruido para a afirmacao ter conteudo.',
+'**2. Alvo de performance e sobre LATENCIA, nao sobre a forma do plano.** Se a tarefa mandar asserir a ausencia de um no especifico do EXPLAIN e voce medir que o alvo de tempo passa com folga mas o no aparece mesmo assim, verifique se e consequencia da RLS e assira o que sobrevive a escala.',
 '',
-'Antes de reportar, auto-revise com olhos frescos: implementei tudo? os testes verificam comportamento observavel e nao so mock? os nomes dizem o que a coisa faz? `git status --short` esta limpo? Corrija o que achar.',
+'**3. O schema tiss existe vazio desde a migration 0002.** As tabelas tiss.* sao NOVAS nesta fase. Nao tente ALTER TABLE em tabela tiss que ainda nao existe — a tarefa anterior cria a tabela.',
+'',
+'**4. O pacote packages/tiss e um stub.** Comece por ele com o codigo novo. NAO recrie o que Fase 0-3 ja construiu (ref.tuss_term, clin.encounter_billing, etc).',
+'',
+'**5. Authz dot-notation.** As acoes de authz usam ponto como separador (ex: `tiss.operadora.read`), NAO dois-pontos. Verifique o padrao em `packages/authz/src/actions.ts` antes de criar acoes novas.',
+'',
+'Antes de reportar, auto-revise: implementei tudo? os testes verificam comportamento? os nomes dizem o que faz? `git status --short` esta limpo?',
 '',
 '## Quando parar',
 '',
-'E sempre aceitavel dizer "isto e dificil demais" ou "falta contexto". Trabalho ruim e pior que nenhum trabalho, e voce nao sera penalizado por escalar. Use **BLOCKED** quando nao conseguir completar, e **NEEDS_CONTEXT** quando faltar informacao que ninguem te deu. Em ambos, preencha `motivoDoBloqueio` com precisao: o que travou, o que voce tentou, e que ajuda resolveria. Um humano vai ler isso e decidir.',
+'E sempre aceitavel dizer "isto e dificil demais" ou "falta contexto". Use **BLOCKED** quando nao conseguir completar, e **NEEDS_CONTEXT** quando faltar informacao. Preencha `motivoDoBloqueio` com precisao.',
 '',
-'**Nao improvise** diante de ambiguidade real, e **nao invente** SQL, assinatura ou nome que a tarefa nao deu. Nao mexa em nada fora do escopo da sua tarefa — em particular, nunca edite uma migration ja aplicada nem altere arquivos de tarefas anteriores sem que a sua peca.',
+'**Nao improvise** diante de ambiguidade real, e **nao invente** SQL, assinatura ou nome que a tarefa nao deu. Nao mexa em nada fora do escopo da sua tarefa.',
 '',
 'Reporte numeros REAIS de teste. Se um teste falhou, diga que falhou.',
 ].join('\n')
@@ -131,7 +127,7 @@ let paradaPorBloqueio = null
 
 for (let i = 0; i < TAREFAS.length; i++) {
   const N = TAREFAS[i]
-  const arquivoTarefa = RAIZ + '/.tasks-fase1/task-' + N + '.md'
+  const arquivoTarefa = RAIZ + '/.tasks-fase4/task-' + N + '.md'
 
   const promptImpl = [
     CONTEXTO,
@@ -147,7 +143,7 @@ for (let i = 0; i < TAREFAS.length; i++) {
     '',
     'Antes de escrever codigo, rode `git log --oneline -5` e olhe o estado real do repositorio: as tarefas anteriores ja rodaram e o que elas criaram existe.',
     '',
-    '**Se a tarefa ja estiver implementada** (o codigo existe, os testes dela passam e ha commit correspondente), nao refaca nem reescreva nada. Confirme rodando os testes que a tarefa manda rodar, reporte `DONE` com os numeros reais e o SHA do commit existente, e registre em `preocupacoes` que a encontrou pronta. As revisoes seguintes trabalham sobre o que ja esta commitado.',
+    '**Se a tarefa ja estiver implementada** (o codigo existe, os testes dela passam e ha commit correspondente), nao refaca nem reescreva nada. Confirme rodando os testes que a tarefa manda rodar, reporte `DONE` com os numeros reais e o SHA do commit existente, e registre em `preocupacoes` que a encontrou pronta.',
     '',
     REGRAS_IMPL,
   ].join('\n')
@@ -167,11 +163,6 @@ for (let i = 0; i < TAREFAS.length; i++) {
   }
 
   if (paradaPorBloqueio) break
-
-  // NENHUMA revisao roda por tarefa: decisao explicita do dono do produto, para
-  // ganhar velocidade. A unica verificacao e a suite de testes que a propria tarefa
-  // manda rodar, com contagem esperada. Uma varredura de qualidade sobre o diff
-  // inteiro fica para o fim da fase, e passa a ser a unica revisao do projeto.
 
   historico.push({
     tarefa: N,
@@ -198,19 +189,13 @@ const resumo = await agent([
   'Agrupado por bloco funcional, nao tarefa a tarefa. O que o sistema sabe fazer agora que nao sabia antes.',
   '',
   '## Numeros',
-  'Tarefas concluidas, commits, testes rodando, problemas encontrados e corrigidos pelas revisoes.',
-  '',
-  '## Os achados que mais importaram',
-  'De 3 a 6 problemas que as revisoes pegaram e que teriam custado caro depois. Explique o problema e por que importava, em linguagem que um nao-especialista entenda.',
+  'Tarefas concluidas, commits, testes rodando, problemas encontrados.',
   '',
   '## Onde parou e por que',
   'Se houve bloqueio: o que travou, o que foi tentado, e qual decisao o humano precisa tomar. Seja preciso e ofereca opcoes. Se nao houve, diga que a execucao completou.',
   '',
-  '## Para a varredura de qualidade',
-  'A revisao de qualidade por tarefa foi deliberadamente adiada e vira uma varredura unica sobre o diff inteiro. Consolide aqui, agrupadas por tema e sem repetir, todas as `observacoes` que os revisores de conformidade registraram ao longo do caminho — e diga quais parecem mais urgentes. Esta secao e a pauta dessa varredura.',
-  '',
   '## O que fica pendente',
-  'Preocupacoes registradas pelos implementadores e qualquer divergencia entre o plano e o estado real do repositorio que tenha sido notada.',
+  'Preocupacoes registradas pelos implementadores e divergencias entre plano e repositorio.',
   '',
   'Nao invente nada que nao esteja no historico. Se um numero nao aparece, nao chute.',
   '',

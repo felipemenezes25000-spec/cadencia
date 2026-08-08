@@ -1,7 +1,18 @@
+### Task 36: teste de isolamento para tiss.lote e tiss.lote_guia
+
+**Arquivos**
+
+- Criar `packages/db/test/iso/31-tiss-lote.iso.test.ts`
+
+**Passos**
+
+- [ ] Criar o teste `packages/db/test/iso/31-tiss-lote.iso.test.ts`:
+
+```typescript
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client } from 'pg';
 import * as F from './fixtures';
-import { comoAtor, openClient } from './harness';
+import { comoAtor, erroPg, openClient } from './harness';
 
 describe('tiss.lote e tiss.lote_guia — isolamento e estrutura', () => {
   let admin: Client;
@@ -20,30 +31,27 @@ describe('tiss.lote e tiss.lote_guia — isolamento e estrutura', () => {
   // ── Estrutura ──────────────────────────────────────────────────────────────
 
   it('tiss.lote tem RLS habilitada e forcada', async () => {
-    const { rows } = await admin.query<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
-      `SELECT relrowsecurity, relforcerowsecurity FROM pg_class
+    const { rows } = await admin.query<{ rowsecurity: boolean; forcerowsecurity: boolean }>(
+      `SELECT rowsecurity, forcerowsecurity FROM pg_class
         WHERE oid = 'tiss.lote'::regclass`,
     );
-    expect(rows[0]?.relrowsecurity).toBe(true);
-    expect(rows[0]?.relforcerowsecurity).toBe(true);
+    expect(rows[0]).toEqual({ rowsecurity: true, forcerowsecurity: true });
   });
 
   it('tiss.lote_guia tem RLS habilitada e forcada', async () => {
-    const { rows } = await admin.query<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
-      `SELECT relrowsecurity, relforcerowsecurity FROM pg_class
+    const { rows } = await admin.query<{ rowsecurity: boolean; forcerowsecurity: boolean }>(
+      `SELECT rowsecurity, forcerowsecurity FROM pg_class
         WHERE oid = 'tiss.lote_guia'::regclass`,
     );
-    expect(rows[0]?.relrowsecurity).toBe(true);
-    expect(rows[0]?.relforcerowsecurity).toBe(true);
+    expect(rows[0]).toEqual({ rowsecurity: true, forcerowsecurity: true });
   });
 
   it('tiss.lote_number_counter tem RLS habilitada e forcada', async () => {
-    const { rows } = await admin.query<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
-      `SELECT relrowsecurity, relforcerowsecurity FROM pg_class
+    const { rows } = await admin.query<{ rowsecurity: boolean; forcerowsecurity: boolean }>(
+      `SELECT rowsecurity, forcerowsecurity FROM pg_class
         WHERE oid = 'tiss.lote_number_counter'::regclass`,
     );
-    expect(rows[0]?.relrowsecurity).toBe(true);
-    expect(rows[0]?.relforcerowsecurity).toBe(true);
+    expect(rows[0]).toEqual({ rowsecurity: true, forcerowsecurity: true });
   });
 
   it('numero_lote e varchar(12) — tamanho maximo do campo no XML TISS', async () => {
@@ -153,3 +161,14 @@ describe('tiss.lote e tiss.lote_guia — isolamento e estrutura', () => {
     });
   });
 });
+```
+
+- [ ] Rodar o teste de isolamento:
+
+```bash
+pnpm test:iso -- --testPathPattern 31-tiss-lote
+```
+
+Saida esperada: todos os testes passam.
+
+---

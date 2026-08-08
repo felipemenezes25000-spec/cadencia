@@ -189,8 +189,8 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
     expect(can(sujeito('profissional'), 'finance.settings', { clinicId: 'c' }).allowed).toBe(false);
   });
 
-  it('15. EVENT_TYPES tem exatamente 10 tipos — 6 da Fase 2 + 4 da Fase 3', () => {
-    expect(EVENT_TYPES).toHaveLength(10);
+  it('15. EVENT_TYPES tem exatamente 11 tipos — 6 da Fase 2 + 4 da Fase 3 + 1 da Fase 4', () => {
+    expect(EVENT_TYPES).toHaveLength(11);
     const fase3 = ['SPLIT_CALCULATED', 'STOCK_ALERT_TRIGGERED',
                    'REPASSE_CLOSED', 'RECURRING_ENTRY_MATERIALIZED'];
     for (const tipo of fase3) {

@@ -1,9 +1,20 @@
+### Task 40: teste de integracao completo do ciclo de vida do lote
+
+**Arquivos**
+
+- Criar `packages/tiss/src/lote-full-cycle.int.test.ts`
+
+**Passos**
+
+- [ ] Criar `packages/tiss/src/lote-full-cycle.int.test.ts`:
+
+```typescript
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
 import { uuidv7 } from '@cadencia/kernel';
 import { createLote } from './create-lote';
-import { addGuiaToLote } from './lote-guias';
+import { addGuiaToLote, removeGuiaFromLote } from './lote-guias';
 import { markLoteReady, markLoteSent, receiveLoteReturn, cancelLote } from './lote-lifecycle';
 
 interface SementeCiclo {
@@ -61,9 +72,9 @@ async function semearCiclo(): Promise<SementeCiclo> {
       [s.tenantId, s.patientId]);
     await c.query(
       `INSERT INTO tiss.operadora
-         (tenant_id, id, registro_ans, razao_social, cnpj, tiss_version, active, created_by)
-       VALUES ($1, $2, '326305', 'Meridiano Ciclo', '66XYZ00005DE05', '3.05', true, $3)`,
-      [s.tenantId, s.operadoraId, s.userId]);
+         (tenant_id, id, registro_ans, razao_social, cnpj, tiss_version, active)
+       VALUES ($1, $2, '326305', 'Meridiano Ciclo', '66XYZ000005DE05', '3.05', true)`,
+      [s.tenantId, s.operadoraId]);
 
     // Tres encounters e tres guias
     for (let idx = 0; idx < 3; idx++) {
@@ -301,3 +312,28 @@ describe('ciclo completo do lote TISS', () => {
     }
   });
 });
+```
+
+- [ ] Rodar o teste:
+
+```bash
+cd packages/tiss && pnpm vitest run src/lote-full-cycle.int.test.ts
+```
+
+Saida esperada: 2 testes passando.
+
+- [ ] Rodar toda a suite do pacote tiss para confirmar que tudo esta verde:
+
+```bash
+cd packages/tiss && pnpm vitest run
+```
+
+Saida esperada: todos os testes passando (create-lote, lote-guias, lote-lifecycle, lote-full-cycle).
+
+- [ ] Rodar os invariantes finais:
+
+```bash
+pnpm db:invariants
+```
+
+Saida esperada: todos passam.

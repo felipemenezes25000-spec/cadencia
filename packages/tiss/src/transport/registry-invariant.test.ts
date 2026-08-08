@@ -9,7 +9,6 @@ describe('invariante CI — tiss-soap nao existe ate haver credencial real (§7.
   });
 
   it('nenhum arquivo no repositorio exporta uma classe ou funcao chamada TissSoapTransport', async () => {
-    // Importar o registry e verificar que so conhece tiss-arquivo
     const registry = await import('./registry');
     const transportNames = Object.keys(registry);
     expect(transportNames).not.toContain('TissSoapTransport');
@@ -18,17 +17,9 @@ describe('invariante CI — tiss-soap nao existe ate haver credencial real (§7.
   });
 
   it('o registry exporta SOMENTE tiss-arquivo como transport disponivel', async () => {
-    const registry = await import('./registry');
-    // O registry deve exportar um map ou funcao que liste os transports disponiveis
-    if (typeof registry.availableTransports === 'function') {
-      const disponiveis = registry.availableTransports();
-      expect(disponiveis).toEqual(['tiss-arquivo']);
-    } else if (typeof registry.TRANSPORTS === 'object' && registry.TRANSPORTS !== null) {
-      const chaves = Object.keys(registry.TRANSPORTS);
-      expect(chaves).toEqual(['tiss-arquivo']);
-    } else if (typeof registry.getTransport === 'function') {
-      // Se for um getter, deve reconhecer 'tiss-arquivo' e rejeitar 'tiss-soap'
-      expect(() => registry.getTransport('tiss-soap')).toThrow();
-    }
+    const { getTransportIds, getTransportFactory } = await import('./registry');
+    expect(getTransportIds()).toEqual(['tiss-arquivo']);
+    expect(getTransportFactory('tiss-soap')).toBeUndefined();
+    expect(getTransportFactory('tiss-arquivo')).toBeDefined();
   });
 });

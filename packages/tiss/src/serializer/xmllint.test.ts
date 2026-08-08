@@ -82,7 +82,7 @@ describe('validacao XML com xmllint', () => {
     writeFileSync(TMP_XML, xml);
 
     try {
-      const result = execSync(
+      execSync(
         `xmllint --noout --schema "${XSD_PATH}" "${TMP_XML}"`,
         { stdio: 'pipe', encoding: 'utf8' },
       );
