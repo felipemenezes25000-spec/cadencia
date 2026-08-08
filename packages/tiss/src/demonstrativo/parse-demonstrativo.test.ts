@@ -98,6 +98,102 @@ const SAMPLE_ANALISE = [
 ].join('\n');
 
 describe('parseDemonstrativoXml', () => {
+  it('detecta tipo pagamento a partir da tag demonstrativoPagamento', () => {
+    const xmlPagamento = [
+      '<?xml version="1.0" encoding="ISO-8859-1"?>',
+      '<ans:mensagemTISS xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas">',
+      '<ans:cabecalho>',
+      '<ans:versaoPadrao>4.01.00</ans:versaoPadrao>',
+      '<ans:registroANS>999999</ans:registroANS>',
+      '<ans:dataGeracao>2026-08-10</ans:dataGeracao>',
+      '<ans:horaGeracao>14:00:00</ans:horaGeracao>',
+      '<ans:sequencialTransacao>1000</ans:sequencialTransacao>',
+      '</ans:cabecalho>',
+      '<ans:operadoraParaPrestador>',
+      '<ans:demonstrativoPagamento>',
+      '<ans:cabecalhoDemonstrativo>',
+      '<ans:registroANS>326305</ans:registroANS>',
+      '<ans:numeroDemonstrativo>PAG-2026-001</ans:numeroDemonstrativo>',
+      '</ans:cabecalhoDemonstrativo>',
+      '<ans:dadosProtocolo>',
+      '<ans:numeroProtocolo>PROT-PAG-001</ans:numeroProtocolo>',
+      '</ans:dadosProtocolo>',
+      '<ans:dataProcessamento>2026-08-10</ans:dataProcessamento>',
+      '<ans:relacaoGuias>',
+      '<ans:guiaCabecalho>',
+      '<ans:numeroGuiaPrestador>PG-001</ans:numeroGuiaPrestador>',
+      '<ans:valorInformadoGuia>500.00</ans:valorInformadoGuia>',
+      '<ans:valorProcessadoGuia>500.00</ans:valorProcessadoGuia>',
+      '<ans:valorLiberadoGuia>500.00</ans:valorLiberadoGuia>',
+      '<ans:valorGlosaGuia>0.00</ans:valorGlosaGuia>',
+      '</ans:guiaCabecalho>',
+      '</ans:relacaoGuias>',
+      '</ans:demonstrativoPagamento>',
+      '</ans:operadoraParaPrestador>',
+      '<ans:epilogo><ans:hash>def456</ans:hash></ans:epilogo>',
+      '</ans:mensagemTISS>',
+    ].join('\n');
+
+    const encoded = encodeIso8859(xmlPagamento);
+    const result = parseDemonstrativoXml(encoded.bytes);
+
+    expect(result.tipo).toBe('pagamento');
+    expect(result.cabecalho.numeroDemonstrativo).toBe('PAG-2026-001');
+    expect(result.cabecalho.numeroProtocolo).toBe('PROT-PAG-001');
+    expect(result.itens).toHaveLength(1);
+    expect(result.itens[0]!.numeroGuiaPrestador).toBe('PG-001');
+    expect(result.itens[0]!.valorInformadoCents).toBe(50000);
+    expect(result.itens[0]!.valorGlosaCents).toBe(0);
+  });
+
+  it('decodifica acentos ISO-8859-1 na descricao de glosa', () => {
+    const xmlComAcentos = [
+      '<?xml version="1.0" encoding="ISO-8859-1"?>',
+      '<ans:mensagemTISS xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas">',
+      '<ans:cabecalho><ans:versaoPadrao>4.01.00</ans:versaoPadrao>',
+      '<ans:registroANS>999999</ans:registroANS>',
+      '<ans:dataGeracao>2026-08-05</ans:dataGeracao>',
+      '<ans:horaGeracao>10:00:00</ans:horaGeracao>',
+      '<ans:sequencialTransacao>1</ans:sequencialTransacao></ans:cabecalho>',
+      '<ans:operadoraParaPrestador>',
+      '<ans:demonstrativoAnaliseConta>',
+      '<ans:cabecalhoDemonstrativo>',
+      '<ans:registroANS>326305</ans:registroANS>',
+      '<ans:numeroDemonstrativo>AC-ACENTO</ans:numeroDemonstrativo>',
+      '</ans:cabecalhoDemonstrativo>',
+      '<ans:dadosProtocolo><ans:numeroProtocolo>P-AC</ans:numeroProtocolo></ans:dadosProtocolo>',
+      '<ans:dataProcessamento>2026-08-05</ans:dataProcessamento>',
+      '<ans:relacaoGuias>',
+      '<ans:guiaCabecalho>',
+      '<ans:numeroGuiaPrestador>AC-001</ans:numeroGuiaPrestador>',
+      '<ans:valorInformadoGuia>100.00</ans:valorInformadoGuia>',
+      '<ans:valorProcessadoGuia>50.00</ans:valorProcessadoGuia>',
+      '<ans:valorLiberadoGuia>50.00</ans:valorLiberadoGuia>',
+      '<ans:valorGlosaGuia>50.00</ans:valorGlosaGuia>',
+      '<ans:glosas><ans:glosa>',
+      '<ans:codigoGlosa>X001</ans:codigoGlosa>',
+      // 'nao' com til: n + a-til + o = caracteres ISO-8859-1 validos
+      '<ans:descricaoGlosa>Procedimento não autorizado pela clínica</ans:descricaoGlosa>',
+      '</ans:glosa></ans:glosas>',
+      '</ans:guiaCabecalho>',
+      '</ans:relacaoGuias>',
+      '</ans:demonstrativoAnaliseConta>',
+      '</ans:operadoraParaPrestador>',
+      '<ans:epilogo><ans:hash>xyz</ans:hash></ans:epilogo>',
+      '</ans:mensagemTISS>',
+    ].join('\n');
+
+    const encoded = encodeIso8859(xmlComAcentos);
+    expect(encoded.warnings).toHaveLength(0);
+
+    const result = parseDemonstrativoXml(encoded.bytes);
+
+    // Os acentos devem ser preservados apos decode ISO-8859-1
+    expect(result.itens[0]!.glosas[0]!.descricaoGlosa).toBe(
+      'Procedimento não autorizado pela clínica',
+    );
+  });
+
   it('extrai cabecalho, 3 itens e glosas de demonstrativo de analise', () => {
     const encoded = encodeIso8859(SAMPLE_ANALISE);
     const result = parseDemonstrativoXml(encoded.bytes);
