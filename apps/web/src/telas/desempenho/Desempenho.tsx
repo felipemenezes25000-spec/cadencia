@@ -12,6 +12,7 @@ import type {
 } from './types';
 import { buildVariationPhrase, formatPeriodLabel } from './format';
 import { WaterfallChart } from './WaterfallChart';
+import { Skeleton } from '../../ui/Skeleton';
 
 export interface DesempenhoProps {
   readonly period: Period;
@@ -34,8 +35,29 @@ function formatFreshnessTime(iso: string): string {
   return `${h}:${m}`;
 }
 
+/* ── Skeleton de carregamento ──────────────────────────────────────────── */
+
+function DesempenhoVariacoesSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando indicadores"
+      data-testid="desempenho-variacoes-skeleton"
+      style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
+               maxWidth: 960, margin: '0 auto' }}
+    >
+      <div>
+        <Skeleton variant="text" width="160px" height="28px" />
+        <Skeleton variant="text" width="200px" className="mt-2" />
+      </div>
+      <Skeleton variant="card" height="200px" />
+    </div>
+  );
+}
+
 export function Desempenho(p: DesempenhoProps) {
-  const [indicators, setIndicators] = useState<VariationIndicator[]>([]);
+  const [indicators, setIndicators] = useState<VariationIndicator[] | null>(null);
   const [freshness, setFreshness] = useState<DataFreshness | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [waterfall, setWaterfall] = useState<WaterfallFactor[]>([]);
@@ -48,6 +70,10 @@ export function Desempenho(p: DesempenhoProps) {
       setFreshness(r.freshness);
     });
   }, [p]);
+
+  if (indicators === null) {
+    return <DesempenhoVariacoesSkeleton />;
+  }
 
   async function onIndicatorClick(metric: string): Promise<void> {
     setSelectedMetric(metric);

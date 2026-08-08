@@ -22,6 +22,7 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { cn } from "../lib/cn";
 import { Tooltip } from "../ui/Tooltip";
 import { Icone } from "../ui/Icone";
+import { Skeleton } from "../ui/Skeleton";
 import { ATALHOS_DO_ATENDIMENTO } from "./atalhos";
 import { SlashCommandExtension } from "./EditorSlashCommands";
 
@@ -72,6 +73,46 @@ for (const a of ATALHOS_DO_ATENDIMENTO) {
 /* ── autosave status ──────────────────────────────────────────────────── */
 
 type SaveStatus = "saved" | "saving" | "error" | "unsaved";
+
+/* ── skeleton de carregamento ─────────────────────────────────────────── */
+
+function EditorClinicoSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando editor"
+      data-testid="editor-clinico-skeleton"
+      className="grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-[var(--r-md)] border border-line bg-surface shadow-elev-1"
+    >
+      {/* Toolbar skeleton */}
+      <div className="border-b border-line">
+        <div className="flex items-center justify-between px-[var(--s-4)] py-[var(--s-2)]">
+          <Skeleton variant="text" width="120px" />
+          <div className="flex gap-[var(--s-2)]">
+            <Skeleton variant="text" width="50px" height="20px" />
+            <Skeleton variant="text" width="50px" height="20px" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1 border-t border-line px-2 py-1">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} variant="text" width="28px" height="28px" />
+          ))}
+        </div>
+      </div>
+      {/* Editor area skeleton */}
+      <div className="p-[var(--s-6)] space-y-3">
+        <Skeleton variant="text" width="40%" />
+        <Skeleton variant="text" lines={4} />
+      </div>
+      {/* Status bar skeleton */}
+      <div className="flex items-center justify-between border-t border-line px-[var(--s-4)] py-[var(--s-2)]">
+        <Skeleton variant="text" width="80px" />
+        <Skeleton variant="text" width="60px" />
+      </div>
+    </div>
+  );
+}
 
 /* ── componente principal ─────────────────────────────────────────────── */
 
@@ -192,6 +233,10 @@ export function EditorClinico(p: EditorClinicoProps) {
   /* contagem de palavras */
   const textoPlano = editor?.getText() ?? "";
   const palavras = textoPlano.trim().split(/\s+/).filter(Boolean).length;
+
+  if (!editor) {
+    return <EditorClinicoSkeleton />;
+  }
 
   return (
     <RadixTooltip.Provider delayDuration={300}>

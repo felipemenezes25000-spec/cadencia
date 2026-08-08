@@ -18,6 +18,7 @@ import { PainelLateral } from '../ui/PainelLateral';
 import { Campo } from '../ui/Campo';
 import { Botao } from '../ui/Botao';
 import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
 /* ── Tipos ─────────────────────────────────────────────────────────────── */
 
@@ -219,10 +220,37 @@ function FormularioAutomacao({ automacao, onSalvar, onCancelar }: FormularioAuto
   );
 }
 
+/* ── Skeleton de carregamento ────────────────────────────────────────────── */
+
+function AutomacoesSkeleton() {
+  return (
+    <div
+      className="space-y-6 p-6 max-sm:p-4"
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando automacoes"
+      data-testid="automacoes-skeleton"
+    >
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton variant="text" width="160px" />
+          <Skeleton variant="text" width="280px" />
+        </div>
+        <Skeleton variant="text" width="140px" height="36px" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} variant="card" height="100px" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── AutomacoesDeConversa (tela principal) ─────────────────────────────── */
 
 export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
-  const [automacoes, setAutomacoes] = useState<Automacao[]>([]);
+  const [automacoes, setAutomacoes] = useState<Automacao[] | null>(null);
   const [formularioAberto, setFormularioAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
@@ -230,12 +258,17 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
     void p.carregar().then(setAutomacoes);
   }, [p]);
 
+  if (automacoes === null) {
+    return <AutomacoesSkeleton />;
+  }
+
   async function alternar(automationId: string, novoEstado: boolean): Promise<void> {
+    if (automacoes === null) return;
     const anterior = automacoes.find((a) => a.automationId === automationId);
     if (!anterior) return;
 
     setAutomacoes((prev) =>
-      prev.map((a) =>
+      (prev ?? []).map((a) =>
         a.automationId === automationId ? { ...a, ativa: novoEstado } : a,
       ),
     );
@@ -243,7 +276,7 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
       await p.aoAlternarAtiva(automationId, novoEstado);
     } catch {
       setAutomacoes((prev) =>
-        prev.map((a) =>
+        (prev ?? []).map((a) =>
           a.automationId === automationId ? { ...a, ativa: !novoEstado } : a,
         ),
       );

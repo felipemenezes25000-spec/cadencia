@@ -4,6 +4,7 @@
 import { useCallback, useState } from 'react';
 import { Botao } from '../ui/Botao';
 import { GraficoExplorar } from '../ui/GraficoExplorar';
+import { Skeleton } from '../ui/Skeleton';
 import type { SavedView, ReportFilter, ReportColumns, ReportSort, ChartKind, ExportFormat } from '@cadencia/reports';
 
 export interface ResultadoConsulta {
@@ -251,9 +252,13 @@ export function Explorar(p: ExplorarProps) {
           </p>
         </section>
       ) : carregando ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-14)' }}>
-          Carregando...
-        </p>
+        <div role="status" aria-busy="true" aria-label="Carregando dados" data-testid="explorar-skeleton" className="space-y-3">
+          <Skeleton variant="text" width="60%" height="16px" />
+          <Skeleton variant="table-row" />
+          <Skeleton variant="table-row" />
+          <Skeleton variant="table-row" />
+          <Skeleton variant="table-row" />
+        </div>
       ) : null}
 
       {/* Salvar visao */}

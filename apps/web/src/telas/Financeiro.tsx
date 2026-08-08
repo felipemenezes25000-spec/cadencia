@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Botao } from '../ui/Botao';
+import { Skeleton } from '../ui/Skeleton';
 
 export type MetodoResumo = 'dinheiro' | 'cartao' | 'pix' | 'link';
 
@@ -95,6 +96,26 @@ function GraficoDeBarras({ dias }: { readonly dias: ReadonlyArray<{ dia: string;
   );
 }
 
+/* ── Skeleton de carregamento ──────────────────────────────────────────── */
+
+function FinanceiroSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando financeiro"
+      data-testid="financeiro-skeleton"
+      style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
+               maxWidth: 960, margin: '0 auto' }}
+    >
+      <Skeleton variant="text" width="160px" height="28px" />
+      <Skeleton variant="card" height="160px" />
+      <Skeleton variant="card" height="200px" />
+      <Skeleton variant="card" height="160px" />
+    </div>
+  );
+}
+
 export function Financeiro(p: FinanceiroProps) {
   const [caixa, setCaixa] = useState<CaixaDoDia | null>(null);
   const [receitas, setReceitas] = useState<ReceitasDoMes | null>(null);
@@ -105,6 +126,12 @@ export function Financeiro(p: FinanceiroProps) {
     void p.carregarReceitasDoMes().then(setReceitas);
     void p.carregarAReceber().then(setAReceber);
   }, [p]);
+
+  const carregando = caixa === null && receitas === null && aReceber === null;
+
+  if (carregando) {
+    return <FinanceiroSkeleton />;
+  }
 
   return (
     <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
