@@ -1,11 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { ChatCircle, Stethoscope } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
+import { PageHeader } from '../ui/PageHeader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import type { PacienteHit } from '../ui/ComboboxDePaciente';
 
-export type PapelNaTela = 'profissional' | 'recepcao' | 'financeiro'
-                        | 'admin_clinico' | 'diretor_tecnico';
+/* ── Tipos exportados ────────────────────────────────────────────────── */
+
+export type PapelNaTela =
+  | 'profissional'
+  | 'recepcao'
+  | 'financeiro'
+  | 'admin_clinico'
+  | 'diretor_tecnico';
 
 export interface MensagemResumo {
   readonly messageId: string;
@@ -24,6 +34,14 @@ export interface LancamentoResumo {
   readonly paidAt: string | null;
 }
 
+export interface AtendimentoResumo {
+  readonly id: string;
+  readonly tipo: string;
+  readonly data: string;
+  readonly resumo: string;
+  readonly profissional: string;
+}
+
 export interface FichaDoPacienteProps {
   readonly paciente: PacienteHit;
   readonly papel: PapelNaTela;
@@ -36,182 +54,413 @@ export interface FichaDoPacienteProps {
   readonly carregarConversas: () => Promise<MensagemResumo[]>;
   readonly carregarFinanceiro: () => Promise<LancamentoResumo[]>;
   readonly podeVerFinanceiro: boolean;
+  /** Exibir skeleton de carregamento */
+  readonly carregando?: boolean;
+  /** Historico de atendimentos para a timeline */
+  readonly atendimentos?: readonly AtendimentoResumo[];
 }
 
-const CLINICOS = new Set<PapelNaTela>(['profissional', 'admin_clinico', 'diretor_tecnico']);
-const VE_FINANCEIRO = new Set<PapelNaTela>(['financeiro', 'admin_clinico', 'diretor_tecnico']);
+/* ── Constantes de acesso ────────────────────────────────────────────── */
 
-type Aba = 'perfil' | 'atendimentos' | 'prontuario' | 'conversas' | 'financeiro';
+const CLINICOS = new Set<PapelNaTela>([
+  'profissional',
+  'admin_clinico',
+  'diretor_tecnico',
+]);
+
+const VE_FINANCEIRO = new Set<PapelNaTela>([
+  'financeiro',
+  'admin_clinico',
+  'diretor_tecnico',
+]);
+
+// Exporta para uso externo (backward compat)
+export { CLINICOS, VE_FINANCEIRO };
+
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+
+function iniciais(nome: string): string {
+  const partes = nome.split(' ').filter(Boolean);
+  if (partes.length === 0) return '?';
+  const primeira = partes[0]!;
+  if (partes.length === 1) return primeira[0]!.toUpperCase();
+  const ultima = partes[partes.length - 1]!;
+  return (primeira[0]!.toUpperCase() + ultima[0]!.toUpperCase());
+}
+
+function calcularIdade(nascimento: string | null): string {
+  if (!nascimento) return '--';
+  const hoje = new Date();
+  const nasc = new Date(nascimento);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const mesAtual = hoje.getMonth();
+  const mesNasc = nasc.getMonth();
+  if (
+    mesAtual < mesNasc ||
+    (mesAtual === mesNasc && hoje.getDate() < nasc.getDate())
+  ) {
+    idade--;
+  }
+  return `${idade} anos`;
+}
+
+function formatarTelefone(tel: string | null): string {
+  if (!tel) return '--';
+  if (tel.length === 11) {
+    return `(${tel.slice(0, 2)}) ${tel.slice(2, 7)}-${tel.slice(7)}`;
+  }
+  return tel;
+}
+
+function formatarData(data: string): string {
+  const d = new Date(data + 'T12:00:00');
+  return d.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+/* ── Skeleton de carregamento ────────────────────────────────────────── */
+
+const shimmer =
+  'bg-[linear-gradient(90deg,var(--line)_25%,var(--surface)_50%,var(--line)_75%)] [background-size:200%_100%] animate-[skeleton-shimmer_1.5s_ease-in-out_infinite]';
+
+function FichaSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando ficha do paciente"
+      className="grid gap-6 p-6"
+    >
+      {/* Header skeleton */}
+      <div className="space-y-2">
+        <div className={cn('h-4 w-32 rounded-md', shimmer)} />
+        <div className={cn('h-7 w-56 rounded-md', shimmer)} />
+      </div>
+
+      {/* Summary bar skeleton */}
+      <div className="flex items-center gap-4 rounded-lg border border-line p-4">
+        <div className={cn('h-14 w-14 shrink-0 rounded-full', shimmer)} />
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
+          <div className="space-y-1">
+            <div className={cn('h-3 w-10 rounded', shimmer)} />
+            <div className={cn('h-4 w-16 rounded', shimmer)} />
+          </div>
+          <div className="space-y-1">
+            <div className={cn('h-3 w-14 rounded', shimmer)} />
+            <div className={cn('h-4 w-28 rounded', shimmer)} />
+          </div>
+          <div className="space-y-1">
+            <div className={cn('h-3 w-10 rounded', shimmer)} />
+            <div className={cn('h-4 w-20 rounded', shimmer)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs skeleton */}
+      <div className={cn('h-10 w-full rounded-md', shimmer)} />
+
+      {/* Content skeleton */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className={cn('h-32 rounded-lg', shimmer)} />
+        <div className={cn('h-32 rounded-lg', shimmer)} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Tab: Resumo ─────────────────────────────────────────────────────── */
+
+function ResumoTab({
+  paciente,
+  pendentes,
+}: {
+  readonly paciente: PacienteHit;
+  readonly pendentes: readonly string[];
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {/* Dados pendentes */}
+      {pendentes.length > 0 && (
+        <div className="col-span-full" role="status">
+          <p className="m-0 rounded-md bg-warn-soft px-4 py-3 text-sm text-warn">
+            {`${pendentes.length} dados pendentes`}
+            <span className="text-text-muted">{` · ${pendentes.join(', ')}`}</span>
+          </p>
+        </div>
+      )}
+
+      {/* Contato */}
+      <section
+        aria-label="Informacoes de contato"
+        className="rounded-lg border border-line bg-surface p-4"
+      >
+        <h2 className="mb-3 text-sm font-semibold text-text">Contato</h2>
+        <dl className="grid gap-3 text-sm">
+          <div>
+            <dt className="text-text-muted">Telefone</dt>
+            <dd className="m-0 font-medium text-text">
+              {formatarTelefone(paciente.phonePrimary)}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      {/* Dados pessoais */}
+      <section
+        aria-label="Dados demograficos"
+        className="rounded-lg border border-line bg-surface p-4"
+      >
+        <h2 className="mb-3 text-sm font-semibold text-text">Dados pessoais</h2>
+        <dl className="grid gap-3 text-sm">
+          <div>
+            <dt className="text-text-muted">Data de nascimento</dt>
+            <dd className="m-0 font-medium text-text">
+              {paciente.birthDate ? formatarData(paciente.birthDate) : '--'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-text-muted">Cadastro</dt>
+            <dd className="m-0 font-medium text-text">
+              {paciente.cadastroStatus === 'completo' ? 'Completo' : 'Preliminar'}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+/* ── Tab: Historico ──────────────────────────────────────────────────── */
+
+function HistoricoTab({
+  atendimentos,
+}: {
+  readonly atendimentos: readonly AtendimentoResumo[] | undefined;
+}) {
+  if (!atendimentos || atendimentos.length === 0) {
+    return (
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <p className="m-0 text-sm text-text-muted">
+          Nenhum atendimento registrado.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ol
+      className="relative ml-3 list-none space-y-6 border-l border-line p-0"
+      aria-label="Timeline de atendimentos"
+    >
+      {atendimentos.map((at) => (
+        <li key={at.id} className="ml-6">
+          {/* Timeline dot */}
+          <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-accent bg-surface" />
+
+          {/* Card */}
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-text">{at.tipo}</span>
+              <time className="text-xs text-text-muted">
+                {formatarData(at.data)}
+              </time>
+            </div>
+            <p className="m-0 text-sm text-text-muted">{at.resumo}</p>
+            <p className="m-0 mt-1 text-xs text-text-faint">
+              Dr(a). {at.profissional}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/* ── Tab: Financeiro ─────────────────────────────────────────────────── */
+
+function FinanceiroTab({
+  lancamentos,
+  veFinanceiro,
+}: {
+  readonly lancamentos: LancamentoResumo[] | null;
+  readonly veFinanceiro: boolean;
+}) {
+  if (!veFinanceiro) {
+    return (
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <p className="m-0 text-sm text-text-muted">
+          Sem permissao para visualizar dados financeiros.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section
+      aria-label="Financeiro do paciente"
+      className="rounded-lg border border-line bg-surface p-6"
+    >
+      {lancamentos === null ? (
+        <p className="m-0 text-text-muted">Carregando financeiro...</p>
+      ) : lancamentos.length === 0 ? (
+        <p className="m-0 text-text-muted">
+          Nenhum lancamento para este paciente.
+        </p>
+      ) : (
+        <ul className="m-0 grid list-none gap-3 p-0">
+          {lancamentos.map((l) => (
+            <li
+              key={l.entryId}
+              className="flex items-center justify-between border-b border-line py-3"
+            >
+              <span className="text-sm">{l.description}</span>
+              <span className="text-sm font-medium tabular-nums">
+                {`R$ ${(Math.abs(l.amountCents) / 100).toFixed(2).replace('.', ',')}`}
+              </span>
+              <span
+                className={cn(
+                  'text-xs uppercase',
+                  l.status === 'paid' && 'text-ok',
+                  l.status === 'overdue' && 'text-danger',
+                  (l.status === 'pending' || l.status === 'cancelled') &&
+                    'text-text-muted',
+                )}
+              >
+                {l.status === 'paid'
+                  ? 'Pago'
+                  : l.status === 'overdue'
+                    ? 'Vencido'
+                    : l.status === 'pending'
+                      ? 'Pendente'
+                      : 'Cancelado'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* ── Componente principal ────────────────────────────────────────────── */
 
 export function FichaDoPaciente(p: FichaDoPacienteProps) {
-  const veProntuario = CLINICOS.has(p.papel);
   const veFinanceiro = p.podeVerFinanceiro || VE_FINANCEIRO.has(p.papel);
-  const [aba, setAba] = useState<Aba>('perfil');
-  const [pedindoVidro, setPedindoVidro] = useState(false);
-  const [justificativa, setJustificativa] = useState('');
-  const [conversas, setConversas] = useState<MensagemResumo[] | null>(null);
-  const [lancamentos, setLancamentos] = useState<LancamentoResumo[] | null>(null);
+  const [lancamentos, setLancamentos] = useState<LancamentoResumo[] | null>(
+    null,
+  );
 
-  const abas: { chave: Aba; rotulo: string }[] = [
-    { chave: 'perfil', rotulo: 'Perfil' },
-    { chave: 'atendimentos', rotulo: 'Atendimentos' },
-    ...(veProntuario ? [{ chave: 'prontuario' as const, rotulo: 'Prontuário' }] : []),
-    { chave: 'conversas', rotulo: 'Conversas' },
-    ...(veFinanceiro ? [{ chave: 'financeiro' as const, rotulo: 'Financeiro' }] : []),
-  ];
+  /* Skeleton de carregamento */
+  if (p.carregando) {
+    return <FichaSkeleton />;
+  }
 
-  function selecionarAba(chave: Aba): void {
-    setAba(chave);
-    if (chave === 'conversas' && conversas === null) {
-      void p.carregarConversas().then(setConversas);
-    }
-    if (chave === 'financeiro' && lancamentos === null) {
+  function aoMudarTab(value: string): void {
+    if (value === 'financeiro' && lancamentos === null && veFinanceiro) {
       void p.carregarFinanceiro().then(setLancamentos);
     }
   }
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)' }}>
-      <header style={{ display: 'grid', gap: 'var(--s-2)' }}>
-        <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-          {p.paciente.displayName}
-        </h1>
-        {p.pendentes.length > 0 ? (
-          <p role="status" style={{
-            margin: 0, fontSize: 'var(--fs-13)', color: 'var(--warn)',
-            background: 'var(--warn-soft)', padding: `var(--s-3) var(--s-4)`,
-            borderRadius: 'var(--r-md)',
-          }}>
-            {`${p.pendentes.length} dados pendentes`}
-            <span style={{ color: 'var(--text-muted)' }}>{` · ${p.pendentes.join(', ')}`}</span>
-          </p>
-        ) : null}
-      </header>
+    <div className="grid gap-6 p-6">
+      {/* Page header com breadcrumbs e acoes */}
+      <PageHeader
+        titulo={p.paciente.displayName}
+        breadcrumbs={[
+          { rotulo: 'Pacientes', href: '/pacientes' },
+          { rotulo: p.paciente.displayName },
+        ]}
+        acoes={
+          <>
+            <Botao variante="secundario" iconeEsquerda={ChatCircle}>
+              Mensagem
+            </Botao>
+            <Botao variante="primario" iconeEsquerda={Stethoscope}>
+              Novo atendimento
+            </Botao>
+          </>
+        }
+      />
 
-      <div role="tablist" aria-label="Seções do paciente" style={{ display: 'flex',
-                                                                   gap: 'var(--s-1)' }}>
-        {abas.map((a) => (
-          <button key={a.chave} role="tab" type="button" aria-selected={aba === a.chave}
-            onClick={() => selecionarAba(a.chave)}
-            style={{
-              border: 0, borderBottom: aba === a.chave
-                ? '2px solid var(--accent)' : '2px solid transparent',
-              background: 'transparent', color: aba === a.chave
-                ? 'var(--text)' : 'var(--text-muted)',
-              minHeight: 32, padding: `0 var(--s-5)`, cursor: 'pointer',
-              fontSize: 'var(--fs-14)',
-            }}>
-            {a.rotulo}
-          </button>
-        ))}
+      {/* Barra de resumo com dados demograficos */}
+      <div className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4 max-sm:flex-col max-sm:items-start">
+        {/* Avatar */}
+        <div
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent"
+          aria-hidden="true"
+        >
+          {iniciais(p.paciente.displayName)}
+        </div>
+
+        {/* Dados */}
+        <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+          <div>
+            <span className="text-text-muted">Idade</span>
+            <p className="m-0 font-medium text-text">
+              {calcularIdade(p.paciente.birthDate)}
+            </p>
+          </div>
+          <div>
+            <span className="text-text-muted">Telefone</span>
+            <p className="m-0 font-medium text-text">
+              {formatarTelefone(p.paciente.phonePrimary)}
+            </p>
+          </div>
+          <div>
+            <span className="text-text-muted">Status</span>
+            <p className="m-0 font-medium text-text">
+              {p.paciente.cadastroStatus === 'completo'
+                ? 'Completo'
+                : 'Preliminar'}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {aba === 'prontuario' && !p.prontuarioAcessivel ? (
-        <section aria-label="Prontuário indisponível"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)',
-                   display: 'grid', gap: 'var(--s-4)' }}>
-          <p style={{ margin: 0 }}>
-            {p.existeMasSemAcesso
-              ? 'Paciente existe. Prontuário não compartilhado com você.'
-              : 'Nenhum prontuário encontrado para este paciente.'}
-          </p>
-          {p.existeMasSemAcesso ? (
-            <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
-              <Botao variante="secundario" onClick={p.aoSolicitarAcesso}>
-                Solicitar acesso
-              </Botao>
-              <Botao variante="fantasma" onClick={() => setPedindoVidro(true)}>
-                Quebra-vidro assistencial
-              </Botao>
-            </div>
-          ) : null}
+      {/* Tabs */}
+      <Tabs defaultValue="resumo" onValueChange={aoMudarTab}>
+        <TabsList>
+          <TabsTrigger value="resumo">Resumo</TabsTrigger>
+          <TabsTrigger value="historico">Historico</TabsTrigger>
+          <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          <TabsTrigger value="convenios">Convenios</TabsTrigger>
+          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+        </TabsList>
 
-          {pedindoVidro ? (
-            <div style={{ display: 'grid', gap: 'var(--s-3)' }}>
-              <label htmlFor="jv" style={{ fontSize: 'var(--fs-12)',
-                                           color: 'var(--text-muted)' }}>
-                Justificativa (mínimo 20 caracteres, registrada na auditoria)
-              </label>
-              <textarea id="jv" value={justificativa} rows={3}
-                onChange={(e) => setJustificativa(e.target.value)}
-                style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                         padding: 'var(--s-4)', background: 'var(--surface)',
-                         color: 'var(--text)', fontFamily: 'var(--font-ui)' }} />
-              <Botao
-                disabled={justificativa.trim().length < 20}
-                onClick={() => { void p.aoQuebrarVidro(justificativa.trim(), 4); }}>
-                Confirmar quebra-vidro
-              </Botao>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+        <TabsContent value="resumo">
+          <ResumoTab paciente={p.paciente} pendentes={p.pendentes} />
+        </TabsContent>
 
-      {aba === 'conversas' ? (
-        <section aria-label="Conversas do paciente"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
-          {conversas === null ? (
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Carregando conversas...</p>
-          ) : conversas.length === 0 ? (
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nenhuma conversa com este paciente.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
-                         gap: 'var(--s-3)' }}>
-              {conversas.map((msg) => (
-                <li key={msg.messageId} style={{ display: 'flex', gap: 'var(--s-4)',
-                                                  padding: 'var(--s-3) 0',
-                                                  borderBottom: 'var(--border)' }}>
-                  <span style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
-                                 minWidth: '3ch', textAlign: 'right' }}>
-                    {msg.direction === 'inbound' ? '←' : '→'}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 'var(--fs-13)' }}>{msg.bodyPreview}</span>
-                  <span style={{ fontSize: 'var(--fs-11)', color: 'var(--text-muted)' }}>
-                    {msg.sentAt}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
+        <TabsContent value="historico">
+          <HistoricoTab atendimentos={p.atendimentos} />
+        </TabsContent>
 
-      {aba === 'financeiro' ? (
-        <section aria-label="Financeiro do paciente"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
-          {lancamentos === null ? (
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Carregando financeiro...</p>
-          ) : lancamentos.length === 0 ? (
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nenhum lançamento para este paciente.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
-                         gap: 'var(--s-3)' }}>
-              {lancamentos.map((l) => (
-                <li key={l.entryId} style={{ display: 'flex', justifyContent: 'space-between',
-                                             padding: 'var(--s-3) 0',
-                                             borderBottom: 'var(--border)' }}>
-                  <span style={{ fontSize: 'var(--fs-13)' }}>{l.description}</span>
-                  <span style={{ fontSize: 'var(--fs-13)', fontWeight: 'var(--fw-medium)' }}>
-                    {`R$ ${(Math.abs(l.amountCents) / 100).toFixed(2).replace('.', ',')}`}
-                  </span>
-                  <span style={{
-                    fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                    color: l.status === 'paid' ? 'var(--success)'
-                         : l.status === 'overdue' ? 'var(--danger)'
-                         : 'var(--text-muted)',
-                  }}>
-                    {l.status === 'paid' ? 'Pago' : l.status === 'overdue' ? 'Vencido'
-                     : l.status === 'pending' ? 'Pendente' : 'Cancelado'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
+        <TabsContent value="documentos">
+          <div className="rounded-lg border border-line bg-surface p-6">
+            <p className="m-0 text-sm text-text-muted">
+              Nenhum documento cadastrado.
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="convenios">
+          <div className="rounded-lg border border-line bg-surface p-6">
+            <p className="m-0 text-sm text-text-muted">
+              Nenhum convenio vinculado.
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="financeiro">
+          <FinanceiroTab
+            lancamentos={lancamentos}
+            veFinanceiro={veFinanceiro}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
