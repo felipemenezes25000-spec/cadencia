@@ -9,8 +9,8 @@ export interface SementeRecurso {
   operadoraId: string;
   loteId: string;
   demonstrativoId: string;
-  glosaIds: [string, string, string];
-  guiaIds: [string, string, string];
+  glosaIds: string[];
+  guiaIds: string[];
 }
 
 function adminUrl(): string {
@@ -25,15 +25,24 @@ function adminUrl(): string {
  * Semeia o grafo completo para testes de recurso de glosa:
  * - tenant, clinica, usuario, profissional, paciente
  * - operadora
- * - 3 encounters finalizados, cada um com encounter_version e guia
- * - 1 lote retornado contendo as 3 guias
+ * - 10 encounters finalizados, cada um com encounter_version e guia
+ * - 1 lote retornado contendo as 10 guias
  * - 1 demonstrativo de analise vinculado ao lote
- * - 3 demonstrativo_items com glosa (valor_glosa_cents > 0, glosa_codigo preenchido)
- * - 3 tiss.glosa em status pendente vinculando demonstrativo_item, guia e version
+ * - 10 demonstrativo_items com glosa (valor_glosa_cents > 0, glosa_codigo preenchido)
+ * - 10 tiss.glosa em status pendente vinculando demonstrativo_item, guia e version
  *
- * Os 3 tiss.glosa servem como "glosas pendentes" para vincular ao recurso.
+ * Os 10 tiss.glosa servem como "glosas pendentes" para vincular ao recurso.
+ * Quantidade elevada permite que testes criem recursos independentes sem
+ * conflitar com a validacao "glosa ja em recurso ativo" de createRecursoGlosa.
  */
 export async function semearRecursoGlosa(): Promise<SementeRecurso> {
+  const GLOSA_COUNT = 10;
+  const glosaIds: string[] = [];
+  const guiaIds: string[] = [];
+  for (let i = 0; i < GLOSA_COUNT; i++) {
+    glosaIds.push(uuidv7());
+    guiaIds.push(uuidv7());
+  }
   const s: SementeRecurso = {
     tenantId: uuidv7(),
     clinicId: uuidv7(),
@@ -41,8 +50,8 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
     operadoraId: uuidv7(),
     loteId: uuidv7(),
     demonstrativoId: uuidv7(),
-    glosaIds: [uuidv7(), uuidv7(), uuidv7()],
-    guiaIds: [uuidv7(), uuidv7(), uuidv7()],
+    glosaIds,
+    guiaIds,
   };
   const profId = uuidv7();
   const patientId = uuidv7();
@@ -92,10 +101,10 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
       [s.tenantId, s.operadoraId, s.userId],
     );
 
-    // --- 3 encounters finalizados com guias ---
+    // --- N encounters finalizados com guias ---
     const versionIds: string[] = [];
     const demoItemIds: string[] = [];
-    for (let idx = 0; idx < 3; idx++) {
+    for (let idx = 0; idx < GLOSA_COUNT; idx++) {
       const encId = uuidv7();
       const verId = uuidv7();
       versionIds.push(verId);
@@ -135,19 +144,20 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
       );
     }
 
-    // --- lote retornado com as 3 guias ---
-    const totalCents = (100 + 200 + 300) * 100; // 60000 centavos
+    // --- lote retornado com as N guias ---
+    let totalCents = 0;
+    for (let i = 1; i <= GLOSA_COUNT; i++) totalCents += i * 10000;
     await c.query(
       `INSERT INTO tiss.lote
          (tenant_id, id, operadora_id, numero_lote, status, tiss_version,
           guia_count, total_value_cents, xml_storage_key, xml_hash_md5,
           protocolo_operadora, sent_at, created_by)
-       VALUES ($1, $2, $3, '1', 'retornado'::tiss.lote_status, '3.05', 3, $4,
+       VALUES ($1, $2, $3, '1', 'retornado'::tiss.lote_status, '3.05', $4, $5,
                'lote/rg.xml', 'aabb0011223344556677889900aabbcc',
-               'PROT-RG-001', TIMESTAMPTZ '2026-07-10T10:00:00Z', $5)`,
-      [s.tenantId, s.loteId, s.operadoraId, totalCents, s.userId],
+               'PROT-RG-001', TIMESTAMPTZ '2026-07-10T10:00:00Z', $6)`,
+      [s.tenantId, s.loteId, s.operadoraId, GLOSA_COUNT, totalCents, s.userId],
     );
-    for (let idx = 0; idx < 3; idx++) {
+    for (let idx = 0; idx < GLOSA_COUNT; idx++) {
       await c.query(
         `INSERT INTO tiss.lote_guia (tenant_id, lote_id, guia_id, sequencial_item)
          VALUES ($1, $2, $3, $4)`,
@@ -156,6 +166,9 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
     }
 
     // --- demonstrativo de analise ---
+    let totalGlosaCents = 0;
+    for (let i = 1; i <= GLOSA_COUNT; i++) totalGlosaCents += i * 1000;
+    const totalLiberadoCents = totalCents - totalGlosaCents;
     await c.query(
       `INSERT INTO tiss.demonstrativo
          (tenant_id, id, operadora_id, lote_id, protocolo_operadora, kind,
@@ -164,12 +177,13 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
           total_liberado_cents, total_glosa_cents, imported_by)
        VALUES ($1, $2, $3, $4, 'PROT-RG-001', 'analise'::tiss.demonstrativo_kind,
                DATE '2026-07-15', 'demonstrativo/rg.xml',
-               60000, 45000, 45000, 15000, $5)`,
-      [s.tenantId, s.demonstrativoId, s.operadoraId, s.loteId, s.userId],
+               $5, $6, $7, $8, $9)`,
+      [s.tenantId, s.demonstrativoId, s.operadoraId, s.loteId,
+       totalCents, totalCents, totalLiberadoCents, totalGlosaCents, s.userId],
     );
 
-    // --- 3 demonstrativo_items com glosa ---
-    for (let idx = 0; idx < 3; idx++) {
+    // --- N demonstrativo_items com glosa ---
+    for (let idx = 0; idx < GLOSA_COUNT; idx++) {
       const demoItemId = uuidv7();
       demoItemIds.push(demoItemId);
       const valorApresentado = (idx + 1) * 10000; // 10000, 20000, 30000 centavos
@@ -193,8 +207,8 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
       );
     }
 
-    // --- 3 tiss.glosa em status pendente ---
-    for (let idx = 0; idx < 3; idx++) {
+    // --- N tiss.glosa em status pendente ---
+    for (let idx = 0; idx < GLOSA_COUNT; idx++) {
       const valorGlosa = (idx + 1) * 1000;
       await c.query(
         `INSERT INTO tiss.glosa

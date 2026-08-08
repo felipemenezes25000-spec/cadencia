@@ -30,8 +30,8 @@ describe('createRecursoGlosa', () => {
         operadoraId: s.operadoraId,
         createdBy: s.userId,
         itens: [
-          { glosaId: s.glosaIds[0], justificativa: 'Procedimento necessario', valorRecursadoCents: 1000 },
-          { glosaId: s.glosaIds[1], justificativa: 'Exame indicado clinicamente', valorRecursadoCents: 2000 },
+          { glosaId: s.glosaIds[0]!, justificativa: 'Procedimento necessario', valorRecursadoCents: 1000 },
+          { glosaId: s.glosaIds[1]!, justificativa: 'Exame indicado clinicamente', valorRecursadoCents: 2000 },
         ],
       }),
     );
