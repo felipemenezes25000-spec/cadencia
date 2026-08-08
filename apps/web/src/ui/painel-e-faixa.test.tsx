@@ -1,9 +1,41 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { PainelLateral } from './PainelLateral';
 import { FaixaDeContadores } from './FaixaDeContadores';
+
+/* ── Polyfills para jsdom (Radix Tooltip/Popper) ───────────────────── */
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof globalThis.ResizeObserver;
+  }
+
+  if (typeof globalThis.DOMRect === 'undefined') {
+    // @ts-ignore — polyfill basico para testes no jsdom
+    globalThis.DOMRect = class DOMRect {
+      x = 0; y = 0; width = 0; height = 0;
+      top = 0; right = 0; bottom = 0; left = 0;
+      toJSON() { return {}; }
+      static fromRect() { return new DOMRect(); }
+    };
+  }
+
+  if (!HTMLElement.prototype.hasPointerCapture) {
+    HTMLElement.prototype.hasPointerCapture = () => false;
+  }
+  if (!HTMLElement.prototype.setPointerCapture) {
+    HTMLElement.prototype.setPointerCapture = () => {};
+  }
+  if (!HTMLElement.prototype.releasePointerCapture) {
+    HTMLElement.prototype.releasePointerCapture = () => {};
+  }
+});
 
 describe('painel lateral compositor', () => {
   it('usa largura md (420px) por padrao e renderiza como Radix Dialog', () => {
@@ -56,9 +88,10 @@ describe('faixa de contadores', () => {
       .toHaveAttribute('aria-live', 'polite');
   });
 
-  it('os numeros sao tabulares em 28/600', () => {
+  it('os numeros usam tipografia tabular e bold', () => {
     render(<FaixaDeContadores contadores={CONT} aoFiltrar={vi.fn()} />);
-    expect(screen.getByText('12')).toHaveStyle({ fontSize: '28px', fontWeight: '600' });
+    const num = screen.getByText('12');
+    expect(num).toHaveClass('text-2xl', 'font-bold', 'tabular-nums');
   });
 
   it('o filtro ativo fica marcado com aria-pressed', () => {
