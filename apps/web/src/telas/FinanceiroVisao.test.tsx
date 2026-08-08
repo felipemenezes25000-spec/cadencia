@@ -1,10 +1,44 @@
 // apps/web/src/telas/FinanceiroVisao.test.tsx
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { FinanceiroVisao, type FinanceiroVisaoProps } from './FinanceiroVisao';
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
+import { FinanceiroVisao, type VisaoDados } from './FinanceiroVisao';
 
-const DADOS: FinanceiroVisaoProps['dados'] = {
+// -- Mock ResizeObserver (necessario para visx ParentSize em jsdom) ----------
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class ResizeObserver {
+      private cb: ResizeObserverCallback;
+      constructor(cb: ResizeObserverCallback) {
+        this.cb = cb;
+      }
+      observe(target: Element) {
+        // Simula dimensoes para o ParentSize
+        this.cb(
+          [
+            {
+              target,
+              contentRect: { width: 600, height: 256, top: 0, left: 0, bottom: 256, right: 600, x: 0, y: 0, toJSON: () => ({}) },
+              borderBoxSize: [{ inlineSize: 600, blockSize: 256 }],
+              contentBoxSize: [{ inlineSize: 600, blockSize: 256 }],
+              devicePixelContentBoxSize: [{ inlineSize: 600, blockSize: 256 }],
+            } as unknown as ResizeObserverEntry,
+          ],
+          this,
+        );
+      }
+      unobserve() {}
+      disconnect() {}
+    };
+  }
+});
+
+// -- Dados de teste ---------------------------------------------------------
+
+const DADOS: VisaoDados = {
   receitaVsDespesa: [
     { mes: '2026-06', receita: 320000, despesa: 180000 },
     { mes: '2026-07', receita: 280000, despesa: 190000 },
@@ -25,67 +59,111 @@ const DADOS: FinanceiroVisaoProps['dados'] = {
     { nome: 'Outros', total: 10000, percentual: 3 },
   ],
   alertas: [
-    { tipo: 'a-receber-vencido', mensagem: '3 lancamentos vencidos ha mais de 30 dias', severidade: 'danger' },
-    { tipo: 'estoque-baixo', mensagem: 'Luva P abaixo do minimo (5 unidades)', severidade: 'warn' },
+    {
+      tipo: 'a-receber-vencido',
+      mensagem: '3 lancamentos vencidos ha mais de 30 dias',
+      severidade: 'danger',
+    },
+    {
+      tipo: 'estoque-baixo',
+      mensagem: 'Luva P abaixo do minimo (5 unidades)',
+      severidade: 'warn',
+    },
   ],
   resumoMes: {
     receitaTotal: 350000,
     despesaTotal: 170000,
     saldo: 180000,
+    pendente: 45000,
+    variacaoReceita: 12.5,
+    variacaoDespesa: -5.3,
   },
 };
 
-function montar() {
-  const carregarDados = vi.fn(async () => DADOS);
-  render(<FinanceiroVisao carregarDados={carregarDados} />);
-  return { carregarDados };
+// -- Helper para montar com NuqsTestingAdapter ------------------------------
+
+function montar(dadosOverride?: Partial<VisaoDados>) {
+  const dadosFinal = dadosOverride ? { ...DADOS, ...dadosOverride } : DADOS;
+  const carregarDados = vi.fn(async () => dadosFinal);
+  const onUrlUpdate = vi.fn();
+
+  const result = render(
+    <NuqsTestingAdapter searchParams={{ periodo: 'mes' }} onUrlUpdate={onUrlUpdate} hasMemory>
+      <FinanceiroVisao carregarDados={carregarDados} />
+    </NuqsTestingAdapter>,
+  );
+
+  return { carregarDados, onUrlUpdate, ...result };
 }
 
+// -- Testes -----------------------------------------------------------------
+
 describe('FinanceiroVisao', () => {
-  it('exibe o resumo do mes com receita, despesa e saldo formatados', async () => {
+  it('renderiza skeleton enquanto carrega', () => {
+    const carregarDados = vi.fn(() => new Promise<VisaoDados>(() => {})); // nunca resolve
+    render(
+      <NuqsTestingAdapter searchParams={{ periodo: 'mes' }}>
+        <FinanceiroVisao carregarDados={carregarDados} />
+      </NuqsTestingAdapter>,
+    );
+    expect(screen.getByTestId('financeiro-visao-skeleton')).toBeInTheDocument();
+  });
+
+  it('renderiza 4 cards de resumo', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+    expect(screen.getByText('Despesa')).toBeVisible();
+    expect(screen.getByText('Saldo')).toBeVisible();
+    expect(screen.getByText('Pendente')).toBeVisible();
+  });
+
+  it('mostra valores formatados em Real (R$)', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('R$ 3.500,00')).toBeVisible());
     expect(screen.getByText('R$ 1.700,00')).toBeVisible();
     expect(screen.getByText('R$ 1.800,00')).toBeVisible();
+    expect(screen.getByText('R$ 450,00')).toBeVisible(); // pendente
   });
 
-  it('renderiza o grafico de receita vs despesa como SVG acessivel', async () => {
+  it('mostra variacao percentual', async () => {
     montar();
-    await waitFor(() => expect(
-      screen.getByRole('img', { name: /Receita vs despesa/i })).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/12\.5% vs\. periodo anterior/)).toBeVisible());
+    expect(screen.getByText(/5\.3% vs\. periodo anterior/)).toBeVisible();
   });
 
-  it('renderiza o grafico de saldo projetado como SVG acessivel', async () => {
+  it('renderiza seletor de periodo', async () => {
     montar();
-    await waitFor(() => expect(
-      screen.getByRole('img', { name: /Saldo projetado/i })).toBeVisible());
+    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+    expect(screen.getByRole('group', { name: /Seletor de periodo/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Diario' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Semanal' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Mensal' })).toBeVisible();
   });
 
-  it('exibe a secao top 5 categorias com nomes e percentuais', async () => {
+  it('muda periodo ao clicar', async () => {
+    const user = userEvent.setup();
+    const { onUrlUpdate } = montar();
+    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+
+    await user.click(screen.getByRole('button', { name: 'Diario' }));
+
+    await waitFor(() => {
+      expect(onUrlUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryString: expect.stringContaining('periodo=dia'),
+        }),
+      );
+    });
+  });
+
+  it('renderiza grafico de receita', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Consulta')).toBeVisible());
-    expect(screen.getByText('57%')).toBeVisible();
-    expect(screen.getByText('Retorno')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+    expect(screen.getByTestId('grafico-receita')).toBeInTheDocument();
   });
 
-  it('exibe os alertas com a mensagem e indicador de severidade', async () => {
-    montar();
-    await waitFor(() => expect(
-      screen.getByText(/3 lancamentos vencidos/)).toBeVisible());
-    expect(screen.getByText(/Luva P abaixo do minimo/)).toBeVisible();
-  });
-
-  it('valores monetarios usam font-variant-numeric tabular-nums', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('R$ 3.500,00')).toBeVisible());
-    const el = screen.getByText('R$ 3.500,00');
-    expect(el.className).toContain('num');
-  });
-
-  it('sem violacao de acessibilidade', async () => {
-    const { container } = render(
-      <FinanceiroVisao carregarDados={async () => DADOS} />,
-    );
+  it('nao tem violacoes de acessibilidade', async () => {
+    const { container } = montar();
     await waitFor(() => expect(screen.getByText('R$ 3.500,00')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();
   });

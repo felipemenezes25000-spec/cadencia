@@ -2,8 +2,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQueryState } from 'nuqs';
+import { Group } from '@visx/group';
+import { Bar } from '@visx/shape';
+import { scaleBand, scaleLinear } from '@visx/scale';
+import { AxisBottom, AxisLeft } from '@visx/axis';
+import { ParentSize } from '@visx/responsive';
+import { TrendUp, TrendDown, Wallet, Clock } from '@phosphor-icons/react';
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
+import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────
+// -- Tipos ------------------------------------------------------------------
 
 export interface ReceitaVsDespesaItem {
   readonly mes: string;
@@ -32,6 +43,14 @@ export interface ResumoMes {
   readonly receitaTotal: number;
   readonly despesaTotal: number;
   readonly saldo: number;
+  readonly pendente?: number;
+  readonly variacaoReceita?: number;
+  readonly variacaoDespesa?: number;
+}
+
+export interface DadosReceita {
+  readonly label: string;
+  readonly valor: number;
 }
 
 export interface VisaoDados {
@@ -47,7 +66,7 @@ export interface FinanceiroVisaoProps {
   readonly carregarDados: () => Promise<VisaoDados>;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 function centavosParaReais(centavos: number): string {
   const abs = Math.abs(centavos);
@@ -57,16 +76,32 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
+type CorCard = 'sucesso' | 'erro' | 'aviso' | 'info';
+
+const corBgClasses: Record<CorCard, string> = {
+  sucesso: 'bg-ok-soft',
+  erro: 'bg-danger-soft',
+  aviso: 'bg-warn-soft',
+  info: 'bg-accent-soft',
+};
+
+const corTextClasses: Record<CorCard, string> = {
+  sucesso: 'text-ok',
+  erro: 'text-danger',
+  aviso: 'text-warn',
+  info: 'text-accent',
+};
+
 const TOKEN_SEVERIDADE: Record<string, string> = {
-  danger: '--danger',
-  warn: '--warn',
-  ok: '--ok',
+  danger: 'text-danger',
+  warn: 'text-warn',
+  ok: 'text-ok',
 };
 
 const BG_SEVERIDADE: Record<string, string> = {
-  danger: '--danger-soft',
-  warn: '--warn-soft',
-  ok: '--ok-soft',
+  danger: 'bg-danger-soft',
+  warn: 'bg-warn-soft',
+  ok: 'bg-ok-soft',
 };
 
 const GLIFO_SEVERIDADE: Record<string, string> = {
@@ -75,218 +110,300 @@ const GLIFO_SEVERIDADE: Record<string, string> = {
   ok: '✓',
 };
 
-// ── Grafico Receita vs Despesa (SVG puro) ──────────────────────────────────
+// -- CardResumo -------------------------------------------------------------
 
-function GraficoReceitaDespesa({ dados }: { readonly dados: readonly ReceitaVsDespesaItem[] }) {
-  const maxVal = Math.max(...dados.flatMap((d) => [d.receita, d.despesa]), 1);
-  const barW = 20;
-  const gap = 6;
-  const groupW = barW * 2 + gap;
-  const groupGap = 16;
-  const alturaMax = 120;
-  const largura = dados.length * (groupW + groupGap);
-
+function CardResumo({
+  rotulo,
+  valor,
+  icone: Icon,
+  cor,
+  variacao,
+}: {
+  readonly rotulo: string;
+  readonly valor: string;
+  readonly icone: PhosphorIcon;
+  readonly cor: CorCard;
+  readonly variacao?: number;
+}) {
   return (
-    <svg
-      role="img" aria-label="Receita vs despesa"
-      viewBox={`0 0 ${largura} ${alturaMax + 30}`}
-      style={{ width: '100%', maxWidth: `${largura}px`, height: `${alturaMax + 30}px` }}
-    >
-      {dados.map((d, i) => {
-        const x = i * (groupW + groupGap);
-        const hRec = Math.max((d.receita / maxVal) * alturaMax, 2);
-        const hDesp = Math.max((d.despesa / maxVal) * alturaMax, 2);
-        const mesLabel = d.mes.slice(5);
-        return (
-          <g key={d.mes}>
-            <rect x={x} y={alturaMax - hRec} width={barW} height={hRec}
-              rx={3} fill="var(--ok)"
-              role="img" aria-label={`Receita ${d.mes}: ${centavosParaReais(d.receita)}`} />
-            <rect x={x + barW + gap} y={alturaMax - hDesp} width={barW} height={hDesp}
-              rx={3} fill="var(--danger)"
-              role="img" aria-label={`Despesa ${d.mes}: ${centavosParaReais(d.despesa)}`} />
-            <text x={x + groupW / 2} y={alturaMax + 14}
-              textAnchor="middle" fontSize="10" fill="var(--text-muted)">
-              {mesLabel}
-            </text>
-          </g>
-        );
-      })}
-      <g>
-        <rect x={0} y={alturaMax + 20} width={8} height={8} rx={2} fill="var(--ok)" />
-        <text x={12} y={alturaMax + 28} fontSize="9" fill="var(--text-muted)">Receita</text>
-        <rect x={60} y={alturaMax + 20} width={8} height={8} rx={2} fill="var(--danger)" />
-        <text x={72} y={alturaMax + 28} fontSize="9" fill="var(--text-muted)">Despesa</text>
-      </g>
-    </svg>
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-medium text-text-muted">{rotulo}</span>
+        <div className={cn('rounded-md p-1.5', corBgClasses[cor])}>
+          <Icone icon={Icon} size="sm" className={corTextClasses[cor]} />
+        </div>
+      </div>
+      <p className="text-xl font-bold text-text tabular-nums">{valor}</p>
+      {variacao != null && (
+        <p
+          className={cn(
+            'mt-1 flex items-center gap-1 text-xs',
+            variacao >= 0 ? 'text-ok' : 'text-danger',
+          )}
+        >
+          <Icone icon={variacao >= 0 ? TrendUp : TrendDown} size="sm" />
+          {Math.abs(variacao).toFixed(1)}% vs. periodo anterior
+        </p>
+      )}
+    </div>
   );
 }
 
-// ── Grafico Saldo Projetado (SVG puro) ─────────────────────────────────────
+// -- SeletorPeriodo ---------------------------------------------------------
 
-function GraficoSaldoProjetado({ dados }: { readonly dados: readonly SaldoProjetadoItem[] }) {
-  if (dados.length === 0) return null;
-  const maxVal = Math.max(...dados.map((d) => d.saldo), 1);
-  const minVal = Math.min(...dados.map((d) => d.saldo), 0);
-  const range = maxVal - minVal || 1;
-  const w = 300;
-  const h = 100;
-  const padX = 10;
-  const padY = 10;
+type Periodo = 'dia' | 'semana' | 'mes';
 
-  const pontos = dados.map((d, i) => {
-    const x = padX + (i / Math.max(dados.length - 1, 1)) * (w - 2 * padX);
-    const y = padY + (1 - (d.saldo - minVal) / range) * (h - 2 * padY);
-    return { x, y, ...d };
-  });
+const ROTULOS_PERIODO: Record<Periodo, string> = {
+  dia: 'Diario',
+  semana: 'Semanal',
+  mes: 'Mensal',
+};
 
-  const pathD = pontos.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-
+function SeletorPeriodo({
+  periodo,
+  onChange,
+}: {
+  readonly periodo: Periodo;
+  readonly onChange: (p: Periodo) => void;
+}) {
   return (
-    <svg
-      role="img" aria-label="Saldo projetado"
-      viewBox={`0 0 ${w} ${h + 20}`}
-      style={{ width: '100%', maxWidth: `${w}px`, height: `${h + 20}px` }}
-    >
-      <path d={pathD} fill="none" stroke="var(--accent)" strokeWidth={2} />
-      {pontos.map((p) => (
-        <circle key={p.dia} cx={p.x} cy={p.y} r={3} fill="var(--accent)"
-          role="img" aria-label={`${p.dia}: ${centavosParaReais(p.saldo)}`} />
+    <div className="flex items-center gap-2" role="group" aria-label="Seletor de periodo">
+      {(['dia', 'semana', 'mes'] as const).map((p) => (
+        <button
+          key={p}
+          type="button"
+          onClick={() => onChange(p)}
+          aria-pressed={periodo === p}
+          className={cn(
+            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors-fast',
+            periodo === p
+              ? 'bg-accent text-accent-on'
+              : 'text-text-muted hover:bg-surface-raised hover:text-text',
+          )}
+        >
+          {ROTULOS_PERIODO[p]}
+        </button>
       ))}
-      {pontos.map((p, i) => {
-        if (i % 2 !== 0 && i !== pontos.length - 1) return null;
-        return (
-          <text key={`l-${p.dia}`} x={p.x} y={h + 14}
-            textAnchor="middle" fontSize="9" fill="var(--text-muted)">
-            {p.dia.slice(8)}
-          </text>
-        );
-      })}
-    </svg>
+    </div>
   );
 }
 
-// ── Componente principal ───────────────────────────────────────────────────
+// -- GraficoReceita (visx) --------------------------------------------------
+
+function GraficoReceita({
+  dados,
+  periodo,
+}: {
+  readonly dados: readonly DadosReceita[];
+  readonly periodo: string;
+}) {
+  if (dados.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <h3 className="mb-4 text-sm font-semibold text-text">Receita por {periodo}</h3>
+      <div className="h-64" data-testid="grafico-receita">
+        <ParentSize>
+          {({ width, height }) => {
+            if (width <= 0 || height <= 0) return null;
+
+            const margin = { top: 10, right: 10, bottom: 30, left: 60 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            if (innerWidth <= 0 || innerHeight <= 0) return null;
+
+            const xScale = scaleBand({
+              range: [0, innerWidth],
+              domain: dados.map((d) => d.label),
+              padding: 0.3,
+            });
+
+            const yScale = scaleLinear({
+              range: [innerHeight, 0],
+              domain: [0, Math.max(...dados.map((d) => d.valor))],
+              nice: true,
+            });
+
+            return (
+              <svg width={width} height={height} role="img" aria-label="Grafico de receita">
+                <Group left={margin.left} top={margin.top}>
+                  {dados.map((d) => (
+                    <Bar
+                      key={d.label}
+                      x={xScale(d.label) ?? 0}
+                      y={yScale(d.valor)}
+                      width={xScale.bandwidth()}
+                      height={innerHeight - yScale(d.valor)}
+                      fill="var(--accent)"
+                      rx={3}
+                    />
+                  ))}
+                  <AxisBottom
+                    top={innerHeight}
+                    scale={xScale}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)"
+                    tickStroke="var(--line)"
+                  />
+                  <AxisLeft
+                    scale={yScale}
+                    tickFormat={(v) => `R$${((v as number) / 100).toFixed(0)}`}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)"
+                    tickStroke="var(--line)"
+                  />
+                </Group>
+              </svg>
+            );
+          }}
+        </ParentSize>
+      </div>
+    </div>
+  );
+}
+
+// -- Skeleton ---------------------------------------------------------------
+
+function FinanceiroVisaoSkeleton() {
+  return (
+    <div className="space-y-6" data-testid="financeiro-visao-skeleton">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} variant="card" height="100px" />
+        ))}
+      </div>
+      <Skeleton variant="text" width="200px" height="36px" />
+      <Skeleton variant="card" height="280px" />
+    </div>
+  );
+}
+
+// -- Alertas ----------------------------------------------------------------
+
+function SecaoAlertas({ alertas }: { readonly alertas: readonly AlertaItem[] }) {
+  if (alertas.length === 0) return null;
+
+  return (
+    <section aria-label="Alertas financeiros" className="grid gap-[var(--s-3)]">
+      {alertas.map((a) => (
+        <div
+          key={a.tipo}
+          role="alert"
+          className={cn(
+            'flex items-center gap-[var(--s-4)] rounded-[var(--r-md)] px-[var(--s-5)] py-[var(--s-4)] text-[length:var(--fs-13)]',
+            BG_SEVERIDADE[a.severidade] ?? 'bg-warn-soft',
+            TOKEN_SEVERIDADE[a.severidade] ?? 'text-warn',
+          )}
+        >
+          <span aria-hidden="true" className="font-semibold">
+            {GLIFO_SEVERIDADE[a.severidade] ?? '!'}
+          </span>
+          {a.mensagem}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+// -- Top Categorias ---------------------------------------------------------
+
+function SecaoCategorias({ categorias }: { readonly categorias: readonly CategoriaItem[] }) {
+  return (
+    <section
+      aria-label="Top categorias"
+      className="rounded-[var(--r-md)] border border-line bg-surface p-[var(--s-6)]"
+    >
+      <h2 className="mb-[var(--s-4)] text-[length:var(--fs-15)] font-semibold">Top categorias</h2>
+      <ul className="m-0 grid list-none gap-[var(--s-3)] p-0">
+        {categorias.map((c) => (
+          <li
+            key={c.nome}
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-[var(--s-4)] border-b border-line py-[var(--s-2)] text-[length:var(--fs-14)]"
+          >
+            <span>{c.nome}</span>
+            <span className="tabular-nums text-text-muted">
+              {centavosParaReais(c.total)}
+            </span>
+            <span className="min-w-[3ch] text-right font-medium tabular-nums">
+              {c.percentual}%
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// -- Componente principal ---------------------------------------------------
 
 export function FinanceiroVisao(p: FinanceiroVisaoProps) {
   const [dados, setDados] = useState<VisaoDados | null>(null);
+  const [periodo, setPeriodo] = useQueryState('periodo', {
+    defaultValue: 'mes',
+    parse: (v) => v as Periodo,
+  });
 
   useEffect(() => {
     void p.carregarDados().then(setDados);
   }, [p]);
 
-  if (dados === null) return null;
+  if (dados === null) return <FinanceiroVisaoSkeleton />;
+
+  const resumo = dados.resumoMes;
+
+  // Derivar dados do grafico de receita a partir do receitaVsDespesa
+  const dadosGrafico: DadosReceita[] = dados.receitaVsDespesa.map((item) => ({
+    label: item.mes.slice(5), // e.g. "06", "07", "08"
+    valor: item.receita,
+  }));
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)' }}>
-      {/* Resumo do mes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                    gap: 'var(--s-6)' }}>
-        {([
-          { rotulo: 'Receita', valor: dados.resumoMes.receitaTotal, cor: '--ok' },
-          { rotulo: 'Despesa', valor: dados.resumoMes.despesaTotal, cor: '--danger' },
-          { rotulo: 'Saldo', valor: dados.resumoMes.saldo, cor: '--accent' },
-        ] as const).map((item) => (
-          <div key={item.rotulo} style={{
-            border: 'var(--border)', borderRadius: 'var(--r-md)',
-            background: 'var(--surface)', padding: 'var(--s-6)',
-          }}>
-            <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                           textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              {item.rotulo}
-            </span>
-            <p className="num" style={{
-              fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-              margin: `var(--s-2) 0 0`, fontVariantNumeric: 'tabular-nums',
-              color: `var(${item.cor})`,
-            }}>
-              {centavosParaReais(item.valor)}
-            </p>
-          </div>
-        ))}
+    <div className="grid gap-[var(--s-8)]">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <CardResumo
+          rotulo="Receita"
+          valor={centavosParaReais(resumo.receitaTotal)}
+          icone={TrendUp}
+          cor="sucesso"
+          {...(resumo.variacaoReceita != null ? { variacao: resumo.variacaoReceita } : {})}
+        />
+        <CardResumo
+          rotulo="Despesa"
+          valor={centavosParaReais(resumo.despesaTotal)}
+          icone={TrendDown}
+          cor="erro"
+          {...(resumo.variacaoDespesa != null ? { variacao: resumo.variacaoDespesa } : {})}
+        />
+        <CardResumo
+          rotulo="Saldo"
+          valor={centavosParaReais(resumo.saldo)}
+          icone={Wallet}
+          cor={resumo.saldo >= 0 ? 'sucesso' : 'erro'}
+        />
+        <CardResumo
+          rotulo="Pendente"
+          valor={centavosParaReais(resumo.pendente ?? 0)}
+          icone={Clock}
+          cor="aviso"
+        />
       </div>
 
       {/* Alertas */}
-      {dados.alertas.length > 0 ? (
-        <section aria-label="Alertas financeiros" style={{ display: 'grid', gap: 'var(--s-3)' }}>
-          {dados.alertas.map((a) => (
-            <div key={a.tipo} role="alert" style={{
-              display: 'flex', alignItems: 'center', gap: 'var(--s-4)',
-              padding: 'var(--s-4) var(--s-5)',
-              borderRadius: 'var(--r-md)',
-              background: `var(${BG_SEVERIDADE[a.severidade] ?? '--warn-soft'})`,
-              color: `var(${TOKEN_SEVERIDADE[a.severidade] ?? '--warn'})`,
-              fontSize: 'var(--fs-13)',
-            }}>
-              <span aria-hidden="true" style={{ fontWeight: 'var(--fw-semibold)' }}>
-                {GLIFO_SEVERIDADE[a.severidade] ?? '!'}
-              </span>
-              {a.mensagem}
-            </div>
-          ))}
-        </section>
-      ) : null}
+      <SecaoAlertas alertas={dados.alertas} />
 
-      {/* Receita vs Despesa */}
-      <section aria-label="Receita vs despesa" style={{
-        border: 'var(--border)', borderRadius: 'var(--r-md)',
-        background: 'var(--surface)', padding: 'var(--s-6)',
-      }}>
-        <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                     margin: `0 0 var(--s-4)` }}>
-          Receita vs despesa
-        </h2>
-        <div style={{ overflowX: 'auto' }}>
-          <GraficoReceitaDespesa dados={dados.receitaVsDespesa} />
-        </div>
-      </section>
+      {/* Seletor de periodo */}
+      <SeletorPeriodo
+        periodo={periodo as Periodo}
+        onChange={(p) => void setPeriodo(p)}
+      />
 
-      {/* Saldo projetado */}
-      <section aria-label="Saldo projetado" style={{
-        border: 'var(--border)', borderRadius: 'var(--r-md)',
-        background: 'var(--surface)', padding: 'var(--s-6)',
-      }}>
-        <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                     margin: `0 0 var(--s-4)` }}>
-          Saldo projetado
-        </h2>
-        <div style={{ overflowX: 'auto' }}>
-          <GraficoSaldoProjetado dados={dados.saldoProjetado} />
-        </div>
-      </section>
+      {/* Grafico de receita (visx) */}
+      <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
 
-      {/* Top 5 categorias */}
-      <section aria-label="Top categorias" style={{
-        border: 'var(--border)', borderRadius: 'var(--r-md)',
-        background: 'var(--surface)', padding: 'var(--s-6)',
-      }}>
-        <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                     margin: `0 0 var(--s-4)` }}>
-          Top categorias
-        </h2>
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
-                     gap: 'var(--s-3)' }}>
-          {dados.topCategorias.map((c) => (
-            <li key={c.nome} style={{
-              display: 'grid', gridTemplateColumns: '1fr auto auto',
-              alignItems: 'center', gap: 'var(--s-4)',
-              padding: 'var(--s-2) 0', borderBottom: 'var(--border)',
-              fontSize: 'var(--fs-14)',
-            }}>
-              <span>{c.nome}</span>
-              <span className="num" style={{ fontVariantNumeric: 'tabular-nums',
-                                              color: 'var(--text-muted)' }}>
-                {centavosParaReais(c.total)}
-              </span>
-              <span className="num" style={{ fontVariantNumeric: 'tabular-nums',
-                                              fontWeight: 'var(--fw-medium)',
-                                              minWidth: '3ch', textAlign: 'right' }}>
-                {c.percentual}%
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Top categorias */}
+      <SecaoCategorias categorias={dados.topCategorias} />
     </div>
   );
 }
