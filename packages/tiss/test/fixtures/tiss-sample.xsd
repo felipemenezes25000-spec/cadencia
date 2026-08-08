@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas"
+           targetNamespace="http://www.ans.gov.br/padroes/tiss/schemas"
+           elementFormDefault="qualified">
+
+  <xs:element name="mensagemTISS">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="cabecalho" type="ans:cabecalhoType"/>
+        <xs:element name="prestadorParaOperadora" type="ans:prestadorParaOperadoraType"/>
+        <xs:element name="epilogo" type="ans:epilogoType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="cabecalhoType">
+    <xs:sequence>
+      <xs:element name="versaoPadrao" type="xs:string"/>
+      <xs:element name="registroANS" type="xs:string"/>
+      <xs:element name="dataGeracao" type="xs:string"/>
+      <xs:element name="horaGeracao" type="xs:string"/>
+      <xs:element name="sequencialTransacao" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="prestadorParaOperadoraType">
+    <xs:sequence>
+      <xs:element name="loteGuias" type="ans:loteGuiasType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="loteGuiasType">
+    <xs:sequence>
+      <xs:element name="numeroLote" type="xs:string"/>
+      <xs:element name="guiaConsulta" type="ans:guiaConsultaType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="guiaConsultaType">
+    <xs:sequence>
+      <xs:element name="numeroGuiaPrestador" type="xs:string"/>
+      <xs:element name="numeroGuiaOperadora" type="xs:string" minOccurs="0"/>
+      <xs:element name="numeroCarteira" type="xs:string"/>
+      <xs:element name="atendimentoRN" type="xs:string"/>
+      <xs:element name="dadosContratado" type="ans:dadosContratadoType"/>
+      <xs:element name="profissionalExecutante" type="ans:profissionalExecutanteType"/>
+      <xs:element name="indicacaoAcidente" type="xs:string"/>
+      <xs:element name="regimeAtendimento" type="xs:string"/>
+      <xs:element name="saudeOcupacional" type="xs:string" minOccurs="0"/>
+      <xs:element name="coberturaEspecial" type="xs:string" minOccurs="0"/>
+      <xs:element name="dataAtendimento" type="xs:string"/>
+      <xs:element name="tipoConsulta" type="xs:string"/>
+      <xs:element name="codigoTabela" type="xs:string"/>
+      <xs:element name="codigoProcedimento" type="xs:string"/>
+      <xs:element name="valorProcedimento" type="xs:string"/>
+      <xs:element name="observacao" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="dadosContratadoType">
+    <xs:sequence>
+      <xs:element name="codigoPrestadorNaOperadora" type="xs:string" minOccurs="0"/>
+      <xs:element name="cpfContratado" type="xs:string" minOccurs="0"/>
+      <xs:element name="cnpjContratado" type="xs:string" minOccurs="0"/>
+      <xs:element name="CNES" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="profissionalExecutanteType">
+    <xs:sequence>
+      <xs:element name="conselhoProfissional" type="xs:string"/>
+      <xs:element name="numeroConselho" type="xs:string"/>
+      <xs:element name="ufConselho" type="xs:string"/>
+      <xs:element name="CBOS" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="epilogoType">
+    <xs:sequence>
+      <xs:element name="hash" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
