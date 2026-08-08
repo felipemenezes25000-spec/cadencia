@@ -1,7 +1,8 @@
 /**
  * Invariante de CI (§3.13 item 8, §3.9): terminologia se resolve pela DATA DO
  * EVENTO. Nenhuma leitura de relogio pode aparecer em codigo de terminologia --
- * nem no TypeScript de `catalogs`, nem no SQL das migrations de `ref`/`tiss`.
+ * nem no TypeScript de `catalogs`, nem no SQL das migrations de `ref`/`tiss`,
+ * nem no TypeScript de `tiss` (que gera queries para tiss.*).
  *
  * clock_timestamp() continua permitido: e a fonte de tempo de created_at, que
  * registra QUANDO a linha foi gravada, nao a competencia consultada.
@@ -16,6 +17,7 @@ import { join } from 'node:path';
 export const TERMINOLOGY_GLOBS: RegExp[] = [
   /^packages\/catalogs\/src\/.*\.ts$/,
   /^packages\/db\/migrations\/.*(ref|tiss|cid10|tuss).*\.sql$/,
+  /^packages\/tiss\/src\/.*\.ts$/,
 ];
 
 const TOKENS: { token: string; re: RegExp }[] = [

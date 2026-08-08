@@ -25,9 +25,9 @@ function agora(): Rfc3339 {
  * O SEQ e derivado do loteId para garantir unicidade dentro do mes.
  */
 function ansFileName(prestadorCnpj: string, loteId: string): string {
-  const now = new Date(systemClock.nowMs());
-  const ano = now.getUTCFullYear();
-  const mes = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const iso = isoFromMs(systemClock.nowMs());
+  const ano = iso.slice(0, 4);
+  const mes = iso.slice(5, 7);
   // Sequencia derivada do loteId: extrai digitos ou usa hash curto
   const seqHash = createHash('md5').update(loteId).digest('hex').slice(0, 6);
   const seqNum = parseInt(seqHash, 16);

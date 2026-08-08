@@ -10,7 +10,7 @@
 --     outbox quando kind IN (retificacao, adendo). O handler assincrono do
 --     worker usa esse evento para reprojetar a guia.
 --
--- Sem now()/current_date no schema tiss (invariante de CI).
+-- Sem uso de relogio de quem executa no schema tiss (invariante de CI).
 
 -- =========================================================================
 -- PARTE 1: tiss.guia_pendencia

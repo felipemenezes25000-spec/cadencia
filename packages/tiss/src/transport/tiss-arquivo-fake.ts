@@ -72,9 +72,9 @@ export function createFakeTissArquivoTransport(
       const f = talvezFalhar<TissSubmissionReceipt>();
       if (f) return f;
 
-      const now = new Date(systemClock.nowMs());
-      const ano = now.getUTCFullYear();
-      const mes = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const iso = isoFromMs(systemClock.nowMs());
+      const ano = iso.slice(0, 4);
+      const mes = iso.slice(5, 7);
       const seq = batches.length + 1;
       const fileName = `${i.prestador.cnpj}_${ano}_${mes}_${seq}.xml`;
       const sha256 = createHash('sha256').update(i.xml).digest('hex');

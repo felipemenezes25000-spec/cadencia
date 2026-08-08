@@ -7,7 +7,7 @@
 -- criacao. O ciclo de vida e: rascunho -> pronto -> enviado -> retornado.
 -- Cancelamento so e permitido antes do envio.
 --
--- Nenhuma ocorrencia de now() ou current_date neste schema (invariante de CI).
+-- Nenhuma ocorrencia de relogio de quem executa neste schema (invariante de CI).
 
 -- ---------------------------------------------------------------------------
 -- 1. Enum de status do lote

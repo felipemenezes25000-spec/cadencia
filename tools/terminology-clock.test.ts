@@ -36,6 +36,54 @@ describe('invariante: sem relogio em codigo de terminologia', () => {
     }])).toHaveLength(0);
   });
 
+  it('acusa now() em arquivo TypeScript do pacote tiss', () => {
+    const achados = findClockUsages([{
+      path: 'packages/tiss/src/bad-query.ts',
+      content: `const q = "SELECT * FROM tiss.guia WHERE created_at > now()";\n`,
+    }]);
+    expect(achados).toHaveLength(1);
+    expect(achados[0]?.token).toBe('now(');
+  });
+
+  it('acusa current_date em arquivo TypeScript do pacote tiss', () => {
+    const achados = findClockUsages([{
+      path: 'packages/tiss/src/query.ts',
+      content: `const sql = "WHERE data_atendimento = current_date";\n`,
+    }]);
+    expect(achados).toHaveLength(1);
+    expect(achados[0]?.token).toBe('current_date');
+  });
+
+  it('acusa new Date() em arquivo TypeScript do pacote tiss', () => {
+    const achados = findClockUsages([{
+      path: 'packages/tiss/src/helper.ts',
+      content: `const d = new Date();\n`,
+    }]);
+    expect(achados).toHaveLength(1);
+    expect(achados[0]?.token).toBe('new Date(');
+  });
+
+  it('nao acusa testes do pacote tiss — eles podem precisar de relogio para fixtures', () => {
+    const achados = findClockUsages([{
+      path: 'packages/tiss/src/serializer.test.ts',
+      content: `const agora = new Date();\n`,
+    }]);
+    // O collectTerminologyFiles ja exclui .test.ts, mas findClockUsages recebe
+    // a lista pronta — se alguem passar o teste, deve acusar, e o filtro e no collect.
+    // Este teste verifica que o GLOB nao inclui .test.ts, abaixo.
+    expect(achados).toHaveLength(1);
+  });
+
+  it('TERMINOLOGY_GLOBS inclui packages/tiss/src/ (excluindo testes via filtro do collect)', () => {
+    expect(TERMINOLOGY_GLOBS.some((re) => re.test('packages/tiss/src/serializer/encode.ts'))).toBe(true);
+    expect(TERMINOLOGY_GLOBS.some((re) => re.test('packages/tiss/src/transport/types.ts'))).toBe(true);
+  });
+
+  it('TERMINOLOGY_GLOBS NAO casa com arquivos fora de packages/tiss/src, packages/catalogs/src ou migrations de ref/tiss', () => {
+    expect(TERMINOLOGY_GLOBS.some((re) => re.test('packages/payments/src/split.ts'))).toBe(false);
+    expect(TERMINOLOGY_GLOBS.some((re) => re.test('packages/db/migrations/0042_encounter_billing.sql'))).toBe(false);
+  });
+
   it('a arvore real do repositorio esta limpa', () => {
     const arquivos = collectTerminologyFiles();
     // Se der zero, o glob esta errado e o invariante nao esta olhando para nada.

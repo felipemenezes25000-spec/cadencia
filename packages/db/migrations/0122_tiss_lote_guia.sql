@@ -6,7 +6,7 @@
 -- nao-cancelado: o indice parcial ux_guia_em_lote_ativo impede duplicacao.
 -- sequencial_item define a ordem da guia dentro do lote (item no XML).
 --
--- Nenhuma ocorrencia de now() ou current_date neste schema (invariante de CI).
+-- Nenhuma ocorrencia de relogio de quem executa neste schema (invariante de CI).
 
 CREATE TABLE tiss.lote_guia (
   tenant_id        uuid NOT NULL DEFAULT app.require_tenant_id(),
