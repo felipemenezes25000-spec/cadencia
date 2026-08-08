@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { PainelDeCobranca, type MetodoPagamento } from '../ui/PainelDeCobranca';
+import { ToastProvider } from '../ui/ToastProvider';
 
 /**
  * Este teste valida o contrato de revalidacao: ao registrar pagamento,
@@ -74,7 +75,9 @@ describe('revalidacao do caixa do dia apos pagamento', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <CobrancaComInvalidacao buscarCaixa={buscarCaixa} />
+        <ToastProvider>
+          <CobrancaComInvalidacao buscarCaixa={buscarCaixa} />
+        </ToastProvider>
       </QueryClientProvider>
     );
 
@@ -84,7 +87,7 @@ describe('revalidacao do caixa do dia apos pagamento', () => {
 
     // 2. Abrir painel de cobranca
     await userEvent.click(screen.getByRole('button', { name: /Abrir cobranca/ }));
-    expect(screen.getByRole('dialog', { name: /Cobrar/ })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: /Cobranca/ })).toBeVisible();
 
     // 3. Registrar pagamento
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
@@ -132,7 +135,9 @@ describe('revalidacao do caixa do dia apos pagamento', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <Falha />
+        <ToastProvider>
+          <Falha />
+        </ToastProvider>
       </QueryClientProvider>
     );
 

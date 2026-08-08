@@ -2,128 +2,248 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  QrCode,
+  Money,
+  CreditCard,
+  Barcode,
+  Copy,
+  Link,
+} from '@phosphor-icons/react';
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 import { PainelLateral } from './PainelLateral';
 import { Botao } from './Botao';
 import { Campo } from './Campo';
+import { Icone } from './Icone';
+import { useToast } from './ToastProvider';
+import { cn } from '../lib/cn';
 
-export type MetodoPagamento = 'dinheiro' | 'cartao' | 'pix' | 'link';
+export type MetodoPagamento = 'pix' | 'dinheiro' | 'credito' | 'debito' | 'boleto';
 
 export interface PainelDeCobrancaProps {
   readonly aberto: boolean;
   readonly pacienteNome: string;
   readonly procedimentoNome: string;
   readonly valorSugeridoCentavos: number;
-  readonly aoRegistrar: (dados: { amountCents: number; method: Exclude<MetodoPagamento, 'link'> }) =>
-    Promise<{ entryId: string; receiptNumber: number }>;
-  readonly aoCriarLink: (dados: { amountCents: number }) =>
-    Promise<{ linkUrl: string; linkId: string }>;
+  readonly aoRegistrar: (dados: {
+    amountCents: number;
+    method: MetodoPagamento;
+  }) => Promise<{ entryId: string; receiptNumber: number }>;
+  readonly aoCriarLink: (dados: {
+    amountCents: number;
+  }) => Promise<{ linkUrl: string; linkId: string }>;
   readonly aoFechar: () => void;
 }
 
-const METODOS: ReadonlyArray<{ valor: MetodoPagamento; rotulo: string }> = [
-  { valor: 'dinheiro', rotulo: 'Dinheiro' },
-  { valor: 'cartao', rotulo: 'Cartão' },
-  { valor: 'pix', rotulo: 'Pix' },
-  { valor: 'link', rotulo: 'Link' },
+interface MetodoPagamentoOpcao {
+  readonly id: MetodoPagamento;
+  readonly rotulo: string;
+  readonly icone: PhosphorIcon;
+}
+
+const METODOS_PAGAMENTO: readonly MetodoPagamentoOpcao[] = [
+  { id: 'pix', rotulo: 'PIX', icone: QrCode },
+  { id: 'dinheiro', rotulo: 'Dinheiro', icone: Money },
+  { id: 'credito', rotulo: 'Cartao de credito', icone: CreditCard },
+  { id: 'debito', rotulo: 'Cartao de debito', icone: CreditCard },
+  { id: 'boleto', rotulo: 'Boleto', icone: Barcode },
 ];
 
-function centavosParaTexto(centavos: number): string {
-  const inteiro = Math.floor(centavos / 100);
-  const decimais = String(centavos % 100).padStart(2, '0');
-  return `${inteiro},${decimais}`;
+function formatarValorInput(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  const centavos = parseInt(digits, 10) || 0;
+  return (centavos / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-function textoParaCentavos(texto: string): number | null {
-  const limpo = texto.replace(/\s/g, '').replace('.', ',');
-  const partes = limpo.split(',');
-  if (partes.length > 2) return null;
-  const inteiro = parseInt(partes[0] ?? '0', 10);
-  if (Number.isNaN(inteiro)) return null;
-  let decimais = 0;
-  if (partes.length === 2) {
-    const decStr = (partes[1] ?? '').padEnd(2, '0').slice(0, 2);
-    decimais = parseInt(decStr, 10);
-    if (Number.isNaN(decimais)) return null;
+function parseValor(texto: string): number {
+  const digits = texto.replace(/\D/g, '');
+  return parseInt(digits, 10) || 0;
+}
+
+interface FormDados {
+  valor: string;
+}
+
+export function PainelDeCobranca({
+  aberto,
+  pacienteNome,
+  procedimentoNome,
+  valorSugeridoCentavos,
+  aoRegistrar,
+  aoCriarLink,
+  aoFechar,
+}: PainelDeCobrancaProps) {
+  const [metodoSelecionado, setMetodoSelecionado] =
+    useState<MetodoPagamento>('pix');
+  const [linkPagamento, setLinkPagamento] = useState<string | null>(null);
+  const [gerandoLink, setGerandoLink] = useState(false);
+  const { toast } = useToast();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    getValues,
+  } = useForm<FormDados>({
+    defaultValues: {
+      valor: formatarValorInput(String(valorSugeridoCentavos)),
+    },
+  });
+
+  const valorRegistro = register('valor', {
+    validate: (v) => {
+      if (!v || parseValor(v) <= 0) return 'Informe o valor';
+      return true;
+    },
+  });
+
+  async function onSubmit(dados: FormDados) {
+    const centavos = parseValor(dados.valor);
+    if (centavos <= 0) return;
+    await aoRegistrar({
+      amountCents: centavos,
+      method: metodoSelecionado,
+    });
+    toast({ tipo: 'sucesso', mensagem: 'Pagamento registrado!' });
+    aoFechar();
   }
-  return inteiro * 100 + decimais;
-}
 
-export function PainelDeCobranca(p: PainelDeCobrancaProps) {
-  const [metodo, setMetodo] = useState<MetodoPagamento>('dinheiro');
-  const [valorTexto, setValorTexto] = useState(() => centavosParaTexto(p.valorSugeridoCentavos));
-  const [carregando, setCarregando] = useState(false);
-  const [linkCriado, setLinkCriado] = useState<string | null>(null);
-
-  async function registrar(): Promise<void> {
-    const centavos = textoParaCentavos(valorTexto);
-    if (centavos === null || centavos <= 0) return;
-    setCarregando(true);
+  async function gerarLink() {
+    const valorAtual = getValues('valor');
+    const centavos = parseValor(valorAtual);
+    if (centavos <= 0) return;
+    setGerandoLink(true);
     try {
-      if (metodo === 'link') {
-        const resultado = await p.aoCriarLink({ amountCents: centavos });
-        setLinkCriado(resultado.linkUrl);
-      } else {
-        await p.aoRegistrar({ amountCents: centavos, method: metodo });
-      }
+      const resultado = await aoCriarLink({ amountCents: centavos });
+      setLinkPagamento(resultado.linkUrl);
     } finally {
-      setCarregando(false);
+      setGerandoLink(false);
     }
   }
 
-  const rotuloConfirmar = metodo === 'link' ? 'Enviar link' : 'Registrar';
+  async function copiarLink(link: string) {
+    await navigator.clipboard.writeText(link);
+    toast({ tipo: 'sucesso', mensagem: 'Link copiado!' });
+  }
 
   return (
-    <PainelLateral aberto={p.aberto} titulo="Cobrar" aoFechar={p.aoFechar}>
-      <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <span style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-medium)' }}>
-            {p.pacienteNome}
-          </span>
-          <span style={{ fontSize: 'var(--fs-13)', color: 'var(--text-muted)' }}>
-            {p.procedimentoNome}
-          </span>
+    <PainelLateral
+      aberto={aberto}
+      titulo="Cobranca"
+      aoFechar={aoFechar}
+      largura="sm"
+    >
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-[var(--s-6)]"
+      >
+        {/* Informacoes do paciente */}
+        <div className="rounded-lg bg-surface-raised p-3">
+          <p className="text-sm font-medium text-text">{pacienteNome}</p>
+          <p className="text-xs text-text-muted">{procedimentoNome}</p>
         </div>
 
+        {/* Campo de valor */}
         <Campo
-          rotulo="Valor (R$)"
-          value={valorTexto}
-          onChange={(e) => setValorTexto(e.target.value)}
+          rotulo="Valor"
+          prefixo={<span className="text-sm text-text-muted">R$</span>}
+          placeholder="0,00"
           inputMode="decimal"
-          aria-label="Valor"
+          ref={valorRegistro.ref}
+          name={valorRegistro.name}
+          onBlur={valorRegistro.onBlur}
+          onChange={(e) => {
+            const formatado = formatarValorInput(e.target.value);
+            e.target.value = formatado;
+            void valorRegistro.onChange(e);
+          }}
+          erro={errors.valor?.message}
         />
 
-        <fieldset style={{ border: 0, margin: 0, padding: 0, display: 'grid', gap: 'var(--s-3)' }}>
-          <legend style={{ fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-                           color: 'var(--text-muted)', marginBottom: 'var(--s-2)' }}>
+        {/* Forma de pagamento */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-sm font-medium text-text">
             Forma de pagamento
           </legend>
-          {METODOS.map((m) => (
-            <label key={m.valor} style={{ display: 'flex', alignItems: 'center',
-                                          gap: 'var(--s-3)', cursor: 'pointer',
-                                          fontSize: 'var(--fs-14)' }}>
+          {METODOS_PAGAMENTO.map((m) => (
+            <label
+              key={m.id}
+              className={cn(
+                'flex cursor-pointer items-center gap-3 rounded-lg border p-3',
+                'transition-colors duration-[var(--dur-2)]',
+                metodoSelecionado === m.id
+                  ? 'border-accent bg-accent-soft'
+                  : 'border-line hover:bg-surface-raised',
+              )}
+            >
               <input
-                type="radio" name="metodo" value={m.valor}
-                checked={metodo === m.valor}
-                onChange={() => setMetodo(m.valor)}
-                aria-label={m.rotulo}
+                type="radio"
+                name="metodo"
+                value={m.id}
+                checked={metodoSelecionado === m.id}
+                onChange={() => setMetodoSelecionado(m.id)}
+                className="accent-accent"
               />
-              {m.rotulo}
+              <Icone icon={m.icone} size="md" className="text-text-muted" />
+              <span className="text-sm text-text">{m.rotulo}</span>
             </label>
           ))}
         </fieldset>
 
-        {linkCriado !== null ? (
-          <div role="status" style={{ padding: 'var(--s-4)', background: 'var(--success-soft)',
-                                      borderRadius: 'var(--r-md)', fontSize: 'var(--fs-13)' }}>
-            Link criado e copiado para a area de transferencia.
-          </div>
-        ) : (
-          <Botao variante="primario" altura={40} carregando={carregando}
-            onClick={() => { void registrar(); }}>
-            {rotuloConfirmar}
+        {/* Acoes */}
+        <div className="flex flex-col gap-2 pt-2">
+          <Botao
+            variante="primario"
+            fullWidth
+            type="submit"
+            carregando={isSubmitting}
+          >
+            Registrar pagamento
           </Botao>
+          <Botao
+            variante="secundario"
+            fullWidth
+            type="button"
+            iconeEsquerda={Link}
+            onClick={() => {
+              void gerarLink();
+            }}
+            carregando={gerandoLink}
+          >
+            Gerar link de pagamento
+          </Botao>
+        </div>
+
+        {/* Link de pagamento gerado */}
+        {linkPagamento && (
+          <div className="rounded-lg border border-line bg-surface-raised p-3">
+            <p className="mb-2 text-xs text-text-muted">Link de pagamento</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={linkPagamento}
+                readOnly
+                className="flex-1 truncate bg-transparent text-xs text-text outline-none font-mono"
+                aria-label="Link de pagamento"
+              />
+              <Botao
+                variante="fantasma"
+                tamanho="sm"
+                iconeEsquerda={Copy}
+                onClick={() => {
+                  void copiarLink(linkPagamento);
+                }}
+              >
+                Copiar
+              </Botao>
+            </div>
+          </div>
         )}
-      </div>
+      </form>
     </PainelLateral>
   );
 }
