@@ -11,6 +11,7 @@ import { ConveniosOperadoras, type OperadorasDados } from './ConveniosOperadoras
 
 const CONTADORES: ContadoresConvenios = {
   guiasAFaturar: 7, lotesRascunho: 1, lotesEnviados: 3, pendencias: 2,
+  glosasPendentes: 0, recursosRascunho: 0,
 };
 
 const DADOS_FATURAR: AFaturarDados = {

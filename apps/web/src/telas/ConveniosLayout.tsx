@@ -5,13 +5,15 @@ import type { ReactNode } from 'react';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
-export type SubAbaConvenios = 'a-faturar' | 'lotes' | 'operadoras';
+export type SubAbaConvenios = 'a-faturar' | 'lotes' | 'retornos' | 'operadoras';
 
 export interface ContadoresConvenios {
   readonly guiasAFaturar: number;
   readonly lotesRascunho: number;
   readonly lotesEnviados: number;
   readonly pendencias: number;
+  readonly glosasPendentes: number;
+  readonly recursosRascunho: number;
 }
 
 export type FiltroConvenios = keyof ContadoresConvenios;
@@ -25,14 +27,17 @@ interface SubAbaConfig {
 const SUB_ABAS: readonly SubAbaConfig[] = [
   { slug: 'a-faturar',  rotulo: 'A faturar',  href: '/financeiro/convenios' },
   { slug: 'lotes',      rotulo: 'Lotes',       href: '/financeiro/convenios/lotes' },
+  { slug: 'retornos',   rotulo: 'Retornos',    href: '/financeiro/convenios/retornos' },
   { slug: 'operadoras', rotulo: 'Operadoras',  href: '/financeiro/convenios/operadoras' },
 ];
 
 const ROTULOS_CONTADORES: Record<FiltroConvenios, string> = {
-  guiasAFaturar: 'Guias a faturar',
-  lotesRascunho: 'Lotes rascunho',
-  lotesEnviados: 'Lotes enviados',
-  pendencias:    'Pendencias',
+  guiasAFaturar:    'Guias a faturar',
+  lotesRascunho:    'Lotes rascunho',
+  lotesEnviados:    'Lotes enviados',
+  pendencias:       'Pendencias',
+  glosasPendentes:  'Glosas pendentes',
+  recursosRascunho: 'Recursos rascunho',
 };
 
 // ── Props ──────────────────────────────────────────────────────────────────
