@@ -284,6 +284,14 @@ export const STOCK_MOVEMENT_B = '01930000-0000-7000-8000-000000001056';
 export const STOCK_ALERT_A = '01930000-0000-7000-8000-000000001057';
 export const STOCK_ALERT_B = '01930000-0000-7000-8000-000000001058';
 
+/** Lote TISS: um em cada tenant. */
+export const LOTE_A = '01930000-0000-7000-8000-000000001061';
+export const LOTE_B = '01930000-0000-7000-8000-000000001062';
+
+/** Juncao lote x guia: uma em cada tenant. */
+export const LOTE_GUIA_A = '01930000-0000-7000-8000-000000001063';
+export const LOTE_GUIA_B = '01930000-0000-7000-8000-000000001064';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

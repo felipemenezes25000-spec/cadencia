@@ -1225,4 +1225,45 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B,
      F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL],
   );
+
+  // tiss.lote_number_counter nasceu na Fase 4 (bloco 06, migration 0121):
+  // contador de numero de lote por operadora. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B.
+  await admin.query(
+    `INSERT INTO tiss.lote_number_counter
+       (tenant_id, operadora_id, next_value) VALUES
+       ($1, $3, 2),
+       ($2, $4, 2)`,
+    [F.TENANT_A, F.TENANT_B, F.OPERADORA_A, F.OPERADORA_B],
+  );
+
+  // tiss.lote nasceu na Fase 4 (bloco 06, migration 0121): agrupamento de guias
+  // para envio a operadora. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO tiss.lote
+       (tenant_id, id, operadora_id, numero_lote, tiss_version,
+        created_by) VALUES
+       ($1, $3, $5, '1', '3.05', $7),
+       ($2, $4, $6, '1', '3.05', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LOTE_A, F.LOTE_B,
+     F.OPERADORA_A, F.OPERADORA_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // tiss.lote_guia nasceu na Fase 4 (bloco 06, migration 0122): juncao
+  // many-to-many entre lote e guia de consulta com ordem. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senao o teste meta reprova e
+  // o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO tiss.lote_guia
+       (tenant_id, lote_id, guia_id, sequencial_item) VALUES
+       ($1, $3, $5, 1),
+       ($2, $4, $6, 1)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LOTE_A, F.LOTE_B,
+     F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B],
+  );
 }

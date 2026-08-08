@@ -1111,6 +1111,15 @@
       ]
     }
   },
+  "tiss.lote_guia": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "tiss.lote_number_counter": {
     "table": {
       "app_rw": [
