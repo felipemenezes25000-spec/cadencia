@@ -38,3 +38,5 @@ export type {
 export { projectGuiaConsulta } from './project-guia';
 
 export { reprojectGuiaOnAmend, type ReprojectAction, type ReprojectError } from './reproject-guia';
+
+export { createLote, type CreateLoteInput, type CreatedLote, type CreateLoteFailure } from './create-lote';
