@@ -76,13 +76,34 @@ export {
   type SubmittedBatch,
 } from './transport/tiss-arquivo-fake';
 
-// --- Recurso de glosa (Fase 5) ---
+// Recurso de glosa (Fase 5)
 export {
+  createRecursoGlosa,
+  addGlosaToRecurso,
+  removeGlosaFromRecurso,
+  markRecursoReady,
+  submitRecurso,
   resolveRecurso,
-  type ResolveResult,
-  type ResolveRecursoResult,
+  type RecursoStatus,
+  type GlosaItemResultado,
+  type CreateRecursoGlosaInput,
+  type CreateRecursoItemInput,
+  type CreateRecursoFailure,
+  type CreatedRecurso,
+  type AddGlosaFailure,
+  type AddedGlosaItem,
+  type RemoveGlosaFailure,
+  type RemovedGlosaItem,
+  type MarkReadyFailure,
+  type RecursoReadyResult,
+  type SubmitRecursoFailure,
+  type RecursoSentResult,
+  type RecursoIndeterminadoResult,
   type ResolveRecursoFailure,
-} from './resolve-recurso';
+  type ResolveRecursoInput,
+  type ResolveItemInput,
+  type RecursoResolvedResult,
+} from './recurso-glosa/index';
 
 // --- Demonstrativo (Fase 5) ---
 export {
