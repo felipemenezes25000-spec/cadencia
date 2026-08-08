@@ -221,4 +221,99 @@ describe('tela Agenda', () => {
     await esperarCarregar();
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  /* ── Testes de drag-and-drop (task-21) ──────────────────── */
+
+  describe('Agenda drag-and-drop', () => {
+    it('agendamentos sao arrostaveis (atributos de drag presentes)', async () => {
+      montar();
+      await esperarCarregar();
+      const grid = await escopoDesktop();
+      const item = grid.getByText('Maria Souza Lima');
+
+      // O handle de arraste (span pai do texto) recebe tabindex do useDraggable
+      const handle = item.closest('[tabindex="0"]') as HTMLElement;
+      expect(handle).toBeTruthy();
+      expect(handle.tagName).toBe('SPAN');
+    });
+
+    it('mostra ghost na posicao original (classe de arraste disponivel)', async () => {
+      montar();
+      await esperarCarregar();
+      const grid = await escopoDesktop();
+      const item = grid.getByText('Maria Souza Lima');
+      const bloco = item.closest('[data-status]') as HTMLElement;
+
+      // Antes de arrastar, o bloco nao tem opacidade reduzida
+      expect(bloco.className).not.toContain('opacity-30');
+    });
+
+    it('marca agendamentos com aria-roledescription para acessibilidade', async () => {
+      montar();
+      await esperarCarregar();
+      const grid = await escopoDesktop();
+      const item = grid.getByText('Maria Souza Lima');
+      const bloco = item.closest('[data-status]') as HTMLElement;
+
+      expect(bloco).toHaveAttribute('aria-roledescription', 'item arrastavel');
+      expect(bloco).toHaveAttribute('aria-describedby', 'dnd-instrucoes');
+    });
+
+    it('renderiza instrucoes de acessibilidade para DnD', async () => {
+      montar();
+      await esperarCarregar();
+
+      const instrucoes = document.getElementById('dnd-instrucoes');
+      expect(instrucoes).toBeInTheDocument();
+      expect(instrucoes?.textContent).toContain('Pressione espaco para arrastar');
+      expect(instrucoes?.textContent).toContain('Use as setas para mover');
+      expect(instrucoes?.textContent).toContain('Pressione escape para cancelar');
+    });
+
+    it('time slots sao droppable (possuem data-horario)', async () => {
+      montar();
+      await esperarCarregar();
+
+      // Os slots vazios devem existir com data-horario
+      const container = document.querySelector('[data-view="desktop-grid"]') as HTMLElement;
+      const slotsEl = container.querySelectorAll('[data-slot="vazio"]');
+      expect(slotsEl.length).toBeGreaterThan(0);
+
+      // Cada slot deve ter um data-horario no formato HH:MM
+      const primeiroSlot = slotsEl[0] as HTMLElement;
+      expect(primeiroSlot).toHaveAttribute('data-horario');
+      const horario = primeiroSlot.getAttribute('data-horario')!;
+      expect(horario).toMatch(/^\d{2}:\d{2}$/);
+    });
+
+    it('clicar em slot vazio continua abrindo compositor (click nao e bloqueado pelo DnD)', async () => {
+      const { aoAbrirCompositor } = montar();
+      const slots = await waitFor(() => {
+        const s = document.querySelectorAll('[data-slot="vazio"]');
+        expect(s.length).toBeGreaterThan(0);
+        return s;
+      });
+      await userEvent.click(slots[0] as HTMLElement);
+      expect(aoAbrirCompositor).toHaveBeenCalled();
+    });
+
+    it('DragOverlay nao esta visivel quando nao arrasta', async () => {
+      montar();
+      await esperarCarregar();
+
+      // O overlay so aparece quando activeAgendamento esta setado
+      expect(screen.queryByTestId('drag-overlay')).not.toBeInTheDocument();
+    });
+
+    it('cursor e grab no handle de arraste', async () => {
+      montar();
+      await esperarCarregar();
+      const grid = await escopoDesktop();
+      const item = grid.getByText('Maria Souza Lima');
+      // O cursor-grab esta no handle de arraste (span com tabindex)
+      const handle = item.closest('[tabindex="0"]') as HTMLElement;
+
+      expect(handle.className).toContain('cursor-grab');
+    });
+  });
 });

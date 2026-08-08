@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CaretLeft, CaretRight, Plus } from '@phosphor-icons/react';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { VISOES, faixasDoDia, type Visao } from './grade';
 import type { LinhaDaFila } from './Hoje';
 import type { StatusAgenda } from '../ui/ChipDeStatus';
@@ -9,6 +10,7 @@ import { Botao } from '../ui/Botao';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { PageHeader } from '../ui/PageHeader';
 import { Skeleton } from '../ui/Skeleton';
+import { AgendaDragContext } from './AgendaDragContext';
 import { cn } from '../lib/cn';
 
 export interface AgendaProps {
@@ -175,19 +177,32 @@ function BlocoDeAgendamento({
   readonly aoCobrar: (id: string) => void;
 }) {
   const { top, height } = calcularPosicao(item.startsAt, item.endsAt, timezone);
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: item.appointmentId,
+    data: { agendamento: item },
+  });
+
+  // Desestruturar attributes para evitar role="button" que causa nested-interactive
+  // quando o bloco contem botoes internos (Confirmar, Cobrar).
+  const { role: _role, ...dragAttrs } = attributes;
 
   return (
     <div
+      ref={setNodeRef}
       data-status={item.status}
+      aria-roledescription="item arrastavel"
+      aria-describedby="dnd-instrucoes"
       className={cn(
-        'absolute left-1 right-1 rounded-[var(--r-sm)] px-2 py-1 text-xs cursor-pointer',
+        'absolute left-1 right-1 rounded-[var(--r-sm)] text-xs',
         'border-l-[3px] overflow-hidden',
         'transition-shadow duration-150 hover:shadow-elev-1',
         coresDeStatus[item.status],
+        isDragging && 'opacity-30',
       )}
       style={{
         top: `${top}px`,
         height: `${height}px`,
+        transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
         ...(item.procedureCor ? { borderLeftColor: item.procedureCor } : {}),
         ...(item.encaixe ? {
           background: 'repeating-linear-gradient(45deg, var(--surface) 0 6px, var(--surface-sunken) 6px 12px)',
@@ -195,7 +210,12 @@ function BlocoDeAgendamento({
       }}
     >
       <div className="flex items-center justify-between h-full min-w-0">
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+        {/* Area arrastavel: recebe listeners e atributos do dnd-kit */}
+        <span
+          {...listeners}
+          {...dragAttrs}
+          className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1 cursor-grab active:cursor-grabbing px-2 py-1"
+        >
           {item.displayName}
           {item.status === 'confirmado' && (
             <span
@@ -206,7 +226,7 @@ function BlocoDeAgendamento({
             </span>
           )}
         </span>
-        <span className="flex gap-[var(--s-2)] shrink-0">
+        <span className="flex gap-[var(--s-2)] shrink-0 pr-1">
           {item.status === 'agendado' && (
             <Botao
               variante="fantasma" tamanho="sm"
@@ -229,6 +249,42 @@ function BlocoDeAgendamento({
         </span>
       </div>
     </div>
+  );
+}
+
+/* ── SlotDeHorario (drop target de 15 minutos) ──────────── */
+
+function SlotDeHorario({
+  horario,
+  colIdx,
+  slotIdx,
+  aoAbrirCompositor,
+}: {
+  readonly horario: string;
+  readonly colIdx: number;
+  readonly slotIdx: number;
+  readonly aoAbrirCompositor: (inicioMin: number) => void;
+}) {
+  const droppableId = `slot-${colIdx}-${horario}`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+
+  return (
+    <div
+      ref={setNodeRef}
+      data-slot="vazio"
+      data-horario={horario}
+      className={cn(
+        'absolute left-0 right-0 cursor-pointer transition-colors duration-100',
+        isOver
+          ? 'border-b-2 border-dashed border-[var(--accent)] bg-[var(--accent)]/5'
+          : 'hover:bg-accent/5',
+      )}
+      style={{
+        top: `${(slotIdx * PASSO_MIN / 60) * PX_POR_HORA}px`,
+        height: `${(PASSO_MIN / 60) * PX_POR_HORA}px`,
+      }}
+      onClick={() => aoAbrirCompositor(INICIO_MIN + slotIdx * PASSO_MIN)}
+    />
   );
 }
 
@@ -306,17 +362,14 @@ function GradeDeHorarios({
               />
             ))}
 
-            {/* Slots clicaveis de 15 minutos */}
+            {/* Slots clicaveis de 15 minutos (droppable) */}
             {FAIXAS.map((f, i) => (
-              <div
+              <SlotDeHorario
                 key={`c-${f}`}
-                data-slot="vazio"
-                className="absolute left-0 right-0 cursor-pointer hover:bg-accent/5 transition-colors duration-100"
-                style={{
-                  top: `${(i * PASSO_MIN / 60) * PX_POR_HORA}px`,
-                  height: `${(PASSO_MIN / 60) * PX_POR_HORA}px`,
-                }}
-                onClick={() => aoAbrirCompositor(INICIO_MIN + i * PASSO_MIN)}
+                horario={f}
+                colIdx={colIdx}
+                slotIdx={i}
+                aoAbrirCompositor={aoAbrirCompositor}
               />
             ))}
 
@@ -538,6 +591,16 @@ export function Agenda(p: AgendaProps) {
     }
   }
 
+  /* Mover agendamento via drag-and-drop */
+  function moverAgendamento(agendamentoId: string, novoSlotId: string): void {
+    // O novoSlotId tem o formato "slot-{colIdx}-{horario}" onde horario e "HH:MM"
+    const parts = novoSlotId.split('-');
+    const horario = parts.slice(2).join('-'); // "HH:MM" (rejoin in case of unexpected dashes)
+    if (horario) {
+      void p.aoMover(agendamentoId, horario);
+    }
+  }
+
   /* Navegacao de data */
   function navAnterior(): void {
     if (p.visao === 'mes') p.aoMudarDia(adicionarMeses(p.dia, -1));
@@ -629,13 +692,19 @@ export function Agenda(p: AgendaProps) {
         ) : (
           <>
             <TabsContent value="dia">
-              {/* Desktop: grade de horarios */}
+              {/* Desktop: grade de horarios com DnD */}
               <div className="hidden md:block" data-view="desktop-grid">
-                <GradeDeHorarios
-                  itensPorColuna={[itens]}
-                  ariaLabel={`Agenda de ${p.dia}`}
-                  {...gradeProps}
-                />
+                <AgendaDragContext
+                  onMover={moverAgendamento}
+                  agendamentos={itens}
+                  timezone={p.timezone}
+                >
+                  <GradeDeHorarios
+                    itensPorColuna={[itens]}
+                    ariaLabel={`Agenda de ${p.dia}`}
+                    {...gradeProps}
+                  />
+                </AgendaDragContext>
               </div>
               {/* Mobile: lista cronologica */}
               <div className="md:hidden" data-view="mobile-list">
@@ -648,12 +717,18 @@ export function Agenda(p: AgendaProps) {
 
             <TabsContent value="semana">
               <div className="overflow-x-auto">
-                <GradeDeHorarios
-                  itensPorColuna={semanaItens}
-                  cabecalhos={semanaCabecalhos}
-                  ariaLabel={`Agenda da semana de ${p.dia}`}
-                  {...gradeProps}
-                />
+                <AgendaDragContext
+                  onMover={moverAgendamento}
+                  agendamentos={itens}
+                  timezone={p.timezone}
+                >
+                  <GradeDeHorarios
+                    itensPorColuna={semanaItens}
+                    cabecalhos={semanaCabecalhos}
+                    ariaLabel={`Agenda da semana de ${p.dia}`}
+                    {...gradeProps}
+                  />
+                </AgendaDragContext>
               </div>
             </TabsContent>
 
@@ -665,21 +740,33 @@ export function Agenda(p: AgendaProps) {
             </TabsContent>
 
             <TabsContent value="profissional">
-              <GradeDeHorarios
-                itensPorColuna={profItens}
-                cabecalhos={profCabecalhos}
-                ariaLabel="Agenda por profissional"
-                {...gradeProps}
-              />
+              <AgendaDragContext
+                onMover={moverAgendamento}
+                agendamentos={itens}
+                timezone={p.timezone}
+              >
+                <GradeDeHorarios
+                  itensPorColuna={profItens}
+                  cabecalhos={profCabecalhos}
+                  ariaLabel="Agenda por profissional"
+                  {...gradeProps}
+                />
+              </AgendaDragContext>
             </TabsContent>
 
             <TabsContent value="sala">
-              <GradeDeHorarios
-                itensPorColuna={salaItens}
-                cabecalhos={['Sala']}
-                ariaLabel="Agenda por sala"
-                {...gradeProps}
-              />
+              <AgendaDragContext
+                onMover={moverAgendamento}
+                agendamentos={itens}
+                timezone={p.timezone}
+              >
+                <GradeDeHorarios
+                  itensPorColuna={salaItens}
+                  cabecalhos={['Sala']}
+                  ariaLabel="Agenda por sala"
+                  {...gradeProps}
+                />
+              </AgendaDragContext>
             </TabsContent>
           </>
         )}
