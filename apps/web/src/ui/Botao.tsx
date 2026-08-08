@@ -1,56 +1,130 @@
 'use client';
 
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ReactNode, ButtonHTMLAttributes } from 'react';
+import { type Icon as PhosphorIcon, SpinnerGap } from '@phosphor-icons/react';
+import { motion } from 'motion/react';
+import { cn } from '../lib/cn';
 
-export type VarianteBotao = 'primario' | 'secundario' | 'fantasma';
+export type VarianteBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo';
+export type TamanhoBotao = 'sm' | 'md' | 'lg';
+/** @deprecated Use `tamanho` instead */
 export type AlturaBotao = 28 | 32 | 40;
 
 export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+  /** Variante visual */
   readonly variante?: VarianteBotao;
+  /** Tamanho */
+  readonly tamanho?: TamanhoBotao;
+  /** @deprecated Use `tamanho` instead. Mantido para compatibilidade. */
   readonly altura?: AlturaBotao;
+  /** Icone a esquerda */
+  readonly iconeEsquerda?: PhosphorIcon;
+  /** Icone a direita */
+  readonly iconeDireita?: PhosphorIcon;
+  /** Estado de carregamento */
   readonly carregando?: boolean;
+  /** Largura total do container */
+  readonly fullWidth?: boolean;
+  /** Conteudo */
   readonly children: ReactNode;
 }
 
-const ESTILO: Record<VarianteBotao, React.CSSProperties> = {
-  primario:   { background: 'var(--accent)', color: 'var(--accent-on)', border: '1px solid transparent' },
-  secundario: { background: 'var(--surface)', color: 'var(--text)', border: 'var(--border)' },
-  fantasma:   { background: 'transparent', color: 'var(--text)', border: '1px solid transparent' },
+const ALTURA_PARA_TAMANHO: Record<AlturaBotao, TamanhoBotao> = {
+  28: 'sm',
+  32: 'md',
+  40: 'lg',
+};
+
+const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+};
+
+const classesVariante: Record<VarianteBotao, string> = {
+  primario: 'bg-accent text-accent-on hover:brightness-110',
+  secundario: 'bg-surface border border-line text-text hover:bg-surface-raised',
+  fantasma: 'bg-transparent text-text hover:bg-surface-raised',
+  perigo: 'bg-danger text-white hover:brightness-110',
+};
+
+const classesTamanho: Record<TamanhoBotao, string> = {
+  sm: 'h-7 px-2.5 text-xs gap-1.5',
+  md: 'h-8 px-3 text-sm gap-2',
+  lg: 'h-10 px-4 text-sm gap-2',
 };
 
 export function Botao({
-  variante = 'primario', altura = 32, carregando = false, children, disabled, ...resto
+  variante = 'primario',
+  tamanho,
+  altura,
+  iconeEsquerda: IconeEsq,
+  iconeDireita: IconeDir,
+  carregando = false,
+  fullWidth = false,
+  children,
+  disabled,
+  className,
+  ...resto
 }: BotaoProps) {
+  const tamanhoResolvido: TamanhoBotao =
+    tamanho ?? (altura ? ALTURA_PARA_TAMANHO[altura] : 'md');
+  const tamanhoIcone = TAMANHO_ICONE[tamanhoResolvido];
+  const desabilitado = disabled === true || carregando;
+
+  const tapAnimation = desabilitado ? {} : { whileTap: { scale: 0.97 } };
+
   return (
-    <button
+    // @ts-expect-error -- exactOptionalPropertyTypes conflict between ButtonHTMLAttributes spread and motion's HTMLMotionProps
+    <motion.button
       type="button"
       {...resto}
-      disabled={disabled === true || carregando}
+      disabled={desabilitado}
       aria-busy={carregando}
-      style={{
-        position: 'relative', overflow: 'hidden',
-        minHeight: `${altura}px`, padding: `0 var(--s-5)`,
-        borderRadius: 'var(--r-md)', fontWeight: 'var(--fw-medium)',
-        fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-        cursor: carregando ? 'progress' : 'pointer',
-        ...ESTILO[variante], ...resto.style,
-      }}
+      {...tapAnimation}
+      transition={{ duration: 0.1 }}
+      className={cn(
+        'inline-flex items-center justify-center font-medium rounded-md',
+        'transition-colors-fast',
+        classesVariante[variante],
+        classesTamanho[tamanhoResolvido],
+        fullWidth && 'w-full',
+        carregando && 'pointer-events-none opacity-70 cursor-progress',
+        desabilitado && !carregando && 'opacity-50 cursor-not-allowed',
+        className,
+      )}
     >
-      {children}
       {carregando ? (
-        <>
-          <span role="status" aria-label="Carregando" />
-          <span
-            data-testid="barra-progresso"
-            aria-hidden="true"
-            style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0, height: 2,
-              background: 'currentColor', opacity: 0.55,
-              animation: `barra-indeterminada var(--dur-3) var(--ease-in-out) infinite alternate`,
-            }}
+        <SpinnerGap
+          size={tamanhoIcone}
+          className="shrink-0 animate-spin"
+          aria-hidden
+          data-testid="spinner-carregando"
+        />
+      ) : (
+        IconeEsq && (
+          <IconeEsq
+            size={tamanhoIcone}
+            className="shrink-0"
+            aria-hidden
+            data-testid="icone-esquerda"
           />
-        </>
-      ) : null}
-    </button>
+        )
+      )}
+      {children}
+      {IconeDir && (
+        <IconeDir
+          size={tamanhoIcone}
+          className="shrink-0"
+          aria-hidden
+          data-testid="icone-direita"
+        />
+      )}
+      {carregando && (
+        <span role="status" className="sr-only">
+          Carregando
+        </span>
+      )}
+    </motion.button>
   );
 }
