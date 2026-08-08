@@ -59,6 +59,20 @@ export type {
 } from './serializer/types';
 
 export { serializeLoteConsulta, type SerializeLoteResult } from './serializer/serialize-lote-consulta';
+
+export type {
+  RecursoGlosaInput,
+  ItemRecursoGlosaInput,
+  ContratadoRecursoInput,
+} from './serializer/types';
+
+export {
+  serializeRecursoGlosa,
+  type SerializeRecursoGlosaResult,
+} from './serializer/serialize-recurso-glosa';
+
+export { computeRecursoGlosaHash } from './serializer/compute-tiss-hash';
+
 export { encodeIso8859, type EncodeResult } from './serializer/encode-iso8859';
 export { computeTissHash } from './serializer/compute-tiss-hash';
 export { XmlBuilder } from './serializer/xml-builder';
