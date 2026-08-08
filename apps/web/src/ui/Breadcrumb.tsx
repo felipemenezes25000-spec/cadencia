@@ -1,0 +1,100 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react";
+import { cn } from "../lib/cn";
+import { Icone } from "./Icone";
+
+/** Mapa de segmentos de rota para rotulos em portugues */
+const ROTULOS: Record<string, string> = {
+  hoje: "Hoje",
+  agenda: "Agenda",
+  pacientes: "Pacientes",
+  financeiro: "Financeiro",
+  conversas: "Conversas",
+  convenios: "Convenios",
+  desempenho: "Desempenho",
+  caixa: "Caixa",
+  "a-receber": "A receber",
+  "a-pagar": "A pagar",
+  recebimentos: "Recebimentos",
+  repasse: "Repasse",
+  estoque: "Estoque",
+  explorar: "Explorar",
+  variacoes: "Variacoes",
+  atendimentos: "Atendimentos",
+  satisfacao: "Satisfacao",
+};
+
+export interface BreadcrumbItem {
+  /** Texto visivel */
+  rotulo: string;
+  /** Link (undefined para item atual) */
+  href?: string;
+}
+
+export interface BreadcrumbProps {
+  /** Itens manuais (sobreescreve auto-geracao) */
+  readonly itens?: BreadcrumbItem[];
+  /** Classes adicionais */
+  readonly className?: string;
+}
+
+/**
+ * Gera breadcrumbs a partir do pathname.
+ * Ex: "/financeiro/caixa" -> [{ rotulo: "Financeiro", href: "/financeiro" }, { rotulo: "Caixa" }]
+ */
+function gerarItensDoPathname(pathname: string): BreadcrumbItem[] {
+  const segmentos = pathname.split("/").filter(Boolean);
+  if (segmentos.length === 0) return [];
+
+  return segmentos.map((segmento, i): BreadcrumbItem => {
+    const rotulo = ROTULOS[segmento] ?? segmento;
+    const eUltimo = i === segmentos.length - 1;
+    if (eUltimo) {
+      return { rotulo };
+    }
+    return { rotulo, href: "/" + segmentos.slice(0, i + 1).join("/") };
+  });
+}
+
+export function Breadcrumb({ itens: itensManuais, className }: BreadcrumbProps) {
+  const pathname = usePathname();
+  const itens = itensManuais ?? gerarItensDoPathname(pathname);
+
+  if (itens.length === 0) return null;
+
+  return (
+    <nav
+      aria-label="Navegacao estrutural"
+      className={cn("flex items-center gap-1 text-sm", className)}
+    >
+      <ol className="flex items-center gap-1">
+        {itens.map((item, i) => (
+          <li key={i} className="flex items-center gap-1">
+            {i > 0 && (
+              <Icone
+                icon={CaretRight}
+                size="sm"
+                className="text-[var(--text-soft)]"
+              />
+            )}
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="text-[var(--text-soft)] hover:text-[var(--text)] transition-colors duration-[var(--dur-2)]"
+              >
+                {item.rotulo}
+              </Link>
+            ) : (
+              <span className="text-[var(--text)] font-medium" aria-current="page">
+                {item.rotulo}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
