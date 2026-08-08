@@ -311,4 +311,124 @@ describe('TissSoapTransport', () => {
       expect(result.error.code).toBe('PROTOCOLO_AUSENTE');
     });
   });
+
+  describe('timeout — estado indeterminado, NUNCA retry (secao 7)', () => {
+    let server: Server;
+    let port: number;
+
+    beforeAll(async () => {
+      server = createServer((_req, _res) => {
+        // Proposital: nunca responde. Conexao fica aberta ate timeout.
+      });
+      await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+      port = (server.address() as { port: number }).port;
+    });
+
+    afterAll(async () => {
+      server.closeAllConnections();
+      await new Promise<void>((r) => server.close(() => r()));
+    });
+
+    it('submitBatch com timeout curto retorna failure kind "timeout"', async () => {
+      const r = createTissSoapTransport({
+        tissVersion: '4.01.00',
+        soapEndpointUrl: `http://127.0.0.1:${port}/tiss`,
+        soapUsername: 'user',
+        soapPassword: 'pass',
+        timeoutMs: 200,
+      });
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<loteGuias>timeout test</loteGuias>');
+      const result = await r.value.submitBatch(ctx, {
+        loteId: 'lote-timeout',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+        prestador: { cnpj: '98XYZ76543AB21', cnes: '2077501' },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('timeout');
+      expect(result.error.detail).toContain('timeout');
+    }, 10_000);
+
+    it('timeout tem retrySafe: false — NUNCA retry automatico em operacao unsafe', async () => {
+      const r = createTissSoapTransport({
+        tissVersion: '4.01.00',
+        soapEndpointUrl: `http://127.0.0.1:${port}/tiss`,
+        soapUsername: 'user',
+        soapPassword: 'pass',
+        timeoutMs: 200,
+      });
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<loteGuias>no retry</loteGuias>');
+      const result = await r.value.submitBatch(ctx, {
+        loteId: 'lote-no-retry',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+        prestador: { cnpj: '98XYZ76543AB21', cnes: '2077501' },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('timeout');
+      // A regra mais cara do documento: timeout em operacao unsafe NAO permite retry.
+      // retrySafe: false garante que o caller sabe que NAO pode reenviar.
+      expect(result.error.retrySafe).toBe(false);
+    }, 10_000);
+
+    it('submitRecursoGlosa com timeout tambem retorna retrySafe: false', async () => {
+      const r = createTissSoapTransport({
+        tissVersion: '4.01.00',
+        soapEndpointUrl: `http://127.0.0.1:${port}/tiss`,
+        soapUsername: 'user',
+        soapPassword: 'pass',
+        timeoutMs: 200,
+      });
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<recurso>timeout glosa</recurso>');
+      const result = await r.value.submitRecursoGlosa(ctx, {
+        recursoId: 'rec-timeout',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('timeout');
+      expect(result.error.retrySafe).toBe(false);
+    }, 10_000);
+
+    it('deadline mais curto que timeoutMs prevalece', async () => {
+      const shortDeadlineCtx: ProviderCtx = {
+        ...ctx,
+        deadlineMs: 150, // menor que timeoutMs=5000
+      };
+
+      const r = createTissSoapTransport({
+        tissVersion: '4.01.00',
+        soapEndpointUrl: `http://127.0.0.1:${port}/tiss`,
+        soapUsername: 'user',
+        soapPassword: 'pass',
+        timeoutMs: 5_000,
+      });
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<loteGuias>deadline curto</loteGuias>');
+      const result = await r.value.submitBatch(shortDeadlineCtx, {
+        loteId: 'lote-deadline',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+        prestador: { cnpj: '98XYZ76543AB21', cnes: '2077501' },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('timeout');
+    }, 10_000);
+  });
 });
