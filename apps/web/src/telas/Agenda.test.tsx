@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { Agenda } from './Agenda';
+import type { LinhaDaFila } from './Hoje';
 
-const FILA = [{
+const FILA: LinhaDaFila[] = [{
   appointmentId: 'a1', startsAt: '2026-08-03T13:00:00.000Z', endsAt: '2026-08-03T13:30:00.000Z',
   patientId: 'p1', displayName: 'Maria Souza Lima', professionalId: 'pr1',
   procedureNome: 'Consulta', procedureCor: '#2f5fd0', operadoraNome: 'Unimed',
@@ -13,28 +14,135 @@ const FILA = [{
   mensagensNaoLidas: 0, pagamentoPendente: true,
 }];
 
-function montar(over = {}) {
-  const props = {
+function montarProps(over = {}) {
+  return {
     dia: '2026-08-03', visao: 'dia' as const, timezone: 'UTC',
     carregar: vi.fn(async () => FILA), aoMudarVisao: vi.fn(), aoMudarDia: vi.fn(),
     aoAbrirCompositor: vi.fn(), aoMover: vi.fn(async () => {}),
     aoConfirmar: vi.fn(async () => {}), aoCobrar: vi.fn(),
     ...over,
   };
+}
+
+function montar(over = {}) {
+  const props = montarProps(over);
   render(<Agenda {...props} />);
   return props;
 }
 
+/**
+ * Aguarda o conteudo carregar. Em jsdom, as visualizacoes desktop e mobile
+ * sao renderizadas simultaneamente (CSS nao aplica), entao usamos queryAll.
+ */
+async function esperarCarregar() {
+  await waitFor(() => {
+    expect(screen.queryAllByText('Maria Souza Lima').length).toBeGreaterThan(0);
+  });
+}
+
+/**
+ * Retorna escopo de queries limitado ao container desktop-grid.
+ */
+async function escopoDesktop() {
+  const el = await waitFor(() => {
+    const grid = document.querySelector('[data-view="desktop-grid"]');
+    expect(grid).toBeTruthy();
+    return grid as HTMLElement;
+  });
+  return within(el);
+}
+
 describe('tela Agenda', () => {
-  it('oferece as cinco visoes como tablist', async () => {
+  /* ── Novos testes da task-20 ────────────────────────────── */
+
+  it('renderiza skeleton enquanto carrega', async () => {
+    let resolver!: (data: LinhaDaFila[]) => void;
+    const carregar = vi.fn(() => new Promise<LinhaDaFila[]>((r) => { resolver = r; }));
+    render(<Agenda {...montarProps({ carregar })} />);
+
+    expect(screen.getByTestId('agenda-skeleton')).toBeInTheDocument();
+
+    resolver(FILA);
+    await waitFor(() => {
+      expect(screen.queryByTestId('agenda-skeleton')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renderiza tabs de visualizacao', async () => {
     montar();
     const abas = await screen.findAllByRole('tab');
     expect(abas.map((a) => a.textContent)).toEqual([
-      'Dia', 'Semana', 'Mês', 'Por profissional', 'Por sala']);
+      'Dia', 'Semana', 'Mês', 'Por profissional', 'Por sala',
+    ]);
   });
 
-  it('as teclas 1..5 trocam a visao — atalho de um caractere fora de campo de texto', async () => {
+  it('mostra grade de horarios na visualizacao Dia', async () => {
+    montar();
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    // Verifica que etiquetas de hora estao na grade
+    expect(grid.getByText('07:00')).toBeInTheDocument();
+    expect(grid.getByText('12:00')).toBeInTheDocument();
+    expect(grid.getByText('19:00')).toBeInTheDocument();
+  });
+
+  it('posiciona agendamentos corretamente na grade', async () => {
+    montar();
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    const item = grid.getByText('Maria Souza Lima');
+    const bloco = item.closest('[data-status]');
+    expect(bloco).toBeTruthy();
+    expect(bloco).toHaveAttribute('data-status', 'agendado');
+    const style = bloco?.getAttribute('style') ?? '';
+    expect(style).toContain('top:');
+    expect(style).toContain('height:');
+  });
+
+  it('aplica cores de status corretas', async () => {
+    montar();
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    const item = grid.getByText('Maria Souza Lima');
+    const bloco = item.closest('[data-status]');
+    expect(bloco).toHaveAttribute('data-status', 'agendado');
+  });
+
+  it('navega entre datas com botoes anterior/proximo', async () => {
+    const props = montar();
+    await esperarCarregar();
+
+    await userEvent.click(screen.getByLabelText('Dia anterior'));
+    expect(props.aoMudarDia).toHaveBeenCalledWith('2026-08-02');
+
+    await userEvent.click(screen.getByLabelText('Proximo dia'));
+    expect(props.aoMudarDia).toHaveBeenCalledWith('2026-08-04');
+  });
+
+  it('muda de visualizacao ao clicar nas tabs', async () => {
+    const props = montar();
+    await esperarCarregar();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Semana' }));
+    expect(props.aoMudarVisao).toHaveBeenCalledWith('semana');
+  });
+
+  it('renderiza como lista no mobile', async () => {
+    montar();
+    await esperarCarregar();
+    // Ambas as visualizacoes estao no DOM (CSS controla visibilidade)
+    expect(document.querySelector('[data-view="desktop-grid"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-view="mobile-list"]')).toBeInTheDocument();
+    // A lista mobile contem o agendamento
+    const mobileList = document.querySelector('[data-view="mobile-list"]') as HTMLElement;
+    expect(within(mobileList).getByText('Maria Souza Lima')).toBeInTheDocument();
+  });
+
+  /* ── Testes de logica de negocio preservados ────────────── */
+
+  it('as teclas 1..5 trocam a visao — atalho fora de campo de texto', async () => {
     const { aoMudarVisao } = montar();
+    await esperarCarregar();
     await userEvent.keyboard('4');
     expect(aoMudarVisao).toHaveBeenCalledWith('profissional');
   });
@@ -47,13 +155,19 @@ describe('tela Agenda', () => {
 
   it('o agendamento aparece posicionado na grade, com a cor do procedimento', async () => {
     montar();
-    const item = await screen.findByText('Maria Souza Lima');
-    expect(item.closest('[style]')).toBeTruthy();
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    const item = grid.getByText('Maria Souza Lima');
+    const bloco = item.closest('[style]');
+    expect(bloco).toBeTruthy();
   });
 
-  it('o botao Confirmar aparece para status agendado e envia template de confirmacao', async () => {
+  it('o botao Confirmar aparece para status agendado e envia confirmacao', async () => {
     const { aoConfirmar } = montar();
-    const botao = await screen.findByRole('button', { name: /Confirmar Maria Souza Lima/ });
+    await esperarCarregar();
+    // Botao aparece em ambas as visualizacoes; usamos a do desktop
+    const grid = await escopoDesktop();
+    const botao = grid.getByRole('button', { name: /Confirmar Maria Souza Lima/ });
     expect(botao).toBeVisible();
     await userEvent.click(botao);
     expect(aoConfirmar).toHaveBeenCalledWith('a1');
@@ -61,15 +175,22 @@ describe('tela Agenda', () => {
 
   it('apos confirmar, o status muda para confirmado e o glifo aparece', async () => {
     montar();
-    await userEvent.click(await screen.findByRole('button', { name: /Confirmar Maria Souza Lima/ }));
-    await waitFor(() => expect(screen.getByLabelText('Confirmado')).toBeVisible());
-    expect(screen.queryByRole('button', { name: /Confirmar Maria Souza Lima/ }))
-      .not.toBeInTheDocument();
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    await userEvent.click(grid.getByRole('button', { name: /Confirmar Maria Souza Lima/ }));
+    await waitFor(() => {
+      const glifos = screen.getAllByLabelText('Confirmado');
+      expect(glifos.length).toBeGreaterThan(0);
+    });
+    // O botao de confirmar desaparece de ambas as views
+    expect(screen.queryAllByRole('button', { name: /Confirmar Maria Souza Lima/ })).toHaveLength(0);
   });
 
   it('o botao Cobrar aparece para quem tem pagamento pendente', async () => {
     const { aoCobrar } = montar();
-    const botao = await screen.findByRole('button', { name: /Cobrar Maria Souza Lima/ });
+    await esperarCarregar();
+    const grid = await escopoDesktop();
+    const botao = grid.getByRole('button', { name: /Cobrar Maria Souza Lima/ });
     expect(botao).toBeVisible();
     await userEvent.click(botao);
     expect(aoCobrar).toHaveBeenCalledWith('a1');
@@ -78,11 +199,11 @@ describe('tela Agenda', () => {
   it('Cobrar NAO aparece quando pagamentoPendente e false', async () => {
     montar({ carregar: vi.fn(async () =>
       FILA.map((f) => ({ ...f, pagamentoPendente: false }))) });
-    await waitFor(() => expect(screen.getByText('Maria Souza Lima')).toBeVisible());
-    expect(screen.queryByRole('button', { name: /Cobrar/ })).not.toBeInTheDocument();
+    await esperarCarregar();
+    expect(screen.queryAllByRole('button', { name: /Cobrar/ })).toHaveLength(0);
   });
 
-  it('clicar num vao vazio abre o compositor INLINE, nao um modal de pagina cheia', async () => {
+  it('clicar num vao vazio abre o compositor INLINE, nao um modal', async () => {
     const { aoAbrirCompositor } = montar();
     const slots = await waitFor(() => {
       const s = document.querySelectorAll('[data-slot="vazio"]');
@@ -95,11 +216,9 @@ describe('tela Agenda', () => {
   });
 
   it('sem violacao de acessibilidade', async () => {
-    const { container } = render(
-      <Agenda dia="2026-08-03" visao="dia" timezone="UTC" carregar={async () => FILA}
-        aoMudarVisao={vi.fn()} aoMudarDia={vi.fn()} aoAbrirCompositor={vi.fn()}
-        aoMover={async () => {}} aoConfirmar={async () => {}} aoCobrar={vi.fn()} />);
+    const { container } = render(<Agenda {...montarProps()} />);
     await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(5));
+    await esperarCarregar();
     expect(await axe(container)).toHaveNoViolations();
   });
 });
