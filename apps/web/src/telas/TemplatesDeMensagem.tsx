@@ -1,83 +1,107 @@
 // apps/web/src/telas/TemplatesDeMensagem.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { PencilSimple, Plus, Trash } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
+import { Icone } from '../ui/Icone';
+import { Tooltip } from '../ui/Tooltip';
+import { PageHeader } from '../ui/PageHeader';
 
-export type StatusAprovacao = 'aprovado' | 'pendente' | 'rejeitado';
+/* ── Tipos ──────────────────────────────────────────────────────────── */
 
-export interface TemplateAdmin {
-  readonly templateId: string;
-  readonly nome: string;
-  readonly corpo: string;
-  readonly canal: 'whatsapp' | 'sms' | 'email';
-  readonly statusAprovacao: StatusAprovacao;
+export interface Template {
+  readonly id: string;
+  readonly titulo: string;
+  readonly conteudo: string;
 }
-
-const COR_STATUS: Record<StatusAprovacao, string> = {
-  aprovado:  'var(--success)',
-  pendente:  'var(--warn)',
-  rejeitado: 'var(--danger)',
-};
 
 export interface TemplatesDeMensagemProps {
-  readonly carregar: () => Promise<TemplateAdmin[]>;
+  /** Lista de templates a exibir */
+  readonly templates: readonly Template[];
+  /** Callback ao clicar em "Novo template" */
   readonly aoCriar: () => void;
-  readonly aoEditar: (templateId: string) => void;
+  /** Callback ao clicar no botao editar de um template */
+  readonly aoEditar: (id: string) => void;
+  /** Callback ao clicar no botao excluir de um template */
+  readonly aoExcluir: (id: string) => void;
 }
 
-export function TemplatesDeMensagem(p: TemplatesDeMensagemProps) {
-  const [templates, setTemplates] = useState<TemplateAdmin[]>([]);
+/* ── Componente ─────────────────────────────────────────────────────── */
 
-  useEffect(() => {
-    void p.carregar().then(setTemplates);
-  }, [p]);
-
+export function TemplatesDeMensagem({
+  templates,
+  aoCriar,
+  aoEditar,
+  aoExcluir,
+}: TemplatesDeMensagemProps) {
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-          Templates
-        </h1>
-        <Botao variante="primario" altura={32} onClick={p.aoCriar}>
-          Novo template
-        </Botao>
-      </div>
+    <div className="space-y-4 p-6">
+      <PageHeader
+        titulo="Templates de mensagem"
+        semBreadcrumb
+        acoes={
+          <Botao variante="primario" iconeEsquerda={Plus} onClick={aoCriar}>
+            Novo template
+          </Botao>
+        }
+      />
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--surface)',
-                      border: 'var(--border)', borderRadius: 'var(--r-md)' }}>
-        <thead>
-          <tr>
-            {['Nome', 'Canal', 'Status'].map((h) => (
-              <th key={h} scope="col" style={{
-                textAlign: 'left', fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                letterSpacing: '.04em', color: 'var(--text-muted)', fontWeight: 500,
-                padding: 'var(--s-4)', borderBottom: 'var(--border)' }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
+      {templates.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-text-muted">
+          <p className="text-sm">Nenhum template cadastrado</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
           {templates.map((t) => (
-            <tr key={t.templateId}
-              onClick={() => p.aoEditar(t.templateId)}
-              style={{ cursor: 'pointer', borderBottom: 'var(--border)' }}>
-              <td style={{ padding: 'var(--s-4)', fontWeight: 'var(--fw-medium)' }}>
-                {t.nome}
-              </td>
-              <td style={{ padding: 'var(--s-4)', fontSize: 'var(--fs-13)',
-                           color: 'var(--text-muted)' }}>
-                {t.canal}
-              </td>
-              <td style={{ padding: 'var(--s-4)', fontSize: 'var(--fs-13)',
-                           color: COR_STATUS[t.statusAprovacao] }}>
-                {t.statusAprovacao}
-              </td>
-            </tr>
+            <div
+              key={t.id}
+              className={cn(
+                'flex items-start justify-between',
+                'rounded-[var(--r-lg)] border border-line',
+                'bg-surface p-4 hover:bg-surface-raised transition-colors-fast',
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-text">{t.titulo}</p>
+                <p className="text-xs text-text-muted mt-1 line-clamp-2">
+                  {t.conteudo}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0 ml-4">
+                <Tooltip conteudo="Editar">
+                  <button
+                    type="button"
+                    onClick={() => aoEditar(t.id)}
+                    className={cn(
+                      'rounded-[var(--r-md)] p-1.5',
+                      'text-text-muted hover:bg-surface-raised transition-colors-fast',
+                    )}
+                    aria-label={`Editar ${t.titulo}`}
+                  >
+                    <Icone icon={PencilSimple} size="sm" />
+                  </button>
+                </Tooltip>
+                <Tooltip conteudo="Excluir">
+                  <button
+                    type="button"
+                    onClick={() => aoExcluir(t.id)}
+                    className={cn(
+                      'rounded-[var(--r-md)] p-1.5',
+                      'text-text-muted hover:text-danger hover:bg-danger/5',
+                      'transition-colors-fast',
+                    )}
+                    aria-label={`Excluir ${t.titulo}`}
+                  >
+                    <Icone icon={Trash} size="sm" />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      )}
     </div>
   );
 }

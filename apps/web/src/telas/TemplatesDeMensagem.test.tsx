@@ -1,79 +1,152 @@
 // apps/web/src/telas/TemplatesDeMensagem.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { axe } from 'vitest-axe';
-import { TemplatesDeMensagem, type TemplateAdmin } from './TemplatesDeMensagem';
+import { TemplatesDeMensagem, type Template } from './TemplatesDeMensagem';
 
-const TEMPLATES: TemplateAdmin[] = [
+/* ── Mocks ──────────────────────────────────────────────────────────── */
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/templates',
+}));
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [k: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+/* ── Dados de teste ─────────────────────────────────────────────────── */
+
+const TEMPLATES: Template[] = [
   {
-    templateId: 't1', nome: 'Confirmacao de consulta',
-    corpo: 'Ola {{nome}}, confirme sua consulta em {{data}} as {{hora}}.',
-    canal: 'whatsapp', statusAprovacao: 'aprovado',
+    id: 't1',
+    titulo: 'Confirmacao de consulta',
+    conteudo:
+      'Ola {{nome}}, sua consulta esta confirmada para {{data}} as {{hora}}.',
   },
   {
-    templateId: 't2', nome: 'Lembrete D-1',
-    corpo: 'Ola {{nome}}, lembramos da consulta amanha as {{hora}}.',
-    canal: 'whatsapp', statusAprovacao: 'pendente',
+    id: 't2',
+    titulo: 'Lembrete D-1',
+    conteudo: 'Ola {{nome}}, lembramos da consulta amanha as {{hora}}.',
   },
   {
-    templateId: 't3', nome: 'Pos-consulta',
-    corpo: 'Ola {{nome}}, obrigado pela visita!',
-    canal: 'whatsapp', statusAprovacao: 'rejeitado',
+    id: 't3',
+    titulo: 'Pos-consulta',
+    conteudo: 'Ola {{nome}}, obrigado pela visita!',
   },
 ];
 
-function montar(over: Partial<Parameters<typeof TemplatesDeMensagem>[0]> = {}) {
+function montar(
+  overrides: Partial<Parameters<typeof TemplatesDeMensagem>[0]> = {},
+) {
   const props = {
-    carregar: vi.fn(async () => TEMPLATES),
+    templates: TEMPLATES,
     aoCriar: vi.fn(),
     aoEditar: vi.fn(),
-    ...over,
+    aoExcluir: vi.fn(),
+    ...overrides,
   };
-  render(<TemplatesDeMensagem {...props} />);
-  return props;
+  return {
+    props,
+    ...render(
+      <RadixTooltip.Provider delayDuration={0}>
+        <TemplatesDeMensagem {...props} />
+      </RadixTooltip.Provider>,
+    ),
+  };
 }
 
-describe('tela Templates de Mensagem', () => {
-  it('lista os templates com nome, canal e status de aprovacao', async () => {
+/* ── Testes ──────────────────────────────────────────────────────────── */
+
+describe('TemplatesDeMensagem', () => {
+  it('renderiza lista de templates', () => {
     montar();
-    await waitFor(() => {
-      expect(screen.getByText('Confirmacao de consulta')).toBeVisible();
-      expect(screen.getByText('aprovado')).toBeVisible();
-      expect(screen.getByText('pendente')).toBeVisible();
-      expect(screen.getByText('rejeitado')).toBeVisible();
-    });
+    expect(screen.getByText('Confirmacao de consulta')).toBeInTheDocument();
+    expect(screen.getByText('Lembrete D-1')).toBeInTheDocument();
+    expect(screen.getByText('Pos-consulta')).toBeInTheDocument();
+  });
+
+  it('mostra titulo e preview do conteudo', () => {
+    montar();
+    expect(screen.getByText('Confirmacao de consulta')).toBeVisible();
+    expect(
+      screen.getByText(/sua consulta esta confirmada/),
+    ).toBeVisible();
+  });
+
+  it('mostra botoes editar e excluir', () => {
+    montar();
+    // Cada template tem um botao editar e um excluir
+    const botoesEditar = screen.getAllByRole('button', { name: /Editar/ });
+    const botoesExcluir = screen.getAllByRole('button', { name: /Excluir/ });
+    expect(botoesEditar).toHaveLength(TEMPLATES.length);
+    expect(botoesExcluir).toHaveLength(TEMPLATES.length);
+  });
+
+  it('mostra botao Novo template', () => {
+    montar();
+    expect(
+      screen.getByRole('button', { name: /Novo template/ }),
+    ).toBeInTheDocument();
   });
 
   it('botao Novo template chama aoCriar', async () => {
-    const { aoCriar } = montar();
-    await waitFor(() => expect(screen.getByText('Confirmacao de consulta')).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Novo template/ }));
-    expect(aoCriar).toHaveBeenCalled();
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.click(screen.getByRole('button', { name: /Novo template/ }));
+    expect(props.aoCriar).toHaveBeenCalled();
   });
 
-  it('clicar no template chama aoEditar com o templateId', async () => {
-    const { aoEditar } = montar();
-    await waitFor(() => expect(screen.getByText('Lembrete D-1')).toBeVisible());
-    await userEvent.click(screen.getByText('Lembrete D-1'));
-    expect(aoEditar).toHaveBeenCalledWith('t2');
+  it('botao editar chama aoEditar com id correto', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.click(
+      screen.getByRole('button', { name: /Editar Lembrete D-1/ }),
+    );
+    expect(props.aoEditar).toHaveBeenCalledWith('t2');
   });
 
-  it('status de aprovacao tem cores distintas: aprovado, pendente, rejeitado', async () => {
-    montar();
-    await waitFor(() => {
-      const aprovado = screen.getByText('aprovado');
-      const rejeitado = screen.getByText('rejeitado');
-      expect(aprovado.getAttribute('style')).toContain('var(--success)');
-      expect(rejeitado.getAttribute('style')).toContain('var(--danger)');
-    });
+  it('botao excluir chama aoExcluir com id correto', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.click(
+      screen.getByRole('button', { name: /Excluir Pos-consulta/ }),
+    );
+    expect(props.aoExcluir).toHaveBeenCalledWith('t3');
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('mostra estado vazio quando sem templates', () => {
+    montar({ templates: [] });
+    expect(screen.getByText('Nenhum template cadastrado')).toBeInTheDocument();
+  });
+
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
-      <TemplatesDeMensagem carregar={async () => TEMPLATES}
-        aoCriar={vi.fn()} aoEditar={vi.fn()} />);
-    await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1));
+      <RadixTooltip.Provider delayDuration={0}>
+        <TemplatesDeMensagem
+          templates={TEMPLATES}
+          aoCriar={vi.fn()}
+          aoEditar={vi.fn()}
+          aoExcluir={vi.fn()}
+        />
+      </RadixTooltip.Provider>,
+    );
     expect(await axe(container)).toHaveNoViolations();
   });
 });

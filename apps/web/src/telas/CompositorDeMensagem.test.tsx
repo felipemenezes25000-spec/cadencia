@@ -1,72 +1,142 @@
 // apps/web/src/telas/CompositorDeMensagem.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { axe } from 'vitest-axe';
 import { CompositorDeMensagem } from './CompositorDeMensagem';
 
-const TEMPLATES = [
-  { templateId: 't1', nome: 'Confirmacao de consulta',
-    corpo: 'Ola {{nome}}, sua consulta esta confirmada para {{data}} as {{hora}}.' },
-  { templateId: 't2', nome: 'Lembrete',
-    corpo: 'Ola {{nome}}, lembramos da sua consulta amanha.' },
-];
-
-function montar(over: Partial<Parameters<typeof CompositorDeMensagem>[0]> = {}) {
+function montar(
+  overrides: Partial<Parameters<typeof CompositorDeMensagem>[0]> = {},
+) {
   const props = {
-    pacienteNome: 'Maria Souza Lima',
-    telefone: '+5511999990001',
-    templates: TEMPLATES,
-    templateSelecionadoId: 't1',
-    aoMudarTemplate: vi.fn(),
-    aoEnviar: vi.fn(async () => {}),
-    aoFechar: vi.fn(),
-    ...over,
+    onEnviar: vi.fn(),
+    ...overrides,
   };
-  render(<CompositorDeMensagem {...props} />);
-  return props;
+  return {
+    props,
+    ...render(
+      <RadixTooltip.Provider delayDuration={0}>
+        <CompositorDeMensagem {...props} />
+      </RadixTooltip.Provider>,
+    ),
+  };
 }
 
-describe('compositor de mensagem (acao rapida)', () => {
-  it('abre com template de confirmacao pre-selecionado e telefone pre-preenchido', () => {
+describe('CompositorDeMensagem', () => {
+  it('renderiza textarea e botao enviar', () => {
     montar();
-    expect(screen.getByText('+5511999990001')).toBeVisible();
-    expect(screen.getByDisplayValue('Confirmacao de consulta')).toBeVisible();
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Enviar mensagem/ }),
+    ).toBeInTheDocument();
   });
 
-  it('mostra preview do corpo do template selecionado', () => {
+  it('envia mensagem ao clicar Enviar', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.type(screen.getByRole('textbox'), 'Ola paciente');
+    await user.click(screen.getByRole('button', { name: /Enviar mensagem/ }));
+
+    expect(props.onEnviar).toHaveBeenCalledWith('Ola paciente', undefined);
+  });
+
+  it('envia mensagem ao pressionar Enter', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.type(screen.getByRole('textbox'), 'Mensagem via Enter{Enter}');
+
+    expect(props.onEnviar).toHaveBeenCalledWith(
+      'Mensagem via Enter',
+      undefined,
+    );
+  });
+
+  it('insere nova linha com Shift+Enter', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.type(
+      screen.getByRole('textbox'),
+      'Linha 1{Shift>}{Enter}{/Shift}Linha 2',
+    );
+
+    expect(props.onEnviar).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox')).toHaveValue('Linha 1\nLinha 2');
+  });
+
+  it('nao envia mensagem vazia', async () => {
+    const user = userEvent.setup();
+    const { props } = montar();
+
+    await user.click(screen.getByRole('button', { name: /Enviar mensagem/ }));
+
+    expect(props.onEnviar).not.toHaveBeenCalled();
+  });
+
+  it('limpa texto apos enviar', async () => {
+    const user = userEvent.setup();
     montar();
-    expect(screen.getByText(/sua consulta esta confirmada/)).toBeVisible();
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'Texto para limpar');
+    await user.click(screen.getByRole('button', { name: /Enviar mensagem/ }));
+
+    expect(textarea).toHaveValue('');
   });
 
-  it('trocar template chama aoMudarTemplate', async () => {
-    const { aoMudarTemplate } = montar();
-    await userEvent.selectOptions(
-      screen.getByRole('combobox', { name: /Template/ }), 't2');
-    expect(aoMudarTemplate).toHaveBeenCalledWith('t2');
+  it('mostra preview de arquivo anexado', async () => {
+    montar();
+
+    const file = new File(['conteudo'], 'receita.pdf', {
+      type: 'application/pdf',
+    });
+    const input = screen.getByLabelText('Anexar arquivo');
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByText('receita.pdf')).toBeInTheDocument();
   });
 
-  it('botao Enviar chama aoEnviar e mostra carregando', async () => {
-    const aoEnviar = vi.fn(() => new Promise<void>(() => { /* nunca resolve */ }));
-    montar({ aoEnviar });
-    await userEvent.click(screen.getByRole('button', { name: /Enviar/ }));
-    expect(aoEnviar).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /Enviar/ })).toHaveAttribute('aria-busy', 'true');
+  it('remove arquivo anexado', async () => {
+    const user = userEvent.setup();
+    montar();
+
+    const file = new File(['conteudo'], 'exame.pdf', {
+      type: 'application/pdf',
+    });
+    const input = screen.getByLabelText('Anexar arquivo');
+
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByText('exame.pdf')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Remover exame.pdf/ }));
+    expect(screen.queryByText('exame.pdf')).not.toBeInTheDocument();
   });
 
-  it('um clique para enviar — nao pede confirmacao', async () => {
-    const aoEnviar = vi.fn(async () => {});
-    montar({ aoEnviar });
-    await userEvent.click(screen.getByRole('button', { name: /Enviar/ }));
-    expect(aoEnviar).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  it('auto-redimensiona textarea', async () => {
+    const user = userEvent.setup();
+    montar();
+
+    const textarea = screen.getByRole('textbox');
+    Object.defineProperty(textarea, 'scrollHeight', {
+      value: 80,
+      configurable: true,
+    });
+
+    await user.type(textarea, 'Linha com conteudo');
+
+    expect(textarea.style.height).toBe('80px');
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
-      <CompositorDeMensagem pacienteNome="Maria" telefone="+5511999990001"
-        templates={TEMPLATES} templateSelecionadoId="t1"
-        aoMudarTemplate={vi.fn()} aoEnviar={async () => {}} aoFechar={vi.fn()} />);
+      <RadixTooltip.Provider delayDuration={0}>
+        <CompositorDeMensagem onEnviar={vi.fn()} />
+      </RadixTooltip.Provider>,
+    );
     expect(await axe(container)).toHaveNoViolations();
   });
 });
