@@ -75,3 +75,20 @@ export {
   type ModoFakeTiss,
   type SubmittedBatch,
 } from './transport/tiss-arquivo-fake';
+
+// --- Demonstrativo (Fase 5) ---
+export {
+  parseDemonstrativoXml,
+  decodeIso8859,
+  type ParsedDemonstrativo,
+  type ParsedDemonstrativoCabecalho,
+  type ParsedDemonstrativoItem,
+  type ParsedDemonstrativoGlosa,
+} from './demonstrativo/parse-demonstrativo';
+
+export {
+  importDemonstrativo,
+  type ImportDemonstrativoInput,
+  type ImportDemonstrativoResult,
+  type ImportDemonstrativoFailure,
+} from './demonstrativo/import-demonstrativo';
