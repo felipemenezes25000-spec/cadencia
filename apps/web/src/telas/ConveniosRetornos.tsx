@@ -1,9 +1,13 @@
 // apps/web/src/telas/ConveniosRetornos.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { MagnifyingGlass } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
 // -- Tipos ------------------------------------------------------------------
 
@@ -74,19 +78,18 @@ const ROTULOS_TOTAIS: { chave: keyof TotaisRetornos; rotulo: string }[] = [
   { chave: 'glosadoCentavos', rotulo: 'Glosado' },
 ];
 
-const TIPO_CHIP: Record<'analise' | 'pagamento', { rotulo: string; cor: string; bg: string }> = {
-  analise:    { rotulo: 'Analise',    cor: 'var(--accent)',  bg: 'var(--accent-soft)' },
-  pagamento:  { rotulo: 'Pagamento',  cor: 'var(--ok)',      bg: 'var(--ok-soft)' },
+const TIPO_CHIP: Record<'analise' | 'pagamento', { rotulo: string; classes: string }> = {
+  analise:   { rotulo: 'Analise',   classes: 'text-accent bg-accent-soft' },
+  pagamento: { rotulo: 'Pagamento', classes: 'text-ok bg-ok-soft' },
 };
 
 // -- Componente -------------------------------------------------------------
 
 export function ConveniosRetornos(p: ConveniosRetornosProps) {
   const [dados, setDados] = useState<RetornosDados | null>(null);
-  const [operadoraId, setOperadoraId] = useState('');
-  const [tipo, setTipo] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [busca, setBusca] = useState('');
+  const [tipoFiltro, setTipoFiltro] = useState('');
+  const [operadoraFiltro, setOperadoraFiltro] = useState('');
   const [importando, setImportando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -94,14 +97,21 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
     void p.carregarDados({}).then(setDados);
   }, [p]);
 
-  function filtrar(): void {
-    void p.carregarDados({
-      operadoraId: operadoraId === '' ? undefined : operadoraId,
-      tipo: tipo === '' ? undefined : tipo as 'analise' | 'pagamento',
-      dataInicio: dataInicio === '' ? undefined : dataInicio,
-      dataFim: dataFim === '' ? undefined : dataFim,
-    }).then(setDados);
-  }
+  const demonstrativosFiltrados = useMemo(() => {
+    if (!dados) return [];
+    return dados.demonstrativos.filter((d) => {
+      if (tipoFiltro !== '' && d.tipo !== tipoFiltro) return false;
+      if (operadoraFiltro !== '' && d.operadoraId !== operadoraFiltro) return false;
+      if (busca !== '') {
+        const termo = busca.toLowerCase();
+        return (
+          d.protocolo.toLowerCase().includes(termo) ||
+          d.operadoraNome.toLowerCase().includes(termo)
+        );
+      }
+      return true;
+    });
+  }, [dados, busca, tipoFiltro, operadoraFiltro]);
 
   function abrirDialogImportar(): void {
     fileRef.current?.click();
@@ -118,25 +128,33 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
     });
   }
 
-  if (dados === null) return null;
+  // -- Skeleton de carregamento --
+  if (dados === null) {
+    return (
+      <div className="space-y-4" role="status" aria-label="Carregando retornos">
+        <Skeleton variant="text" width="30%" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
+    <div className="space-y-6">
       {/* Cabecalho */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-          Retornos
-        </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-[length:var(--fs-15)] font-semibold">Retornos</h3>
         <div>
           <input
             ref={fileRef}
             type="file"
             accept=".xml"
             onChange={handleFileChange}
-            style={{ display: 'none' }}
+            className="hidden"
             aria-label="Selecionar arquivo XML"
           />
-          <Botao variante="primario" altura={32}
+          <Botao variante="primario" tamanho="md"
             onClick={abrirDialogImportar} carregando={importando}>
             Importar
           </Botao>
@@ -146,26 +164,27 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
       {/* Totalizadores */}
       <div
         role="group" aria-label="Totalizadores de retornos" aria-live="polite"
-        style={{ display: 'flex', border: 'var(--border)', borderRadius: 'var(--r-md)',
-                 background: 'var(--surface)', overflow: 'hidden' }}
+        className="flex rounded-md border border-line bg-surface overflow-hidden"
       >
         {ROTULOS_TOTAIS.map((t, i) => (
           <div
             key={t.chave}
-            style={{
-              flex: 1,
-              borderInlineStart: i === 0 ? 'none' : '1px solid var(--line)',
-              padding: `var(--s-5) var(--s-4)`,
-              display: 'grid', gap: 'var(--s-1)', justifyItems: 'start',
-            }}
+            className={cn(
+              'flex-1 px-3 py-4 grid gap-1 justify-items-start',
+              i > 0 && 'border-l border-line',
+            )}
           >
-            <span className="num" style={{ fontSize: '28px', fontWeight: 600, lineHeight: 1.1,
-                                           color: t.chave === 'glosadoCentavos' && dados.totais[t.chave] > 0
-                                             ? 'var(--danger)' : 'var(--text)' }}>
+            <span
+              className={cn(
+                'text-[28px] font-semibold leading-tight tabular-nums',
+                t.chave === 'glosadoCentavos' && dados.totais[t.chave] > 0
+                  ? 'text-danger'
+                  : 'text-text',
+              )}
+            >
               {centavosParaReais(dados.totais[t.chave])}
             </span>
-            <span style={{ fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                           letterSpacing: '.04em', color: 'var(--text-muted)' }}>
+            <span className="text-[11px] uppercase tracking-[.04em] text-text-muted">
               {t.rotulo}
             </span>
           </div>
@@ -173,25 +192,41 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', alignItems: 'end' }}>
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-operadora-ret" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+      <div className="flex flex-wrap items-end gap-3">
+        <Campo
+          prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+          placeholder="Buscar..."
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar retornos"
+        />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="filtro-tipo-ret" className="text-sm font-medium text-text-muted">
+            Tipo
+          </label>
+          <select
+            id="filtro-tipo-ret"
+            value={tipoFiltro}
+            onChange={(e) => setTipoFiltro(e.target.value)}
+            aria-label="Tipo"
+            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+          >
+            <option value="">Todos</option>
+            <option value="analise">Analise</option>
+            <option value="pagamento">Pagamento</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="filtro-operadora-ret" className="text-sm font-medium text-text-muted">
             Operadora
           </label>
           <select
             id="filtro-operadora-ret"
-            value={operadoraId}
-            onChange={(e) => setOperadoraId(e.target.value)}
+            value={operadoraFiltro}
+            onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (
@@ -199,139 +234,77 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
             ))}
           </select>
         </div>
-
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-tipo-ret" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
-            Tipo
-          </label>
-          <select
-            id="filtro-tipo-ret"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            aria-label="Tipo"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
-          >
-            <option value="">Todos</option>
-            <option value="analise">Analise</option>
-            <option value="pagamento">Pagamento</option>
-          </select>
-        </div>
-
-        <Campo rotulo="Periodo inicio" type="date" denso
-          value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Periodo inicio" />
-        <Campo rotulo="Periodo fim" type="date" denso
-          value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Periodo fim" />
-        <Botao variante="secundario" altura={32} onClick={filtrar}>
-          Filtrar
-        </Botao>
       </div>
 
-      {/* Lista de demonstrativos */}
-      <section aria-label="Demonstrativos importados">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.demonstrativos.map((d) => {
-            const chip = TIPO_CHIP[d.tipo];
-            return (
-              <li key={d.id} style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                alignItems: 'center', gap: 'var(--s-4)',
-                padding: 'var(--s-4) var(--s-5)',
-                borderBottom: 'var(--border)', minHeight: 56,
-              }}>
-                <div
-                  role="button" tabIndex={0}
-                  onClick={() => p.aoAbrirDemonstrativo(d.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      p.aoAbrirDemonstrativo(d.id);
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                    <span className="num" style={{
-                      fontSize: 'var(--fs-13)', fontVariantNumeric: 'tabular-nums',
-                      color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
-                    }}>
-                      {d.protocolo}
-                    </span>
-                    <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
-                      {d.operadoraNome}
-                    </span>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-                      fontWeight: 'var(--fw-medium)', padding: 'var(--s-1) var(--s-4)',
-                      borderRadius: 'var(--r-full)',
-                      color: chip.cor, background: chip.bg,
-                    }}>
-                      {chip.rotulo}
-                    </span>
-                    {d.itensGlosados > 0 ? (
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        fontSize: 'var(--fs-11)', fontWeight: 'var(--fw-medium)',
-                        padding: 'var(--s-1) var(--s-4)',
-                        borderRadius: 'var(--r-full)',
-                        color: 'var(--danger)', background: 'var(--danger-soft)',
-                      }}>
-                        {d.itensGlosados} glosa(s)
-                      </span>
-                    ) : null}
-                  </div>
-                  <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                                 color: 'var(--text-muted)' }}>
-                    {d.periodoInicio} a {d.periodoFim} — {d.totalItens} iten(s) — Importado em {d.dataImportacao}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', gap: 'var(--s-6)', alignItems: 'baseline' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="num" style={{
-                      fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {centavosParaReais(d.totalLiberadoCentavos)}
-                    </span>
-                    <span style={{ display: 'block', fontSize: 'var(--fs-11)',
-                                   color: 'var(--text-muted)' }}>
-                      liberado
-                    </span>
-                  </div>
-                  {d.totalGlosadoCentavos > 0 ? (
-                    <div style={{ textAlign: 'right' }}>
-                      <span className="num" style={{
-                        fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)',
-                        fontVariantNumeric: 'tabular-nums', color: 'var(--danger)',
-                      }}>
-                        {centavosParaReais(d.totalGlosadoCentavos)}
-                      </span>
-                      <span style={{ display: 'block', fontSize: 'var(--fs-11)',
-                                     color: 'var(--text-muted)' }}>
-                        glosado
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      {/* Tabela de demonstrativos */}
+      {demonstrativosFiltrados.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+          <p>Nenhum demonstrativo encontrado</p>
+        </div>
+      ) : (
+        <section aria-label="Demonstrativos importados">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Lote</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Operadora</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Data retorno</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Guias</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor aprovado</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor glosado</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {demonstrativosFiltrados.map((d) => {
+                    const chip = TIPO_CHIP[d.tipo];
+                    return (
+                      <tr
+                        key={d.id}
+                        className="hover:bg-surface-raised transition-colors-fast cursor-pointer"
+                        onClick={() => p.aoAbrirDemonstrativo(d.id)}
+                        role="link"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            p.aoAbrirDemonstrativo(d.id);
+                          }
+                        }}
+                      >
+                        <td className="px-4 py-3 font-mono text-xs">{d.protocolo}</td>
+                        <td className="px-4 py-3 text-text">{d.operadoraNome}</td>
+                        <td className="px-4 py-3 text-text-muted">{d.dataImportacao}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{d.totalItens}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums">{centavosParaReais(d.totalLiberadoCentavos)}</td>
+                        <td className={cn(
+                          'px-4 py-3 text-right font-mono tabular-nums',
+                          d.totalGlosadoCentavos > 0 && 'text-danger',
+                        )}>
+                          {d.totalGlosadoCentavos > 0
+                            ? centavosParaReais(d.totalGlosadoCentavos)
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            'inline-flex items-center text-[11px] uppercase tracking-[.04em] font-medium',
+                            'px-2 py-0.5 rounded-full',
+                            chip.classes,
+                          )}>
+                            {chip.rotulo}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

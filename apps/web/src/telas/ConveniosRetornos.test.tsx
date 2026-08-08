@@ -58,6 +58,17 @@ const DADOS: RetornosDados = {
   },
 };
 
+const DADOS_VAZIO: RetornosDados = {
+  demonstrativos: [],
+  operadoras: [],
+  totais: {
+    apresentadoCentavos: 0,
+    processadoCentavos: 0,
+    liberadoCentavos: 0,
+    glosadoCentavos: 0,
+  },
+};
+
 function montar(overrides: Partial<{
   carregarDados: (f: FiltrosRetornos) => Promise<RetornosDados>;
   aoImportarXml: (arquivo: File) => Promise<void>;
@@ -80,6 +91,37 @@ function montar(overrides: Partial<{
 }
 
 describe('ConveniosRetornos', () => {
+  it('renderiza skeleton enquanto carrega', () => {
+    // carregarDados nunca resolve — mantem estado de carregamento
+    const carregarDados = vi.fn<(f: FiltrosRetornos) => Promise<RetornosDados>>()
+      .mockReturnValue(new Promise(() => {}));
+    render(
+      <ConveniosRetornos
+        carregarDados={carregarDados}
+        aoImportarXml={async () => {}}
+        aoAbrirDemonstrativo={() => {}}
+      />,
+    );
+    const skeletons = screen.getAllByRole('status');
+    expect(skeletons.length).toBeGreaterThanOrEqual(1);
+    expect(skeletons[0]).toBeVisible();
+  });
+
+  it('renderiza tabela com dados', async () => {
+    montar();
+    await waitFor(() => {
+      expect(screen.getByText('PROT-001')).toBeVisible();
+    });
+    expect(screen.getByText('PROT-002')).toBeVisible();
+    // Verifica tabela com cabecalhos
+    expect(screen.getByText('Lote')).toBeVisible();
+    expect(screen.getByText('Operadora', { selector: 'th' })).toBeVisible();
+    // Dados na tabela
+    const secao = screen.getByRole('region', { name: /Demonstrativos importados/i });
+    expect(within(secao).getByText('Unimed')).toBeVisible();
+    expect(within(secao).getByText('Bradesco Saude')).toBeVisible();
+  });
+
   it('renderiza totalizadores: apresentado, processado, liberado, glosado', async () => {
     montar();
     await waitFor(() => {
@@ -93,28 +135,42 @@ describe('ConveniosRetornos', () => {
     expect(within(grupo).getByText('R$ 300,00')).toBeVisible();
   });
 
-  it('renderiza lista de demonstrativos com protocolo, operadora e tipo', async () => {
+  it('filtra por status (tipo)', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('PROT-001')).toBeVisible();
     });
+    const select = screen.getByLabelText(/Tipo/i);
+    await userEvent.selectOptions(select, 'analise');
+    // So PROT-001 (analise) deve aparecer
+    expect(screen.getByText('PROT-001')).toBeVisible();
+    expect(screen.queryByText('PROT-002')).not.toBeInTheDocument();
+  });
+
+  it('filtra por operadora', async () => {
+    montar();
+    await waitFor(() => {
+      expect(screen.getByText('PROT-001')).toBeVisible();
+    });
+    const select = screen.getByLabelText(/Operadora/i);
+    await userEvent.selectOptions(select, 'op2');
+    // So PROT-002 (Bradesco) deve aparecer
+    expect(screen.queryByText('PROT-001')).not.toBeInTheDocument();
     expect(screen.getByText('PROT-002')).toBeVisible();
-    const lista = screen.getByLabelText(/Demonstrativos importados/i);
-    expect(within(lista).getByText('Unimed')).toBeVisible();
-    expect(within(lista).getByText('Bradesco Saude')).toBeVisible();
-    expect(within(lista).getByText(/Analise/i)).toBeVisible();
-    expect(within(lista).getByText(/Pagamento/i)).toBeVisible();
   });
 
-  it('exibe badge de itens glosados quando ha glosas', async () => {
+  it('busca por texto', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('PROT-001')).toBeVisible();
     });
-    expect(screen.getByText(/3 glosa/i)).toBeVisible();
+    const camposBusca = screen.getByLabelText(/Buscar retornos/i);
+    await userEvent.type(camposBusca, 'Bradesco');
+    expect(screen.queryByText('PROT-001')).not.toBeInTheDocument();
+    expect(screen.getByText('PROT-002')).toBeVisible();
   });
 
-  it('ao clicar em um demonstrativo chama aoAbrirDemonstrativo', async () => {
+  it('navega para detalhe ao clicar na linha', async () => {
     const { aoAbrirDemonstrativo } = montar();
     await waitFor(() => {
       expect(screen.getByText('PROT-001')).toBeVisible();
@@ -123,14 +179,30 @@ describe('ConveniosRetornos', () => {
     expect(aoAbrirDemonstrativo).toHaveBeenCalledWith('d1');
   });
 
-  it('renderiza filtros de operadora, periodo e tipo', async () => {
+  it('mostra chip de status correto', async () => {
     montar();
     await waitFor(() => {
-      expect(screen.getByLabelText(/Operadora/i)).toBeVisible();
+      expect(screen.getByText('PROT-001')).toBeVisible();
     });
-    expect(screen.getByLabelText(/Periodo inicio/i)).toBeVisible();
-    expect(screen.getByLabelText(/Periodo fim/i)).toBeVisible();
-    expect(screen.getByLabelText(/Tipo/i)).toBeVisible();
+    const secao = screen.getByRole('region', { name: /Demonstrativos importados/i });
+    // Chips de tipo dentro da tabela
+    expect(within(secao).getByText(/Analise/i)).toBeVisible();
+    expect(within(secao).getByText(/Pagamento/i)).toBeVisible();
+  });
+
+  it('mostra estado vazio', async () => {
+    const carregarDados = vi.fn<(f: FiltrosRetornos) => Promise<RetornosDados>>()
+      .mockResolvedValue(DADOS_VAZIO);
+    render(
+      <ConveniosRetornos
+        carregarDados={carregarDados}
+        aoImportarXml={async () => {}}
+        aoAbrirDemonstrativo={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/Nenhum demonstrativo encontrado/i)).toBeVisible();
+    });
   });
 
   it('botao Importar esta visivel', async () => {
@@ -140,7 +212,7 @@ describe('ConveniosRetornos', () => {
     });
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <ConveniosRetornos
         carregarDados={async () => DADOS}

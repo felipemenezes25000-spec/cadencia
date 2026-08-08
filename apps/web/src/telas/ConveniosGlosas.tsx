@@ -1,9 +1,13 @@
 // apps/web/src/telas/ConveniosGlosas.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle, MagnifyingGlass } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
 // -- Tipos ------------------------------------------------------------------
 
@@ -60,11 +64,11 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
-const STATUS_CHIP: Record<StatusGlosa, { rotulo: string; cor: string; bg: string }> = {
-  pendente:        { rotulo: 'Pendente',        cor: 'var(--warn)',     bg: 'var(--warn-soft)' },
-  recurso_enviado: { rotulo: 'Recurso enviado', cor: 'var(--accent)',   bg: 'var(--accent-soft)' },
-  recurso_aceito:  { rotulo: 'Recurso aceito',  cor: 'var(--ok)',       bg: 'var(--ok-soft)' },
-  recurso_negado:  { rotulo: 'Recurso negado',  cor: 'var(--danger)',   bg: 'var(--danger-soft)' },
+const STATUS_CHIP: Record<StatusGlosa, { rotulo: string; classes: string }> = {
+  pendente:        { rotulo: 'Pendente',        classes: 'text-warn bg-warn-soft' },
+  recurso_enviado: { rotulo: 'Recurso enviado', classes: 'text-accent bg-accent-soft' },
+  recurso_aceito:  { rotulo: 'Recurso aceito',  classes: 'text-ok bg-ok-soft' },
+  recurso_negado:  { rotulo: 'Recurso negado',  classes: 'text-danger bg-danger-soft' },
 };
 
 // -- Componente -------------------------------------------------------------
@@ -72,23 +76,31 @@ const STATUS_CHIP: Record<StatusGlosa, { rotulo: string; cor: string; bg: string
 export function ConveniosGlosas(p: ConveniosGlosasProps) {
   const [dados, setDados] = useState<GlosasDados | null>(null);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [busca, setBusca] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
-  const [operadoraId, setOperadoraId] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [operadoraFiltro, setOperadoraFiltro] = useState('');
 
   useEffect(() => {
     void p.carregarDados({}).then(setDados);
   }, [p]);
 
-  function filtrar(): void {
-    void p.carregarDados({
-      status: statusFiltro === '' ? undefined : statusFiltro as StatusGlosa,
-      operadoraId: operadoraId === '' ? undefined : operadoraId,
-      dataInicio: dataInicio === '' ? undefined : dataInicio,
-      dataFim: dataFim === '' ? undefined : dataFim,
-    }).then(setDados);
-  }
+  const glosasFiltradas = useMemo(() => {
+    if (!dados) return [];
+    return dados.glosas.filter((g) => {
+      if (statusFiltro !== '' && g.status !== statusFiltro) return false;
+      if (operadoraFiltro !== '' && g.operadoraId !== operadoraFiltro) return false;
+      if (busca !== '') {
+        const termo = busca.toLowerCase();
+        return (
+          g.guiaNumero.toLowerCase().includes(termo) ||
+          g.pacienteNome.toLowerCase().includes(termo) ||
+          g.operadoraNome.toLowerCase().includes(termo) ||
+          g.descricaoGlosa.toLowerCase().includes(termo)
+        );
+      }
+      return true;
+    });
+  }, [dados, busca, statusFiltro, operadoraFiltro]);
 
   function alternarSelecao(id: string): void {
     setSelecionadas((prev) => {
@@ -98,37 +110,44 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
     });
   }
 
-  if (dados === null) return null;
+  // -- Skeleton de carregamento --
+  if (dados === null) {
+    return (
+      <div className="space-y-4" role="status" aria-label="Carregando glosas">
+        <Skeleton variant="text" width="30%" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
+    <div className="space-y-6">
       {/* Cabecalho com badge de pendente */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
-          <h3 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-            Glosas
-          </h3>
-          {dados.totalGlosadoPendenteCentavos > 0 ? (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-              fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-              padding: 'var(--s-1) var(--s-4)',
-              borderRadius: 'var(--r-full)',
-              color: 'var(--danger)', background: 'var(--danger-soft)',
-            }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h3 className="text-[length:var(--fs-15)] font-semibold">Glosas</h3>
+          {dados.totalGlosadoPendenteCentavos > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-danger bg-danger-soft">
               {centavosParaReais(dados.totalGlosadoPendenteCentavos)} pendente
             </span>
-          ) : null}
+          )}
         </div>
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', alignItems: 'end' }}>
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-status-gl" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+      <div className="flex flex-wrap items-end gap-3">
+        <Campo
+          prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+          placeholder="Buscar..."
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar glosas"
+        />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="filtro-status-gl" className="text-sm font-medium text-text-muted">
             Status
           </label>
           <select
@@ -136,12 +155,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
             aria-label="Status"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
@@ -150,25 +164,16 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             <option value="recurso_negado">Recurso negado</option>
           </select>
         </div>
-
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-operadora-gl" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="filtro-operadora-gl" className="text-sm font-medium text-text-muted">
             Operadora
           </label>
           <select
             id="filtro-operadora-gl"
-            value={operadoraId}
-            onChange={(e) => setOperadoraId(e.target.value)}
+            value={operadoraFiltro}
+            onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (
@@ -176,105 +181,100 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             ))}
           </select>
         </div>
-
-        <Campo rotulo="Periodo inicio" type="date" denso
-          value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Periodo inicio" />
-        <Campo rotulo="Periodo fim" type="date" denso
-          value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Periodo fim" />
-        <Botao variante="secundario" altura={32} onClick={filtrar}>
-          Filtrar
-        </Botao>
       </div>
 
       {/* Barra de acao batch */}
-      {selecionadas.size > 0 ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)',
-                      padding: 'var(--s-3) var(--s-5)',
-                      background: 'var(--accent-soft)', borderRadius: 'var(--r-md)' }}>
-          <span style={{ fontSize: 'var(--fs-13)', color: 'var(--text)' }}>
+      {selecionadas.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-accent-soft rounded-md">
+          <span className="text-sm text-text">
             {selecionadas.size} glosa(s) selecionada(s)
           </span>
-          <Botao variante="primario" altura={32}
+          <Botao variante="primario" tamanho="md"
             onClick={() => { p.aoCriarRecurso(Array.from(selecionadas)); }}>
             Criar recurso
           </Botao>
         </div>
-      ) : null}
+      )}
 
-      {/* Lista de glosas */}
-      <section aria-label="Lista de glosas">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.glosas.map((g) => {
-            const chip = STATUS_CHIP[g.status];
-            const selecionavel = g.status === 'pendente';
-
-            return (
-              <li key={g.id} style={{
-                display: 'grid',
-                gridTemplateColumns: selecionavel ? 'auto 1fr auto' : '1fr auto',
-                alignItems: 'center', gap: 'var(--s-4)',
-                padding: 'var(--s-4) var(--s-5)',
-                borderBottom: 'var(--border)', minHeight: 56,
-              }}>
-                {selecionavel ? (
-                  <input
-                    type="checkbox"
-                    checked={selecionadas.has(g.id)}
-                    onChange={() => alternarSelecao(g.id)}
-                    aria-label={`Selecionar glosa ${g.guiaNumero}`}
-                    style={{ width: 16, height: 16, cursor: 'pointer' }}
-                  />
-                ) : null}
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                    <span className="num" style={{
-                      fontSize: 'var(--fs-13)', fontVariantNumeric: 'tabular-nums',
-                      color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
-                    }}>
-                      {g.guiaNumero}
-                    </span>
-                    <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
-                      {g.pacienteNome}
-                    </span>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-                      fontWeight: 'var(--fw-medium)', padding: 'var(--s-1) var(--s-4)',
-                      borderRadius: 'var(--r-full)',
-                      color: chip.cor, background: chip.bg,
-                    }}>
-                      {chip.rotulo}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)',
-                                fontSize: 'var(--fs-12)', color: 'var(--text-muted)' }}>
-                    <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{g.codigoGlosa}</span>
-                    <span>{g.descricaoGlosa}</span>
-                    <span>—</span>
-                    <span>{g.operadoraNome}</span>
-                    <span>—</span>
-                    <span>{g.dataAtendimento}</span>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <span className="num" style={{
-                    fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)',
-                    fontVariantNumeric: 'tabular-nums', color: 'var(--danger)',
-                  }}>
-                    {centavosParaReais(g.valorGlosadoCentavos)}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      {/* Tabela de glosas */}
+      {glosasFiltradas.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+          <Icone icon={CheckCircle} size="xl" className="text-ok mb-3" />
+          <p>Nenhuma glosa pendente</p>
+        </div>
+      ) : (
+        <section aria-label="Lista de glosas">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <th className="w-10 px-4 py-3">
+                      <span className="sr-only">Selecionar</span>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Guia</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Paciente</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Operadora</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Motivo</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                      <span className="sr-only">Acao</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {glosasFiltradas.map((g) => {
+                    const chip = STATUS_CHIP[g.status];
+                    const selecionavel = g.status === 'pendente';
+                    return (
+                      <tr key={g.id} className="hover:bg-surface-raised transition-colors-fast">
+                        <td className="px-4 py-3">
+                          {selecionavel ? (
+                            <input
+                              type="checkbox"
+                              checked={selecionadas.has(g.id)}
+                              onChange={() => alternarSelecao(g.id)}
+                              aria-label={`Selecionar glosa ${g.guiaNumero}`}
+                              className="h-4 w-4 cursor-pointer rounded border-line accent-accent"
+                            />
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs">{g.guiaNumero}</td>
+                        <td className="px-4 py-3 text-text">{g.pacienteNome}</td>
+                        <td className="px-4 py-3 text-text-muted">{g.operadoraNome}</td>
+                        <td className="px-4 py-3 text-text-muted max-w-[200px] truncate" title={g.descricaoGlosa}>
+                          {g.descricaoGlosa}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-danger">
+                          {centavosParaReais(g.valorGlosadoCentavos)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            'inline-flex items-center text-[11px] uppercase tracking-[.04em] font-medium',
+                            'px-2 py-0.5 rounded-full',
+                            chip.classes,
+                          )}>
+                            {chip.rotulo}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {selecionavel && (
+                            <Botao variante="secundario" tamanho="sm"
+                              onClick={() => { p.aoCriarRecurso([g.id]); }}>
+                              Recursar
+                            </Botao>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

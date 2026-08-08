@@ -66,6 +66,12 @@ const DADOS: GlosasDados = {
   totalGlosadoPendenteCentavos: 23000,
 };
 
+const DADOS_VAZIO: GlosasDados = {
+  glosas: [],
+  operadoras: [],
+  totalGlosadoPendenteCentavos: 0,
+};
+
 function montar(overrides: Partial<{
   carregarDados: (f: FiltrosGlosas) => Promise<GlosasDados>;
   aoCriarRecurso: (glosaIds: readonly string[]) => void;
@@ -84,34 +90,87 @@ function montar(overrides: Partial<{
 }
 
 describe('ConveniosGlosas', () => {
+  it('renderiza skeleton enquanto carrega', () => {
+    const carregarDados = vi.fn<(f: FiltrosGlosas) => Promise<GlosasDados>>()
+      .mockReturnValue(new Promise(() => {}));
+    render(
+      <ConveniosGlosas
+        carregarDados={carregarDados}
+        aoCriarRecurso={() => {}}
+      />,
+    );
+    const skeletons = screen.getAllByRole('status');
+    expect(skeletons.length).toBeGreaterThanOrEqual(1);
+    expect(skeletons[0]).toBeVisible();
+  });
+
+  it('renderiza tabela com dados', async () => {
+    montar();
+    await waitFor(() => {
+      expect(screen.getByText('000001')).toBeVisible();
+    });
+    expect(screen.getByText('000002')).toBeVisible();
+    expect(screen.getByText('000003')).toBeVisible();
+    // Cabecalhos da tabela
+    expect(screen.getByText('Guia')).toBeVisible();
+    expect(screen.getByText('Paciente')).toBeVisible();
+    // Dados na tabela
+    expect(screen.getByText('Carlos Melo')).toBeVisible();
+    expect(screen.getByText('Ana Silva')).toBeVisible();
+  });
+
   it('renderiza badge de valor total glosado pendente', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText(/R\$ 230,00/)).toBeVisible();
     });
-    // Badge contem valor e "pendente" juntos
     expect(screen.getByText(/R\$ 230,00/)).toHaveTextContent(/pendente/i);
   });
 
-  it('renderiza lista de glosas com guia, paciente e codigo da glosa', async () => {
+  it('filtra por status', async () => {
+    montar();
+    const secao = await screen.findByRole('region', { name: /Lista de glosas/i });
+    expect(within(secao).getByText('000001')).toBeVisible();
+    const select = screen.getByLabelText(/Status/i);
+    await userEvent.selectOptions(select, 'recurso_enviado');
+    // So gl3 (recurso_enviado) deve aparecer
+    expect(within(secao).queryByText('000001')).not.toBeInTheDocument();
+    expect(within(secao).queryByText('000002')).not.toBeInTheDocument();
+    expect(within(secao).getByText('000003')).toBeVisible();
+  });
+
+  it('filtra por operadora', async () => {
+    montar();
+    const secao = await screen.findByRole('region', { name: /Lista de glosas/i });
+    // Todas as glosas sao de op1, selecionar op1 deve manter todas
+    const select = screen.getByLabelText(/Operadora/i);
+    await userEvent.selectOptions(select, 'op1');
+    expect(within(secao).getByText('000001')).toBeVisible();
+    expect(within(secao).getByText('000002')).toBeVisible();
+    expect(within(secao).getByText('000003')).toBeVisible();
+  });
+
+  it('busca por texto', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('000001')).toBeVisible();
     });
-    expect(screen.getByText('Carlos Melo')).toBeVisible();
-    // Codigo 1005 aparece em mais de uma glosa — busca dentro da secao
-    const secao = screen.getByRole('region', { name: /Lista de glosas/i });
-    expect(within(secao).getAllByText('1005').length).toBeGreaterThanOrEqual(1);
-    expect(within(secao).getAllByText(/Procedimento nao autorizado/).length).toBeGreaterThanOrEqual(1);
+    const campoBusca = screen.getByLabelText(/Buscar glosas/i);
+    await userEvent.type(campoBusca, 'Ana');
+    // So gl2 (Ana Silva) deve aparecer
+    expect(screen.queryByText('000001')).not.toBeInTheDocument();
+    expect(screen.getByText('000002')).toBeVisible();
+    expect(screen.queryByText('000003')).not.toBeInTheDocument();
   });
 
-  it('renderiza chip de status para glosa com recurso enviado', async () => {
+  it('mostra ChipDeStatusTiss correto', async () => {
     montar();
     await waitFor(() => {
-      expect(screen.getByText('000003')).toBeVisible();
+      expect(screen.getByText('000001')).toBeVisible();
     });
-    // "Recurso enviado" aparece no select e no chip — busca dentro da secao
     const secao = screen.getByRole('region', { name: /Lista de glosas/i });
+    // Chips de status na tabela
+    expect(within(secao).getAllByText(/Pendente/i).length).toBeGreaterThanOrEqual(1);
     expect(within(secao).getByText(/Recurso enviado/i)).toBeVisible();
   });
 
@@ -139,17 +198,21 @@ describe('ConveniosGlosas', () => {
     expect(aoCriarRecurso).toHaveBeenCalledWith(['gl1', 'gl2']);
   });
 
-  it('renderiza filtros de status, operadora e periodo', async () => {
-    montar();
+  it('mostra estado vazio com icone', async () => {
+    const carregarDados = vi.fn<(f: FiltrosGlosas) => Promise<GlosasDados>>()
+      .mockResolvedValue(DADOS_VAZIO);
+    render(
+      <ConveniosGlosas
+        carregarDados={carregarDados}
+        aoCriarRecurso={() => {}}
+      />,
+    );
     await waitFor(() => {
-      expect(screen.getByLabelText(/Status/i)).toBeVisible();
+      expect(screen.getByText(/Nenhuma glosa pendente/i)).toBeVisible();
     });
-    expect(screen.getByLabelText(/Operadora/i)).toBeVisible();
-    expect(screen.getByLabelText(/Periodo inicio/i)).toBeVisible();
-    expect(screen.getByLabelText(/Periodo fim/i)).toBeVisible();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <ConveniosGlosas
         carregarDados={async () => DADOS}
