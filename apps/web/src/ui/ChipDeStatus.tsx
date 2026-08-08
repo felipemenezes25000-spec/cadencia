@@ -1,30 +1,51 @@
 'use client';
 
+import { cn } from '../lib/cn';
+
 export type StatusAgenda =
   | 'agendado' | 'confirmado' | 'aguardando' | 'atendendo'
-  | 'atendido' | 'faltou' | 'cancelado';
+  | 'atendido' | 'faltou' | 'cancelado'
+  | 'em_atendimento' | 'pendente' | 'pago' | 'vencido';
 
-const CHIP: Record<StatusAgenda, { rotulo: string; glifo: string; token: string }> = {
-  agendado:   { rotulo: 'Agendado',   glifo: '●', token: '--st-agendado' },
-  confirmado: { rotulo: 'Confirmado', glifo: '✓', token: '--st-confirmado' },
-  aguardando: { rotulo: 'Aguardando', glifo: '⏱', token: '--st-aguardando' },
-  atendendo:  { rotulo: 'Atendendo',  glifo: '●', token: '--st-atendendo' },
-  atendido:   { rotulo: 'Atendido',   glifo: '✓', token: '--st-atendido' },
-  faltou:     { rotulo: 'Faltou',     glifo: '✕', token: '--st-faltou' },
-  cancelado:  { rotulo: 'Cancelado',  glifo: '✕', token: '--st-cancelado' },
+const CHIP: Record<StatusAgenda, { rotulo: string; glifo: string; classes: string }> = {
+  agendado:        { rotulo: 'Agendado',        glifo: '●', classes: 'bg-surface-sunken text-st-agendado' },
+  confirmado:      { rotulo: 'Confirmado',      glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  aguardando:      { rotulo: 'Aguardando',      glifo: '⏱', classes: 'bg-warn-soft/40 text-warn border border-warn/20' },
+  atendendo:       { rotulo: 'Atendendo',       glifo: '●', classes: 'bg-accent-soft/40 text-accent border border-accent/20' },
+  em_atendimento:  { rotulo: 'Em atendimento',  glifo: '●', classes: 'bg-accent-soft/40 text-accent border border-accent/20' },
+  atendido:        { rotulo: 'Atendido',        glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  faltou:          { rotulo: 'Faltou',          glifo: '✕', classes: 'bg-danger-soft/40 text-danger border border-danger/20' },
+  cancelado:       { rotulo: 'Cancelado',       glifo: '✕', classes: 'bg-surface-sunken text-text-muted border border-line' },
+  pendente:        { rotulo: 'Pendente',        glifo: '●', classes: 'bg-warn-soft/40 text-warn border border-warn/20' },
+  pago:            { rotulo: 'Pago',            glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  vencido:         { rotulo: 'Vencido',         glifo: '✕', classes: 'bg-danger-soft/40 text-danger border border-danger/20' },
 };
 
-export function ChipDeStatus({ status }: { status: StatusAgenda }) {
-  const c = CHIP[status];
+export interface ChipDeStatusProps {
+  readonly status: StatusAgenda;
+  readonly className?: string;
+}
+
+export function ChipDeStatus({ status, className }: ChipDeStatusProps) {
+  const c = CHIP[status] ?? {
+    rotulo: status,
+    glifo: '●',
+    classes: 'bg-surface-sunken text-text-muted border border-line',
+  };
+
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-      fontWeight: 'var(--fw-medium)', padding: `var(--s-1) var(--s-4)`,
-      borderRadius: 'var(--r-full)',
-      color: `var(${c.token})`, background: 'var(--surface-sunken)',
-    }}>
-      <span aria-hidden="true">{c.glifo}</span>{c.rotulo}
+    <span
+      className={cn(
+        'inline-flex items-center gap-[var(--s-2)]',
+        'text-[length:var(--fs-11)] uppercase tracking-[.04em] font-medium',
+        'px-[var(--s-4)] py-[var(--s-1)]',
+        'rounded-full',
+        c.classes,
+        className,
+      )}
+    >
+      <span aria-hidden="true">{c.glifo}</span>
+      {c.rotulo}
     </span>
   );
 }

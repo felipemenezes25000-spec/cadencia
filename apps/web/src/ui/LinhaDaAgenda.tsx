@@ -57,13 +57,17 @@ export type LinhaDaAgendaProps = PropsNova | PropsLegada;
 /* ── Cores de borda por status ─────────────────────────────────────────── */
 
 const COR_BORDA: Record<StatusAgenda, string> = {
-  agendado:   'border-l-st-agendado',
-  confirmado: 'border-l-st-confirmado',
-  aguardando: 'border-l-st-aguardando',
-  atendendo:  'border-l-st-atendendo',
-  atendido:   'border-l-st-atendido',
-  faltou:     'border-l-st-faltou',
-  cancelado:  'border-l-st-cancelado',
+  agendado:       'border-l-st-agendado',
+  confirmado:     'border-l-st-confirmado',
+  aguardando:     'border-l-st-aguardando',
+  atendendo:      'border-l-st-atendendo',
+  em_atendimento: 'border-l-st-atendendo',
+  atendido:       'border-l-st-atendido',
+  faltou:         'border-l-st-faltou',
+  cancelado:      'border-l-st-cancelado',
+  pendente:       'border-l-st-aguardando',
+  pago:           'border-l-st-atendido',
+  vencido:        'border-l-st-faltou',
 };
 
 /* ── Normalizacao de props ─────────────────────────────────────────────── */

@@ -55,13 +55,17 @@ const ROTULOS_NAV: Record<Visao['chave'], { anterior: string; proximo: string }>
 /* ── Cores de status ──────────────────────────────────────── */
 
 const coresDeStatus: Record<StatusAgenda, string> = {
-  agendado:   'bg-surface border-l-st-agendado text-text',
-  confirmado: 'bg-ok/10 border-l-st-confirmado text-st-confirmado',
-  aguardando: 'bg-warn/10 border-l-st-aguardando text-st-aguardando',
-  atendendo:  'bg-accent/10 border-l-st-atendendo text-st-atendendo',
-  atendido:   'bg-ok/10 border-l-st-atendido text-text-muted',
-  faltou:     'bg-danger/10 border-l-st-faltou text-st-faltou',
-  cancelado:  'bg-surface-sunken border-l-st-cancelado text-text-faint line-through',
+  agendado:       'bg-surface border-l-st-agendado text-text',
+  confirmado:     'bg-ok/10 border-l-st-confirmado text-st-confirmado',
+  aguardando:     'bg-warn/10 border-l-st-aguardando text-st-aguardando',
+  atendendo:      'bg-accent/10 border-l-st-atendendo text-st-atendendo',
+  em_atendimento: 'bg-accent/10 border-l-st-atendendo text-st-atendendo',
+  atendido:       'bg-ok/10 border-l-st-atendido text-text-muted',
+  faltou:         'bg-danger/10 border-l-st-faltou text-st-faltou',
+  cancelado:      'bg-surface-sunken border-l-st-cancelado text-text-faint line-through',
+  pendente:       'bg-warn/10 border-l-st-aguardando text-st-aguardando',
+  pago:           'bg-ok/10 border-l-st-atendido text-text-muted',
+  vencido:        'bg-danger/10 border-l-st-faltou text-st-faltou',
 };
 
 /* ── Utilitarios de data ──────────────────────────────────── */

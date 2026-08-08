@@ -1,30 +1,53 @@
 // apps/web/src/ui/ChipDeStatusTiss.tsx
 'use client';
 
+import { cn } from '../lib/cn';
+
 export type StatusTiss =
   | 'rascunho' | 'enviado' | 'processado' | 'glosado'
-  | 'completa' | 'incompleta';
+  | 'completa' | 'incompleta'
+  | 'pendente' | 'processando' | 'aprovado' | 'parcial' | 'recurso' | 'pago';
 
-const CHIP: Record<StatusTiss, { rotulo: string; glifo: string; cor: string; bg: string }> = {
-  rascunho:    { rotulo: 'Rascunho',    glifo: '●', cor: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
-  enviado:     { rotulo: 'Enviado',     glifo: '↑', cor: 'var(--accent)',      bg: 'var(--accent-soft)' },
-  processado:  { rotulo: 'Processado',  glifo: '✓', cor: 'var(--ok)',          bg: 'var(--ok-soft)' },
-  glosado:     { rotulo: 'Glosado',     glifo: '!', cor: 'var(--danger)',      bg: 'var(--danger-soft)' },
-  completa:    { rotulo: 'Completa',    glifo: '✓', cor: 'var(--ok)',          bg: 'var(--ok-soft)' },
-  incompleta:  { rotulo: 'Incompleta',  glifo: '!', cor: 'var(--warn)',        bg: 'var(--warn-soft)' },
+const CHIP: Record<StatusTiss, { rotulo: string; glifo: string; classes: string }> = {
+  rascunho:    { rotulo: 'Rascunho',    glifo: '●', classes: 'bg-surface-sunken text-text-muted border border-line' },
+  pendente:    { rotulo: 'Pendente',    glifo: '●', classes: 'bg-warn-soft/40 text-warn border border-warn/20' },
+  enviado:     { rotulo: 'Enviado',     glifo: '↑', classes: 'bg-accent-soft/40 text-accent border border-accent/20' },
+  processando: { rotulo: 'Processando', glifo: '●', classes: 'bg-accent-soft/40 text-accent border border-accent/20' },
+  processado:  { rotulo: 'Processado',  glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  aprovado:    { rotulo: 'Aprovado',    glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  glosado:     { rotulo: 'Glosado',     glifo: '!', classes: 'bg-danger-soft/40 text-danger border border-danger/20' },
+  parcial:     { rotulo: 'Parcial',     glifo: '●', classes: 'bg-warn-soft/40 text-warn border border-warn/20' },
+  recurso:     { rotulo: 'Em recurso',  glifo: '●', classes: 'bg-accent-soft/40 text-accent border border-accent/20' },
+  completa:    { rotulo: 'Completa',    glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
+  incompleta:  { rotulo: 'Incompleta',  glifo: '!', classes: 'bg-warn-soft/40 text-warn border border-warn/20' },
+  pago:        { rotulo: 'Pago',        glifo: '✓', classes: 'bg-ok-soft/40 text-ok border border-ok/20' },
 };
 
-export function ChipDeStatusTiss({ status }: { readonly status: StatusTiss }) {
-  const c = CHIP[status];
+export interface ChipDeStatusTissProps {
+  readonly status: StatusTiss;
+  readonly className?: string;
+}
+
+export function ChipDeStatusTiss({ status, className }: ChipDeStatusTissProps) {
+  const c = CHIP[status] ?? {
+    rotulo: status,
+    glifo: '●',
+    classes: 'bg-surface-sunken text-text-muted border border-line',
+  };
+
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-      fontWeight: 'var(--fw-medium)', padding: `var(--s-1) var(--s-4)`,
-      borderRadius: 'var(--r-full)',
-      color: c.cor, background: c.bg,
-    }}>
-      <span aria-hidden="true">{c.glifo}</span>{c.rotulo}
+    <span
+      className={cn(
+        'inline-flex items-center gap-[var(--s-2)]',
+        'text-[length:var(--fs-11)] uppercase tracking-[.04em] font-medium',
+        'px-[var(--s-4)] py-[var(--s-1)]',
+        'rounded-full',
+        c.classes,
+        className,
+      )}
+    >
+      <span aria-hidden="true">{c.glifo}</span>
+      {c.rotulo}
     </span>
   );
 }

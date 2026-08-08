@@ -1,6 +1,10 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { CaretDown, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
+import { Icone } from './Icone';
 
 export interface VersaoRetificadaProps {
   readonly versaoNo: number;
@@ -8,48 +12,80 @@ export interface VersaoRetificadaProps {
   readonly autor: string;
   readonly justificativa: string;
   readonly children: ReactNode;
+  readonly className?: string;
 }
 
 export function VersaoRetificada({
-  versaoNo, retificadaEm, autor, justificativa, children,
+  versaoNo,
+  retificadaEm,
+  autor,
+  justificativa,
+  children,
+  className,
 }: VersaoRetificadaProps) {
   const [aberta, setAberta] = useState(false);
   const id = useId();
+
   return (
-    <div style={{
-      background: 'var(--surface-sunken)', border: 'var(--border)',
-      borderRadius: 'var(--r-md)', padding: `var(--s-4) var(--s-5)`,
-      marginBlockEnd: 'var(--s-5)',
-    }}>
+    <div
+      className={cn(
+        'rounded-[var(--r-md)] border border-warn/30 bg-warn-soft/30 mb-[var(--s-5)]',
+        className,
+      )}
+    >
       <button
-        type="button" onClick={() => setAberta((v) => !v)}
-        aria-expanded={aberta} aria-controls={id}
-        style={{
-          border: 0, background: 'transparent', padding: 0, minHeight: 24,
-          color: 'var(--text-muted)', fontSize: 'var(--fs-12)', cursor: 'pointer',
-          textAlign: 'left', width: '100%',
-        }}
+        type="button"
+        onClick={() => setAberta((v) => !v)}
+        aria-expanded={aberta}
+        aria-controls={id}
+        className={cn(
+          'flex w-full items-center justify-between',
+          'px-[var(--s-4)] py-[var(--s-3)]',
+          'border-0 bg-transparent text-left cursor-pointer',
+          'text-[length:var(--fs-12)] text-text-muted',
+          'hover:bg-warn-soft/20 transition-colors-fast',
+          'rounded-[var(--r-md)]',
+          'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+        )}
       >
-        {`⟨ versão ${versaoNo} · retificada em ${retificadaEm} por ${autor} ⟩ ${aberta ? '▾' : '▸'}`}
+        <div className="flex items-center gap-[var(--s-2)]">
+          <Icone
+            icon={ArrowCounterClockwise}
+            size="sm"
+            className="text-warn"
+          />
+          <span className="text-[length:var(--fs-12)] font-medium text-text">
+            {`versão ${versaoNo}`}
+          </span>
+          <span className="text-[length:var(--fs-12)] text-text-muted">
+            {`retificada em ${retificadaEm} por ${autor}`}
+          </span>
+        </div>
+        <motion.div
+          animate={{ rotate: aberta ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Icone icon={CaretDown} size="sm" className="text-text-muted" />
+        </motion.div>
       </button>
-      {aberta ? (
-        <div id={id}>
+
+      {aberta && (
+        <div id={id} className="border-t border-warn/20 px-[var(--s-4)] py-[var(--s-3)] space-y-[var(--s-3)]">
           <div
             data-testid="conteudo-retificado"
+            className="text-text-muted my-[var(--s-4)]"
             style={{
-              color: 'var(--text-muted)',
               textDecorationLine: 'line-through',
               textDecorationColor: 'var(--danger)',
-              marginBlock: 'var(--s-4)',
             }}
           >
             {children}
           </div>
-          <p style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)', margin: 0 }}>
+          <p className="text-[length:var(--fs-12)] text-text-muted m-0">
             <strong>Justificativa:</strong> {justificativa}
           </p>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

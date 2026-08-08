@@ -1,46 +1,94 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { CaretDown } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
+import { Icone } from './Icone';
 
 export interface BlocoDeSecaoProps {
   readonly titulo: string;
+  /** @deprecated Use aberto={false} em vez de vazia */
   readonly vazia?: boolean;
+  readonly aberto?: boolean;
+  readonly badge?: number;
   readonly children?: ReactNode;
+  readonly className?: string;
 }
 
-export function BlocoDeSecao({ titulo, vazia = false, children }: BlocoDeSecaoProps) {
-  const [aberta, setAberta] = useState(!vazia);
+export function BlocoDeSecao({
+  titulo,
+  vazia = false,
+  aberto: abertoProp,
+  badge,
+  children,
+  className,
+}: BlocoDeSecaoProps) {
+  // aberto prop takes precedence; if not provided, infer from vazia
+  const abertoInicial = abertoProp !== undefined ? abertoProp : !vazia;
+  const [aberto, setAberto] = useState(abertoInicial);
   const id = useId();
 
-  if (!aberta) {
-    return (
-      <button
-        type="button" onClick={() => setAberta(true)} aria-expanded={false} aria-controls={id}
-        style={{
-          display: 'block', width: '100%', textAlign: 'left', minHeight: 24,
-          border: 0, background: 'transparent', color: 'var(--text-faint)',
-          fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-          letterSpacing: '.01em', padding: 0, cursor: 'pointer',
-        }}
-      >
-        {titulo}
-      </button>
-    );
-  }
-
   return (
-    <section id={id} aria-label={titulo} style={{ marginBlockEnd: 'var(--s-8)' }}>
-      <h3 style={{
-        fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', lineHeight: 1.3,
-        letterSpacing: '.01em', margin: 0, paddingBottom: 'var(--s-3)',
-        borderBottom: '1px solid var(--line)',
-      }}>
-        {titulo}
-      </h3>
-      <div style={{ paddingTop: 'var(--s-5)', fontSize: 'var(--fs-15)',
-                    lineHeight: 'var(--lh-read)' }}>
-        {children}
-      </div>
+    <section
+      className={cn('mb-[var(--s-8)]', className)}
+    >
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        aria-controls={id}
+        style={{ minHeight: 24 }}
+        className={cn(
+          'flex w-full items-center justify-between',
+          'border-0 bg-transparent text-left cursor-pointer p-0',
+          'text-[length:var(--fs-15)] font-semibold tracking-[.01em]',
+          'hover:text-accent transition-colors-fast',
+          'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+          'rounded-[var(--r-sm)]',
+          aberto ? 'text-text' : 'text-text-faint',
+        )}
+      >
+        <div className="flex items-center gap-[var(--s-2)]">
+          <h3 className="text-[length:var(--fs-15)] font-semibold leading-[1.3] tracking-[.01em] m-0">
+            {titulo}
+          </h3>
+          {badge != null && badge > 0 && (
+            <span
+              className={cn(
+                'flex h-5 min-w-[20px] items-center justify-center',
+                'rounded-full bg-accent px-1.5',
+                'text-[length:10px] font-bold text-accent-on',
+              )}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+        <motion.div
+          animate={{ rotate: aberto ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Icone icon={CaretDown} size="sm" className="text-text-muted" />
+        </motion.div>
+      </button>
+
+      {aberto && (
+        <div
+          id={id}
+          role="region"
+          aria-label={titulo}
+        >
+          <div
+            className={cn(
+              'pt-[var(--s-5)] text-[length:var(--fs-15)] leading-[var(--lh-read)]',
+              'border-t border-line mt-[var(--s-3)]',
+            )}
+          >
+            {children}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
