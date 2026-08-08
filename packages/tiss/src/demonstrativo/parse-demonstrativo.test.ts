@@ -194,6 +194,94 @@ describe('parseDemonstrativoXml', () => {
     );
   });
 
+  it('lanca erro para XML sem tag de demonstrativo', () => {
+    const xmlSemDemo = [
+      '<?xml version="1.0" encoding="ISO-8859-1"?>',
+      '<ans:mensagemTISS xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas">',
+      '<ans:cabecalho><ans:versaoPadrao>4.01.00</ans:versaoPadrao></ans:cabecalho>',
+      '</ans:mensagemTISS>',
+    ].join('\n');
+    const encoded = encodeIso8859(xmlSemDemo);
+
+    expect(() => parseDemonstrativoXml(encoded.bytes)).toThrow(
+      'XML nao contem demonstrativoAnaliseConta nem demonstrativoPagamento',
+    );
+  });
+
+  it('retorna itens vazio para demonstrativo sem guias', () => {
+    const xmlSemGuias = [
+      '<?xml version="1.0" encoding="ISO-8859-1"?>',
+      '<ans:mensagemTISS xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas">',
+      '<ans:cabecalho><ans:versaoPadrao>4.01.00</ans:versaoPadrao>',
+      '<ans:registroANS>999999</ans:registroANS>',
+      '<ans:dataGeracao>2026-08-05</ans:dataGeracao>',
+      '<ans:horaGeracao>10:00:00</ans:horaGeracao>',
+      '<ans:sequencialTransacao>1</ans:sequencialTransacao></ans:cabecalho>',
+      '<ans:operadoraParaPrestador>',
+      '<ans:demonstrativoAnaliseConta>',
+      '<ans:cabecalhoDemonstrativo>',
+      '<ans:registroANS>326305</ans:registroANS>',
+      '<ans:numeroDemonstrativo>VAZIO-001</ans:numeroDemonstrativo>',
+      '</ans:cabecalhoDemonstrativo>',
+      '<ans:dadosProtocolo><ans:numeroProtocolo>P-V</ans:numeroProtocolo></ans:dadosProtocolo>',
+      '<ans:dataProcessamento>2026-08-05</ans:dataProcessamento>',
+      '<ans:relacaoGuias></ans:relacaoGuias>',
+      '</ans:demonstrativoAnaliseConta>',
+      '</ans:operadoraParaPrestador>',
+      '<ans:epilogo><ans:hash>vazio</ans:hash></ans:epilogo>',
+      '</ans:mensagemTISS>',
+    ].join('\n');
+
+    const encoded = encodeIso8859(xmlSemGuias);
+    const result = parseDemonstrativoXml(encoded.bytes);
+
+    expect(result.tipo).toBe('analise');
+    expect(result.cabecalho.numeroDemonstrativo).toBe('VAZIO-001');
+    expect(result.itens).toHaveLength(0);
+  });
+
+  it('converte valores monetarios com centavos fracionarios corretamente', () => {
+    const xmlValores = [
+      '<?xml version="1.0" encoding="ISO-8859-1"?>',
+      '<ans:mensagemTISS xmlns:ans="http://www.ans.gov.br/padroes/tiss/schemas">',
+      '<ans:cabecalho><ans:versaoPadrao>4.01.00</ans:versaoPadrao>',
+      '<ans:registroANS>999999</ans:registroANS>',
+      '<ans:dataGeracao>2026-08-05</ans:dataGeracao>',
+      '<ans:horaGeracao>10:00:00</ans:horaGeracao>',
+      '<ans:sequencialTransacao>1</ans:sequencialTransacao></ans:cabecalho>',
+      '<ans:operadoraParaPrestador>',
+      '<ans:demonstrativoAnaliseConta>',
+      '<ans:cabecalhoDemonstrativo>',
+      '<ans:registroANS>326305</ans:registroANS>',
+      '<ans:numeroDemonstrativo>VAL-001</ans:numeroDemonstrativo>',
+      '</ans:cabecalhoDemonstrativo>',
+      '<ans:dadosProtocolo><ans:numeroProtocolo>P-VAL</ans:numeroProtocolo></ans:dadosProtocolo>',
+      '<ans:dataProcessamento>2026-08-05</ans:dataProcessamento>',
+      '<ans:relacaoGuias>',
+      '<ans:guiaCabecalho>',
+      '<ans:numeroGuiaPrestador>VAL-001</ans:numeroGuiaPrestador>',
+      '<ans:valorInformadoGuia>0.99</ans:valorInformadoGuia>',
+      '<ans:valorProcessadoGuia>1234.56</ans:valorProcessadoGuia>',
+      '<ans:valorLiberadoGuia>0.01</ans:valorLiberadoGuia>',
+      '<ans:valorGlosaGuia>0.00</ans:valorGlosaGuia>',
+      '</ans:guiaCabecalho>',
+      '</ans:relacaoGuias>',
+      '</ans:demonstrativoAnaliseConta>',
+      '</ans:operadoraParaPrestador>',
+      '<ans:epilogo><ans:hash>val</ans:hash></ans:epilogo>',
+      '</ans:mensagemTISS>',
+    ].join('\n');
+
+    const encoded = encodeIso8859(xmlValores);
+    const result = parseDemonstrativoXml(encoded.bytes);
+    const item = result.itens[0]!;
+
+    expect(item.valorInformadoCents).toBe(99);
+    expect(item.valorProcessadoCents).toBe(123456);
+    expect(item.valorLiberadoCents).toBe(1);
+    expect(item.valorGlosaCents).toBe(0);
+  });
+
   it('extrai cabecalho, 3 itens e glosas de demonstrativo de analise', () => {
     const encoded = encodeIso8859(SAMPLE_ANALISE);
     const result = parseDemonstrativoXml(encoded.bytes);
