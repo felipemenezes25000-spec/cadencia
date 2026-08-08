@@ -100,4 +100,23 @@ describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
     });
     expect(violacoes.filter((v) => v.includes('ix__patient_created'))).toEqual([]);
   });
+
+  it('reprova now() dentro do schema tiss — mesma regra que current_date', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE FUNCTION tiss.__guia_hoje() RETURNS timestamptz
+                     LANGUAGE sql STABLE AS $fn$ SELECT now() $fn$`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain('tiss.__guia_hoje (function): le o relogio dentro do schema tiss');
+  });
+
+  it('reprova default com now() em tabela tiss — mesmo proibido que funcao', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query(`CREATE TABLE tiss.__com_now (
+        tenant_id uuid NOT NULL, id uuid NOT NULL,
+        criado_em timestamptz NOT NULL DEFAULT now())`);
+      return ddlLintViolations(c);
+    });
+    expect(violacoes).toContain('tiss.__com_now.criado_em (default): le o relogio dentro do schema tiss');
+  });
 });

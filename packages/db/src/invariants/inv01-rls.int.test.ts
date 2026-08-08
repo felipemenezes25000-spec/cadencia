@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { catalogPool, closeCatalogPool, inRollbackTx } from './catalog';
+import { catalogPool, closeCatalogPool, inRollbackTx, TENANT_SCHEMAS } from './catalog';
 import { readRelations, rlsViolations } from './inv01-rls';
 
 afterAll(async () => {
@@ -108,5 +108,19 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
       return rlsViolations(await readRelations(c));
     });
     expect(violacoes.filter((v) => v.startsWith('clin.__particionada'))).toEqual([]);
+  });
+
+  it('tiss pertence ao TENANT_SCHEMAS e tabelas no schema tiss sao alcancadas pelo invariante 1', () => {
+    expect(TENANT_SCHEMAS).toContain('tiss');
+  });
+
+  it('reprova tabela no schema tiss sem RLS — mesmo erro que clin ou fin', async () => {
+    const violacoes = await inRollbackTx(async (c) => {
+      await c.query('CREATE TABLE tiss.__sem_rls (tenant_id uuid NOT NULL, id uuid NOT NULL)');
+      return rlsViolations(await readRelations(c));
+    });
+    expect(violacoes).toContain('tiss.__sem_rls: RLS nao habilitada');
+    expect(violacoes).toContain('tiss.__sem_rls: RLS nao forcada — o dono da tabela escapa da policy');
+    expect(violacoes).toContain('tiss.__sem_rls: nenhuma policy');
   });
 });

@@ -84,7 +84,7 @@ function stripLiterals(definition: string): string {
   return definition.replace(/'[^']*'/g, "''").replace(/''\s*::\s*date\b/gi, "''");
 }
 
-const CLOCK_RE = /\b(now\s*\(\s*\)|current_date|current_timestamp|localtimestamp)\b/i;
+const CLOCK_RE = /\bnow\s*\(\s*\)|\b(?:current_date|current_timestamp|localtimestamp)\b/i;
 const DATE_CAST_RE = /(::\s*date\b|\bas\s+date\s*\))/i;
 
 export async function ddlLintViolations(db: Queryable): Promise<string[]> {
