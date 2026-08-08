@@ -2,6 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '../../lib/cn';
+import { Skeleton } from '../../ui/Skeleton';
 import type { DataFreshness } from './types';
 
 interface AtendimentoRow {
@@ -35,100 +37,111 @@ function formatCents(cents: number): string {
   return `${cents < 0 ? '-' : ''}R$ ${grouped},${String(rest).padStart(2, '0')}`;
 }
 
+const thClasses = cn(
+  'border-b border-line px-3 py-2 text-[var(--fs-11)]',
+  'font-medium uppercase tracking-[.04em] text-text-muted',
+);
+
+function AtendimentosSkeleton() {
+  return (
+    <div
+      className="grid gap-6 p-6 mx-auto max-w-[1080px]"
+      role="status"
+      aria-label="Carregando atendimentos"
+    >
+      <Skeleton variant="text" width="160px" height="28px" />
+      <Skeleton variant="text" width="140px" height="12px" />
+      <div className="space-y-1">
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+      </div>
+    </div>
+  );
+}
+
 export function Atendimentos(p: AtendimentosProps) {
   const [rows, setRows] = useState<AtendimentoRow[]>([]);
   const [totals, setTotals] = useState<AtendimentoTotals | null>(null);
   const [freshness, setFreshness] = useState<DataFreshness | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     void p.carregarDados().then((r) => {
       setRows(r.rows);
       setTotals(r.totals);
       setFreshness(r.freshness);
+      setLoading(false);
     });
   }, [p]);
 
+  if (loading && rows.length === 0) {
+    return <AtendimentosSkeleton />;
+  }
+
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
-                  maxWidth: 1080, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
+    <div className="grid gap-6 p-6 mx-auto max-w-[1080px]">
+      <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
         Atendimentos
       </h1>
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
-        <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
-                    textTransform: 'uppercase', letterSpacing: '.04em', margin: 0 }}>
+        <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
           dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
 
-      <section aria-label="Tabela de atendimentos" style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse',
-                        fontSize: 'var(--fs-13)' }}>
+      <section aria-label="Tabela de atendimentos" className="overflow-x-auto">
+        <table className="w-full border-collapse text-[var(--fs-13)]">
           <thead>
             <tr>
-              {['Profissional', 'Procedimento'].map((h) => (
-                <th key={h} style={{
-                  textAlign: 'left', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                  fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                  letterSpacing: '.04em', fontWeight: 'var(--fw-medium)',
-                }}>{h}</th>
-              ))}
-              {['Qtd', 'Valor', 'Duracao media'].map((h) => (
-                <th key={h} style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                  fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                  letterSpacing: '.04em', fontWeight: 'var(--fw-medium)',
-                }}>{h}</th>
-              ))}
+              <th className={cn(thClasses, 'text-left')}>Profissional</th>
+              <th className={cn(thClasses, 'text-left')}>Procedimento</th>
+              <th className={cn(thClasses, 'text-right')}>Qtd</th>
+              <th className={cn(thClasses, 'text-right')}>Valor</th>
+              <th className={cn(thClasses, 'text-right')}>Duracao media</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.key}>
-                <td style={{ padding: `var(--s-2) var(--s-3)`, borderBottom: 'var(--border)' }}>
+              <tr key={r.key} className="transition-colors-fast hover:bg-surface-raised">
+                <td className="border-b border-line px-3 py-2">
                   {r.professionalName}
                 </td>
-                <td style={{ padding: `var(--s-2) var(--s-3)`, borderBottom: 'var(--border)' }}>
+                <td className="border-b border-line px-3 py-2">
                   {r.procedureName}
                 </td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                }}>{r.count}</td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                }}>{formatCents(r.valueCents)}</td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                }}>{r.avgDurationMin} min</td>
+                <td className="num border-b border-line px-3 py-2 text-right tabular-nums">
+                  {r.count}
+                </td>
+                <td className="num border-b border-line px-3 py-2 text-right tabular-nums">
+                  {formatCents(r.valueCents)}
+                </td>
+                <td className="num border-b border-line px-3 py-2 text-right tabular-nums">
+                  {r.avgDurationMin} min
+                </td>
               </tr>
             ))}
           </tbody>
           {totals !== null ? (
             <tfoot>
               <tr>
-                <td colSpan={2} style={{
-                  padding: `var(--s-2) var(--s-3)`, fontWeight: 'var(--fw-semibold)',
-                  borderTop: '2px solid var(--line-strong)',
-                }}>Total</td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  fontWeight: 'var(--fw-semibold)', fontVariantNumeric: 'tabular-nums',
-                  borderTop: '2px solid var(--line-strong)',
-                }}>{totals.count}</td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  fontWeight: 'var(--fw-semibold)', fontVariantNumeric: 'tabular-nums',
-                  borderTop: '2px solid var(--line-strong)',
-                }}>{formatCents(totals.valueCents)}</td>
-                <td style={{ borderTop: '2px solid var(--line-strong)' }} />
+                <td
+                  colSpan={2}
+                  className="border-t-2 border-line-strong px-3 py-2 font-semibold"
+                >
+                  Total
+                </td>
+                <td className="num border-t-2 border-line-strong px-3 py-2 text-right font-semibold tabular-nums">
+                  {totals.count}
+                </td>
+                <td className="num border-t-2 border-line-strong px-3 py-2 text-right font-semibold tabular-nums">
+                  {formatCents(totals.valueCents)}
+                </td>
+                <td className="border-t-2 border-line-strong" />
               </tr>
             </tfoot>
           ) : null}

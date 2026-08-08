@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { cn } from '../../lib/cn';
 import { Botao } from '../../ui/Botao';
 import type { SavedView, ExportFormat, DataFreshness } from './types';
 
@@ -38,40 +39,45 @@ export function Exportar(p: ExportarProps) {
   const canExport = selectedView !== null && !exporting;
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
-                  maxWidth: 640, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
+    <div className="grid gap-6 p-6 mx-auto max-w-[640px]">
+      <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
         Exportar
       </h1>
 
       {p.freshness.source === 'matview' && p.freshness.refreshedAt !== null ? (
-        <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
-                    textTransform: 'uppercase', letterSpacing: '.04em', margin: 0 }}>
+        <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
           dados ate {new Date(p.freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
 
       {/* Selecao de visao */}
-      <fieldset style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                         padding: 'var(--s-6)', background: 'var(--surface)' }}>
-        <legend style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                         padding: `0 var(--s-2)` }}>
+      <fieldset className="rounded-md border border-line bg-surface p-4">
+        <legend className="px-1 text-[var(--fs-15)] font-semibold">
           Visao
         </legend>
-        <div role="radiogroup" aria-label="Selecionar visao"
-          style={{ display: 'grid', gap: 'var(--s-3)', marginTop: 'var(--s-3)' }}>
+        <div
+          role="radiogroup"
+          aria-label="Selecionar visao"
+          className="mt-2 grid gap-2"
+        >
           {p.savedViews.map((v) => (
-            <label key={v.viewId}
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)',
-                       fontSize: 'var(--fs-14)', cursor: 'pointer',
-                       padding: `var(--s-2) 0` }}>
-              <input type="radio" name="export-view" value={v.viewId}
+            <label
+              key={v.viewId}
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5',
+                'text-[var(--fs-14)] transition-colors-fast',
+                'hover:bg-surface-raised',
+              )}
+            >
+              <input
+                type="radio"
+                name="export-view"
+                value={v.viewId}
                 aria-label={v.name}
                 checked={selectedView === v.viewId}
                 onChange={() => setSelectedView(v.viewId)}
-                style={{ accentColor: 'var(--accent)' }}
+                className="accent-accent"
               />
               {v.name}
             </label>
@@ -80,23 +86,31 @@ export function Exportar(p: ExportarProps) {
       </fieldset>
 
       {/* Selecao de formato */}
-      <fieldset style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                         padding: 'var(--s-6)', background: 'var(--surface)' }}>
-        <legend style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                         padding: `0 var(--s-2)` }}>
+      <fieldset className="rounded-md border border-line bg-surface p-4">
+        <legend className="px-1 text-[var(--fs-15)] font-semibold">
           Formato
         </legend>
-        <div role="radiogroup" aria-label="Selecionar formato"
-          style={{ display: 'flex', gap: 'var(--s-6)', marginTop: 'var(--s-3)' }}>
+        <div
+          role="radiogroup"
+          aria-label="Selecionar formato"
+          className="mt-2 flex gap-4"
+        >
           {(['csv', 'xlsx'] as const).map((f) => (
-            <label key={f}
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)',
-                       fontSize: 'var(--fs-14)', cursor: 'pointer' }}>
-              <input type="radio" name="export-format" value={f}
+            <label
+              key={f}
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5',
+                'text-[var(--fs-14)] transition-colors-fast',
+              )}
+            >
+              <input
+                type="radio"
+                name="export-format"
+                value={f}
                 aria-label={f.toUpperCase()}
                 checked={format === f}
                 onChange={() => setFormat(f)}
-                style={{ accentColor: 'var(--accent)' }}
+                className="accent-accent"
               />
               {f.toUpperCase()}
             </label>
@@ -105,50 +119,61 @@ export function Exportar(p: ExportarProps) {
       </fieldset>
 
       {/* Periodo */}
-      <fieldset style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                         padding: 'var(--s-6)', background: 'var(--surface)' }}>
-        <legend style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                         padding: `0 var(--s-2)` }}>
+      <fieldset className="rounded-md border border-line bg-surface p-4">
+        <legend className="px-1 text-[var(--fs-15)] font-semibold">
           Periodo
         </legend>
-        <div style={{ display: 'flex', gap: 'var(--s-6)', marginTop: 'var(--s-3)' }}>
+        <div className="mt-2 flex gap-4">
           <div>
-            <label htmlFor="export-date-from"
-              style={{ display: 'block', fontSize: 'var(--fs-12)',
-                       color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
+            <label
+              htmlFor="export-date-from"
+              className="mb-0.5 block text-[var(--fs-12)] text-text-muted"
+            >
               De
             </label>
-            <input id="export-date-from" type="date" value={dateFrom}
+            <input
+              id="export-date-from"
+              type="date"
+              value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              style={{
-                border: 'var(--border)', borderRadius: 'var(--r-md)',
-                padding: `var(--s-2) var(--s-3)`, fontSize: 'var(--fs-14)',
-                background: 'var(--surface)', color: 'var(--text)',
-              }}
+              className={cn(
+                'rounded-md border border-line bg-surface px-2 py-1.5',
+                'text-[var(--fs-14)] text-text',
+                'transition-colors-fast',
+                'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',
+              )}
             />
           </div>
           <div>
-            <label htmlFor="export-date-to"
-              style={{ display: 'block', fontSize: 'var(--fs-12)',
-                       color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
+            <label
+              htmlFor="export-date-to"
+              className="mb-0.5 block text-[var(--fs-12)] text-text-muted"
+            >
               Ate
             </label>
-            <input id="export-date-to" type="date" value={dateTo}
+            <input
+              id="export-date-to"
+              type="date"
+              value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              style={{
-                border: 'var(--border)', borderRadius: 'var(--r-md)',
-                padding: `var(--s-2) var(--s-3)`, fontSize: 'var(--fs-14)',
-                background: 'var(--surface)', color: 'var(--text)',
-              }}
+              className={cn(
+                'rounded-md border border-line bg-surface px-2 py-1.5',
+                'text-[var(--fs-14)] text-text',
+                'transition-colors-fast',
+                'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',
+              )}
             />
           </div>
         </div>
       </fieldset>
 
-      <Botao variante="primario" altura={40}
+      <Botao
+        variante="primario"
+        altura={40}
         disabled={!canExport}
         carregando={exporting}
-        onClick={() => { void handleExport(); }}>
+        onClick={() => { void handleExport(); }}
+      >
         Exportar
       </Botao>
     </div>

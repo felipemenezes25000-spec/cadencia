@@ -2,6 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '../../lib/cn';
+import { Skeleton } from '../../ui/Skeleton';
 import type { NpsSummary, NpsPoint, NpsByProfessional, DataFreshness } from './types';
 
 export interface SatisfacaoProps {
@@ -35,8 +37,8 @@ function NpsEvolutionChart({ points }: { readonly points: readonly NpsPoint[] })
   const padding = 30;
   const chartW = width - padding * 2;
   const chartH = height - padding * 2;
-  const minScore = Math.min(...points.map((p) => p.score), 0);
-  const maxScore = Math.max(...points.map((p) => p.score), 100);
+  const minScore = Math.min(...points.map((pt) => pt.score), 0);
+  const maxScore = Math.max(...points.map((pt) => pt.score), 100);
   const range = maxScore - minScore || 1;
 
   const pathPoints = points.map((pt, i) => {
@@ -49,9 +51,11 @@ function NpsEvolutionChart({ points }: { readonly points: readonly NpsPoint[] })
 
   return (
     <svg
-      role="img" aria-label="NPS evolutivo"
+      role="img"
+      aria-label="NPS evolutivo"
       viewBox={`0 0 ${width} ${height}`}
-      style={{ width: '100%', maxWidth: `${width}px`, height: `${height}px` }}
+      className="w-full max-w-[400px]"
+      style={{ height: `${height}px` }}
     >
       <path d={pathD} fill="none" stroke="var(--accent)" strokeWidth={2} />
       {points.map((pt, i) => {
@@ -62,8 +66,13 @@ function NpsEvolutionChart({ points }: { readonly points: readonly NpsPoint[] })
         return (
           <g key={pt.period}>
             <circle cx={x} cy={y} r={3} fill="var(--accent)" />
-            <text x={x} y={height - 4} textAnchor="middle"
-              fontSize="10" fill="var(--text-muted)">
+            <text
+              x={x}
+              y={height - 4}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--text-muted)"
+            >
               {MESES_CURTO[monthIdx]}
             </text>
           </g>
@@ -73,34 +82,63 @@ function NpsEvolutionChart({ points }: { readonly points: readonly NpsPoint[] })
   );
 }
 
+const thClasses = cn(
+  'border-b border-line px-3 py-2 text-[var(--fs-11)]',
+  'font-medium uppercase tracking-[.04em] text-text-muted',
+);
+
+function SatisfacaoSkeleton() {
+  return (
+    <div
+      className="grid gap-6 p-6 mx-auto max-w-[960px]"
+      role="status"
+      aria-label="Carregando satisfacao"
+    >
+      <Skeleton variant="text" width="140px" height="28px" />
+      <Skeleton variant="text" width="140px" height="12px" />
+      <Skeleton variant="card" height="160px" />
+      <Skeleton variant="card" height="120px" />
+      <div className="space-y-1">
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+      </div>
+    </div>
+  );
+}
+
 export function Satisfacao(p: SatisfacaoProps) {
   const [summary, setSummary] = useState<NpsSummary | null>(null);
   const [evolution, setEvolution] = useState<NpsPoint[]>([]);
   const [byProf, setByProf] = useState<NpsByProfessional[]>([]);
   const [freshness, setFreshness] = useState<DataFreshness | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout> | undefined;
+    setLoading(true);
     void p.carregarDados().then((r) => {
       setSummary(r.summary);
       setEvolution(r.evolution);
       setFreshness(r.freshness);
+      setLoading(false);
       timerId = setTimeout(() => setByProf(r.byProfessional), 0);
     });
     return () => { if (timerId !== undefined) clearTimeout(timerId); };
   }, [p]);
 
+  if (loading && summary === null) {
+    return <SatisfacaoSkeleton />;
+  }
+
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
-                  maxWidth: 960, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
+    <div className="grid gap-6 p-6 mx-auto max-w-[960px]">
+      <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
         Satisfacao
       </h1>
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
-        <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
-                    textTransform: 'uppercase', letterSpacing: '.04em', margin: 0 }}>
+        <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
           dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
@@ -108,54 +146,44 @@ export function Satisfacao(p: SatisfacaoProps) {
 
       {/* NPS em destaque */}
       {summary !== null ? (
-        <section aria-label="NPS do periodo"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)',
-                   display: 'grid', gap: 'var(--s-5)' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s-4)' }}>
-            <span className="num" style={{
-              fontSize: 'var(--fs-28)', fontWeight: 'var(--fw-semibold)',
-              color: npsColor(summary.score),
-              fontVariantNumeric: 'tabular-nums',
-            }}>
+        <section
+          aria-label="NPS do periodo"
+          className="grid gap-3 rounded-md border border-line bg-surface p-4"
+        >
+          <div className="flex items-baseline gap-3">
+            <span
+              className="num text-[var(--fs-28)] font-semibold tabular-nums"
+              style={{ color: npsColor(summary.score) }}
+            >
               {summary.score}
             </span>
-            <span style={{ fontSize: 'var(--fs-14)', color: 'var(--text-muted)' }}>
+            <span className="text-[var(--fs-14)] text-text-muted">
               NPS — {summary.totalResponses} respostas
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: 'var(--s-8)' }}>
+          <div className="flex gap-6">
             <div>
-              <span className="num" style={{ fontSize: 'var(--fs-18)',
-                fontWeight: 'var(--fw-semibold)', color: 'var(--ok)' }}>
+              <span className="num text-[var(--fs-18)] font-semibold text-ok">
                 {summary.promoters}
               </span>
-              <span style={{ display: 'block', fontSize: 'var(--fs-11)',
-                color: 'var(--text-muted)', textTransform: 'uppercase',
-                letterSpacing: '.04em' }}>
+              <span className="block text-[var(--fs-11)] uppercase tracking-[.04em] text-text-muted">
                 Promotores
               </span>
             </div>
             <div>
-              <span className="num" style={{ fontSize: 'var(--fs-18)',
-                fontWeight: 'var(--fw-semibold)', color: 'var(--text-muted)' }}>
+              <span className="num text-[var(--fs-18)] font-semibold text-text-muted">
                 {summary.passives}
               </span>
-              <span style={{ display: 'block', fontSize: 'var(--fs-11)',
-                color: 'var(--text-muted)', textTransform: 'uppercase',
-                letterSpacing: '.04em' }}>
+              <span className="block text-[var(--fs-11)] uppercase tracking-[.04em] text-text-muted">
                 Neutros
               </span>
             </div>
             <div>
-              <span className="num" style={{ fontSize: 'var(--fs-18)',
-                fontWeight: 'var(--fw-semibold)', color: 'var(--danger)' }}>
+              <span className="num text-[var(--fs-18)] font-semibold text-danger">
                 {summary.detractors}
               </span>
-              <span style={{ display: 'block', fontSize: 'var(--fs-11)',
-                color: 'var(--text-muted)', textTransform: 'uppercase',
-                letterSpacing: '.04em' }}>
+              <span className="block text-[var(--fs-11)] uppercase tracking-[.04em] text-text-muted">
                 Detratores
               </span>
             </div>
@@ -165,14 +193,14 @@ export function Satisfacao(p: SatisfacaoProps) {
 
       {/* Grafico evolutivo */}
       {evolution.length > 0 ? (
-        <section aria-label="Evolucao do NPS"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
-          <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                       margin: `0 0 var(--s-4)` }}>
+        <section
+          aria-label="Evolucao do NPS"
+          className="rounded-md border border-line bg-surface p-4"
+        >
+          <h2 className="m-0 mb-3 text-[var(--fs-15)] font-semibold">
             Evolutivo
           </h2>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="overflow-x-auto">
             <NpsEvolutionChart points={evolution} />
           </div>
         </section>
@@ -180,54 +208,34 @@ export function Satisfacao(p: SatisfacaoProps) {
 
       {/* Ranking por profissional */}
       {byProf.length > 0 ? (
-        <section aria-label="NPS por profissional"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
-          <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
-                       margin: `0 0 var(--s-4)` }}>
+        <section
+          aria-label="NPS por profissional"
+          className="rounded-md border border-line bg-surface p-4"
+        >
+          <h2 className="m-0 mb-3 text-[var(--fs-15)] font-semibold">
             Por profissional
           </h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse',
-                          fontSize: 'var(--fs-13)' }}>
+          <table className="w-full border-collapse text-[var(--fs-13)]">
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: `var(--s-2) var(--s-3)`,
-                             borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                             fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
-                  Profissional
-                </th>
-                <th style={{ textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                             borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                             fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
-                  NPS
-                </th>
-                <th style={{ textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                             borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                             fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
-                  Respostas
-                </th>
+                <th className={cn(thClasses, 'text-left')}>Profissional</th>
+                <th className={cn(thClasses, 'text-right')}>NPS</th>
+                <th className={cn(thClasses, 'text-right')}>Respostas</th>
               </tr>
             </thead>
             <tbody>
               {byProf.map((prof) => (
-                <tr key={prof.professionalId}>
-                  <td style={{ padding: `var(--s-2) var(--s-3)`, borderBottom: 'var(--border)' }}>
+                <tr key={prof.professionalId} className="transition-colors-fast hover:bg-surface-raised">
+                  <td className="border-b border-line px-3 py-2">
                     {prof.professionalName}
                   </td>
-                  <td className="num" style={{
-                    textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                    borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                    color: npsColor(prof.score), fontWeight: 'var(--fw-medium)',
-                  }}>
+                  <td
+                    className="num border-b border-line px-3 py-2 text-right font-medium tabular-nums"
+                    style={{ color: npsColor(prof.score) }}
+                  >
                     {prof.score}
                   </td>
-                  <td className="num" style={{
-                    textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                    borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                  }}>
+                  <td className="num border-b border-line px-3 py-2 text-right tabular-nums">
                     {prof.responses}
                   </td>
                 </tr>

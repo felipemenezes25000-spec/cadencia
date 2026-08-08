@@ -2,7 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '../../lib/cn';
 import { Botao } from '../../ui/Botao';
+import { Skeleton } from '../../ui/Skeleton';
 import type {
   ExploreFilter,
   ExploreRow,
@@ -44,12 +46,13 @@ function SimpleBarChart({ rows }: { readonly rows: readonly ExploreRow[] }) {
       {rows.map((r) => {
         const width = Math.max((r.valueCents / maxVal) * 100, 2);
         return (
-          <div key={r.key} style={{ marginBottom: 'var(--s-2)' }}>
-            <div style={{ height: 20, background: 'var(--surface-sunken)',
-                          borderRadius: 'var(--r-sm)', overflow: 'hidden' }}>
-              <div style={{ width: `${width}%`, height: '100%',
-                            background: 'var(--accent)', borderRadius: 'var(--r-sm)' }}
-                   title={`${r.label}: ${formatCents(r.valueCents)}`} />
+          <div key={r.key} className="mb-1">
+            <div className="h-5 overflow-hidden rounded-sm bg-surface-sunken">
+              <div
+                className="h-full rounded-sm bg-accent transition-all duration-300 ease-out"
+                style={{ width: `${width}%` }}
+                title={`${r.label}: ${formatCents(r.valueCents)}`}
+              />
             </div>
           </div>
         );
@@ -58,131 +61,154 @@ function SimpleBarChart({ rows }: { readonly rows: readonly ExploreRow[] }) {
   );
 }
 
+function ExplorarSkeleton() {
+  return (
+    <div
+      className="grid gap-6 p-6 mx-auto max-w-[1080px]"
+      role="status"
+      aria-label="Carregando explorador"
+    >
+      <div className="flex items-center justify-between">
+        <Skeleton variant="text" width="120px" height="28px" />
+        <Skeleton variant="text" width="100px" height="28px" />
+      </div>
+      <Skeleton variant="text" width="160px" height="12px" />
+      <div className="flex gap-1">
+        <Skeleton variant="text" width="140px" height="32px" />
+        <Skeleton variant="text" width="140px" height="32px" />
+      </div>
+      <Skeleton variant="card" height="200px" />
+      <div className="space-y-1">
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+        <Skeleton variant="table-row" />
+      </div>
+    </div>
+  );
+}
+
 export function Explorar(p: ExplorarProps) {
   const [rows, setRows] = useState<ExploreRow[]>([]);
   const [freshness, setFreshness] = useState<DataFreshness | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     void p.carregarDados(p.filters).then((r) => {
       setRows(r.rows);
       setFreshness(r.freshness);
+      setLoading(false);
     });
   }, [p, p.filters]);
 
+  if (loading && rows.length === 0) {
+    return <ExplorarSkeleton />;
+  }
+
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
-                  maxWidth: 1080, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                     lineHeight: 'var(--lh-tight)', margin: 0 }}>
+    <div className="grid gap-6 p-6 mx-auto max-w-[1080px]">
+      <div className="flex items-center justify-between">
+        <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
           Explorar
         </h1>
-        <Botao variante="secundario" altura={28}
-          onClick={() => { void p.aoSalvarVisao('Nova visao', p.filters, p.chartKind); }}>
+        <Botao
+          variante="secundario"
+          altura={28}
+          onClick={() => { void p.aoSalvarVisao('Nova visao', p.filters, p.chartKind); }}
+        >
           Salvar visao
         </Botao>
       </div>
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
-        <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
-                    textTransform: 'uppercase', letterSpacing: '.04em', margin: 0 }}>
+        <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
           dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
 
       {/* Tabs de visoes salvas */}
-      <div role="tablist" aria-label="Visoes salvas"
-        style={{ display: 'flex', gap: 'var(--s-1)', overflowX: 'auto',
-                 borderBottom: 'var(--border)', paddingBottom: 0 }}>
+      <div
+        role="tablist"
+        aria-label="Visoes salvas"
+        className="flex gap-0.5 overflow-x-auto border-b border-line scrollbar-thin"
+      >
         {p.savedViews.map((v) => (
-          <button key={v.viewId} role="tab" type="button"
+          <button
+            key={v.viewId}
+            role="tab"
+            type="button"
             aria-selected={false}
             onClick={() => p.aoSelecionarVisao(v.viewId)}
-            style={{
-              border: 0, background: 'transparent', cursor: 'pointer',
-              padding: `var(--s-3) var(--s-5)`,
-              fontSize: 'var(--fs-13)', color: 'var(--text-muted)',
-              fontWeight: 'var(--fw-medium)',
-              borderBottom: '2px solid transparent',
-              whiteSpace: 'nowrap',
-            }}>
+            className={cn(
+              'cursor-pointer border-0 border-b-2 border-transparent bg-transparent',
+              'whitespace-nowrap px-3 py-2',
+              'text-[var(--fs-13)] font-medium text-text-muted',
+              'transition-colors-fast hover:text-text',
+            )}
+          >
             {v.name}
           </button>
         ))}
       </div>
 
       {/* Seletor de tipo de grafico */}
-      <div role="radiogroup" aria-label="Tipo de grafico"
-        style={{ display: 'flex', gap: 'var(--s-2)' }}>
+      <div role="radiogroup" aria-label="Tipo de grafico" className="flex gap-1">
         {(['bar', 'line', 'pie'] as const).map((kind) => (
-          <button key={kind} role="radio" type="button"
+          <button
+            key={kind}
+            role="radio"
+            type="button"
             aria-checked={p.chartKind === kind}
             aria-label={CHART_LABELS[kind]}
             onClick={() => p.aoMudarGrafico(kind)}
-            style={{
-              border: p.chartKind === kind ? '1px solid var(--accent)' : 'var(--border)',
-              background: p.chartKind === kind ? 'var(--accent-soft)' : 'var(--surface)',
-              borderRadius: 'var(--r-md)', padding: `var(--s-2) var(--s-4)`,
-              fontSize: 'var(--fs-12)', color: 'var(--text)', cursor: 'pointer',
-              fontWeight: p.chartKind === kind ? 'var(--fw-medium)' : 'var(--fw-regular)',
-            }}>
+            className={cn(
+              'cursor-pointer rounded-md px-2 py-1',
+              'text-xs text-text transition-colors-fast',
+              p.chartKind === kind
+                ? 'border border-accent bg-accent-soft font-medium'
+                : 'border border-line bg-surface font-normal hover:bg-surface-raised',
+            )}
+          >
             {CHART_LABELS[kind]}
           </button>
         ))}
       </div>
 
       {/* Grafico */}
-      <section aria-label="Resultado"
-        style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                 background: 'var(--surface)', padding: 'var(--s-6)' }}>
+      <section
+        aria-label="Resultado"
+        className="rounded-md border border-line bg-surface p-4"
+      >
         <SimpleBarChart rows={rows} />
       </section>
 
       {/* Tabela de dados */}
-      <section aria-label="Tabela de dados"
-        style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse',
-                        fontSize: 'var(--fs-13)' }}>
+      <section aria-label="Tabela de dados" className="overflow-x-auto">
+        <table className="w-full border-collapse text-[var(--fs-13)]">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: `var(--s-2) var(--s-3)`,
-                           borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                           fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                           letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
+              <th className="border-b border-line px-2 py-1.5 text-left text-[var(--fs-11)] font-medium uppercase tracking-[.04em] text-text-muted">
                 Item
               </th>
-              <th style={{ textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                           borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                           fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                           letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
+              <th className="border-b border-line px-2 py-1.5 text-right text-[var(--fs-11)] font-medium uppercase tracking-[.04em] text-text-muted">
                 Qtd
               </th>
-              <th style={{ textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                           borderBottom: 'var(--border)', color: 'var(--text-muted)',
-                           fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                           letterSpacing: '.04em', fontWeight: 'var(--fw-medium)' }}>
+              <th className="border-b border-line px-2 py-1.5 text-right text-[var(--fs-11)] font-medium uppercase tracking-[.04em] text-text-muted">
                 Valor
               </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.key}>
-                <td style={{ padding: `var(--s-2) var(--s-3)`,
-                             borderBottom: 'var(--border)' }}>
+              <tr key={r.key} className="transition-colors-fast hover:bg-surface-raised">
+                <td className="border-b border-line px-2 py-1.5">
                   {r.label}
                 </td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                }}>
+                <td className="num border-b border-line px-2 py-1.5 text-right tabular-nums">
                   {r.count}
                 </td>
-                <td className="num" style={{
-                  textAlign: 'right', padding: `var(--s-2) var(--s-3)`,
-                  borderBottom: 'var(--border)', fontVariantNumeric: 'tabular-nums',
-                }}>
+                <td className="num border-b border-line px-2 py-1.5 text-right tabular-nums">
                   {formatCents(r.valueCents)}
                 </td>
               </tr>
