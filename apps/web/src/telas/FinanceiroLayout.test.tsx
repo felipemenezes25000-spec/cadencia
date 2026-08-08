@@ -6,7 +6,7 @@ import { axe } from 'vitest-axe';
 import { FinanceiroLayout, type AbaFinanceiro } from './FinanceiroLayout';
 
 const ABAS: AbaFinanceiro[] = [
-  'visao', 'caixa', 'a-receber', 'a-pagar', 'recebimentos', 'repasse', 'estoque',
+  'visao', 'caixa', 'a-receber', 'a-pagar', 'recebimentos', 'repasse', 'convenios', 'estoque',
 ];
 
 function montar(abaAtiva: AbaFinanceiro = 'visao') {
@@ -25,7 +25,7 @@ describe('FinanceiroLayout', () => {
     expect(screen.getByRole('heading', { level: 1, name: /Financeiro/ })).toBeVisible();
   });
 
-  it('renderiza todas as 7 abas como links de navegacao', () => {
+  it('renderiza todas as 8 abas como links de navegacao', () => {
     montar();
     const nav = screen.getByRole('navigation', { name: /Sub-navegacao financeiro/i });
     expect(nav).toBeVisible();
@@ -35,20 +35,21 @@ describe('FinanceiroLayout', () => {
     expect(screen.getByRole('link', { name: /A pagar/i })).toBeVisible();
     expect(screen.getByRole('link', { name: /Recebimentos/i })).toBeVisible();
     expect(screen.getByRole('link', { name: /Repasse/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /Convenios/i })).toBeVisible();
     expect(screen.getByRole('link', { name: /Estoque/i })).toBeVisible();
   });
 
-  it('marca a aba ativa com aria-current="page"', () => {
-    montar('caixa');
-    const link = screen.getByRole('link', { name: /^Caixa$/i });
+  it('marca a aba Convenios com aria-current="page" quando ativa', () => {
+    montar('convenios');
+    const link = screen.getByRole('link', { name: /Convenios/i });
     expect(link).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /Visao/i })).not.toHaveAttribute('aria-current');
   });
 
-  it('ao clicar em outra aba chama aoNavegar com o slug correto', async () => {
+  it('ao clicar em Convenios chama aoNavegar com o slug correto', async () => {
     const { aoNavegar } = montar('visao');
-    await userEvent.click(screen.getByRole('link', { name: /A pagar/i }));
-    expect(aoNavegar).toHaveBeenCalledWith('a-pagar');
+    await userEvent.click(screen.getByRole('link', { name: /Convenios/i }));
+    expect(aoNavegar).toHaveBeenCalledWith('convenios');
   });
 
   it('renderiza o conteudo filho dentro do container', () => {

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 
 export type AbaFinanceiro =
   | 'visao' | 'caixa' | 'a-receber' | 'a-pagar'
-  | 'recebimentos' | 'repasse' | 'estoque';
+  | 'recebimentos' | 'repasse' | 'convenios' | 'estoque';
 
 export interface AbaConfig {
   readonly slug: AbaFinanceiro;
@@ -20,6 +20,7 @@ export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
   { slug: 'a-pagar',       rotulo: 'A pagar',       href: '/financeiro/a-pagar' },
   { slug: 'recebimentos',  rotulo: 'Recebimentos',  href: '/financeiro/recebimentos' },
   { slug: 'repasse',       rotulo: 'Repasse',       href: '/financeiro/repasse' },
+  { slug: 'convenios',     rotulo: 'Convenios',     href: '/financeiro/convenios' },
   { slug: 'estoque',       rotulo: 'Estoque',       href: '/financeiro/estoque' },
 ];
 
