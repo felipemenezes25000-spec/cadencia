@@ -4,7 +4,7 @@ import { withTenantTx, type Actor } from '@cadencia/db';
 import { computeVariation } from './compute-variation';
 import { factorsAddUp } from './variation-types';
 import {
-  semearVariacao, criarAtendimentoComLancamento,
+  semearVariacao, criarAtendimentoComLancamento, criarGlosaAceita,
   type SementeVariacao,
 } from './test-support';
 
@@ -163,5 +163,79 @@ describe('computeVariation', () => {
     expect(result.factors.total_a_cents).toBe(0);
     expect(result.factors.total_b_cents).toBe(0);
     expect(factorsAddUp(result.factors)).toBe(true);
+  });
+
+  describe('fator de glosas nao recuperadas', () => {
+    let sGlosa: SementeVariacao;
+    let poolGlosa: Pool;
+
+    beforeAll(async () => {
+      sGlosa = await semearVariacao();
+      poolGlosa = new Pool({
+        connectionString: process.env['DATABASE_URL'],
+        max: 2,
+      });
+      poolGlosa.on('connect', (client) => {
+        void client.query('SET ROLE app_rw').catch(() => undefined);
+      });
+
+      // Periodo A (junho 2026): 3 consultas pagas + 1 glosa aceita de R$200
+      for (let i = 0; i < 3; i++) {
+        await criarAtendimentoComLancamento({
+          tenantId: sGlosa.tenantId, clinicId: sGlosa.clinicId,
+          patientId: sGlosa.patientIds[i]!,
+          professionalId: sGlosa.professionalIdA,
+          procedureId: sGlosa.procedureIdConsulta,
+          userId: sGlosa.userId, paymentMethodId: sGlosa.paymentMethodId,
+          categoryId: sGlosa.categoryId,
+          amountCents: 25000, date: `2026-06-${String(10 + i).padStart(2, '0')}`,
+          status: 'atendido', operadoraNome: 'Operadora Var', pago: true,
+        });
+      }
+      await criarGlosaAceita({
+        tenantId: sGlosa.tenantId, clinicId: sGlosa.clinicId,
+        patientId: sGlosa.patientIds[3]!,
+        professionalId: sGlosa.professionalIdA,
+        userId: sGlosa.userId, operadoraId: sGlosa.operadoraId,
+        valorGlosadoCents: 20000, dataAtendimento: '2026-06-15',
+      });
+
+      // Periodo B (julho 2026): 3 consultas pagas, sem glosas
+      for (let i = 0; i < 3; i++) {
+        await criarAtendimentoComLancamento({
+          tenantId: sGlosa.tenantId, clinicId: sGlosa.clinicId,
+          patientId: sGlosa.patientIds[i]!,
+          professionalId: sGlosa.professionalIdA,
+          procedureId: sGlosa.procedureIdConsulta,
+          userId: sGlosa.userId, paymentMethodId: sGlosa.paymentMethodId,
+          categoryId: sGlosa.categoryId,
+          amountCents: 25000, date: `2026-07-${String(10 + i).padStart(2, '0')}`,
+          status: 'atendido', operadoraNome: 'Operadora Var', pago: true,
+        });
+      }
+    });
+
+    afterAll(async () => {
+      await poolGlosa.end();
+    });
+
+    it('glosas no periodo A e nenhuma no B → fator positivo (glosas reduziram)', async () => {
+      const actor: Actor = {
+        kind: 'user', tenantId: sGlosa.tenantId, userId: sGlosa.userId,
+        clinicId: sGlosa.clinicId, requestId: 'test-glosa-1',
+      };
+      const result = await withTenantTx(actor, async (tx) => {
+        return computeVariation(tx, sGlosa.tenantId, sGlosa.clinicId,
+          { start: '2026-06-01', end: '2026-06-30' },
+          { start: '2026-07-01', end: '2026-07-31' },
+        );
+      }, poolGlosa);
+
+      // Glosas: A teve R$200 aceita, B teve R$0
+      // Fator = -(0 - 20000) = +20000 (reducao de glosas e positivo)
+      expect(result.factors.glosas_cents).toBe(20000);
+      // Propriedade matematica ainda vale
+      expect(factorsAddUp(result.factors)).toBe(true);
+    });
   });
 });
