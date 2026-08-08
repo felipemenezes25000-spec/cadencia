@@ -25,6 +25,7 @@ import { guiaRoutes } from './routes/tiss/guias';
 import { loteRoutes } from './routes/tiss/lotes';
 import { convenioPacienteRoutes } from './routes/tiss/convenios-paciente';
 import { demonstrativoRoutes } from './routes/tiss/demonstrativos';
+import { glosaRoutes } from './routes/tiss/glosas';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -105,6 +106,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(loteRoutes);
   await app.register(convenioPacienteRoutes);
   await app.register(demonstrativoRoutes);
+  await app.register(glosaRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
