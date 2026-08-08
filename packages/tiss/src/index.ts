@@ -76,6 +76,14 @@ export {
   type SubmittedBatch,
 } from './transport/tiss-arquivo-fake';
 
+// --- Recurso de glosa (Fase 5) ---
+export {
+  resolveRecurso,
+  type ResolveResult,
+  type ResolveRecursoResult,
+  type ResolveRecursoFailure,
+} from './resolve-recurso';
+
 // --- Demonstrativo (Fase 5) ---
 export {
   parseDemonstrativoXml,
