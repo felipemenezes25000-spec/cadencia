@@ -8,10 +8,11 @@ import { ConveniosLayout, type ContadoresConvenios } from './ConveniosLayout';
 import { ConveniosAFaturar, type AFaturarDados } from './ConveniosAFaturar';
 import { ConveniosLotes, type LotesDados } from './ConveniosLotes';
 import { ConveniosOperadoras, type OperadorasDados } from './ConveniosOperadoras';
+import { ConveniosRetornos, type RetornosDados } from './ConveniosRetornos';
 
 const CONTADORES: ContadoresConvenios = {
   guiasAFaturar: 7, lotesRascunho: 1, lotesEnviados: 3, pendencias: 2,
-  glosasPendentes: 0, recursosRascunho: 0,
+  glosasPendentes: 4, recursosRascunho: 1,
 };
 
 const DADOS_FATURAR: AFaturarDados = {
@@ -45,6 +46,24 @@ const DADOS_OPERADORAS: OperadorasDados = {
       email: null, telefone: null, ativa: true, totalPacientes: 10,
     },
   ],
+};
+
+const DADOS_RETORNOS: RetornosDados = {
+  demonstrativos: [
+    {
+      id: 'd1', operadoraNome: 'Unimed', operadoraId: 'op1',
+      registroAns: '123456', protocolo: 'PROT-001', tipo: 'analise',
+      dataImportacao: '2026-08-01', periodoInicio: '2026-07-01',
+      periodoFim: '2026-07-31', totalApresentadoCentavos: 500000,
+      totalProcessadoCentavos: 480000, totalLiberadoCentavos: 450000,
+      totalGlosadoCentavos: 30000, totalItens: 15, itensGlosados: 3,
+    },
+  ],
+  operadoras: [{ id: 'op1', nome: 'Unimed', registroAns: '123456' }],
+  totais: {
+    apresentadoCentavos: 500000, processadoCentavos: 480000,
+    liberadoCentavos: 450000, glosadoCentavos: 30000,
+  },
 };
 
 describe('Navegacao completa: Financeiro > Convenios', () => {
@@ -124,6 +143,42 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
     expect(screen.getByRole('button', { name: /Nova operadora/i })).toBeVisible();
   });
 
+  it('sub-aba Retornos renderiza lista de demonstrativos', async () => {
+    render(
+      <FinanceiroLayout abaAtiva="convenios" aoNavegar={() => {}}>
+        <ConveniosLayout
+          abaAtiva="retornos" aoNavegar={() => {}}
+          contadores={CONTADORES} aoFiltrar={() => {}}
+        >
+          <ConveniosRetornos
+            carregarDados={async () => DADOS_RETORNOS}
+            aoImportarXml={async () => {}}
+            aoAbrirDemonstrativo={() => {}}
+          />
+        </ConveniosLayout>
+      </FinanceiroLayout>,
+    );
+    await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
+    expect(screen.getByRole('link', { name: /Retornos/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /Importar/i })).toBeVisible();
+  });
+
+  it('contadores da faixa incluem glosas pendentes e recursos rascunho', () => {
+    render(
+      <FinanceiroLayout abaAtiva="convenios" aoNavegar={() => {}}>
+        <ConveniosLayout
+          abaAtiva="a-faturar" aoNavegar={() => {}}
+          contadores={CONTADORES} aoFiltrar={() => {}}
+        >
+          <div>Conteudo</div>
+        </ConveniosLayout>
+      </FinanceiroLayout>,
+    );
+    expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
+    expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
+    expect(screen.getByText('4')).toBeVisible();
+  });
+
   it('contadores da faixa sao botoes clicaveis', async () => {
     const aoFiltrar = vi.fn();
     render(
@@ -136,26 +191,26 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
         </ConveniosLayout>
       </FinanceiroLayout>,
     );
-    await userEvent.click(screen.getByRole('button', { name: /Pendencias/i }));
-    expect(aoFiltrar).toHaveBeenCalledWith('pendencias');
+    await userEvent.click(screen.getByRole('button', { name: /Glosas pendentes/i }));
+    expect(aoFiltrar).toHaveBeenCalledWith('glosasPendentes');
   });
 
-  it('sem violacao de acessibilidade na composicao completa', async () => {
+  it('sem violacao de acessibilidade na composicao com Retornos', async () => {
     const { container } = render(
       <FinanceiroLayout abaAtiva="convenios" aoNavegar={() => {}}>
         <ConveniosLayout
-          abaAtiva="a-faturar" aoNavegar={() => {}}
+          abaAtiva="retornos" aoNavegar={() => {}}
           contadores={CONTADORES} aoFiltrar={() => {}}
         >
-          <ConveniosAFaturar
-            carregarDados={async () => DADOS_FATURAR}
-            aoCriarLote={async () => {}}
-            aoAbrirGuia={() => {}}
+          <ConveniosRetornos
+            carregarDados={async () => DADOS_RETORNOS}
+            aoImportarXml={async () => {}}
+            aoAbrirDemonstrativo={() => {}}
           />
         </ConveniosLayout>
       </FinanceiroLayout>,
     );
-    await waitFor(() => expect(screen.getByText('Carlos Melo')).toBeVisible());
+    await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();
   });
 });
