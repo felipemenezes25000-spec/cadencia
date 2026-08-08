@@ -1088,6 +1088,30 @@
       }
     }
   },
+  "tiss.glosa": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "resolved_at": [
+          "UPDATE"
+        ],
+        "resolved_by": [
+          "UPDATE"
+        ],
+        "status": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
   "tiss.guia_ajuste": {
     "table": {
       "app_rw": [
