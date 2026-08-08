@@ -1,9 +1,13 @@
 // apps/web/src/telas/FinanceiroCaixa.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { SortAscending, SortDescending, Receipt } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
+import { Skeleton } from '../ui/Skeleton';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -50,148 +54,424 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
-function formatarHora(iso: string): string {
-  const d = new Date(iso);
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
-  }).format(d);
+function formatarData(iso: string): string {
+  const dateStr = iso.substring(0, 10);
+  const [ano, mes, dia] = dateStr.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+// ── Ordenacao ──────────────────────────────────────────────────────────────
+
+type DirecaoOrdenacao = 'asc' | 'desc';
+
+interface Ordenacao {
+  readonly campo: string;
+  readonly direcao: DirecaoOrdenacao;
+}
+
+function ThSortavel({
+  campo,
+  rotulo,
+  ordenacao,
+  onSort,
+  className,
+}: {
+  readonly campo: string;
+  readonly rotulo: string;
+  readonly ordenacao: Ordenacao | null;
+  readonly onSort: (ord: Ordenacao) => void;
+  readonly className?: string;
+}) {
+  const ativo = ordenacao?.campo === campo;
+  const direcao = ativo ? ordenacao.direcao : null;
+
+  return (
+    <th
+      className={cn(
+        'px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted',
+        'cursor-pointer select-none hover:text-text transition-colors-fast',
+        className,
+      )}
+      aria-sort={ativo ? (direcao === 'asc' ? 'ascending' : 'descending') : 'none'}
+      onClick={() =>
+        onSort({
+          campo,
+          direcao: ativo && direcao === 'asc' ? 'desc' : 'asc',
+        })
+      }
+    >
+      <span className="inline-flex items-center gap-1">
+        {rotulo}
+        {ativo && (
+          <Icone
+            icon={direcao === 'asc' ? SortAscending : SortDescending}
+            size="sm"
+            className="text-accent"
+          />
+        )}
+      </span>
+    </th>
+  );
+}
+
+// ── Chip de tipo ──────────────────────────────────────────────────────────
+
+function ChipDeTipo({ tipo }: { readonly tipo: 'receita' | 'despesa' }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+        tipo === 'receita' ? 'bg-ok-soft text-ok' : 'bg-danger-soft text-danger',
+      )}
+    >
+      {tipo === 'receita' ? 'Receita' : 'Despesa'}
+    </span>
+  );
+}
+
+// ── Skeleton de carregamento ──────────────────────────────────────────────
+
+function CaixaSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Skeleton variant="text" width="120px" height="32px" />
+        <Skeleton variant="text" width="120px" height="32px" />
+        <Skeleton variant="text" width="120px" height="32px" />
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+        <Skeleton variant="card" height="80px" />
+        <Skeleton variant="card" height="80px" />
+        <Skeleton variant="card" height="80px" />
+      </div>
+      <div className="rounded-lg border border-line overflow-hidden">
+        <div className="border-b border-line bg-surface-raised px-4 py-2.5">
+          <Skeleton variant="text" width="80%" height="16px" />
+        </div>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="border-b border-line px-4 py-3">
+            <Skeleton variant="table-row" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Estado vazio ──────────────────────────────────────────────────────────
+
+function EstadoVazio() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Icone icon={Receipt} size="xl" className="text-text-muted mb-3" />
+      <p className="text-base font-medium text-text">
+        Nenhum lancamento encontrado
+      </p>
+      <p className="mt-1 text-sm text-text-muted">
+        Ajuste os filtros ou adicione um novo lancamento
+      </p>
+    </div>
+  );
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────
 
 export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
+  const baseId = useId();
   const [dados, setDados] = useState<CaixaDados | null>(null);
+  const [carregando, setCarregando] = useState(true);
   const [contaId, setContaId] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [tipoFiltro, setTipoFiltro] = useState('');
+  const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
 
   useEffect(() => {
-    void p.carregarDados({}).then(setDados);
+    setCarregando(true);
+    void p.carregarDados({}).then((d) => {
+      setDados(d);
+      setCarregando(false);
+    });
   }, [p]);
 
   function filtrar(): void {
-    void p.carregarDados({
-      contaId: contaId === '' ? undefined : contaId,
-      dataInicio: dataInicio === '' ? undefined : dataInicio,
-      dataFim: dataFim === '' ? undefined : dataFim,
-    }).then(setDados);
+    setCarregando(true);
+    void p
+      .carregarDados({
+        ...(contaId !== '' ? { contaId } : {}),
+        ...(dataInicio !== '' ? { dataInicio } : {}),
+        ...(dataFim !== '' ? { dataFim } : {}),
+      })
+      .then((d) => {
+        setDados(d);
+        setCarregando(false);
+      });
   }
 
-  if (dados === null) return null;
+  const categoriasDisponiveis = useMemo(() => {
+    if (!dados) return [];
+    const cats = new Set(dados.lancamentos.map((l) => l.categoryName));
+    return Array.from(cats).sort();
+  }, [dados]);
+
+  const lancamentosFiltrados = useMemo(() => {
+    if (!dados) return [];
+    let resultado = [...dados.lancamentos];
+
+    if (categoriaFiltro !== '') {
+      resultado = resultado.filter((l) => l.categoryName === categoriaFiltro);
+    }
+
+    if (tipoFiltro !== '') {
+      resultado = resultado.filter((l) => l.kind === tipoFiltro);
+    }
+
+    if (ordenacao) {
+      resultado.sort((a, b) => {
+        let cmp = 0;
+        switch (ordenacao.campo) {
+          case 'data':
+            cmp = a.paidAt.localeCompare(b.paidAt);
+            break;
+          case 'categoria':
+            cmp = a.categoryName.localeCompare(b.categoryName);
+            break;
+          case 'valor': {
+            const va = a.kind === 'receita' ? a.amountCents : -a.amountCents;
+            const vb = b.kind === 'receita' ? b.amountCents : -b.amountCents;
+            cmp = va - vb;
+            break;
+          }
+          default:
+            cmp = 0;
+        }
+        return ordenacao.direcao === 'desc' ? -cmp : cmp;
+      });
+    }
+
+    return resultado;
+  }, [dados, categoriaFiltro, tipoFiltro, ordenacao]);
+
+  if (carregando) {
+    return <CaixaSkeleton />;
+  }
+
+  if (!dados) return null;
+
+  const selectClasses =
+    'h-8 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
+  const vazio = lancamentosFiltrados.length === 0;
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
+    <div className="space-y-6">
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', alignItems: 'end' }}>
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-conta" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`${baseId}-conta`}
+            className="text-sm font-medium text-text-muted"
+          >
             Conta
           </label>
           <select
-            id="filtro-conta"
+            id={`${baseId}-conta`}
             value={contaId}
             onChange={(e) => setContaId(e.target.value)}
-            aria-label="Conta"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className={selectClasses}
           >
             <option value="">Todas</option>
             {dados.contas.map((c) => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
             ))}
           </select>
         </div>
-        <Campo rotulo="Data inicio" type="date" denso
-          value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Data inicio" />
-        <Campo rotulo="Data fim" type="date" denso
-          value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Data fim" />
-        <Botao variante="secundario" altura={32} onClick={filtrar}>
+
+        <div className="flex items-end gap-2">
+          <Campo
+            rotulo="De"
+            type="date"
+            denso
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            className="w-36"
+          />
+          <Campo
+            rotulo="Ate"
+            type="date"
+            denso
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            className="w-36"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`${baseId}-categoria`}
+            className="text-sm font-medium text-text-muted"
+          >
+            Categoria
+          </label>
+          <select
+            id={`${baseId}-categoria`}
+            value={categoriaFiltro}
+            onChange={(e) => setCategoriaFiltro(e.target.value)}
+            className={selectClasses}
+          >
+            <option value="">Todas</option>
+            {categoriasDisponiveis.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`${baseId}-tipo`}
+            className="text-sm font-medium text-text-muted"
+          >
+            Tipo
+          </label>
+          <select
+            id={`${baseId}-tipo`}
+            value={tipoFiltro}
+            onChange={(e) => setTipoFiltro(e.target.value)}
+            className={selectClasses}
+          >
+            <option value="">Todos</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </div>
+
+        <Botao variante="secundario" tamanho="sm" onClick={filtrar}>
           Filtrar
         </Botao>
       </div>
 
       {/* Totais */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                    gap: 'var(--s-4)' }}>
-        <div style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                      background: 'var(--surface)', padding: 'var(--s-5)' }}>
-          <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                         textTransform: 'uppercase', letterSpacing: '.04em' }}>Receita</span>
-          <p className="num" style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)',
-                                      margin: 'var(--s-1) 0 0', fontVariantNumeric: 'tabular-nums',
-                                      color: 'var(--ok)' }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+            Receita
+          </span>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-ok">
             {centavosParaReais(dados.totalReceita)}
           </p>
         </div>
-        <div style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                      background: 'var(--surface)', padding: 'var(--s-5)' }}>
-          <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                         textTransform: 'uppercase', letterSpacing: '.04em' }}>Despesa</span>
-          <p className="num" style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)',
-                                      margin: 'var(--s-1) 0 0', fontVariantNumeric: 'tabular-nums',
-                                      color: 'var(--danger)' }}>
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+            Despesa
+          </span>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-danger">
             {centavosParaReais(dados.totalDespesa)}
           </p>
         </div>
-        <div style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
-                      background: 'var(--surface)', padding: 'var(--s-5)' }}>
-          <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                         textTransform: 'uppercase', letterSpacing: '.04em' }}>Saldo</span>
-          <p className="num" style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)',
-                                      margin: 'var(--s-1) 0 0', fontVariantNumeric: 'tabular-nums' }}>
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+            Saldo
+          </span>
+          <p className="num mt-1 text-lg font-semibold tabular-nums">
             {centavosParaReais(dados.saldo)}
           </p>
         </div>
       </div>
 
-      {/* Extrato */}
-      <section aria-label="Extrato">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.lancamentos.map((l) => {
-            const sinal = l.kind === 'receita' ? '+' : '-';
-            const cor = l.kind === 'receita' ? 'var(--ok)' : 'var(--danger)';
-            return (
-              <li key={l.id} style={{
-                display: 'grid', gridTemplateColumns: 'auto 1fr auto',
-                alignItems: 'center', gap: 'var(--s-4)',
-                padding: 'var(--s-4) var(--s-5)',
-                borderBottom: 'var(--border)', minHeight: 44,
-              }}>
-                <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
-                               fontVariantNumeric: 'tabular-nums', minWidth: '4ch' }}>
-                  {formatarHora(l.paidAt)}
-                </span>
-                <div>
-                  <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
-                    {l.descricao}
-                  </span>
-                  <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                                 color: 'var(--text-muted)' }}>
-                    {l.categoryName} — {l.method}
-                  </span>
-                </div>
-                <span className="num" style={{
-                  fontSize: 'var(--fs-14)', fontVariantNumeric: 'tabular-nums',
-                  fontWeight: 'var(--fw-medium)', color: cor,
-                }}>
-                  {sinal} {centavosParaReais(l.amountCents)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      {/* Tabela ou estado vazio */}
+      {vazio ? (
+        <EstadoVazio />
+      ) : (
+        <section aria-label="Extrato">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <ThSortavel
+                      campo="data"
+                      rotulo="Data"
+                      ordenacao={ordenacao}
+                      onSort={setOrdenacao}
+                    />
+                    <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                      Descricao
+                    </th>
+                    <ThSortavel
+                      campo="categoria"
+                      rotulo="Categoria"
+                      ordenacao={ordenacao}
+                      onSort={setOrdenacao}
+                    />
+                    <ThSortavel
+                      campo="valor"
+                      rotulo="Valor"
+                      ordenacao={ordenacao}
+                      onSort={setOrdenacao}
+                      className="text-right"
+                    />
+                    <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                      Tipo
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {lancamentosFiltrados.map((l) => {
+                    const positivo = l.kind === 'receita';
+                    const valorExibido = `${positivo ? '+' : '-'} ${centavosParaReais(l.amountCents)}`;
+                    return (
+                      <tr
+                        key={l.id}
+                        className="hover:bg-surface-hover transition-colors-fast"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap font-mono text-xs tabular-nums text-text-muted">
+                          {formatarData(l.paidAt)}
+                        </td>
+                        <td className="px-4 py-3 text-text">
+                          <div>{l.descricao}</div>
+                          <div className="text-xs text-text-muted">{l.method}</div>
+                        </td>
+                        <td className="px-4 py-3 text-text-muted">
+                          {l.categoryName}
+                        </td>
+                        <td
+                          className={cn(
+                            'px-4 py-3 text-right whitespace-nowrap font-mono tabular-nums font-medium',
+                            positivo ? 'text-ok' : 'text-danger',
+                          )}
+                        >
+                          {valorExibido}
+                        </td>
+                        <td className="px-4 py-3">
+                          <ChipDeTipo tipo={l.kind} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-line bg-surface-raised">
+                    <td
+                      colSpan={3}
+                      className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted"
+                    >
+                      Saldo do periodo
+                    </td>
+                    <td className="num px-4 py-3 text-right font-mono tabular-nums font-semibold">
+                      {centavosParaReais(dados.saldo)}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

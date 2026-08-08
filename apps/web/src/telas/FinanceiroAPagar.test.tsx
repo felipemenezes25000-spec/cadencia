@@ -1,32 +1,56 @@
 // apps/web/src/telas/FinanceiroAPagar.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { FinanceiroAPagar, type APagarDados } from './FinanceiroAPagar';
 
 const DADOS: APagarDados = {
-  total: 85000,
+  total: 82000,
   despesas: [
-    { id: 'd1', descricao: 'Aluguel', fornecedor: 'Imobiliaria XYZ',
-      amountCents: 50000, dueDate: '2026-08-10', categoryName: 'Aluguel',
-      status: 'pendente' },
-    { id: 'd2', descricao: 'Material de limpeza', fornecedor: 'Fornecedor ABC',
-      amountCents: 15000, dueDate: '2026-08-15', categoryName: 'Materiais',
-      status: 'pendente' },
-    { id: 'd3', descricao: 'Energia eletrica', fornecedor: 'Eletropaulo',
-      amountCents: 20000, dueDate: '2026-08-20', categoryName: 'Utilidades',
-      status: 'pendente' },
+    {
+      id: 'd1',
+      descricao: 'Aluguel',
+      fornecedor: 'Imobiliaria XYZ',
+      amountCents: 50000,
+      dueDate: '2026-08-10',
+      categoryName: 'Aluguel',
+      status: 'pendente',
+    },
+    {
+      id: 'd2',
+      descricao: 'Material de limpeza',
+      fornecedor: 'Fornecedor ABC',
+      amountCents: 15000,
+      dueDate: '2026-08-15',
+      categoryName: 'Materiais',
+      status: 'vencido',
+    },
+    {
+      id: 'd3',
+      descricao: 'Energia eletrica',
+      fornecedor: 'Eletropaulo',
+      amountCents: 20000,
+      dueDate: '2026-08-20',
+      categoryName: 'Utilidades',
+      status: 'pendente',
+    },
+    {
+      id: 'd4',
+      descricao: 'Credito fornecedor',
+      fornecedor: 'Fornecedor ABC',
+      amountCents: -3000,
+      dueDate: '2026-08-05',
+      categoryName: 'Ajustes',
+      status: 'pago',
+    },
   ],
-  categorias: ['Aluguel', 'Materiais', 'Utilidades'],
+  categorias: ['Aluguel', 'Materiais', 'Utilidades', 'Ajustes'],
 };
 
 function montar() {
   const props = {
-    carregarDados: vi.fn(async (_filtros: {
-      fornecedor?: string; categoria?: string;
-      dataInicio?: string; dataFim?: string;
-    }) => DADOS),
+    carregarDados: vi.fn(async () => DADOS),
     aoMarcarPago: vi.fn(async () => {}),
     aoEditar: vi.fn(),
     aoParcelar: vi.fn(async () => {}),
@@ -36,61 +60,123 @@ function montar() {
 }
 
 describe('FinanceiroAPagar', () => {
-  it('exibe o total a pagar formatado em reais', async () => {
-    montar();
-    await waitFor(() => expect(screen.getByText('R$ 850,00')).toBeVisible());
+  it('renderiza skeleton enquanto carrega', () => {
+    render(
+      <FinanceiroAPagar
+        carregarDados={() => new Promise<APagarDados>(() => {})}
+        aoMarcarPago={async () => {}}
+        aoEditar={() => {}}
+        aoParcelar={async () => {}}
+      />,
+    );
+    expect(screen.getAllByRole('status').length).toBeGreaterThan(0);
   });
 
-  it('lista as despesas pendentes com descricao e fornecedor', async () => {
+  it('renderiza tabela com dados', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Material de limpeza')).toBeVisible());
-    // 'Aluguel' aparece tanto como opcao de categoria quanto como descricao de despesa
-    expect(screen.getAllByText('Aluguel').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/Imobiliaria XYZ/)).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('Material de limpeza')).toBeVisible();
     expect(screen.getByText('Energia eletrica')).toBeVisible();
+    expect(screen.getByText(/Imobiliaria XYZ/)).toBeVisible();
   });
 
-  it('cada despesa tem botoes Marcar pago, Editar e Parcelar', async () => {
+  it('ordena ao clicar no cabecalho de coluna', async () => {
     montar();
-    await waitFor(() => expect(
-      screen.getAllByRole('button', { name: /Marcar pago/i }).length).toBe(3));
-    expect(screen.getAllByRole('button', { name: /Editar/i }).length).toBe(3);
-    expect(screen.getAllByRole('button', { name: /Parcelar/i }).length).toBe(3);
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+
+    const thValor = screen.getByText('Valor').closest('th')!;
+    await userEvent.click(thValor);
+    expect(thValor.getAttribute('aria-sort')).toBe('ascending');
+
+    await userEvent.click(thValor);
+    expect(thValor.getAttribute('aria-sort')).toBe('descending');
   });
 
-  it('ao clicar em Marcar pago chama aoMarcarPago com o id correto', async () => {
-    const props = montar();
-    await waitFor(() => expect(screen.getByText('Material de limpeza')).toBeVisible());
-    const botoes = screen.getAllByRole('button', { name: /Marcar pago/i });
-    await userEvent.click(botoes[0]!);
-    expect(props.aoMarcarPago).toHaveBeenCalledWith('d1');
+  it('filtra por data', async () => {
+    const { carregarDados } = montar();
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+    const de = screen.getByLabelText('De');
+    fireEvent.change(de, { target: { value: '2026-08-01' } });
+    await userEvent.click(screen.getByRole('button', { name: /Filtrar/i }));
+    expect(carregarDados).toHaveBeenCalledTimes(2);
   });
 
-  it('ao clicar em Editar chama aoEditar com o id correto', async () => {
-    const props = montar();
-    await waitFor(() => expect(screen.getByText('Material de limpeza')).toBeVisible());
-    const botoes = screen.getAllByRole('button', { name: /Editar/i });
-    await userEvent.click(botoes[1]!);
-    expect(props.aoEditar).toHaveBeenCalledWith('d2');
+  it('filtra por categoria', async () => {
+    const { carregarDados } = montar();
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+    const selectCategoria = screen.getByLabelText('Categoria');
+    await userEvent.selectOptions(selectCategoria, 'Aluguel');
+    await userEvent.click(screen.getByRole('button', { name: /Filtrar/i }));
+    expect(carregarDados).toHaveBeenCalledTimes(2);
   });
 
-  it('tem filtro por fornecedor', async () => {
+  it('filtra por status', async () => {
     montar();
-    await waitFor(() => expect(screen.getByLabelText(/Fornecedor/i)).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+
+    const selectStatus = screen.getByLabelText('Status');
+    await userEvent.selectOptions(selectStatus, 'pendente');
+
+    // d1 status=pendente, d3 status=pendente
+    // d2 status=vencido, d4 status=pago
+    expect(screen.getByText('Energia eletrica')).toBeVisible();
+    expect(
+      screen.queryByText('Material de limpeza'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Credito fornecedor'),
+    ).not.toBeInTheDocument();
   });
 
-  it('tem filtro por categoria', async () => {
+  it('mostra valores positivos em verde', async () => {
     montar();
-    await waitFor(() => expect(screen.getByLabelText(/Categoria/i)).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+    const el = screen.getByText('R$ 500,00');
+    expect(el.className).toContain('text-ok');
   });
 
-  it('tem filtro por periodo de vencimento', async () => {
+  it('mostra valores negativos em vermelho', async () => {
     montar();
-    await waitFor(() => expect(screen.getByLabelText(/Vencimento inicio/i)).toBeVisible());
-    expect(screen.getByLabelText(/Vencimento fim/i)).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
+    const el = screen.getByText('R$ -30,00');
+    expect(el.className).toContain('text-danger');
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('mostra estado vazio quando sem resultados', async () => {
+    const dadosVazios: APagarDados = {
+      ...DADOS,
+      despesas: [],
+    };
+    render(
+      <FinanceiroAPagar
+        carregarDados={async () => dadosVazios}
+        aoMarcarPago={async () => {}}
+        aoEditar={() => {}}
+        aoParcelar={async () => {}}
+      />,
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Nenhum lancamento encontrado/),
+      ).toBeVisible(),
+    );
+  });
+
+  it('nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroAPagar
         carregarDados={async () => DADOS}
@@ -99,7 +185,9 @@ describe('FinanceiroAPagar', () => {
         aoParcelar={async () => {}}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Material de limpeza')).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toBeInTheDocument(),
+    );
     expect(await axe(container)).toHaveNoViolations();
   });
 });
