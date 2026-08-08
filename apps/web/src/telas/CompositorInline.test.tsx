@@ -60,7 +60,7 @@ async function digitarCombobox(texto: string) {
   const input = screen.getByRole('combobox', { name: /Quem/ });
   fireEvent.change(input, { target: { value: texto } });
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(120);
+    await vi.advanceTimersByTimeAsync(300);
   });
 }
 
