@@ -132,6 +132,15 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'tiss.paciente_convenio.write', description: 'Vincular paciente a convenio',
     roles: ['admin_clinico', 'recepcao'] },
+  // -- Fase 4 . TISS — Guias e Lotes ─────────────────────────────────────
+  { key: 'tiss.guia.read', description: 'Visualizar guias TISS pendentes e enviadas',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  { key: 'tiss.guia.adjust', description: 'Ajustar codigo de procedimento na guia para faturamento',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'tiss.lote.manage', description: 'Criar, montar e cancelar lotes TISS',
+    roles: ['admin_clinico', 'recepcao', 'financeiro'] },
+  { key: 'tiss.lote.send', description: 'Enviar lote TISS para operadora (gera XML)',
+    roles: ['admin_clinico', 'financeiro'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
