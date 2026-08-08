@@ -1,62 +1,150 @@
 // apps/web/src/telas/Desempenho.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Explorar, type ExplorarProps } from './Explorar';
+import { Suspense } from "react";
+import { useQueryState } from "nuqs";
+import { cn } from "../lib/cn";
+import { PageHeader } from "../ui/PageHeader";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/Tabs";
+import { Skeleton } from "../ui/Skeleton";
 
-type AbaDesempenho = 'explorar' | 'variacoes' | 'atendimentos' | 'satisfacao';
+/* ── Tipos e constantes ────────────────────────────────────────────── */
 
-const ABAS: readonly { id: AbaDesempenho; rotulo: string }[] = [
-  { id: 'explorar', rotulo: 'Explorar' },
-  { id: 'variacoes', rotulo: 'Variacoes do periodo' },
-  { id: 'atendimentos', rotulo: 'Atendimentos' },
-  { id: 'satisfacao', rotulo: 'Satisfacao' },
-];
+const PERIODOS = ["semana", "mes", "trimestre", "ano"] as const;
+type Periodo = (typeof PERIODOS)[number];
 
-export type DesempenhoProps = ExplorarProps;
+const PERIODO_ROTULOS: Record<Periodo, string> = {
+  semana: "Semana",
+  mes: "Mes",
+  trimestre: "Trimestre",
+  ano: "Ano",
+};
 
-export function Desempenho(p: DesempenhoProps) {
-  const [abaAtiva, setAbaAtiva] = useState<AbaDesempenho>('explorar');
+/* ── Skeleton de carregamento ──────────────────────────────────────── */
+
+export function DesempenhoSkeleton() {
+  return (
+    <div className="space-y-6 p-6" data-testid="desempenho-skeleton">
+      <div className="flex items-center justify-between">
+        <Skeleton variant="text" width="200px" />
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="text" width="80px" height="36px" />
+          ))}
+        </div>
+      </div>
+      <Skeleton variant="text" width="300px" height="40px" />
+      <Skeleton variant="card" height="400px" />
+    </div>
+  );
+}
+
+/* ── Conteudo principal ────────────────────────────────────────────── */
+
+function DesempenhoConteudo() {
+  const [periodo, setPeriodo] = useQueryState("periodo", {
+    defaultValue: "mes",
+  });
+  const [aba, setAba] = useQueryState("aba", { defaultValue: "explorar" });
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)',
-                  maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
-        Desempenho
-      </h1>
+    <div className="space-y-6 p-6 max-sm:p-4">
+      {/* Header + seletor de periodo */}
+      <div className="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-3">
+        <PageHeader titulo="Desempenho" semBreadcrumb className="pb-0" />
 
-      {/* Sub-navegacao */}
-      <div role="tablist" aria-label="Abas do Desempenho"
-        style={{ display: 'flex', gap: 'var(--s-1)',
-                 borderBottom: '2px solid var(--line)' }}>
-        {ABAS.map((aba) => (
-          <button key={aba.id} role="tab"
-            aria-selected={abaAtiva === aba.id}
-            onClick={() => setAbaAtiva(aba.id)}
-            style={{
-              padding: 'var(--s-3) var(--s-5)',
-              fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: abaAtiva === aba.id ? 'var(--accent)' : 'var(--text-muted)',
-              borderBottom: abaAtiva === aba.id
-                ? '2px solid var(--accent)' : '2px solid transparent',
-              marginBottom: '-2px',
-            }}>
-            {aba.rotulo}
-          </button>
-        ))}
+        <div
+          className="flex items-center gap-2"
+          role="group"
+          aria-label="Seletor de periodo"
+        >
+          {PERIODOS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => void setPeriodo(p)}
+              aria-pressed={periodo === p}
+              className={cn(
+                "rounded-[var(--r-md)] px-3 py-1.5 text-sm font-medium",
+                "transition-colors duration-[var(--dur-2)]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                periodo === p
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--surface-raised)]",
+              )}
+            >
+              {PERIODO_ROTULOS[p]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Conteudo da aba */}
-      {abaAtiva === 'explorar' ? (
-        <Explorar {...p} />
-      ) : (
-        <p style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-14)',
-                    padding: 'var(--s-8)' }}>
-          Em breve
-        </p>
-      )}
+      {/* Abas de navegacao */}
+      <Tabs
+        value={aba}
+        onValueChange={(v) => void setAba(v)}
+      >
+        <TabsList className="overflow-x-auto max-sm:scrollbar-none">
+          <TabsTrigger value="explorar">Explorar</TabsTrigger>
+          <TabsTrigger value="variacoes">Variacoes</TabsTrigger>
+          <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
+          <TabsTrigger value="satisfacao">Satisfacao</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="explorar">
+          <section
+            aria-label="Explorar"
+            className="rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] p-6"
+          >
+            <p className="text-sm text-[var(--text-muted)]">
+              Selecione uma visao para explorar dados do periodo.
+            </p>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="variacoes">
+          <section
+            aria-label="Variacoes"
+            className="rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] p-6"
+          >
+            <p className="text-sm text-[var(--text-muted)]">
+              Variacoes do periodo selecionado.
+            </p>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="atendimentos">
+          <section
+            aria-label="Atendimentos"
+            className="rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] p-6"
+          >
+            <p className="text-sm text-[var(--text-muted)]">
+              Resumo de atendimentos do periodo.
+            </p>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="satisfacao">
+          <section
+            aria-label="Satisfacao"
+            className="rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] p-6"
+          >
+            <p className="text-sm text-[var(--text-muted)]">
+              Indicadores de satisfacao e NPS.
+            </p>
+          </section>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+/* ── Componente exportado ──────────────────────────────────────────── */
+
+export function Desempenho() {
+  return (
+    <Suspense fallback={<DesempenhoSkeleton />}>
+      <DesempenhoConteudo />
+    </Suspense>
   );
 }

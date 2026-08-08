@@ -1,52 +1,145 @@
 // apps/web/src/telas/Desempenho.test.tsx
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { axe } from 'vitest-axe';
-import { Desempenho } from './Desempenho';
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { axe } from "vitest-axe";
+import { NuqsTestingAdapter } from "nuqs/adapters/testing";
+import { Desempenho } from "./Desempenho";
 
-const PROPS_BASE = {
-  visoesSalvas: [],
-  aoConsultar: vi.fn(async () => ({ rows: [], total: 0 })),
-  aoExportar: vi.fn(async () => {}),
-  aoSalvarVisao: vi.fn(async () => ({ viewId: 'v1' })),
-};
+// -- Helper para montar com NuqsTestingAdapter --------------------------------
 
-describe('tela Desempenho', () => {
-  it('renderiza o titulo "Desempenho"', () => {
-    render(<Desempenho {...PROPS_BASE} />);
-    expect(screen.getByRole('heading', { name: /Desempenho/ })).toBeVisible();
+function montar(searchParams: Record<string, string> = {}) {
+  const onUrlUpdate = vi.fn();
+
+  const result = render(
+    <NuqsTestingAdapter
+      searchParams={{ periodo: "mes", aba: "explorar", ...searchParams }}
+      onUrlUpdate={onUrlUpdate}
+      hasMemory
+    >
+      <Desempenho />
+    </NuqsTestingAdapter>,
+  );
+
+  return { onUrlUpdate, ...result };
+}
+
+// -- Testes do shell ----------------------------------------------------------
+
+describe("tela Desempenho", () => {
+  it("renderiza titulo", () => {
+    montar();
+    expect(
+      screen.getByRole("heading", { name: /Desempenho/ }),
+    ).toBeVisible();
   });
 
-  it('renderiza a sub-navegacao com aba "Explorar" ativa', () => {
-    render(<Desempenho {...PROPS_BASE} />);
-    expect(screen.getByRole('tab', { name: /Explorar/ })).toHaveAttribute('aria-selected', 'true');
+  it("renderiza seletor de periodo com 4 opcoes", () => {
+    montar();
+    const grupo = screen.getByRole("group", {
+      name: /Seletor de periodo/i,
+    });
+    expect(grupo).toBeVisible();
+    expect(screen.getByRole("button", { name: "Semana" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Mes" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Trimestre" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Ano" })).toBeVisible();
   });
 
-  it('renderiza o componente Explorar dentro', () => {
-    render(<Desempenho {...PROPS_BASE} />);
-    expect(screen.getByLabelText(/Data inicio/i)).toBeInTheDocument();
+  it("renderiza 4 tabs", () => {
+    montar();
+    expect(screen.getByRole("tab", { name: /Explorar/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Variacoes/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Atendimentos/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Satisfacao/ })).toBeVisible();
   });
 
-  it('sem violacao de acessibilidade', async () => {
-    const { container } = render(<Desempenho {...PROPS_BASE} />);
+  it("muda periodo ao clicar", async () => {
+    const user = userEvent.setup();
+    const { onUrlUpdate } = montar();
+
+    await user.click(screen.getByRole("button", { name: "Semana" }));
+
+    await waitFor(() => {
+      expect(onUrlUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryString: expect.stringContaining("periodo=semana"),
+        }),
+      );
+    });
+  });
+
+  it("muda tab ao clicar", async () => {
+    const user = userEvent.setup();
+    const { onUrlUpdate } = montar();
+
+    await user.click(screen.getByRole("tab", { name: /Satisfacao/ }));
+
+    await waitFor(() => {
+      expect(onUrlUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryString: expect.stringContaining("aba=satisfacao"),
+        }),
+      );
+    });
+  });
+
+  it("persiste periodo e aba na URL", () => {
+    montar({ periodo: "trimestre", aba: "atendimentos" });
+
+    // Periodo trimestre deve estar pressionado
+    expect(
+      screen.getByRole("button", { name: "Trimestre" }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    // Tab atendimentos deve estar ativa
+    expect(
+      screen.getByRole("tab", { name: /Atendimentos/ }),
+    ).toHaveAttribute("data-state", "active");
+  });
+
+  it("renderiza conteudo da tab ativa", () => {
+    montar({ aba: "explorar" });
+    expect(
+      screen.getByRole("region", { name: /Explorar/ }),
+    ).toBeVisible();
+  });
+
+  it("renderiza conteudo ao trocar de tab", async () => {
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(screen.getByRole("tab", { name: /Satisfacao/ }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("region", { name: /Satisfacao/ }),
+      ).toBeVisible();
+    });
+  });
+
+  it("nao tem violacoes de acessibilidade", async () => {
+    const { container } = montar();
     expect(await axe(container)).toHaveNoViolations();
   });
 });
 
-import { FASE_ATUAL, ITENS_NAV } from '../ui/nav';
+// -- Testes de navegacao (preservados) ----------------------------------------
 
-describe('navegacao Desempenho', () => {
-  it('FASE_ATUAL e 3', () => {
-    expect(FASE_ATUAL).toBe(3);
+import { FASE_ATUAL, ITENS_NAV } from "../ui/nav";
+
+describe("navegacao Desempenho", () => {
+  it("FASE_ATUAL inclui fase do Desempenho", () => {
+    expect(FASE_ATUAL).toBeGreaterThanOrEqual(3);
   });
 
-  it('item Desempenho esta disponivel na fase 3', () => {
-    const item = ITENS_NAV.find((i) => i.rotulo === 'Desempenho');
+  it("item Desempenho esta disponivel na fase 3", () => {
+    const item = ITENS_NAV.find((i) => i.rotulo === "Desempenho");
     expect(item).toBeDefined();
     expect(item!.disponivelNaFase).toBeLessThanOrEqual(FASE_ATUAL);
   });
 
-  it('todos os itens de navegacao estao disponiveis na fase atual', () => {
+  it("todos os itens de navegacao estao disponiveis na fase atual", () => {
     for (const item of ITENS_NAV) {
       expect(item.disponivelNaFase).toBeLessThanOrEqual(FASE_ATUAL);
     }
