@@ -1,7 +1,28 @@
 'use client';
 
-import { useDraggable } from '@dnd-kit/core';
+import { useEffect, useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Check, DotsSixVertical } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
+import { Icone } from '../ui/Icone';
+
+/* ── tipos exportados (backward compat) ───────────────────────────── */
 
 export type Prioridade = 'baixa' | 'normal' | 'alta' | 'urgente';
 
@@ -14,66 +35,182 @@ export interface ItemDeEspera {
   readonly observacao: string | null;
 }
 
-const PESO: Record<Prioridade, number> = { urgente: 3, alta: 2, normal: 1, baixa: 0 };
+/* ── helpers (preservados) ────────────────────────────────────────── */
 
-function Arrastavel({ item, aoChamar }: { item: ItemDeEspera; aoChamar: (id: string) => void }) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: item.waitlistId });
+const PESO: Record<Prioridade, number> = {
+  urgente: 3,
+  alta: 2,
+  normal: 1,
+  baixa: 0,
+};
+
+function ordenarPorPrioridade(itens: readonly ItemDeEspera[]): ItemDeEspera[] {
+  return [...itens].sort(
+    (a, b) =>
+      PESO[b.prioridade] - PESO[a.prioridade] ||
+      a.esperandoDesde.localeCompare(b.esperandoDesde),
+  );
+}
+
+function formatarDesde(iso: string): string {
+  return `desde ${new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(iso))}`;
+}
+
+/* ── item arrastavel ──────────────────────────────────────────────── */
+
+function ItemEspera({
+  item,
+  posicao,
+  aoChamar,
+}: {
+  readonly item: ItemDeEspera;
+  readonly posicao: number;
+  readonly aoChamar: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.waitlistId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
     <li
       ref={setNodeRef}
-      style={{
-        transform: transform === null ? undefined
-          : `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        border: 'var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface)',
-        padding: 'var(--s-4)', display: 'grid', gap: 'var(--s-2)', minHeight: 44,
-      }}
+      style={style}
+      className={cn(
+        'flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3',
+        'transition-shadow duration-[var(--dur-2)]',
+        isDragging && 'shadow-elev-2 opacity-75 z-10 relative',
+      )}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
-        <span {...attributes} {...listeners}
-          aria-label={`Arrastar ${item.displayName}`}
-          style={{ cursor: 'grab', userSelect: 'none', fontSize: 'var(--fs-12)',
-                   color: 'var(--text-muted)' }}>
-          ⠿
-        </span>
-        <strong style={{ fontWeight: 'var(--fw-medium)' }}>{item.displayName}</strong>
-      </div>
-      <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)' }}>
-        {`${item.prioridade} · desde ${new Intl.DateTimeFormat('pt-BR',
-          { day: '2-digit', month: '2-digit', timeZone: 'UTC' })
-          .format(new Date(item.esperandoDesde))}`}
-        {item.observacao === null ? '' : ` · ${item.observacao}`}
+      {/* Alca de arraste */}
+      <button
+        {...attributes}
+        {...listeners}
+        className={cn(
+          'cursor-grab active:cursor-grabbing text-text-muted hover:text-text',
+          'rounded p-0.5 focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+        )}
+        aria-label={`Arrastar ${item.displayName}`}
+      >
+        <Icone icon={DotsSixVertical} size="md" />
+      </button>
+
+      {/* Numero da posicao */}
+      <span
+        className={cn(
+          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
+          'bg-accent-soft text-xs font-bold text-accent',
+        )}
+        aria-label={`Posicao ${posicao}`}
+      >
+        {posicao}
       </span>
-      <Botao variante="secundario" altura={28}
+
+      {/* Informacoes do paciente */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-text truncate">
+          {item.displayName}
+        </p>
+        <p className="text-xs text-text-muted">
+          {item.prioridade} · {formatarDesde(item.esperandoDesde)}
+          {item.observacao != null ? ` · ${item.observacao}` : ''}
+        </p>
+      </div>
+
+      {/* Acao */}
+      <Botao
+        variante="fantasma"
+        tamanho="sm"
+        iconeEsquerda={Check}
         aria-label={`Chamar ${item.displayName} para a vaga`}
-        onClick={() => aoChamar(item.waitlistId)}>
+        onClick={() => aoChamar(item.waitlistId)}
+      >
         Chamar
       </Botao>
     </li>
   );
 }
 
+/* ── componente principal ─────────────────────────────────────────── */
+
 export function ListaDeEspera({
-  itens, aoChamar,
-}: { itens: readonly ItemDeEspera[]; aoChamar: (waitlistId: string) => void }) {
-  const ordenados = [...itens].sort((a, b) =>
-    PESO[b.prioridade] - PESO[a.prioridade]
-    || a.esperandoDesde.localeCompare(b.esperandoDesde));
+  itens,
+  aoChamar,
+}: {
+  readonly itens: readonly ItemDeEspera[];
+  readonly aoChamar: (waitlistId: string) => void;
+}) {
+  const [ordenados, setOrdenados] = useState<ItemDeEspera[]>(() =>
+    ordenarPorPrioridade(itens),
+  );
+
+  // Atualizar quando props mudam
+  useEffect(() => {
+    setOrdenados(ordenarPorPrioridade(itens));
+  }, [itens]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over != null && active.id !== over.id) {
+      setOrdenados((prev) => {
+        const oldIndex = prev.findIndex((i) => i.waitlistId === active.id);
+        const newIndex = prev.findIndex((i) => i.waitlistId === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  }
 
   return (
-    <aside aria-label="Lista de espera"
-      style={{
-        width: 300, borderInlineStart: 'var(--border)', background: 'var(--bg)',
-        padding: 'var(--s-5)', display: 'grid', gap: 'var(--s-4)', alignContent: 'start',
-      }}>
-      <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+    <aside
+      aria-label="Lista de espera"
+      className={cn(
+        'w-[300px] border-l border-line bg-bg',
+        'p-5 flex flex-col gap-4',
+      )}
+    >
+      <h2 className="text-[length:var(--fs-15)] font-semibold text-text m-0">
         Lista de espera
       </h2>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
-                   gap: 'var(--s-3)' }}>
-        {ordenados.map((i) => (
-          <Arrastavel key={i.waitlistId} item={i} aoChamar={aoChamar} />
-        ))}
-      </ul>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={ordenados.map((i) => i.waitlistId)}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="list-none m-0 p-0 flex flex-col gap-3">
+            {ordenados.map((item, index) => (
+              <ItemEspera
+                key={item.waitlistId}
+                item={item}
+                posicao={index + 1}
+                aoChamar={aoChamar}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
     </aside>
   );
 }

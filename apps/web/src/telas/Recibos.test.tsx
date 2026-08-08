@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { Recibos } from './Recibos';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
+import { Recibos, type RecibosProps } from './Recibos';
 
 const LISTA = [
   { receiptNumber: 42, patientName: 'Maria Souza Lima', description: 'Consulta',
@@ -13,12 +15,20 @@ const LISTA = [
     receiptId: 'r2' },
 ];
 
-function montar() {
-  const props = {
+/** Wrapper com TooltipProvider exigido pelo Radix. */
+function Wrapper({ children }: { children: ReactNode }) {
+  return (
+    <RadixTooltip.Provider delayDuration={0}>{children}</RadixTooltip.Provider>
+  );
+}
+
+function montar(overrides?: Partial<RecibosProps>) {
+  const props: RecibosProps = {
     carregarRecibos: vi.fn(async (_filtros: { dataInicio?: string; dataFim?: string; paciente?: string }) => LISTA),
     aoImprimirRecibo: vi.fn(async () => {}),
+    ...overrides,
   };
-  render(<Recibos {...props} />);
+  render(<Recibos {...props} />, { wrapper: Wrapper });
   return props;
 }
 
@@ -29,6 +39,18 @@ describe('tela Recibos', () => {
       screen.getByRole('heading', { level: 1, name: /Recibos/ })).toBeVisible());
   });
 
+  it('renderiza tabela de recibos', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
+    const tabela = screen.getByRole('table');
+    expect(tabela).toBeVisible();
+    expect(screen.getByText('Numero')).toBeVisible();
+    // "Paciente" aparece tanto no filtro quanto no cabecalho da tabela
+    const cabecalhos = screen.getAllByRole('columnheader');
+    expect(cabecalhos.some((th) => th.textContent === 'Paciente')).toBe(true);
+    expect(screen.getByText('Valor')).toBeVisible();
+  });
+
   it('lista os recibos com numero sequencial, paciente e valor', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
@@ -37,11 +59,18 @@ describe('tela Recibos', () => {
   });
 
   it('cada recibo tem botao "Imprimir"', async () => {
-    const { aoImprimirRecibo } = montar();
+    const props = montar();
     await waitFor(() => expect(
       screen.getAllByRole('button', { name: /Imprimir/ }).length).toBe(2));
     await userEvent.click(screen.getAllByRole('button', { name: /Imprimir/ })[0]!);
-    expect(aoImprimirRecibo).toHaveBeenCalledWith('r1');
+    expect(props.aoImprimirRecibo).toHaveBeenCalledWith('r1');
+  });
+
+  it('mostra botoes imprimir e email', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
+    expect(screen.getAllByRole('button', { name: /Imprimir/ })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /email/i })).toHaveLength(2);
   });
 
   it('tem campos de filtro por data e paciente', async () => {
@@ -51,21 +80,70 @@ describe('tela Recibos', () => {
     expect(screen.getByLabelText(/Paciente/i)).toBeVisible();
   });
 
+  it('filtra por busca', async () => {
+    montar();
+    await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
+    const campoBusca = screen.getByLabelText(/Buscar/i);
+    await userEvent.type(campoBusca, 'Joana');
+    await waitFor(() => {
+      expect(screen.queryByText('Maria Souza Lima')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Joana Prado')).toBeVisible();
+  });
+
+  it('filtra por data', async () => {
+    const props = montar();
+    await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
+    const campoDataInicio = screen.getByLabelText(/Data início/i);
+    await userEvent.type(campoDataInicio, '2026-08-01');
+    await userEvent.click(screen.getByRole('button', { name: /Filtrar/ }));
+    expect(props.carregarRecibos).toHaveBeenCalledTimes(2);
+  });
+
   it('ao preencher filtro de paciente e disparar busca, recarrega a lista', async () => {
-    const { carregarRecibos } = montar();
+    const props = montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     const campoPaciente = screen.getByLabelText(/Paciente/i);
     await userEvent.type(campoPaciente, 'Maria');
     await userEvent.click(screen.getByRole('button', { name: /Filtrar/ }));
-    expect(carregarRecibos).toHaveBeenCalledTimes(2);
+    expect(props.carregarRecibos).toHaveBeenCalledTimes(2);
+  });
+
+  it('mostra skeleton enquanto carrega', () => {
+    render(
+      <Wrapper>
+        <Recibos
+          carregarRecibos={() => new Promise(() => {})}
+          aoImprimirRecibo={async () => {}}
+        />
+      </Wrapper>,
+    );
+    expect(screen.getByTestId('skeleton-recibos')).toBeVisible();
+  });
+
+  it('mostra estado vazio', async () => {
+    render(
+      <Wrapper>
+        <Recibos
+          carregarRecibos={async () => []}
+          aoImprimirRecibo={async () => {}}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum recibo encontrado')).toBeVisible(),
+    );
   });
 
   it('sem violacao de acessibilidade', async () => {
     const { container } = render(
-      <Recibos
-        carregarRecibos={async () => LISTA}
-        aoImprimirRecibo={async () => {}}
-      />);
+      <Wrapper>
+        <Recibos
+          carregarRecibos={async () => LISTA}
+          aoImprimirRecibo={async () => {}}
+        />
+      </Wrapper>,
+    );
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();
   });

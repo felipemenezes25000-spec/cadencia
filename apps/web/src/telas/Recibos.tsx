@@ -1,8 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  EnvelopeSimple,
+  MagnifyingGlass,
+  Printer,
+  Receipt,
+} from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
+import { PageHeader } from '../ui/PageHeader';
+import { Tooltip } from '../ui/Tooltip';
+
+/* ── tipos exportados (backward compat) ───────────────────────────── */
 
 export type MetodoRecibo = 'dinheiro' | 'cartao' | 'pix' | 'link';
 
@@ -18,13 +30,21 @@ export interface LinhaDeRecibo {
 
 export interface RecibosProps {
   readonly carregarRecibos: (filtros: {
-    dataInicio?: string; dataFim?: string; paciente?: string;
+    dataInicio?: string;
+    dataFim?: string;
+    paciente?: string;
   }) => Promise<LinhaDeRecibo[]>;
   readonly aoImprimirRecibo: (receiptId: string) => Promise<void>;
+  readonly aoEnviarEmail?: (receiptId: string) => Promise<void>;
 }
 
+/* ── helpers (preservados) ────────────────────────────────────────── */
+
 const ROTULO_METODO: Record<MetodoRecibo, string> = {
-  dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'Pix', link: 'Link',
+  dinheiro: 'Dinheiro',
+  cartao: 'Cartão',
+  pix: 'Pix',
+  link: 'Link',
 };
 
 function centavosParaReais(centavos: number): string {
@@ -38,90 +58,235 @@ function centavosParaReais(centavos: number): string {
 function formatarDataHora(iso: string): string {
   const d = new Date(iso);
   return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
   }).format(d);
 }
 
+/* ── skeleton de carregamento ─────────────────────────────────────── */
+
+function TabelaSkeleton() {
+  return (
+    <div className="space-y-2" data-testid="skeleton-recibos" role="status" aria-label="Carregando recibos">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-4 rounded-md bg-surface-sunken px-4 py-3 animate-pulse"
+        >
+          <div className="h-4 w-16 rounded bg-line" />
+          <div className="h-4 flex-1 rounded bg-line" />
+          <div className="h-4 w-24 rounded bg-line" />
+          <div className="h-4 w-20 rounded bg-line" />
+          <div className="h-4 w-20 rounded bg-line" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── classes reutilizaveis ────────────────────────────────────────── */
+
+const thClasses =
+  'px-4 py-2.5 text-left text-xs font-medium text-text-muted';
+
+const acaoBotaoClasses = cn(
+  'rounded-md p-1.5 text-text-muted',
+  'transition-colors duration-[var(--dur-2)]',
+  'hover:bg-surface-hover hover:text-text',
+  'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+);
+
+/* ── componente principal ─────────────────────────────────────────── */
+
 export function Recibos(p: RecibosProps) {
   const [recibos, setRecibos] = useState<LinhaDeRecibo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [paciente, setPaciente] = useState('');
+  const [busca, setBusca] = useState('');
 
   useEffect(() => {
-    void p.carregarRecibos({}).then(setRecibos);
+    setIsLoading(true);
+    void p.carregarRecibos({}).then((dados) => {
+      setRecibos(dados);
+      setIsLoading(false);
+    });
   }, [p]);
 
   function filtrar(): void {
-    void p.carregarRecibos({
-      dataInicio: dataInicio === '' ? undefined : dataInicio,
-      dataFim: dataFim === '' ? undefined : dataFim,
-      paciente: paciente === '' ? undefined : paciente,
-    }).then(setRecibos);
+    setIsLoading(true);
+    const filtros: { dataInicio?: string; dataFim?: string; paciente?: string } = {};
+    if (dataInicio !== '') filtros.dataInicio = dataInicio;
+    if (dataFim !== '') filtros.dataFim = dataFim;
+    if (paciente !== '') filtros.paciente = paciente;
+    void p.carregarRecibos(filtros).then((dados) => {
+      setRecibos(dados);
+      setIsLoading(false);
+    });
   }
 
-  return (
-    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
-                  maxWidth: 960, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
-        Recibos
-      </h1>
+  const recibosFiltrados = useMemo(() => {
+    if (busca === '') return recibos;
+    const termo = busca.toLowerCase();
+    return recibos.filter(
+      (r) =>
+        r.patientName.toLowerCase().includes(termo) ||
+        String(r.receiptNumber).includes(termo),
+    );
+  }, [recibos, busca]);
 
-      <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', alignItems: 'end' }}>
-        <Campo rotulo="Data início" type="date" denso
-          value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Data início" />
-        <Campo rotulo="Data fim" type="date" denso
-          value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Data fim" />
-        <Campo rotulo="Paciente" denso
-          value={paciente} onChange={(e) => setPaciente(e.target.value)}
-          aria-label="Paciente" placeholder="Nome do paciente" />
-        <Botao variante="secundario" altura={32} onClick={filtrar}>
+  return (
+    <div className="space-y-6 p-6 max-sm:p-4 max-w-5xl mx-auto">
+      <PageHeader titulo="Recibos" semBreadcrumb />
+
+      {/* Filtros */}
+      <div className="flex flex-wrap items-end gap-3">
+        <Campo
+          prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+          placeholder="Buscar por paciente ou numero..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="max-w-xs"
+          aria-label="Buscar recibos"
+        />
+        <Campo
+          type="date"
+          rotulo="Data início"
+          denso
+          value={dataInicio}
+          onChange={(e) => setDataInicio(e.target.value)}
+          aria-label="Data início"
+          className="w-36"
+        />
+        <Campo
+          type="date"
+          rotulo="Data fim"
+          denso
+          value={dataFim}
+          onChange={(e) => setDataFim(e.target.value)}
+          aria-label="Data fim"
+          className="w-36"
+        />
+        <Campo
+          rotulo="Paciente"
+          denso
+          value={paciente}
+          onChange={(e) => setPaciente(e.target.value)}
+          aria-label="Paciente"
+          placeholder="Nome do paciente"
+        />
+        <Botao variante="secundario" tamanho="sm" onClick={filtrar}>
           Filtrar
         </Botao>
       </div>
 
-      <section aria-label="Lista de recibos">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {recibos.map((r) => (
-            <li key={r.receiptId}
-              style={{ display: 'grid',
-                       gridTemplateColumns: 'auto 1fr auto auto',
-                       alignItems: 'center', gap: 'var(--s-5)',
-                       borderBottom: 'var(--border)',
-                       padding: 'var(--s-4) var(--s-5)', minHeight: 44 }}>
-              <span className="num" style={{ fontSize: 'var(--fs-13)',
-                                             color: 'var(--text-muted)',
-                                             fontVariantNumeric: 'tabular-nums' }}>
-                #{r.receiptNumber}
-              </span>
-              <div>
-                <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
-                  {r.patientName}
-                </span>
-                <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                               color: 'var(--text-muted)' }}>
-                  {r.description} — {ROTULO_METODO[r.method]} — {formatarDataHora(r.paidAt)}
-                </span>
-              </div>
-              <span className="num" style={{ fontSize: 'var(--fs-14)',
-                                             fontVariantNumeric: 'tabular-nums' }}>
-                {centavosParaReais(r.amountCents)}
-              </span>
-              <Botao variante="fantasma" altura={28}
-                aria-label={`Imprimir recibo ${r.receiptNumber}`}
-                onClick={() => { void p.aoImprimirRecibo(r.receiptId); }}>
-                Imprimir
-              </Botao>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Skeleton de carregamento */}
+      {isLoading && <TabelaSkeleton />}
+
+      {/* Tabela de recibos */}
+      {!isLoading && recibosFiltrados.length > 0 && (
+        <section aria-label="Lista de recibos">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <th scope="col" className={thClasses}>
+                      Numero
+                    </th>
+                    <th scope="col" className={thClasses}>
+                      Paciente
+                    </th>
+                    <th scope="col" className={thClasses}>
+                      Data
+                    </th>
+                    <th
+                      scope="col"
+                      className={cn(thClasses, 'text-right')}
+                    >
+                      Valor
+                    </th>
+                    <th scope="col" className={thClasses}>
+                      Forma pgto
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 w-20">
+                      <span className="sr-only">Acoes</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {recibosFiltrados.map((r) => (
+                    <tr
+                      key={r.receiptId}
+                      className="transition-colors duration-[var(--dur-2)] hover:bg-surface-raised"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs tabular-nums text-text-muted">
+                        #{r.receiptNumber}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-text">
+                        {r.patientName}
+                      </td>
+                      <td className="px-4 py-3 text-text-muted">
+                        {formatarDataHora(r.paidAt)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-ok">
+                        {centavosParaReais(r.amountCents)}
+                      </td>
+                      <td className="px-4 py-3 text-text-muted">
+                        {ROTULO_METODO[r.method]}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <Tooltip conteudo="Imprimir">
+                            <button
+                              className={acaoBotaoClasses}
+                              aria-label={`Imprimir recibo ${r.receiptNumber}`}
+                              onClick={() => {
+                                void p.aoImprimirRecibo(r.receiptId);
+                              }}
+                            >
+                              <Icone icon={Printer} size="sm" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip conteudo="Enviar por email">
+                            <button
+                              className={acaoBotaoClasses}
+                              aria-label={`Enviar recibo ${r.receiptNumber} por email`}
+                              onClick={() => {
+                                void p.aoEnviarEmail?.(r.receiptId);
+                              }}
+                            >
+                              <Icone icon={EnvelopeSimple} size="sm" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Estado vazio */}
+      {!isLoading && recibosFiltrados.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Icone icon={Receipt} size="xl" className="text-text-faint mb-3" />
+          <p className="text-base font-medium text-text">
+            Nenhum recibo encontrado
+          </p>
+          <p className="text-sm text-text-muted mt-1">
+            Tente ajustar os filtros de busca.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

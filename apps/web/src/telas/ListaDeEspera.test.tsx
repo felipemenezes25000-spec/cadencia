@@ -20,10 +20,28 @@ describe('lista de espera', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('renderiza lista de pacientes', () => {
+    render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
+    expect(screen.getByText('Maria Souza Lima')).toBeVisible();
+    expect(screen.getByText('Joana Prado')).toBeVisible();
+  });
+
   it('ordena por prioridade e depois por tempo de espera', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     const linhas = screen.getAllByRole('listitem');
     expect(linhas[0]).toHaveTextContent('Maria Souza Lima');
+  });
+
+  it('mostra posicao numerica', () => {
+    render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
+    expect(screen.getByText('1')).toBeVisible();
+    expect(screen.getByText('2')).toBeVisible();
+  });
+
+  it('mostra alca de arraste', () => {
+    render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Arrastar Maria Souza Lima/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Arrastar Joana Prado/ })).toBeVisible();
   });
 
   it('cada item tem alternativa de TECLADO ao arraste — arrastar nao pode ser o unico caminho', async () => {
@@ -31,6 +49,11 @@ describe('lista de espera', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={aoChamar} />);
     await userEvent.click(screen.getByRole('button', { name: /Chamar Joana Prado/ }));
     expect(aoChamar).toHaveBeenCalledWith('w2');
+  });
+
+  it('mostra botao Chamar', () => {
+    render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
+    expect(screen.getAllByRole('button', { name: /Chamar/ })).toHaveLength(2);
   });
 
   it('mostra ha quanto tempo a pessoa espera, em texto', () => {
