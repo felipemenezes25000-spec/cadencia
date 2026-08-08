@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type {
   CabecalhoInput,
   ContratadoInput,
+  ContratadoRecursoInput,
   GuiaConsultaInput,
+  ItemRecursoGlosaInput,
   LoteConsultaInput,
   ProfissionalExecutanteInput,
+  RecursoGlosaInput,
 } from './types';
 
 // Teste de compilacao: garante que os tipos sao atribuiveis e que campos
@@ -107,5 +110,87 @@ describe('tipos de entrada do serializador TISS', () => {
     expect(porCodigo.codigoPrestadorNaOperadora).toBe('ABCD123');
     expect(porCpf.cpfContratado).toBe('12345678901');
     expect(porCnpj.cnpjContratado).toBe('11222333000181');
+  });
+});
+
+describe('RecursoGlosaInput', () => {
+  function itemRecursoBase(): ItemRecursoGlosaInput {
+    return {
+      sequencialItem: '1',
+      dataAtendimento: '2026-08-05',
+      numeroGuiaPrestador: '00001',
+      codigoProcedimento: '10101012',
+      codigoGlosa: 'A10',
+      valorRecursadoCentavos: 15000,
+      justificativa: 'Procedimento realizado conforme indicacao clinica',
+    };
+  }
+
+  function contratadoRecursoBase(): ContratadoRecursoInput {
+    return {
+      cnpjContratado: '11222333000181',
+      cnes: '1234567',
+    };
+  }
+
+  function recursoAmostra(): RecursoGlosaInput {
+    return {
+      cabecalho: {
+        versaoPadrao: '4.01.00',
+        registroANS: '339679',
+        dataGeracao: '2026-08-07',
+        horaGeracao: '14:30:00',
+        sequencialTransacao: '12345',
+      },
+      registroANS: '339679',
+      numeroLoteOriginal: '0001',
+      numeroRecursoGlosa: 'RG0001',
+      contratado: contratadoRecursoBase(),
+      itens: [itemRecursoBase()],
+      encounterVersionId: 'ev_00000000-0000-0000-0000-000000000001',
+    };
+  }
+
+  it('aceita entrada valida com todos os campos obrigatorios', () => {
+    const input: RecursoGlosaInput = recursoAmostra();
+    expect(input.cabecalho.versaoPadrao).toBe('4.01.00');
+    expect(input.itens).toHaveLength(1);
+    expect(input.encounterVersionId).toBeTruthy();
+  });
+
+  it('aceita item com numeroGuiaOperadora opcional', () => {
+    const item: ItemRecursoGlosaInput = {
+      ...itemRecursoBase(),
+      numeroGuiaOperadora: 'OP98765',
+    };
+    expect(item.numeroGuiaOperadora).toBe('OP98765');
+  });
+
+  it('aceita contratado com CPF ao inves de CNPJ', () => {
+    const contratado: ContratadoRecursoInput = {
+      cpfContratado: '12345678901',
+      cnes: '1234567',
+    };
+    expect(contratado.cpfContratado).toBe('12345678901');
+    expect(contratado.cnpjContratado).toBeUndefined();
+  });
+
+  it('aceita contratado com codigoPrestadorNaOperadora', () => {
+    const contratado: ContratadoRecursoInput = {
+      codigoPrestadorNaOperadora: 'PREST001',
+      cnes: '7654321',
+    };
+    expect(contratado.codigoPrestadorNaOperadora).toBe('PREST001');
+  });
+
+  it('aceita multiplos itens no recurso', () => {
+    const input: RecursoGlosaInput = {
+      ...recursoAmostra(),
+      itens: [
+        itemRecursoBase(),
+        { ...itemRecursoBase(), sequencialItem: '2', codigoGlosa: 'B15', valorRecursadoCentavos: 8050 },
+      ],
+    };
+    expect(input.itens).toHaveLength(2);
   });
 });
