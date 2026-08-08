@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./invariants/catalog": "./src/invariants/catalog.ts"
   },
   "dependencies": {
     "pg": "^8.22.0"
