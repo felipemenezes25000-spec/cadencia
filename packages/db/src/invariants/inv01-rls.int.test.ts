@@ -123,4 +123,39 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
     expect(violacoes).toContain('tiss.__sem_rls: RLS nao forcada — o dono da tabela escapa da policy');
     expect(violacoes).toContain('tiss.__sem_rls: nenhuma policy');
   });
+
+  it('as 5 tabelas da Fase 5 em tiss existem e passam o invariante de RLS', async () => {
+    const relacoes = await readRelations(catalogPool());
+    const tissFase5 = [
+      'demonstrativo',
+      'demonstrativo_item',
+      'glosa',
+      'recurso_glosa',
+      'recurso_glosa_item',
+    ];
+    for (const tabela of tissFase5) {
+      const rel = relacoes.find((r) => r.schema === 'tiss' && r.relation === tabela);
+      expect(rel, `tiss.${tabela} nao encontrada — a migration da Fase 5 nao foi aplicada`).toBeDefined();
+      expect(rel!.hasDiscriminator, `tiss.${tabela} sem coluna tenant_id`).toBe(true);
+      expect(rel!.rlsEnabled, `tiss.${tabela} com RLS desabilitada`).toBe(true);
+      expect(rel!.rlsForced, `tiss.${tabela} com RLS nao forcada`).toBe(true);
+      expect(rel!.policies, `tiss.${tabela} sem nenhuma policy`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('nenhuma das 5 tabelas da Fase 5 aparece nas violacoes de RLS', async () => {
+    const relacoes = await readRelations(catalogPool());
+    const violacoes = rlsViolations(relacoes);
+    const tissFase5 = [
+      'tiss.demonstrativo',
+      'tiss.demonstrativo_item',
+      'tiss.glosa',
+      'tiss.recurso_glosa',
+      'tiss.recurso_glosa_item',
+    ];
+    for (const tabela of tissFase5) {
+      const violacao = violacoes.find((v) => v.startsWith(tabela));
+      expect(violacao, `violacao encontrada para ${tabela}: ${violacao}`).toBeUndefined();
+    }
+  });
 });
