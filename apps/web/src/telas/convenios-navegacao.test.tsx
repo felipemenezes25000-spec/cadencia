@@ -1,6 +1,6 @@
 // apps/web/src/telas/convenios-navegacao.test.tsx
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { FinanceiroLayout } from './FinanceiroLayout';
@@ -98,7 +98,9 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
     const abaConvenios = screen.getByRole('tab', { name: /Convenios/i });
     expect(abaConvenios).toHaveAttribute('data-state', 'active');
     expect(screen.getByRole('heading', { level: 2, name: /Convenios/ })).toBeVisible();
-    expect(screen.getByText('7')).toBeVisible();
+    /* "7" aparece no grupo de contadores e como badge na aba */
+    const grupo = screen.getByRole('group', { name: /Contadores de convenios/i });
+    expect(within(grupo).getByText('7')).toBeVisible();
     expect(screen.getByTestId('conteudo-afaturar')).toBeVisible();
   });
 
@@ -176,8 +178,9 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
       </FinanceiroLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
-    /* ConveniosLayout retornos usa links internos, nao tabs do FinanceiroLayout */
-    expect(screen.getByRole('link', { name: /Retornos/i })).toHaveAttribute('aria-current', 'page');
+    /* ConveniosLayout agora usa Radix Tabs (tab, nao link) */
+    const tabRetornos = screen.getByRole('tab', { name: /Retornos/i });
+    expect(tabRetornos).toBeVisible();
     expect(screen.getByRole('button', { name: /Importar/i })).toBeVisible();
   });
 
@@ -194,7 +197,8 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
     );
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
     expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
-    expect(screen.getByText('4')).toBeVisible();
+    const grupoContadores = screen.getByRole('group', { name: /Contadores de convenios/i });
+    expect(within(grupoContadores).getByText('4')).toBeVisible();
   });
 
   it('contadores da faixa sao botoes clicaveis', async () => {

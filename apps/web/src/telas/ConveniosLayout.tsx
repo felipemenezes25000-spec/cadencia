@@ -1,11 +1,20 @@
 // apps/web/src/telas/ConveniosLayout.tsx
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "../lib/cn";
+import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
 
-// ── Tipos ──────────────────────────────────────────────────────────────────
+/* ── Tipos exportados ────────────────────────────────────────────── */
 
-export type SubAbaConvenios = 'a-faturar' | 'lotes' | 'retornos' | 'operadoras';
+export type SubAbaConvenios =
+  | "a-faturar"
+  | "lotes"
+  | "retornos"
+  | "glosas"
+  | "recursos"
+  | "operadoras";
 
 export interface ContadoresConvenios {
   readonly guiasAFaturar: number;
@@ -18,117 +27,153 @@ export interface ContadoresConvenios {
 
 export type FiltroConvenios = keyof ContadoresConvenios;
 
-interface SubAbaConfig {
-  readonly slug: SubAbaConvenios;
+export interface AbaConfig {
+  readonly value: SubAbaConvenios;
   readonly rotulo: string;
   readonly href: string;
+  readonly badgeKey?: FiltroConvenios;
 }
 
-const SUB_ABAS: readonly SubAbaConfig[] = [
-  { slug: 'a-faturar',  rotulo: 'A faturar',  href: '/financeiro/convenios' },
-  { slug: 'lotes',      rotulo: 'Lotes',       href: '/financeiro/convenios/lotes' },
-  { slug: 'retornos',   rotulo: 'Retornos',    href: '/financeiro/convenios/retornos' },
-  { slug: 'operadoras', rotulo: 'Operadoras',  href: '/financeiro/convenios/operadoras' },
+const ABAS: readonly AbaConfig[] = [
+  { value: "a-faturar", rotulo: "A faturar", href: "/convenios", badgeKey: "guiasAFaturar" },
+  { value: "lotes", rotulo: "Lotes", href: "/convenios/lotes" },
+  { value: "retornos", rotulo: "Retornos", href: "/convenios/retornos", badgeKey: "pendencias" },
+  { value: "glosas", rotulo: "Glosas", href: "/convenios/glosas", badgeKey: "glosasPendentes" },
+  { value: "recursos", rotulo: "Recursos", href: "/convenios/recursos" },
+  { value: "operadoras", rotulo: "Operadoras", href: "/convenios/operadoras" },
 ];
 
 const ROTULOS_CONTADORES: Record<FiltroConvenios, string> = {
-  guiasAFaturar:    'Guias a faturar',
-  lotesRascunho:    'Lotes rascunho',
-  lotesEnviados:    'Lotes enviados',
-  pendencias:       'Pendencias',
-  glosasPendentes:  'Glosas pendentes',
-  recursosRascunho: 'Recursos rascunho',
+  guiasAFaturar: "Guias a faturar",
+  lotesRascunho: "Lotes rascunho",
+  lotesEnviados: "Lotes enviados",
+  pendencias: "Pendencias",
+  glosasPendentes: "Glosas pendentes",
+  recursosRascunho: "Recursos rascunho",
 };
 
-// ── Props ──────────────────────────────────────────────────────────────────
+/* ── Props ─────────────────────────────────────────────────────────── */
 
 export interface ConveniosLayoutProps {
-  readonly abaAtiva: SubAbaConvenios;
-  readonly aoNavegar: (aba: SubAbaConvenios) => void;
-  readonly contadores: ContadoresConvenios;
-  readonly aoFiltrar: (filtro: FiltroConvenios) => void;
-  readonly filtroAtivo?: FiltroConvenios;
   readonly children: ReactNode;
+  /** Contadores para badges nas abas e faixa de contadores */
+  readonly contadores?: ContadoresConvenios;
+  /** Callback ao clicar em um contador */
+  readonly aoFiltrar?: (filtro: FiltroConvenios) => void;
+  /** Filtro ativo (destaca o contador) */
+  readonly filtroAtivo?: FiltroConvenios;
+
+  /* ── Props legadas (backward compat) ─────────────────────────── */
+  /** @deprecated Determinado automaticamente pelo pathname */
+  readonly abaAtiva?: SubAbaConvenios;
+  /** @deprecated Navegacao agora usa router.push */
+  readonly aoNavegar?: (aba: SubAbaConvenios) => void;
 }
 
-// ── Componente ─────────────────────────────────────────────────────────────
+/* ── Componente ────────────────────────────────────────────────────── */
 
 export function ConveniosLayout({
-  abaAtiva, aoNavegar, contadores, aoFiltrar, filtroAtivo, children,
+  children,
+  contadores,
+  aoFiltrar,
+  filtroAtivo,
+  abaAtiva: abaAtivaLegada,
+  aoNavegar,
 }: ConveniosLayoutProps) {
-  const chaves = Object.keys(ROTULOS_CONTADORES) as FiltroConvenios[];
+  const pathname = usePathname();
+  const router = useRouter();
+
+  /* Determina aba ativa a partir do pathname, fallback para prop legada */
+  const abaAtiva =
+    ABAS.find((a) => a.href === pathname)?.value ?? abaAtivaLegada ?? "a-faturar";
+
+  const chaves = contadores
+    ? (Object.keys(ROTULOS_CONTADORES) as FiltroConvenios[])
+    : [];
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-      <h2 style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)',
-                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
+    <div className="space-y-6 p-6 max-sm:p-4">
+      {/* h2 porque ConveniosLayout e aninhado dentro de FinanceiroLayout (h1) */}
+      <h2 className="text-xl font-semibold text-text tracking-tight">
         Convenios
       </h2>
 
       {/* Faixa de contadores */}
-      <div
-        role="group" aria-label="Contadores de convenios" aria-live="polite"
-        style={{ display: 'flex', border: 'var(--border)', borderRadius: 'var(--r-md)',
-                 background: 'var(--surface)', overflow: 'hidden' }}
+      {contadores && (
+        <div
+          role="group"
+          aria-label="Contadores de convenios"
+          aria-live="polite"
+          className="flex rounded-md border border-line bg-surface overflow-hidden"
+        >
+          {chaves.map((k, i) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => aoFiltrar?.(k)}
+              aria-pressed={filtroAtivo === k}
+              className={cn(
+                "flex-1 min-h-[44px] cursor-pointer",
+                "grid gap-[var(--s-1)] justify-items-start",
+                "py-[var(--s-5)] px-[var(--s-4)]",
+                "border-0 text-text transition-colors-fast",
+                i > 0 && "border-l border-line",
+                filtroAtivo === k
+                  ? "bg-surface-hover"
+                  : "bg-transparent hover:bg-surface-hover",
+              )}
+            >
+              <span className="text-[28px] font-semibold leading-tight tabular-nums">
+                {contadores[k]}
+              </span>
+              <span className="text-[var(--fs-11)] uppercase tracking-[.04em] text-text-muted">
+                {ROTULOS_CONTADORES[k]}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Abas de navegacao */}
+      <Tabs
+        value={abaAtiva}
+        onValueChange={(value: string) => {
+          const aba = ABAS.find((a) => a.value === value);
+          if (aba) {
+            /* Suporte a callback legada */
+            if (aoNavegar) {
+              aoNavegar(aba.value);
+            }
+            router.push(aba.href);
+          }
+        }}
       >
-        {chaves.map((k, i) => (
-          <button
-            key={k} type="button" onClick={() => aoFiltrar(k)}
-            aria-pressed={filtroAtivo === k}
-            style={{
-              flex: 1, border: 0,
-              background: filtroAtivo === k ? 'var(--surface-hover)' : 'transparent',
-              borderInlineStart: i === 0 ? 'none' : '1px solid var(--line)',
-              padding: `var(--s-5) var(--s-4)`, cursor: 'pointer', minHeight: 44,
-              display: 'grid', gap: 'var(--s-1)', justifyItems: 'start', color: 'var(--text)',
-            }}
-          >
-            <span className="num" style={{ fontSize: '28px', fontWeight: 600, lineHeight: 1.1 }}>
-              {contadores[k]}
-            </span>
-            <span style={{ fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                           letterSpacing: '.04em', color: 'var(--text-muted)' }}>
-              {ROTULOS_CONTADORES[k]}
-            </span>
-          </button>
-        ))}
-      </div>
+        <div
+          className={cn(
+            "overflow-x-auto scrollbar-thin",
+            "-mx-6 px-6 max-sm:-mx-4 max-sm:px-4",
+          )}
+        >
+          <TabsList className="min-w-max">
+            {ABAS.map((aba) => (
+              <TabsTrigger
+                key={aba.value}
+                value={aba.value}
+                badge={
+                  aba.badgeKey && contadores && contadores[aba.badgeKey] > 0
+                    ? contadores[aba.badgeKey]
+                    : undefined
+                }
+              >
+                {aba.rotulo}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      </Tabs>
 
-      {/* Sub-abas */}
-      <nav aria-label="Sub-navegacao convenios">
-        <ul style={{ display: 'flex', gap: 'var(--s-1)', listStyle: 'none',
-                     margin: 0, padding: 0, borderBottom: 'var(--border)' }}>
-          {SUB_ABAS.map((aba) => {
-            const ativo = aba.slug === abaAtiva;
-            return (
-              <li key={aba.slug}>
-                <a
-                  href={aba.href}
-                  aria-current={ativo ? 'page' : undefined}
-                  onClick={(e) => { e.preventDefault(); aoNavegar(aba.slug); }}
-                  style={{
-                    display: 'inline-block',
-                    padding: `var(--s-4) var(--s-5)`,
-                    color: ativo ? 'var(--text)' : 'var(--text-muted)',
-                    fontWeight: ativo ? 'var(--fw-medium)' : 'var(--fw-regular)',
-                    fontSize: 'var(--fs-14)',
-                    textDecoration: 'none',
-                    borderBottom: ativo
-                      ? '2px solid var(--accent)'
-                      : '2px solid transparent',
-                    whiteSpace: 'nowrap',
-                    minHeight: 24,
-                  }}
-                >
-                  {aba.rotulo}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div>{children}</div>
+      {/* Conteudo da rota filha */}
+      {children}
     </div>
   );
 }

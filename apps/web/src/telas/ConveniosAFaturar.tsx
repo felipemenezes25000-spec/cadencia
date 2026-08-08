@@ -1,9 +1,13 @@
 // apps/web/src/telas/ConveniosAFaturar.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Botao } from '../ui/Botao';
-import { Campo } from '../ui/Campo';
+import { useEffect, useState } from "react";
+import { Package } from "@phosphor-icons/react";
+import { cn } from "../lib/cn";
+import { Botao } from "../ui/Botao";
+import { Campo } from "../ui/Campo";
+import { ChipDeStatusTiss, type StatusTiss } from "../ui/ChipDeStatusTiss";
+import { Skeleton } from "../ui/Skeleton";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +21,7 @@ export interface GuiaPendente {
   readonly nomeProcedimento: string;
   readonly valorCentavos: number;
   readonly dataAtendimento: string;
-  readonly status: 'completa' | 'incompleta';
+  readonly status: "completa" | "incompleta";
 }
 
 export interface OperadoraResumo {
@@ -32,10 +36,10 @@ export interface AFaturarDados {
 }
 
 export interface FiltrosAFaturar {
-  readonly operadoraId?: string;
-  readonly status?: string;
-  readonly dataInicio?: string;
-  readonly dataFim?: string;
+  readonly operadoraId?: string | undefined;
+  readonly status?: string | undefined;
+  readonly dataInicio?: string | undefined;
+  readonly dataFim?: string | undefined;
 }
 
 export interface ConveniosAFaturarProps {
@@ -49,9 +53,66 @@ export interface ConveniosAFaturarProps {
 function centavosParaReais(centavos: number): string {
   const abs = Math.abs(centavos);
   const inteiro = Math.floor(abs / 100);
-  const decimais = String(abs % 100).padStart(2, '0');
-  const formatado = inteiro.toLocaleString('pt-BR');
-  return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
+  const decimais = String(abs % 100).padStart(2, "0");
+  const formatado = inteiro.toLocaleString("pt-BR");
+  return `R$ ${centavos < 0 ? "-" : ""}${formatado},${decimais}`;
+}
+
+// ── Skeleton de carregamento ───────────────────────────────────────────────
+
+function TabelaSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Carregando guias..."
+      className="rounded-lg border border-line overflow-hidden"
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line bg-surface-raised">
+              <th className="px-4 py-2.5 w-10">
+                <Skeleton variant="text" width="16px" height="16px" />
+              </th>
+              <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="60px" /></th>
+              <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="100px" /></th>
+              <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="90px" /></th>
+              <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="110px" /></th>
+              <th className="px-4 py-2.5 text-right"><Skeleton variant="text" width="70px" /></th>
+              <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="80px" /></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {Array.from({ length: 5 }, (_, i) => (
+              <tr key={i}>
+                <td className="px-4 py-3"><Skeleton variant="text" width="16px" height="16px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="60px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="120px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="90px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="100px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="70px" /></td>
+                <td className="px-4 py-3"><Skeleton variant="text" width="80px" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Estado vazio ───────────────────────────────────────────────────────────
+
+function EstadoVazio() {
+  return (
+    <div className="rounded-lg border border-line bg-surface p-8 text-center">
+      <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
+      <p className="text-sm font-medium text-text">Nenhuma guia pendente</p>
+      <p className="mt-1 text-xs text-text-muted">
+        Todas as guias foram faturadas ou nao ha registros para os filtros selecionados.
+      </p>
+    </div>
+  );
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────
@@ -59,43 +120,64 @@ function centavosParaReais(centavos: number): string {
 export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
   const [dados, setDados] = useState<AFaturarDados | null>(null);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
-  const [operadoraId, setOperadoraId] = useState('');
-  const [status, setStatus] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [operadoraId, setOperadoraId] = useState("");
+  const [status, setStatus] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
 
   useEffect(() => {
     void p.carregarDados({}).then(setDados);
   }, [p]);
 
   function filtrar(): void {
-    void p.carregarDados({
-      operadoraId: operadoraId === '' ? undefined : operadoraId,
-      status: status === '' ? undefined : status,
-      dataInicio: dataInicio === '' ? undefined : dataInicio,
-      dataFim: dataFim === '' ? undefined : dataFim,
-    }).then(setDados);
+    void p
+      .carregarDados({
+        operadoraId: operadoraId === "" ? undefined : operadoraId,
+        status: status === "" ? undefined : status,
+        dataInicio: dataInicio === "" ? undefined : dataInicio,
+        dataFim: dataFim === "" ? undefined : dataFim,
+      })
+      .then(setDados);
   }
 
-  function alternarSelecao(id: string): void {
+  function toggleSelecao(id: string): void {
     setSelecionadas((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
 
-  if (dados === null) return null;
+  function toggleTodos(): void {
+    if (!dados) return;
+    if (selecionadas.size === dados.guias.length) {
+      setSelecionadas(new Set());
+    } else {
+      setSelecionadas(new Set(dados.guias.map((g) => g.id)));
+    }
+  }
+
+  // Estado de carregamento
+  if (dados === null) {
+    return (
+      <div className="space-y-4">
+        <TabelaSkeleton />
+      </div>
+    );
+  }
+
+  const guias = dados.guias;
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
+    <div className="space-y-4">
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', alignItems: 'end' }}>
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-operadora-af" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+      <div className="flex flex-wrap items-end gap-[var(--s-4)]">
+        <div className="grid gap-[var(--s-2)]">
+          <label
+            htmlFor="filtro-operadora-af"
+            className="text-sm font-medium text-text-muted"
+          >
             Operadora
           </label>
           <select
@@ -103,25 +185,27 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             value={operadoraId}
             onChange={(e) => setOperadoraId(e.target.value)}
             aria-label="Operadora"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className={cn(
+              "h-8 px-[var(--s-4)]",
+              "border border-line rounded-md",
+              "bg-surface text-text text-sm",
+              "outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+            )}
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (
-              <option key={op.id} value={op.id}>{op.nome}</option>
+              <option key={op.id} value={op.id}>
+                {op.nome}
+              </option>
             ))}
           </select>
         </div>
 
-        <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-          <label htmlFor="filtro-status-af" style={{
-            fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-            lineHeight: 1.3, color: 'var(--text-muted)',
-          }}>
+        <div className="grid gap-[var(--s-2)]">
+          <label
+            htmlFor="filtro-status-af"
+            className="text-sm font-medium text-text-muted"
+          >
             Status
           </label>
           <select
@@ -129,12 +213,12 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             aria-label="Status"
-            style={{
-              height: 32, padding: '0 var(--s-4)',
-              border: 'var(--border)', borderRadius: 'var(--r-md)',
-              background: 'var(--surface)', color: 'var(--text)',
-              fontSize: 'var(--fs-14)',
-            }}
+            className={cn(
+              "h-8 px-[var(--s-4)]",
+              "border border-line rounded-md",
+              "bg-surface text-text text-sm",
+              "outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+            )}
           >
             <option value="">Todos</option>
             <option value="completa">Completa</option>
@@ -142,100 +226,146 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
           </select>
         </div>
 
-        <Campo rotulo="Periodo inicio" type="date" denso
-          value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Periodo inicio" />
-        <Campo rotulo="Periodo fim" type="date" denso
-          value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Periodo fim" />
-        <Botao variante="secundario" altura={32} onClick={filtrar}>
+        <Campo
+          rotulo="Periodo inicio"
+          type="date"
+          denso
+          value={dataInicio}
+          onChange={(e) => setDataInicio(e.target.value)}
+          aria-label="Periodo inicio"
+        />
+        <Campo
+          rotulo="Periodo fim"
+          type="date"
+          denso
+          value={dataFim}
+          onChange={(e) => setDataFim(e.target.value)}
+          aria-label="Periodo fim"
+        />
+        <Botao variante="secundario" tamanho="md" onClick={filtrar}>
           Filtrar
         </Botao>
       </div>
 
       {/* Barra de acao batch */}
-      {selecionadas.size > 0 ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)',
-                      padding: 'var(--s-3) var(--s-5)',
-                      background: 'var(--accent-soft)', borderRadius: 'var(--r-md)' }}>
-          <span style={{ fontSize: 'var(--fs-13)', color: 'var(--text)' }}>
-            {selecionadas.size} guia(s) selecionada(s)
+      {selecionadas.size > 0 && (
+        <div
+          className={cn(
+            "flex items-center justify-between",
+            "rounded-lg bg-accent-soft border border-accent/20 p-3",
+          )}
+        >
+          <span className="text-sm text-text">
+            {selecionadas.size}{" "}
+            {selecionadas.size === 1
+              ? "guia selecionada"
+              : "guias selecionadas"}
           </span>
-          <Botao variante="primario" altura={32}
-            onClick={() => { void p.aoCriarLote(Array.from(selecionadas)); }}>
+          <Botao
+            variante="primario"
+            tamanho="sm"
+            iconeEsquerda={Package}
+            onClick={() => {
+              void p.aoCriarLote(Array.from(selecionadas));
+            }}
+          >
             Criar lote
           </Botao>
         </div>
-      ) : null}
+      )}
 
-      {/* Lista de guias */}
-      <section aria-label="Guias a faturar">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0,
-                     border: 'var(--border)', borderRadius: 'var(--r-md)',
-                     overflow: 'hidden', background: 'var(--surface)' }}>
-          {dados.guias.map((g) => (
-            <li key={g.id} style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              alignItems: 'center', gap: 'var(--s-4)',
-              padding: 'var(--s-4) var(--s-5)',
-              borderBottom: 'var(--border)', minHeight: 56,
-            }}>
-              {/* Checkbox de selecao */}
-              <input
-                type="checkbox"
-                checked={selecionadas.has(g.id)}
-                onChange={() => alternarSelecao(g.id)}
-                aria-label={`Selecionar guia ${g.numeroGuia}`}
-                style={{ width: 16, height: 16, cursor: 'pointer' }}
-              />
-
-              {/* Dados da guia */}
-              <div
-                role="button" tabIndex={0}
-                onClick={() => p.aoAbrirGuia(g.id)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); p.aoAbrirGuia(g.id); } }}
-                style={{ cursor: 'pointer' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                  <span className="num" style={{
-                    fontSize: 'var(--fs-13)', fontVariantNumeric: 'tabular-nums',
-                    color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
-                  }}>
-                    {g.numeroGuia}
-                  </span>
-                  <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
-                    {g.pacienteNome}
-                  </span>
-                  {g.status === 'incompleta' ? (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)',
-                      fontSize: 'var(--fs-11)', textTransform: 'uppercase', letterSpacing: '.04em',
-                      fontWeight: 'var(--fw-medium)', padding: 'var(--s-1) var(--s-4)',
-                      borderRadius: 'var(--r-full)',
-                      color: 'var(--warn)', background: 'var(--warn-soft)',
-                    }}>
-                      <span aria-hidden="true">!</span>Incompleta
-                    </span>
-                  ) : null}
-                </div>
-                <span style={{ display: 'block', fontSize: 'var(--fs-12)',
-                               color: 'var(--text-muted)' }}>
-                  {g.operadoraNome} — {g.nomeProcedimento} — {g.dataAtendimento}
-                </span>
-              </div>
-
-              {/* Valor */}
-              <span className="num" style={{
-                fontSize: 'var(--fs-14)', fontWeight: 'var(--fw-medium)',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                {centavosParaReais(g.valorCentavos)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Estado vazio */}
+      {guias.length === 0 ? (
+        <EstadoVazio />
+      ) : (
+        /* Tabela de guias */
+        <section aria-label="Guias a faturar">
+          <div className="rounded-lg border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-raised">
+                    <th className="px-4 py-2.5 w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selecionadas.size === guias.length && guias.length > 0
+                        }
+                        onChange={toggleTodos}
+                        className="accent-accent cursor-pointer"
+                        aria-label="Selecionar todas"
+                      />
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Guia
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Paciente
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Operadora
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted max-sm:hidden">
+                      Procedimento
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                      Valor
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {guias.map((g) => (
+                    <tr
+                      key={g.id}
+                      className={cn(
+                        "hover:bg-surface-raised transition-colors-fast cursor-pointer",
+                        selecionadas.has(g.id) && "bg-accent-soft",
+                      )}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selecionadas.has(g.id)}
+                          onChange={() => toggleSelecao(g.id)}
+                          className="accent-accent cursor-pointer"
+                          aria-label={`Selecionar guia ${g.numeroGuia}`}
+                        />
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs tabular-nums text-text-muted">
+                        {g.numeroGuia}
+                      </td>
+                      <td className="px-4 py-3 text-text">
+                        <button
+                          type="button"
+                          onClick={() => p.aoAbrirGuia(g.id)}
+                          className="text-left hover:text-accent transition-colors-fast focus:outline-none focus-visible:underline"
+                        >
+                          {g.pacienteNome}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-text-muted">
+                        {g.operadoraNome}
+                      </td>
+                      <td className="px-4 py-3 text-text-muted max-sm:hidden">
+                        {g.nomeProcedimento}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums font-medium">
+                        {centavosParaReais(g.valorCentavos)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ChipDeStatusTiss status={g.status as StatusTiss} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
