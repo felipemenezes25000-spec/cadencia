@@ -1223,6 +1223,13 @@
       "rpt_owner": [
         "SELECT"
       ]
+    },
+    "column": {
+      "resultado": {
+        "app_rw": [
+          "UPDATE"
+        ]
+      }
     }
   },
   "tiss.recurso_number_counter": {

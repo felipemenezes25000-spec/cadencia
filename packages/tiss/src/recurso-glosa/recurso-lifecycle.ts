@@ -121,11 +121,11 @@ export async function submitRecurso(
     codigo_procedimento: string;
   }>(
     `SELECT rgi.glosa_id, rgi.justificativa_item, rgi.valor_recursado_cents,
-            di.glosa_codigo, di.numero_guia_prestador,
+            gl.codigo_glosa AS glosa_codigo, g.numero_guia_prestador,
             g.data_atendimento::text, g.codigo_procedimento
        FROM tiss.recurso_glosa_item rgi
-       JOIN tiss.demonstrativo_item di ON di.id = rgi.glosa_id AND di.tenant_id = rgi.tenant_id
-       JOIN tiss.encounter_guia_consulta g ON g.id = di.guia_id AND g.tenant_id = di.tenant_id
+       JOIN tiss.glosa gl ON gl.id = rgi.glosa_id AND gl.tenant_id = rgi.tenant_id
+       JOIN tiss.encounter_guia_consulta g ON g.id = gl.guia_id AND g.tenant_id = gl.tenant_id
       WHERE rgi.recurso_id = $1
       ORDER BY rgi.glosa_id`,
     [recursoId],
