@@ -1,5 +1,59 @@
 @import "tailwindcss";
 
+/* ── Tailwind v4 theme: expoe CSS vars como utility classes ──────────── */
+@theme {
+  /* cores semanticas */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-text-link: var(--text-link);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-on: var(--accent-on);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+
+  /* cores de status */
+  --color-st-agendado: var(--st-agendado);
+  --color-st-confirmado: var(--st-confirmado);
+  --color-st-aguardando: var(--st-aguardando);
+  --color-st-atendendo: var(--st-atendendo);
+  --color-st-atendido: var(--st-atendido);
+  --color-st-faltou: var(--st-faltou);
+  --color-st-cancelado: var(--st-cancelado);
+
+  /* tipografia — --font-sans referencia --font-ui; mono e doc usam valor */
+  /* direto para evitar referencia circular com os CSS vars de mesmo nome  */
+  --font-sans: var(--font-ui);
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-doc: "IBM Plex Serif", Georgia, serif;
+
+  /* sombras / elevacao */
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+
+  /* raios */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-full: var(--r-full);
+}
+
 :root {
   /* ── primitivas (OKLCH) ────────────────────────────────────────────── */
   --tinta-50:  oklch(96.5% 0.014 258);  --tinta-100: oklch(92% 0.030 258);
@@ -33,6 +87,8 @@
   --warn: var(--ambar-500);  --warn-soft: var(--ambar-100);
   --danger: var(--rubi-500); --danger-soft: var(--rubi-100);
   --ai:   var(--violeta-500);--ai-soft:   var(--violeta-100);
+  --surface-raised: oklch(0.98 0 0);
+  --text-link: oklch(0.55 0.15 250);
 
   --st-agendado: var(--papel-300);  --st-confirmado: var(--tinta-300);
   --st-aguardando: var(--ambar-500);--st-atendendo: var(--tinta-600);
@@ -79,6 +135,8 @@
   --warn: oklch(80% 0.130 75); --warn-soft: oklch(30% 0.055 75);
   --danger: oklch(70% 0.150 25); --danger-soft: oklch(29% 0.060 25);
   --ai: oklch(72% 0.120 300);  --ai-soft: oklch(29% 0.055 300);
+  --surface-raised: oklch(0.22 0 0);
+  --text-link: oklch(0.72 0.12 250);
   --elev-1: 0 1px 2px oklch(0% 0 0 / .5), 0 0 0 1px oklch(100% 0 0 / .06);
   --elev-2: 0 8px 28px oklch(0% 0 0 / .6), 0 0 0 1px oklch(100% 0 0 / .08);
 }}
@@ -95,6 +153,8 @@
   --warn: oklch(80% 0.130 75); --warn-soft: oklch(30% 0.055 75);
   --danger: oklch(70% 0.150 25); --danger-soft: oklch(29% 0.060 25);
   --ai: oklch(72% 0.120 300);  --ai-soft: oklch(29% 0.055 300);
+  --surface-raised: oklch(0.22 0 0);
+  --text-link: oklch(0.72 0.12 250);
   --elev-1: 0 1px 2px oklch(0% 0 0 / .5), 0 0 0 1px oklch(100% 0 0 / .06);
   --elev-2: 0 8px 28px oklch(0% 0 0 / .6), 0 0 0 1px oklch(100% 0 0 / .08);
 }
@@ -106,6 +166,8 @@
   --text-faint: var(--papel-500);
   --accent: var(--tinta-600); --accent-hover: var(--tinta-700);
   --accent-soft: var(--tinta-50); --accent-on: var(--papel-0);
+  --surface-raised: oklch(0.98 0 0);
+  --text-link: oklch(0.55 0.15 250);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -132,3 +194,94 @@ body {
 }
 
 @keyframes entra-painel { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+/* ── animacoes: task-2 ───────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideDown {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 oklch(0.65 0.15 250 / 0.4); }
+  100% { box-shadow: 0 0 0 8px oklch(0.65 0.15 250 / 0); }
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── utilitarios: task-2 ─────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border-radius: 3px;
+}
+
+/* ── transicoes: task-2 ──────────────────────────────────────────────── */
+.transition-colors-fast {
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+.transition-transform-fast {
+  transition-property: transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+.transition-all-fast {
+  transition-property: all;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
