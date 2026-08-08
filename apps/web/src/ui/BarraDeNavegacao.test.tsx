@@ -19,13 +19,13 @@ describe('barra de navegacao', () => {
       'Hoje', 'Agenda', 'Conversas', 'Pacientes', 'Financeiro', 'Desempenho']);
   });
 
-  it('na Fase 3 nenhum item esta marcado como futuro', () => {
-    expect(FASE_ATUAL).toBe(3);
+  it('na Fase 5 nenhum item esta marcado como futuro', () => {
+    expect(FASE_ATUAL).toBe(5);
     const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > FASE_ATUAL);
     expect(futuros).toEqual([]);
   });
 
-  it('todos os itens sao links navegaveis, incluindo Desempenho', () => {
+  it('todos os itens sao links navegaveis', () => {
     render(<BarraDeNavegacao />);
     for (const item of ITENS_NAV) {
       expect(screen.getByRole('link', { name: item.rotulo })).toBeInTheDocument();

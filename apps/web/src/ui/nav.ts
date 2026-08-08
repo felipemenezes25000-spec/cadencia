@@ -16,4 +16,4 @@ export const ITENS_NAV: readonly ItemNav[] = [
     motivo: 'Desempenho e atribuição de variação chegam na Fase 3' },
 ];
 
-export const FASE_ATUAL = 3 as const;
+export const FASE_ATUAL = 5 as const;
