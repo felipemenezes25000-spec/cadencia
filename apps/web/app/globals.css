@@ -178,6 +178,11 @@
   }
 }
 
+/* ── navegacao lateral: task-13 ─────────────────────────────────────── */
+@media (min-width: 768px) {
+  :root { --nav-width: 64px; }
+}
+
 html { color-scheme: light dark; }
 body {
   margin: 0; background: var(--bg); color: var(--text);

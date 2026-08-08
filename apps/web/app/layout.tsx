@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <Providers>
           <BarraDeNavegacao />
-          <main id="conteudo">{children}</main>
+          <main id="conteudo" className="pb-14 md:pb-0 transition-[margin-left] duration-200 ease-[var(--ease-in-out)]" style={{ marginLeft: 'var(--nav-width, 0px)' }}>{children}</main>
         </Providers>
       </body>
     </html>
