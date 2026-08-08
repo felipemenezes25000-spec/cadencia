@@ -49,3 +49,16 @@ export {
   type LoteLifecycleFailure, type LoteReadyResult, type LoteSentResult,
   type LoteReturnedResult, type LoteCancelledResult,
 } from './lote-lifecycle';
+
+export type {
+  CabecalhoInput,
+  ContratadoInput,
+  GuiaConsultaInput,
+  LoteConsultaInput,
+  ProfissionalExecutanteInput,
+} from './serializer/types';
+
+export { serializeLoteConsulta, type SerializeLoteResult } from './serializer/serialize-lote-consulta';
+export { encodeIso8859, type EncodeResult } from './serializer/encode-iso8859';
+export { computeTissHash } from './serializer/compute-tiss-hash';
+export { XmlBuilder } from './serializer/xml-builder';
