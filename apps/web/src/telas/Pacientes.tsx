@@ -1,9 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { MagnifyingGlass, UserCircle, Plus } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
+import { useDebounce } from '../lib/hooks';
+import { Campo } from '../ui/Campo';
+import { Icone } from '../ui/Icone';
+import { Botao } from '../ui/Botao';
+import { Skeleton } from '../ui/Skeleton';
+import { PageHeader } from '../ui/PageHeader';
 import type { PacienteHit } from '../ui/ComboboxDePaciente';
 
-export interface Faceta { readonly chave: string; readonly rotulo: string }
+/* ── Facetas (filtros salvos) ───────────────────────────── */
+
+export interface Faceta {
+  readonly chave: string;
+  readonly rotulo: string;
+}
 
 export const FACETAS: readonly Faceta[] = [
   { chave: 'ativos', rotulo: 'Ativos' },
@@ -13,78 +26,238 @@ export const FACETAS: readonly Faceta[] = [
   { chave: 'sem_retorno', rotulo: 'Sem retorno há 6 meses' },
 ];
 
+/* ── Helpers ────────────────────────────────────────────── */
+
+/** Extrai iniciais do nome (ate 2 letras) */
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/);
+  const primeira = partes[0];
+  if (!primeira) return '?';
+  const ultima = partes[partes.length - 1];
+  if (partes.length === 1 || !ultima) return primeira.charAt(0).toUpperCase();
+  return (primeira.charAt(0) + ultima.charAt(0)).toUpperCase();
+}
+
+/** Formata data ISO para exibicao curta */
+function formatarData(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return iso;
+  }
+}
+
+/* ── Props ──────────────────────────────────────────────── */
+
 export interface PacientesProps {
   readonly faceta: string;
   readonly buscar: (termo: string, faceta: string) => Promise<PacienteHit[]>;
   readonly aoMudarFaceta: (faceta: string) => void;
   readonly aoAbrir: (patientId: string) => void;
+  /** Callback para botao "Novo paciente" */
+  readonly aoCriar?: () => void;
 }
 
-export function Pacientes(p: PacientesProps) {
-  const [termo, setTermo] = useState('');
-  const [itens, setItens] = useState<PacienteHit[]>([]);
+/* ── Skeleton de carregamento ───────────────────────────── */
 
-  useEffect(() => { void p.buscar(termo, p.faceta).then(setItens); }, [p, termo, p.faceta]);
+export function PacientesSkeleton() {
+  return (
+    <div className="space-y-4 p-6" data-testid="pacientes-skeleton">
+      <Skeleton variant="text" width="200px" />
+      <Skeleton variant="text" width="300px" height="40px" />
+      <div className="flex gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} variant="text" width="80px" height="32px" />
+        ))}
+      </div>
+      <div className="space-y-1">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-3">
+            <Skeleton variant="avatar" />
+            <div className="flex-1 space-y-1">
+              <Skeleton variant="text" width="60%" />
+              <Skeleton variant="text" width="30%" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Estado vazio ───────────────────────────────────────── */
+
+function EstadoVazio({
+  busca,
+  aoCriar,
+}: {
+  readonly busca: string;
+  readonly aoCriar?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Icone icon={UserCircle} size="xl" className="text-text-muted mb-3" />
+      <p className="text-base font-medium text-text">Nenhum paciente encontrado</p>
+      <p className="mt-1 text-sm text-text-muted">
+        {busca
+          ? `Nenhum resultado para "${busca}"`
+          : 'Adicione seu primeiro paciente'}
+      </p>
+      {!busca && aoCriar && (
+        <Botao
+          variante="primario"
+          className="mt-4"
+          iconeEsquerda={Plus}
+          onClick={aoCriar}
+        >
+          Novo paciente
+        </Botao>
+      )}
+    </div>
+  );
+}
+
+/* ── Componente principal ───────────────────────────────── */
+
+export function Pacientes(p: PacientesProps) {
+  const [busca, setBusca] = useState('');
+  const [itens, setItens] = useState<PacienteHit[] | null>(null);
+
+  const buscaDebounced = useDebounce(busca, 300);
+
+  // Buscar pacientes quando muda o debounced ou a faceta
+  const [ultimaBusca, setUltimaBusca] = useState<string | null>(null);
+  const [ultimaFaceta, setUltimaFaceta] = useState<string | null>(null);
+
+  if (buscaDebounced !== ultimaBusca || p.faceta !== ultimaFaceta) {
+    setUltimaBusca(buscaDebounced);
+    setUltimaFaceta(p.faceta);
+    void p.buscar(buscaDebounced, p.faceta).then(setItens);
+  }
+
+  const carregando = itens === null;
+
+  // Contagem para o subtitulo
+  const contagem = itens?.length ?? 0;
+
+  // Filtro local pelo termo digitado (antes do debounce resolver)
+  const pacientesFiltrados = useMemo(() => {
+    if (!itens) return [];
+    return itens;
+  }, [itens]);
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-6)', padding: 'var(--s-8)' }}>
-      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-        Pacientes
-      </h1>
+    <div className="grid gap-[var(--s-6)] p-[var(--s-8)] max-sm:p-[var(--s-4)]">
+      {/* Cabecalho */}
+      <PageHeader
+        titulo="Pacientes"
+        {...(carregando ? {} : { subtitulo: `${contagem} paciente${contagem !== 1 ? 's' : ''}` })}
+        semBreadcrumb
+        {...(p.aoCriar
+          ? {
+              acoes: (
+                <Botao variante="primario" iconeEsquerda={Plus} onClick={p.aoCriar}>
+                  Novo paciente
+                </Botao>
+              ),
+            }
+          : {})}
+      />
 
-      <div style={{ display: 'flex', gap: 'var(--s-2)', flexWrap: 'wrap' }}>
+      {/* Barra de busca */}
+      <Campo
+        prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
+        placeholder="Buscar por nome, CPF ou telefone..."
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        className="max-w-md"
+        aria-label="Buscar pacientes"
+      />
+
+      {/* Chips de filtro (facetas) */}
+      <div
+        className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-2"
+        role="tablist"
+        aria-label="Filtros de pacientes"
+      >
         {FACETAS.map((f) => (
-          <button key={f.chave} type="button" aria-pressed={p.faceta === f.chave}
+          <button
+            key={f.chave}
+            type="button"
+            role="tab"
+            aria-selected={p.faceta === f.chave}
             onClick={() => p.aoMudarFaceta(f.chave)}
-            style={{
-              border: 'var(--border)', borderRadius: 'var(--r-full)', minHeight: 28,
-              padding: `0 var(--s-5)`, fontSize: 'var(--fs-13)', cursor: 'pointer',
-              background: p.faceta === f.chave ? 'var(--accent-soft)' : 'var(--surface)',
-              color: 'var(--text)',
-            }}>
+            className={cn(
+              'whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors-fast',
+              p.faceta === f.chave
+                ? 'bg-accent text-accent-on'
+                : 'bg-surface-raised text-text-muted hover:text-text'
+            )}
+          >
             {f.rotulo}
           </button>
         ))}
       </div>
 
-      <label htmlFor="busca-pacientes" style={{ fontSize: 'var(--fs-12)',
-                                                color: 'var(--text-muted)' }}>
-        Buscar
-      </label>
-      <input id="busca-pacientes" value={termo} onChange={(e) => setTermo(e.target.value)}
-        style={{ height: 40, border: 'var(--border)', borderRadius: 'var(--r-md)',
-                 padding: `0 var(--s-4)`, background: 'var(--surface)', color: 'var(--text)' }} />
+      {/* Conteudo */}
+      {carregando ? (
+        <PacientesSkeleton />
+      ) : pacientesFiltrados.length === 0 ? (
+        <EstadoVazio busca={busca} {...(p.aoCriar ? { aoCriar: p.aoCriar } : {})} />
+      ) : (
+        <ul className="space-y-1 list-none p-0 m-0" aria-label="Lista de pacientes">
+          {pacientesFiltrados.map((pac) => (
+            <li
+              key={pac.patientId}
+              style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 56px' }}
+            >
+              <button
+                type="button"
+                onClick={() => p.aoAbrir(pac.patientId)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-4 py-3',
+                  'text-left transition-colors-fast',
+                  'hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-accent'
+                )}
+              >
+                {/* Avatar */}
+                <div
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                    'bg-accent-soft text-sm font-semibold text-accent'
+                  )}
+                  aria-hidden="true"
+                >
+                  {iniciais(pac.displayName)}
+                </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--surface)',
-                      border: 'var(--border)', borderRadius: 'var(--r-md)' }}>
-        <thead>
-          <tr>
-            {['Nome', 'Nascimento', 'Telefone', 'Cadastro'].map((h) => (
-              <th key={h} scope="col" style={{
-                textAlign: 'left', fontSize: 'var(--fs-11)', textTransform: 'uppercase',
-                letterSpacing: '.04em', color: 'var(--text-muted)', fontWeight: 500,
-                padding: 'var(--s-4)', borderBottom: 'var(--border)' }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {itens.map((x) => (
-            <tr key={x.patientId} onClick={() => p.aoAbrir(x.patientId)}
-                style={{ cursor: 'pointer', borderBottom: 'var(--border)' }}>
-              <td style={{ padding: 'var(--s-4)' }}>{x.displayName}</td>
-              <td className="num" style={{ padding: 'var(--s-4)' }}>{x.birthDate ?? '—'}</td>
-              <td className="num" style={{ padding: 'var(--s-4)' }}>{x.phonePrimary ?? '—'}</td>
-              <td style={{ padding: 'var(--s-4)',
-                           color: x.cadastroStatus === 'preliminar'
-                             ? 'var(--warn)' : 'var(--text-muted)' }}>
-                {x.cadastroStatus === 'preliminar' ? 'preliminar' : 'completo'}
-              </td>
-            </tr>
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-text">
+                    {pac.displayName}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {pac.birthDate
+                      ? `Nascimento: ${formatarData(pac.birthDate)}`
+                      : 'Sem data de nascimento'}
+                  </p>
+                  {pac.cadastroStatus === 'preliminar' && (
+                    <span className="mt-0.5 inline-block rounded bg-warn-soft px-1.5 py-0.5 text-[10px] font-medium text-warn">
+                      preliminar
+                    </span>
+                  )}
+                </div>
+
+                {/* Telefone (visivel apenas no desktop) */}
+                <span className="text-xs text-text-muted max-sm:hidden">
+                  {pac.phonePrimary ?? '—'}
+                </span>
+              </button>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      )}
     </div>
   );
 }

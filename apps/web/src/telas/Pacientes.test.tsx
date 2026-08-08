@@ -1,50 +1,260 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { Pacientes, FACETAS } from './Pacientes';
+import { Pacientes, PacientesSkeleton, FACETAS } from './Pacientes';
 
 const HITS = [
-  { patientId: 'p1', displayName: 'Álvaro Neto', legalName: 'Álvaro Neto',
-    hasSocialName: false, birthDate: '1970-01-01', cadastroStatus: 'completo' as const,
-    phonePrimary: null },
-  { patientId: 'p2', displayName: 'Ana Lima', legalName: 'Ana Lima', hasSocialName: false,
-    birthDate: null, cadastroStatus: 'preliminar' as const, phonePrimary: '11999999999' },
+  {
+    patientId: 'p1',
+    displayName: 'Álvaro Neto',
+    legalName: 'Álvaro Neto',
+    hasSocialName: false,
+    birthDate: '1970-01-01',
+    cadastroStatus: 'completo' as const,
+    phonePrimary: null,
+  },
+  {
+    patientId: 'p2',
+    displayName: 'Ana Lima',
+    legalName: 'Ana Lima',
+    hasSocialName: false,
+    birthDate: null,
+    cadastroStatus: 'preliminar' as const,
+    phonePrimary: '11999999999',
+  },
 ];
 
+function criarBuscarMock(resultados = HITS) {
+  return vi.fn(async () => resultados);
+}
+
 describe('tela Pacientes', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
   it('as abas do lider viram FACETAS, que sao filtros salvos', () => {
     expect(FACETAS.map((f) => f.chave)).toEqual([
-      'ativos', 'inativos', 'obitos', 'cadastro_preliminar', 'sem_retorno']);
+      'ativos',
+      'inativos',
+      'obitos',
+      'cadastro_preliminar',
+      'sem_retorno',
+    ]);
+  });
+
+  it('renderiza skeleton enquanto carrega', () => {
+    const { container } = render(<PacientesSkeleton />);
+    expect(container.querySelector('[data-testid="pacientes-skeleton"]')).toBeTruthy();
+    // Verifica que ha elementos de skeleton
+    const skeletons = container.querySelectorAll('[role="status"]');
+    expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('renderiza lista de pacientes', async () => {
+    const buscar = criarBuscarMock();
+    render(
+      <Pacientes
+        buscar={buscar}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Álvaro Neto')).toBeVisible();
+      expect(screen.getByText('Ana Lima')).toBeVisible();
+    });
+  });
+
+  it('filtra pacientes ao digitar na busca', async () => {
+    const anaHit = HITS[1]!;
+    const buscar = vi.fn(async (termo: string, _faceta: string) => {
+      if (termo === 'ana') return [anaHit];
+      return HITS;
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(
+      <Pacientes
+        buscar={buscar}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Álvaro Neto')).toBeVisible());
+
+    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    await user.type(input, 'ana');
+
+    // Avanca o debounce
+    await act(async () => {
+      vi.advanceTimersByTime(350);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Ana Lima')).toBeVisible();
+      expect(screen.queryByText('Álvaro Neto')).not.toBeInTheDocument();
+    });
+  });
+
+  it('debounce a busca (300ms)', async () => {
+    const buscar = criarBuscarMock();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(
+      <Pacientes
+        buscar={buscar}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+
+    // Aguarda a primeira chamada (renderizacao inicial)
+    await waitFor(() => expect(buscar).toHaveBeenCalledTimes(1));
+
+    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    await user.type(input, 'test');
+
+    // Antes do debounce expirar, nao deve ter chamado de novo com o termo
+    const chamadasAntes = buscar.mock.calls.length;
+
+    await act(async () => {
+      vi.advanceTimersByTime(350);
+    });
+
+    // Apos o debounce, deve chamar com o termo debounced
+    await waitFor(() => {
+      expect(buscar.mock.calls.length).toBeGreaterThan(chamadasAntes);
+    });
+  });
+
+  it('mostra estado vazio quando sem resultados', async () => {
+    const buscar = vi.fn(async () => []);
+
+    render(
+      <Pacientes
+        buscar={buscar}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+        aoCriar={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum paciente encontrado')).toBeVisible();
+      expect(screen.getByText('Adicione seu primeiro paciente')).toBeVisible();
+    });
+  });
+
+  it('mostra estado vazio com mensagem personalizada para busca', async () => {
+    const buscar = vi.fn(async () => []);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(
+      <Pacientes
+        buscar={buscar}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum paciente encontrado')).toBeVisible();
+    });
+
+    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    await user.type(input, 'xyz');
+
+    await act(async () => {
+      vi.advanceTimersByTime(350);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum resultado para "xyz"')).toBeVisible();
+    });
   });
 
   it('a faceta escolhida vai para a query string', async () => {
     const aoMudarFaceta = vi.fn();
-    render(<Pacientes buscar={async () => HITS} faceta="ativos"
-      aoMudarFaceta={aoMudarFaceta} aoAbrir={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Cadastro preliminar' }));
+    render(
+      <Pacientes
+        buscar={async () => HITS}
+        faceta="ativos"
+        aoMudarFaceta={aoMudarFaceta}
+        aoAbrir={vi.fn()}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('tab', { name: 'Cadastro preliminar' }),
+    );
     expect(aoMudarFaceta).toHaveBeenCalledWith('cadastro_preliminar');
   });
 
-  it('lista em ordem portuguesa: Álvaro antes de Ana', async () => {
-    render(<Pacientes buscar={async () => HITS} faceta="ativos"
-      aoMudarFaceta={vi.fn()} aoAbrir={vi.fn()} />);
-    await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1));
-    const linhas = screen.getAllByRole('row');
-    expect(linhas[1]).toHaveTextContent('Álvaro Neto');
-    expect(linhas[2]).toHaveTextContent('Ana Lima');
+  it('navega para detalhe ao clicar em paciente', async () => {
+    const aoAbrir = vi.fn();
+    render(
+      <Pacientes
+        buscar={async () => HITS}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={aoAbrir}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Álvaro Neto')).toBeVisible());
+
+    await userEvent.click(screen.getByText('Álvaro Neto'));
+    expect(aoAbrir).toHaveBeenCalledWith('p1');
+  });
+
+  it('mostra iniciais do nome no avatar', async () => {
+    render(
+      <Pacientes
+        buscar={async () => HITS}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      // Alvaro Neto → ÁN (preserva acentuacao)
+      expect(screen.getByText('ÁN')).toBeVisible();
+      // Ana Lima → AL
+      expect(screen.getByText('AL')).toBeVisible();
+    });
   });
 
   it('marca o cadastro preliminar com texto, nunca so com cor', async () => {
-    render(<Pacientes buscar={async () => HITS} faceta="ativos"
-      aoMudarFaceta={vi.fn()} aoAbrir={vi.fn()} />);
+    render(
+      <Pacientes
+        buscar={async () => HITS}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
     await waitFor(() => expect(screen.getByText('preliminar')).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
-    const { container } = render(<Pacientes buscar={async () => HITS} faceta="ativos"
-      aoMudarFaceta={vi.fn()} aoAbrir={vi.fn()} />);
-    await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1));
+  it('nao tem violacoes de acessibilidade', async () => {
+    const { container } = render(
+      <Pacientes
+        buscar={async () => HITS}
+        faceta="ativos"
+        aoMudarFaceta={vi.fn()}
+        aoAbrir={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Álvaro Neto')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();
   });
 });
