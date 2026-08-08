@@ -17,10 +17,11 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, DotsSixVertical } from '@phosphor-icons/react';
+import { Check, DotsSixVertical, ClockCounterClockwise } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Icone } from '../ui/Icone';
+import { EstadoVazio } from '../ui/EstadoVazio';
 
 /* ── tipos exportados (backward compat) ───────────────────────────── */
 
@@ -190,27 +191,36 @@ export function ListaDeEspera({
         Lista de espera
       </h2>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={ordenados.map((i) => i.waitlistId)}
-          strategy={verticalListSortingStrategy}
+      {ordenados.length === 0 ? (
+        <EstadoVazio
+          icone={ClockCounterClockwise}
+          titulo="Lista de espera vazia"
+          descricao="Nenhum paciente na lista de espera"
+          compacto
+        />
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          <ul className="list-none m-0 p-0 flex flex-col gap-3">
-            {ordenados.map((item, index) => (
-              <ItemEspera
-                key={item.waitlistId}
-                item={item}
-                posicao={index + 1}
-                aoChamar={aoChamar}
-              />
-            ))}
-          </ul>
-        </SortableContext>
-      </DndContext>
+          <SortableContext
+            items={ordenados.map((i) => i.waitlistId)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="list-none m-0 p-0 flex flex-col gap-3">
+              {ordenados.map((item, index) => (
+                <ItemEspera
+                  key={item.waitlistId}
+                  item={item}
+                  posicao={index + 1}
+                  aoChamar={aoChamar}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
     </aside>
   );
 }

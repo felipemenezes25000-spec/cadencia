@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '../src/lib/cn';
 import { Providers } from './providers';
 import { BarraDeNavegacao } from '../src/ui/BarraDeNavegacao';
+import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -64,7 +65,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               id="conteudo-principal"
               className="flex-1 min-w-0 ml-[var(--nav-width,0px)] max-md:ml-0 pb-14 md:pb-0 transition-[margin-left] duration-200 ease-[var(--ease-in-out)]"
             >
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </main>
           </div>
         </Providers>
