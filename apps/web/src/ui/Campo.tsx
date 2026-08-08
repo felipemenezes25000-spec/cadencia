@@ -1,52 +1,212 @@
 'use client';
 
-import { useId, type InputHTMLAttributes } from 'react';
+import {
+  forwardRef,
+  useId,
+  useState,
+  type InputHTMLAttributes,
+  type TextareaHTMLAttributes,
+  type ReactNode,
+  type ChangeEvent,
+} from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../lib/cn';
 
-export interface CampoProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
-  readonly rotulo: string;
+export interface CampoProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'size'> {
+  /** Rotulo visivel */
+  readonly rotulo?: string;
+  /** Texto de ajuda abaixo do campo */
+  readonly ajuda?: string;
+  /** @deprecated Use `ajuda` instead. Mantido para compatibilidade. */
   readonly dica?: string;
+  /** Mensagem de erro (ativa estado de erro) */
   readonly erro?: string;
+  /** Variante: input padrao ou textarea */
+  readonly variante?: 'default' | 'textarea';
+  /** Numero de linhas para textarea */
+  readonly linhas?: number;
+  /** Slot de prefixo (icone, simbolo) */
+  readonly prefixo?: ReactNode;
+  /** Slot de sufixo (icone, botao) */
+  readonly sufixo?: ReactNode;
+  /** @deprecated Use Tailwind sizing. Mantido para compatibilidade. */
   readonly denso?: boolean;
+  /** Classes adicionais para o container */
+  readonly className?: string;
 }
 
-export function Campo({ rotulo, dica, erro, denso = false, ...resto }: CampoProps) {
-  const id = useId();
-  const idDica = `${id}-dica`;
-  const idErro = `${id}-erro`;
-  const descrito = [dica === undefined ? null : idDica, erro === undefined ? null : idErro]
-    .filter((x): x is string => x !== null).join(' ');
+const wrapperBase = [
+  'flex items-center gap-2 rounded-md border bg-surface px-3',
+  'transition-colors-fast',
+].join(' ');
 
-  return (
-    <div style={{ display: 'grid', gap: 'var(--s-2)' }}>
-      <label htmlFor={id} style={{
-        fontSize: 'var(--fs-12)', fontWeight: 'var(--fw-medium)',
-        lineHeight: 1.3, color: 'var(--text-muted)',
-      }}>
-        {rotulo}
-      </label>
-      <input
-        id={id}
-        {...resto}
-        aria-invalid={erro !== undefined}
-        aria-describedby={descrito === '' ? undefined : descrito}
-        style={{
-          height: denso ? 32 : 40, padding: `0 var(--s-4)`,
-          border: erro === undefined ? 'var(--border)' : '1px solid var(--danger)',
-          borderRadius: 'var(--r-md)', background: 'var(--surface)', color: 'var(--text)',
-          fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-          ...resto.style,
-        }}
-      />
-      {dica === undefined ? null : (
-        <span id={idDica} style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)' }}>
-          {dica}
-        </span>
-      )}
-      {erro === undefined ? null : (
-        <span id={idErro} style={{ fontSize: 'var(--fs-12)', color: 'var(--danger)' }}>
-          {erro}
-        </span>
-      )}
-    </div>
-  );
-}
+const wrapperFocus =
+  'focus-within:border-accent focus-within:ring-1 focus-within:ring-accent';
+
+const wrapperError =
+  'border-danger focus-within:border-danger focus-within:ring-danger';
+
+const wrapperNormal = 'border-line';
+
+const inputBase =
+  'flex-1 bg-transparent py-2 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
+
+/**
+ * Campo de entrada com suporte a forwardRef para react-hook-form,
+ * variante textarea, prefixo/sufixo, e estados de feedback.
+ */
+const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
+  function Campo(props, ref) {
+    const {
+      rotulo,
+      ajuda,
+      dica,
+      erro,
+      variante = 'default',
+      linhas,
+      prefixo,
+      sufixo,
+      denso = false,
+      className,
+      maxLength,
+      onChange,
+      defaultValue,
+      value,
+      ...resto
+    } = props;
+
+    const id = useId();
+    const textoAjuda = ajuda ?? dica;
+    const idAjuda = `${id}-ajuda`;
+    const idErro = `${id}-erro`;
+    const descrito = [
+      textoAjuda != null ? idAjuda : null,
+      erro != null ? idErro : null,
+    ]
+      .filter((x): x is string => x !== null)
+      .join(' ');
+
+    const [charCount, setCharCount] = useState(() => {
+      const initial = (value ?? defaultValue ?? '') as string;
+      return initial.length;
+    });
+
+    function handleChange(
+      e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
+    ) {
+      if (maxLength != null) {
+        setCharCount(e.target.value.length);
+      }
+      if (onChange) {
+        onChange(e as ChangeEvent<HTMLInputElement>);
+      }
+    }
+
+    const temErro = erro != null && erro !== '';
+
+    const wrapperClasses = cn(
+      wrapperBase,
+      wrapperFocus,
+      temErro ? wrapperError : wrapperNormal,
+      denso && 'h-8',
+    );
+
+    const sharedInputProps = {
+      id,
+      'aria-invalid': temErro,
+      'aria-describedby': descrito === '' ? undefined : descrito,
+      maxLength,
+      onChange: handleChange,
+      ...(value !== undefined ? { value } : {}),
+      ...(defaultValue !== undefined ? { defaultValue } : {}),
+    };
+
+    const showCounter = maxLength != null;
+    const nearMax = maxLength != null && charCount >= maxLength * 0.9;
+
+    return (
+      <div className={cn('flex flex-col gap-1', className)}>
+        {rotulo && (
+          <label
+            htmlFor={id}
+            className="text-sm font-medium text-text-muted"
+          >
+            {rotulo}
+          </label>
+        )}
+
+        <div className={wrapperClasses}>
+          {prefixo && (
+            <span className="shrink-0 text-text-muted" data-testid="campo-prefixo">
+              {prefixo}
+            </span>
+          )}
+
+          {variante === 'textarea' ? (
+            <textarea
+              ref={ref as React.Ref<HTMLTextAreaElement>}
+              rows={linhas ?? 3}
+              className={cn(inputBase, 'resize-y')}
+              {...(resto as unknown as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+              {...sharedInputProps}
+            />
+          ) : (
+            <input
+              ref={ref as React.Ref<HTMLInputElement>}
+              className={cn(inputBase, denso ? 'py-1' : 'py-2')}
+              {...resto}
+              {...sharedInputProps}
+            />
+          )}
+
+          {sufixo && (
+            <span className="shrink-0 text-text-muted" data-testid="campo-sufixo">
+              {sufixo}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <AnimatePresence mode="wait">
+              {temErro ? (
+                <motion.p
+                  key="erro"
+                  id={idErro}
+                  initial={{ x: -4, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-xs text-danger"
+                  role="alert"
+                >
+                  {erro}
+                </motion.p>
+              ) : textoAjuda != null ? (
+                <p key="ajuda" id={idAjuda} className="text-xs text-text-muted">
+                  {textoAjuda}
+                </p>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          {showCounter && (
+            <span
+              className={cn(
+                'ml-auto text-xs',
+                nearMax ? 'text-danger' : 'text-text-muted',
+              )}
+              data-testid="campo-contador"
+            >
+              {charCount}/{maxLength}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  },
+);
+
+export { Campo };
+export type { CampoProps as CampoPropsType };
