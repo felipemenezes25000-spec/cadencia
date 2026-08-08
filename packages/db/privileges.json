@@ -1102,6 +1102,24 @@
       }
     }
   },
+  "tiss.lote": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "tiss.lote_number_counter": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "tiss.operadora": {
     "table": {
       "app_rw": [
