@@ -1058,6 +1058,18 @@
       ]
     }
   },
+  "tiss.demonstrativo_item": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "jobs": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "tiss.encounter_guia_consulta": {
     "table": {
       "app_rw": [
