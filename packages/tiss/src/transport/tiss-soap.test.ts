@@ -431,4 +431,212 @@ describe('TissSoapTransport', () => {
       expect(result.error.kind).toBe('timeout');
     }, 10_000);
   });
+
+  describe('fetchDemonstrativo e submitRecursoGlosa via SOAP', () => {
+    let server: Server;
+    let port: number;
+    let handler: (req: IncomingMessage, res: ServerResponse) => void;
+
+    beforeAll(async () => {
+      server = createServer((req, res) => handler(req, res));
+      await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+      port = (server.address() as { port: number }).port;
+    });
+
+    afterAll(async () => {
+      await new Promise<void>((r) => server.close(() => r()));
+    });
+
+    function soapOpts(): TissSoapOptions {
+      return {
+        tissVersion: '4.01.00',
+        soapEndpointUrl: `http://127.0.0.1:${port}/tiss`,
+        soapUsername: 'user',
+        soapPassword: 'pass',
+        timeoutMs: 5_000,
+      };
+    }
+
+    it('fetchDemonstrativo extrai XML e kind "analise" da resposta SOAP', async () => {
+      handler = (_req, res) => {
+        const resposta =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body>' +
+          '<tissSolicitacaoDemonstrativoRetornoResponse>' +
+          '<tipoDemonstrativo>analise</tipoDemonstrativo>' +
+          '<demonstrativoXml>conteudo-demonstrativo-xml</demonstrativoXml>' +
+          '</tissSolicitacaoDemonstrativoRetornoResponse>' +
+          '</soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(200, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(resposta);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const result = await r.value.fetchDemonstrativo(ctx, {
+        protocolo: 'PROT-2026-001',
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.kind).toBe('analise');
+      const xmlText = Buffer.from(result.value.xml).toString('latin1');
+      expect(xmlText).toBe('conteudo-demonstrativo-xml');
+    });
+
+    it('fetchDemonstrativo extrai kind "pagamento" quando indicado', async () => {
+      handler = (_req, res) => {
+        const resposta =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body>' +
+          '<tissSolicitacaoDemonstrativoRetornoResponse>' +
+          '<tipoDemonstrativo>pagamento</tipoDemonstrativo>' +
+          '<demonstrativoXml>demonstrativo-pago</demonstrativoXml>' +
+          '</tissSolicitacaoDemonstrativoRetornoResponse>' +
+          '</soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(200, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(resposta);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const result = await r.value.fetchDemonstrativo(ctx, {
+        protocolo: 'PROT-2026-002',
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.kind).toBe('pagamento');
+    });
+
+    it('fetchDemonstrativo retorna rejected quando demonstrativoXml ausente', async () => {
+      handler = (_req, res) => {
+        const resposta =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body><vazio/></soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(200, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(resposta);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const result = await r.value.fetchDemonstrativo(ctx, {
+        protocolo: 'PROT-VAZIO',
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('rejected');
+      if (result.error.kind !== 'rejected') return;
+      expect(result.error.code).toBe('DEMONSTRATIVO_AUSENTE');
+    });
+
+    it('submitRecursoGlosa envia XML e extrai protocolo da resposta', async () => {
+      handler = (_req, res) => {
+        const resposta =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body>' +
+          '<tissRecursoGlosaResponse>' +
+          '<protocolo>REC-PROT-001</protocolo>' +
+          '<dataRecebimento>2026-08-08T14:00:00.000Z</dataRecebimento>' +
+          '</tissRecursoGlosaResponse>' +
+          '</soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(200, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(resposta);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<recursoGlosa>dados do recurso</recursoGlosa>');
+      const result = await r.value.submitRecursoGlosa(ctx, {
+        recursoId: 'rec-glosa-001',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.kind).toBe('protocolo');
+      if (result.value.kind !== 'protocolo') return;
+      expect(result.value.protocolo).toBe('REC-PROT-001');
+      expect(result.value.recebidoEm).toBe('2026-08-08T14:00:00.000Z');
+    });
+
+    it('submitRecursoGlosa retorna rejected quando protocolo ausente', async () => {
+      handler = (_req, res) => {
+        const resposta =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body><semProtocolo/></soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(200, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(resposta);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<recurso>sem resposta</recurso>');
+      const result = await r.value.submitRecursoGlosa(ctx, {
+        recursoId: 'rec-glosa-sem',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('rejected');
+      if (result.error.kind !== 'rejected') return;
+      expect(result.error.code).toBe('PROTOCOLO_AUSENTE');
+    });
+
+    it('submitRecursoGlosa retorna rejected quando SOAP Fault', async () => {
+      handler = (_req, res) => {
+        const faultXml =
+          '<?xml version="1.0" encoding="ISO-8859-1"?>' +
+          '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+          '<soap:Body>' +
+          '<soap:Fault>' +
+          '<faultcode>soap:Client</faultcode>' +
+          '<faultstring>Recurso de glosa nao pertence ao prestador</faultstring>' +
+          '</soap:Fault>' +
+          '</soap:Body>' +
+          '</soap:Envelope>';
+        res.writeHead(500, { 'Content-Type': 'text/xml; charset=ISO-8859-1' });
+        res.end(faultXml);
+      };
+
+      const r = createTissSoapTransport(soapOpts());
+      if (!r.ok) return;
+
+      const xml = new TextEncoder().encode('<recurso>glosa invalida</recurso>');
+      const result = await r.value.submitRecursoGlosa(ctx, {
+        recursoId: 'rec-fault',
+        xml,
+        operadoraCnpj: '12ABC34503DE37',
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('rejected');
+      if (result.error.kind !== 'rejected') return;
+      expect(result.error.code).toBe('soap:Client');
+      expect(result.error.detail).toContain('nao pertence');
+    });
+  });
 });
