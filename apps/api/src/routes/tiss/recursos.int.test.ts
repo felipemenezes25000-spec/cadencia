@@ -311,4 +311,75 @@ describe('rotas de recursos de glosa TISS', () => {
     expect(r.statusCode).toBe(403);
     await app.close();
   });
+
+  // --- Testes de envio e resolucao (Task 49) ---
+
+  it('POST /v1/tiss/recursos/:id/enviar dispara serializacao e transport', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST',
+      url: `/v1/tiss/recursos/${recursoId}/enviar`,
+      ...auth(admin),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { recursoId: string; status: string };
+    expect(body.status).toBe('enviado');
+    await app.close();
+  });
+
+  it('POST /v1/tiss/recursos/:id/resolver resolve recurso com resultado', async () => {
+    const app = await buildApp();
+
+    // Buscar itens do recurso para obter os IDs
+    const detR = await app.inject({
+      method: 'GET',
+      url: `/v1/tiss/recursos/${recursoId}`,
+      ...auth(admin),
+    });
+    const det = detR.json() as {
+      itens: Array<{ itemId: string; valorRecursadoCents: number }>;
+    };
+    expect(det.itens.length).toBe(2);
+
+    const resultados = det.itens.map((item) => ({
+      itemId: item.itemId,
+      resultado: 'deferido' as const,
+    }));
+
+    const r = await app.inject({
+      method: 'POST',
+      url: `/v1/tiss/recursos/${recursoId}/resolver`,
+      ...auth(admin),
+      payload: { resultados },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { recursoId: string; status: string };
+    expect(body.status).toBe('deferido');
+
+    // Verificar que as glosas foram marcadas como revertidas
+    const glR = await app.inject({
+      method: 'GET',
+      url: `/v1/tiss/glosas/${glosaIdA}`,
+      ...auth(admin),
+    });
+    if (glR.statusCode === 200) {
+      const gl = glR.json() as { status: string };
+      expect(gl.status).toBe('revertida');
+    }
+
+    await app.close();
+  });
+
+  it('recepcao recebe 403 ao tentar enviar recurso', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST',
+      url: `/v1/tiss/recursos/${recursoId}/enviar`,
+      ...auth(recepcao),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
 });

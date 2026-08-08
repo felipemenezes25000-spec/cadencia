@@ -388,4 +388,163 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
       })),
     };
   }));
+
+  // ── POST /v1/tiss/recursos/:id/enviar — enviar recurso ────────────────
+  r.post('/v1/tiss/recursos/:id/enviar', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      body: z.object({}),
+      response: {
+        200: z.object({
+          recursoId: z.string().uuid(),
+          status: z.literal('enviado'),
+        }),
+      },
+    },
+  }, rota('tiss.recurso.send', async (tx, ctx, req) => {
+    const p = req.params as { id: string };
+
+    const { rows } = await tx.query<{
+      status: string; operadora_id: string; item_count: number;
+      total_recursado_cents: string;
+    }>(
+      `SELECT status, operadora_id, item_count, total_recursado_cents::text
+         FROM tiss.recurso_glosa WHERE id = $1 FOR UPDATE`,
+      [p.id]);
+    if (rows.length === 0) erroDominio('recurso_nao_encontrado', 404);
+    if (rows[0]!.status !== 'pronto') {
+      erroDominio('recurso_nao_pronto', 422);
+    }
+    if (rows[0]!.item_count === 0) {
+      erroDominio('recurso_sem_itens', 422);
+    }
+
+    // Transicionar para enviado
+    await tx.query(
+      `UPDATE tiss.recurso_glosa
+          SET status = 'enviado', sent_at = clock_timestamp()
+        WHERE id = $1`,
+      [p.id]);
+
+    // Enfileirar no outbox para serializacao XML + transport
+    await tx.query(
+      `SELECT app.enqueue_outbox('tiss_recurso_send', $1::uuid,
+               jsonb_build_object(
+                 'recursoId', $2::text,
+                 'operadoraId', $3::text,
+                 'itemCount', $4::int,
+                 'clinicId', $5::text))`,
+      [p.id, p.id, rows[0]!.operadora_id,
+       rows[0]!.item_count, ctx.actor.clinicId]);
+
+    // Auditoria
+    await tx.query(
+      `SELECT audit.log('TISS_RECURSO_SEND', 'tiss', 'recurso_glosa', $1,
+              'sucesso',
+              jsonb_build_object('item_count', $2::int,
+                                 'total_recursado_cents', $3::text), $4)`,
+      [p.id, rows[0]!.item_count,
+       rows[0]!.total_recursado_cents, ctx.actor.clinicId]);
+
+    return { recursoId: p.id, status: 'enviado' as const };
+  }));
+
+  // ── POST /v1/tiss/recursos/:id/resolver — resolver com resultado ──────
+  r.post('/v1/tiss/recursos/:id/resolver', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      body: z.object({
+        resultados: z.array(z.object({
+          itemId: z.string().uuid(),
+          resultado: z.enum(['deferido', 'indeferido', 'deferido_parcial']),
+        })).min(1),
+      }),
+      response: {
+        200: z.object({
+          recursoId: z.string().uuid(),
+          status: z.enum(['deferido', 'indeferido', 'parcial']),
+        }),
+      },
+    },
+  }, rota('tiss.recurso.manage', async (tx, ctx, req) => {
+    const p = req.params as { id: string };
+    const b = req.body as {
+      resultados: Array<{
+        itemId: string;
+        resultado: 'deferido' | 'indeferido' | 'deferido_parcial';
+      }>;
+    };
+
+    // Verificar que o recurso existe e esta enviado
+    const { rows } = await tx.query<{ status: string }>(
+      `SELECT status FROM tiss.recurso_glosa
+        WHERE id = $1 FOR UPDATE`,
+      [p.id]);
+    if (rows.length === 0) erroDominio('recurso_nao_encontrado', 404);
+    if (rows[0]!.status !== 'enviado') {
+      erroDominio('recurso_nao_enviado', 422);
+    }
+
+    // Atualizar cada item com o resultado
+    for (const res of b.resultados) {
+      const { rowCount } = await tx.query(
+        `UPDATE tiss.recurso_glosa_item
+            SET resultado = $2
+          WHERE id = $1 AND recurso_id = $3`,
+        [res.itemId, res.resultado, p.id]);
+      if (rowCount === 0) {
+        erroDominio('item_recurso_nao_encontrado', 404,
+          { itemId: res.itemId });
+      }
+
+      // Se deferido (total ou parcial), marcar a glosa como revertida
+      if (res.resultado === 'deferido' || res.resultado === 'deferido_parcial') {
+        await tx.query(
+          `UPDATE tiss.glosa
+              SET status = 'revertida',
+                  resolved_at = clock_timestamp(),
+                  resolved_by = app.current_user_id()
+            WHERE id = (
+              SELECT glosa_id
+                FROM tiss.recurso_glosa_item
+               WHERE id = $1)
+              AND status = 'contestada'`,
+          [res.itemId]);
+      }
+    }
+
+    // Computar status final do recurso
+    const hasDeferido = b.resultados.some(
+      (r) => r.resultado === 'deferido' || r.resultado === 'deferido_parcial');
+    const hasIndeferido = b.resultados.some(
+      (r) => r.resultado === 'indeferido');
+    let finalStatus: 'deferido' | 'indeferido' | 'parcial';
+    if (hasDeferido && hasIndeferido) {
+      finalStatus = 'parcial';
+    } else if (hasDeferido) {
+      finalStatus = 'deferido';
+    } else {
+      finalStatus = 'indeferido';
+    }
+
+    // Marcar recurso com status final
+    await tx.query(
+      `UPDATE tiss.recurso_glosa
+          SET status = $2::tiss.recurso_glosa_status,
+              resolved_at = clock_timestamp()
+        WHERE id = $1`,
+      [p.id, finalStatus]);
+
+    // Auditoria
+    const deferidos = b.resultados.filter(
+      (r) => r.resultado === 'deferido' || r.resultado === 'deferido_parcial');
+    await tx.query(
+      `SELECT audit.log('TISS_RECURSO_RESOLVE', 'tiss', 'recurso_glosa', $1,
+              'sucesso',
+              jsonb_build_object('total_resultados', $2::int,
+                                 'deferidos', $3::int), $4)`,
+      [p.id, b.resultados.length, deferidos.length, ctx.actor.clinicId]);
+
+    return { recursoId: p.id, status: finalStatus };
+  }));
 }
