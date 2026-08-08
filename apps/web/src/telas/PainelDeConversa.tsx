@@ -1,7 +1,16 @@
 // apps/web/src/telas/PainelDeConversa.tsx
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
+import { ArrowLeft, UserCircle } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
+import { Icone } from '../ui/Icone';
 
 export type DeliveryStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -32,17 +41,106 @@ export interface ContextoConversa {
 }
 
 const STATUS_GLIFO: Record<DeliveryStatus, { glifo: string; titulo: string }> = {
-  queued:    { glifo: '○', titulo: 'Na fila' },
-  sent:      { glifo: '✓', titulo: 'Enviado' },
+  queued: { glifo: '○', titulo: 'Na fila' },
+  sent: { glifo: '✓', titulo: 'Enviado' },
   delivered: { glifo: '✓✓', titulo: 'Entregue' },
-  read:      { glifo: '✓✓', titulo: 'Lido' },
-  failed:    { glifo: '✗', titulo: 'Falhou' },
+  read: { glifo: '✓✓', titulo: 'Lido' },
+  failed: { glifo: '✗', titulo: 'Falhou' },
 };
 
 function hora(iso: string): string {
-  return new Intl.DateTimeFormat('pt-BR',
-    { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(new Date(iso));
+  return new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(iso));
 }
+
+function chaveDia(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+function dataParaSeparador(iso: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(iso));
+}
+
+/* ── Agrupamento de mensagens por data ────────────────────────── */
+
+interface GrupoDeMensagens {
+  readonly data: string;
+  readonly chave: string;
+  readonly mensagens: Mensagem[];
+}
+
+function agruparPorData(mensagens: Mensagem[]): GrupoDeMensagens[] {
+  const grupos: GrupoDeMensagens[] = [];
+  let grupoAtual: GrupoDeMensagens | null = null;
+
+  for (const msg of mensagens) {
+    const chave = chaveDia(msg.sentAt);
+    const data = dataParaSeparador(msg.sentAt);
+
+    if (grupoAtual === null || grupoAtual.chave !== chave) {
+      grupoAtual = { data, chave, mensagens: [] };
+      grupos.push(grupoAtual);
+    }
+    grupoAtual.mensagens.push(msg);
+  }
+
+  return grupos;
+}
+
+/* ── Sub-componente: bolha de mensagem ────────────────────────── */
+
+function BolhaDeMensagem({ mensagem }: { mensagem: Mensagem }) {
+  const outbound = mensagem.direction === 'outbound';
+  const st = STATUS_GLIFO[mensagem.deliveryStatus];
+
+  return (
+    <div
+      data-testid={`msg-${mensagem.messageId}`}
+      data-direction={mensagem.direction}
+      className={cn('flex', outbound ? 'justify-end' : 'justify-start')}
+    >
+      <div
+        className={cn(
+          'max-w-[70%] rounded-2xl px-4 py-2',
+          outbound
+            ? 'rounded-br-md bg-accent text-accent-on'
+            : 'rounded-bl-md bg-surface-raised text-text',
+        )}
+      >
+        <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed">
+          {mensagem.body}
+        </p>
+        <span
+          className={cn(
+            'mt-1 flex items-center justify-end gap-1 text-[11px]',
+            outbound ? 'opacity-60' : 'text-text-muted',
+          )}
+        >
+          <span className="num">{hora(mensagem.sentAt)}</span>
+          <span
+            title={st.titulo}
+            className={cn(
+              mensagem.deliveryStatus === 'read' && !outbound && 'text-accent',
+            )}
+          >
+            {st.glifo}
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Componente principal ─────────────────────────────────────── */
 
 export interface PainelDeConversaProps {
   readonly conversationId: string;
@@ -54,34 +152,43 @@ export interface PainelDeConversaProps {
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
   readonly aoVincularPaciente: () => void;
   readonly aoSelecionarTemplate: () => void;
+  /** Callback para voltar a lista no mobile */
+  readonly aoVoltar?: () => void;
 }
 
 export function PainelDeConversa(p: PainelDeConversaProps) {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [contexto, setContexto] = useState<ContextoConversa | null>(null);
   const [texto, setTexto] = useState('');
-  const threadRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void p.carregarMensagens(p.conversationId).then(setMensagens);
     void p.carregarContexto(p.conversationId).then(setContexto);
   }, [p, p.conversationId]);
 
+  /* Auto-scroll para ultima mensagem */
   useEffect(() => {
-    if (threadRef.current !== null) {
-      threadRef.current.scrollTop = threadRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [mensagens]);
+
+  const grupos = useMemo(() => agruparPorData(mensagens), [mensagens]);
 
   async function enviar(): Promise<void> {
     const corpo = texto.trim();
     if (corpo === '') return;
     setTexto('');
     const { messageId } = await p.aoEnviar(corpo);
-    setMensagens((prev) => [...prev, {
-      messageId, direction: 'outbound', body: corpo,
-      sentAt: new Date().toISOString(), deliveryStatus: 'queued',
-    }]);
+    setMensagens((prev) => [
+      ...prev,
+      {
+        messageId,
+        direction: 'outbound',
+        body: corpo,
+        sentAt: new Date().toISOString(),
+        deliveryStatus: 'queued',
+      },
+    ]);
   }
 
   function aoTeclarInput(e: KeyboardEvent<HTMLTextAreaElement>): void {
@@ -92,157 +199,140 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
   }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 320px',
-      gridTemplateRows: 'auto 1fr auto',
-      height: '100%', overflow: 'hidden',
-    }}>
+    <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden md:grid-cols-[1fr_320px]">
       {/* Cabecalho */}
-      <header style={{
-        gridColumn: '1 / -1', display: 'flex', alignItems: 'center',
-        gap: 'var(--s-4)', padding: `var(--s-4) var(--s-5)`,
-        borderBottom: 'var(--border)', background: 'var(--surface)',
-      }}>
-        <h2 style={{ fontSize: 'var(--fs-18)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
-          {p.nomeExibido}
-        </h2>
-        <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)' }}>
-          {p.phoneNumber}
-        </span>
+      <header className="col-span-full flex items-center gap-3 border-b border-line bg-surface px-4 py-3">
+        {/* Botao voltar (mobile) */}
+        {p.aoVoltar != null && (
+          <button
+            type="button"
+            onClick={p.aoVoltar}
+            className="rounded-md p-1 text-text-muted transition-colors duration-[var(--dur-2)] hover:bg-surface-raised md:hidden"
+            aria-label="Voltar"
+          >
+            <Icone icon={ArrowLeft} size="md" />
+          </button>
+        )}
+
+        <h2 className="m-0 text-lg font-semibold">{p.nomeExibido}</h2>
+        <span className="text-xs text-text-muted">{p.phoneNumber}</span>
+
         {p.patientId === null ? (
-          <button type="button" onClick={p.aoVincularPaciente}
-            style={{
-              marginInlineStart: 'auto', border: 'var(--border)',
-              borderRadius: 'var(--r-md)', background: 'var(--surface)',
-              padding: 'var(--s-2) var(--s-4)', fontSize: 'var(--fs-13)',
-              cursor: 'pointer', color: 'var(--accent)',
-            }}>
+          <button
+            type="button"
+            onClick={p.aoVincularPaciente}
+            className="ml-auto cursor-pointer rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-accent transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
+          >
             Vincular a paciente
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            className="ml-auto rounded-md p-1.5 text-text-muted transition-colors duration-[var(--dur-2)] hover:bg-surface-raised"
+            aria-label="Abrir ficha"
+          >
+            <Icone icon={UserCircle} size="md" />
+          </button>
+        )}
       </header>
 
       {/* Thread de mensagens */}
-      <div ref={threadRef} role="log" aria-label="Mensagens"
-        style={{
-          gridColumn: 1, overflowY: 'auto',
-          padding: 'var(--s-5)', display: 'flex',
-          flexDirection: 'column', gap: 'var(--s-3)',
-        }}>
-        {mensagens.map((m) => {
-          const outbound = m.direction === 'outbound';
-          const st = STATUS_GLIFO[m.deliveryStatus];
-          return (
+      <div
+        role="log"
+        aria-label="Mensagens"
+        className="col-start-1 flex flex-col gap-3 overflow-y-auto p-4"
+      >
+        {grupos.map((grupo) => (
+          <div key={grupo.chave}>
+            {/* Separador de data */}
             <div
-              key={m.messageId}
-              data-testid={`msg-${m.messageId}`}
-              data-direction={m.direction}
-              style={{
-                alignSelf: outbound ? 'flex-end' : 'flex-start',
-                maxWidth: '75%', padding: `var(--s-3) var(--s-4)`,
-                borderRadius: 'var(--r-md)',
-                background: outbound ? 'var(--accent-soft)' : 'var(--surface-sunken)',
-              }}>
-              <p style={{ margin: 0, fontSize: 'var(--fs-14)', lineHeight: 'var(--lh-read)',
-                          whiteSpace: 'pre-wrap' }}>
-                {m.body}
-              </p>
-              <span style={{
-                display: 'flex', justifyContent: 'flex-end',
-                gap: 'var(--s-2)', marginTop: 'var(--s-1)',
-                fontSize: 'var(--fs-11)', color: 'var(--text-muted)',
-              }}>
-                <span className="num">{hora(m.sentAt)}</span>
-                <span title={st.titulo} style={{
-                  color: m.deliveryStatus === 'read' ? 'var(--accent)' : 'var(--text-muted)',
-                }}>
-                  {st.glifo}
-                </span>
+              data-testid="date-separator"
+              className="my-3 flex items-center gap-3"
+            >
+              <div className="h-px flex-1 bg-line" />
+              <span className="text-[11px] font-medium text-text-muted">
+                {grupo.data}
               </span>
+              <div className="h-px flex-1 bg-line" />
             </div>
-          );
-        })}
+
+            {/* Mensagens do grupo */}
+            <div className="flex flex-col gap-3">
+              {grupo.mensagens.map((msg) => (
+                <BolhaDeMensagem key={msg.messageId} mensagem={msg} />
+              ))}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Painel de contexto */}
-      <aside aria-label="Contexto do paciente"
-        style={{
-          gridColumn: 2, gridRow: '2 / 4', borderInlineStart: 'var(--border)',
-          padding: 'var(--s-5)', overflowY: 'auto', background: 'var(--surface)',
-          fontSize: 'var(--fs-13)',
-        }}>
-        {contexto !== null ? (
-          <div style={{ display: 'grid', gap: 'var(--s-6)' }}>
-            {contexto.proximoAgendamento !== null ? (
+      <aside
+        aria-label="Contexto do paciente"
+        className="overflow-y-auto border-l border-line bg-surface p-4 text-[13px] md:col-start-2 md:row-[2/4]"
+      >
+        {contexto !== null && (
+          <div className="grid gap-4">
+            {contexto.proximoAgendamento !== null && (
               <div>
-                <h3 style={{ fontSize: 'var(--fs-12)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', color: 'var(--text-muted)',
-                             fontWeight: 'var(--fw-medium)', margin: `0 0 var(--s-3)` }}>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
                   Proximo agendamento
                 </h3>
-                <p style={{ margin: 0 }}>
+                <p className="m-0">
                   {`${contexto.proximoAgendamento.dia} as ${contexto.proximoAgendamento.hora}`}
                 </p>
-                <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                <p className="m-0 text-text-muted">
                   {contexto.proximoAgendamento.procedimento}
                 </p>
               </div>
-            ) : null}
+            )}
 
-            {contexto.pendencias.length > 0 ? (
+            {contexto.pendencias.length > 0 && (
               <div>
-                <h3 style={{ fontSize: 'var(--fs-12)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', color: 'var(--text-muted)',
-                             fontWeight: 'var(--fw-medium)', margin: `0 0 var(--s-3)` }}>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
                   Pendencias
                 </h3>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none',
-                             display: 'grid', gap: 'var(--s-2)' }}>
+                <ul className="m-0 grid list-none gap-1 p-0">
                   {contexto.pendencias.map((pend) => (
-                    <li key={pend} style={{ color: 'var(--warn)' }}>{pend}</li>
+                    <li key={pend} className="text-warn">
+                      {pend}
+                    </li>
                   ))}
                 </ul>
               </div>
-            ) : null}
+            )}
 
-            {contexto.historicoAgendamentos.length > 0 ? (
+            {contexto.historicoAgendamentos.length > 0 && (
               <div>
-                <h3 style={{ fontSize: 'var(--fs-12)', textTransform: 'uppercase',
-                             letterSpacing: '.04em', color: 'var(--text-muted)',
-                             fontWeight: 'var(--fw-medium)', margin: `0 0 var(--s-3)` }}>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
                   Historico
                 </h3>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none',
-                             display: 'grid', gap: 'var(--s-2)' }}>
+                <ul className="m-0 grid list-none gap-1 p-0">
                   {contexto.historicoAgendamentos.map((h) => (
-                    <li key={`${h.dia}-${h.procedimento}`}
-                      style={{ display: 'flex', gap: 'var(--s-3)' }}>
-                      <span className="num" style={{ color: 'var(--text-muted)' }}>{h.dia}</span>
+                    <li
+                      key={`${h.dia}-${h.procedimento}`}
+                      className="flex gap-2"
+                    >
+                      <span className="num text-text-muted">{h.dia}</span>
                       <span>{h.procedimento}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-            ) : null}
+            )}
           </div>
-        ) : null}
+        )}
       </aside>
 
       {/* Input de mensagem */}
-      <div style={{
-        gridColumn: 1, display: 'flex', gap: 'var(--s-3)',
-        padding: 'var(--s-4)', borderTop: 'var(--border)',
-        background: 'var(--surface)', alignItems: 'flex-end',
-      }}>
-        <button type="button" aria-label="Template" onClick={p.aoSelecionarTemplate}
-          style={{
-            border: 'var(--border)', borderRadius: 'var(--r-md)',
-            background: 'var(--surface)', width: 36, height: 36,
-            cursor: 'pointer', color: 'var(--text-muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'var(--fs-15)',
-          }}>
+      <div className="col-start-1 flex items-end gap-2 border-t border-line bg-surface p-3">
+        <button
+          type="button"
+          aria-label="Template"
+          onClick={p.aoSelecionarTemplate}
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-surface text-sm text-text-muted transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
+        >
           T
         </button>
         <textarea
@@ -252,22 +342,16 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={aoTeclarInput}
           rows={1}
-          style={{
-            flex: 1, resize: 'none', border: 'var(--border)',
-            borderRadius: 'var(--r-md)', padding: 'var(--s-3) var(--s-4)',
-            background: 'var(--surface)', color: 'var(--text)',
-            fontSize: 'var(--fs-14)', fontFamily: 'var(--font-ui)',
-            minHeight: 36, maxHeight: 120,
-          }}
+          className="min-h-9 max-h-[120px] flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 font-sans text-sm text-text outline-none transition-colors duration-[var(--dur-2)] focus:border-accent"
         />
-        <button type="button" aria-label="Enviar" onClick={() => { void enviar(); }}
-          style={{
-            border: 'none', borderRadius: 'var(--r-md)',
-            background: 'var(--accent)', color: 'var(--accent-on)',
-            width: 36, height: 36, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'var(--fs-15)',
-          }}>
+        <button
+          type="button"
+          aria-label="Enviar"
+          onClick={() => {
+            void enviar();
+          }}
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-accent text-sm text-accent-on transition-colors duration-[var(--dur-2)] hover:bg-accent-hover"
+        >
           &gt;
         </button>
       </div>

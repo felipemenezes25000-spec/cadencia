@@ -1,5 +1,5 @@
 // apps/web/src/telas/PainelDeConversa.test.tsx
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
@@ -20,6 +20,19 @@ const MENSAGENS: Mensagem[] = [
     messageId: 'm3', direction: 'outbound',
     body: 'Lembramos de trazer os exames.',
     sentAt: '2026-08-03T14:32:00.000Z', deliveryStatus: 'sent',
+  },
+];
+
+const MENSAGENS_MULTI_DIA: Mensagem[] = [
+  {
+    messageId: 'd1', direction: 'inbound',
+    body: 'Mensagem do dia 2',
+    sentAt: '2026-08-02T10:00:00.000Z', deliveryStatus: 'delivered',
+  },
+  {
+    messageId: 'd2', direction: 'outbound',
+    body: 'Resposta do dia 3',
+    sentAt: '2026-08-03T14:00:00.000Z', deliveryStatus: 'sent',
   },
 ];
 
@@ -47,6 +60,13 @@ function montar(over: Partial<Parameters<typeof PainelDeConversa>[0]> = {}) {
   render(<PainelDeConversa {...props} />);
   return props;
 }
+
+/* Guarda o scrollIntoView original para restaurar */
+const scrollIntoViewOriginal = HTMLElement.prototype.scrollIntoView;
+
+afterEach(() => {
+  HTMLElement.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 describe('painel de conversa', () => {
   it('mostra o nome do contato no cabecalho', async () => {
@@ -112,6 +132,31 @@ describe('painel de conversa', () => {
     await screen.findAllByTestId(/^msg-/);
     await userEvent.click(screen.getByRole('button', { name: /Template/ }));
     expect(aoSelecionarTemplate).toHaveBeenCalled();
+  });
+
+  it('mostra separadores de data entre grupos de mensagens', async () => {
+    montar({ carregarMensagens: vi.fn(async () => MENSAGENS_MULTI_DIA) });
+    const separadores = await screen.findAllByTestId('date-separator');
+    // 2 datas distintas = 2 separadores
+    expect(separadores).toHaveLength(2);
+  });
+
+  it('faz scroll para ultima mensagem ao carregar', async () => {
+    const scrollMock = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollMock;
+    montar();
+    await screen.findAllByTestId(/^msg-/);
+    expect(scrollMock).toHaveBeenCalled();
+  });
+
+  it('mostra botao voltar quando aoVoltar e fornecido', async () => {
+    const aoVoltar = vi.fn();
+    montar({ aoVoltar });
+    await screen.findAllByTestId(/^msg-/);
+    const botaoVoltar = screen.getByRole('button', { name: /Voltar/ });
+    expect(botaoVoltar).toBeInTheDocument();
+    await userEvent.click(botaoVoltar);
+    expect(aoVoltar).toHaveBeenCalled();
   });
 
   it('sem violacao de acessibilidade', async () => {

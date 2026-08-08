@@ -12,6 +12,7 @@ const CONVERSAS: ConversaResumo[] = [
     lastMessageAt: '2026-08-03T14:30:00.000Z', unreadCount: 2,
     channel: 'whatsapp', status: 'ativa',
     lastMessageDirection: 'inbound',
+    online: true,
   },
   {
     conversationId: 'c2', patientId: null, patientName: null,
@@ -86,6 +87,21 @@ describe('tela Caixa de Conversas', () => {
     const itens = await screen.findAllByRole('listitem');
     await userEvent.click(itens[0]!);
     expect(aoAbrirConversa).toHaveBeenCalledWith('c1');
+  });
+
+  it('destaca conversa ativa com atributo data-active', async () => {
+    montar({ conversaAtivaId: 'c1' });
+    const itens = await screen.findAllByRole('listitem');
+    expect(itens[0]).toHaveAttribute('data-active', 'true');
+    expect(itens[1]).not.toHaveAttribute('data-active');
+    expect(itens[2]).not.toHaveAttribute('data-active');
+  });
+
+  it('mostra indicador online quando conversa tem online=true', async () => {
+    montar();
+    const indicadores = await screen.findAllByTestId('online-indicator');
+    // Apenas c1 tem online: true
+    expect(indicadores).toHaveLength(1);
   });
 
   it('sem violacao de acessibilidade', async () => {
