@@ -38,7 +38,6 @@ export async function materializeRecurringEntries(
 ): Promise<MaterializeResult> {
   // Obtem "agora" do Postgres, nao do relogio local
   const dbNow = (await tx.query<{ now: string }>(`SELECT current_date::text AS now`)).rows[0]!.now;
-  const nowDate = parseDateMidday(dbNow);
 
   // Busca templates ativos com next_due_date no horizonte de 30 dias
   const { rows: templates } = await tx.query<TemplateRow>(

@@ -1224,9 +1224,9 @@
         "SELECT"
       ]
     },
-    "column": {
-      "resultado": {
-        "app_rw": [
+    "columns": {
+      "app_rw": {
+        "resultado": [
           "UPDATE"
         ]
       }
