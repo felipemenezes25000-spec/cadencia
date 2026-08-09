@@ -92,11 +92,13 @@ export function ConveniosLayout({
     : [];
 
   return (
-    <div className="space-y-6 p-6 max-sm:p-4">
+    <div className="space-y-6 p-4 sm:p-0">
       {/* h2 porque ConveniosLayout e aninhado dentro de FinanceiroLayout (h1) */}
-      <h2 className="text-xl font-semibold text-text tracking-tight">
-        Convenios
-      </h2>
+      <div>
+        <span className="cadencia-eyebrow">Ciclo TISS</span>
+        <h2 className="m-0 mt-1 text-xl font-semibold tracking-[-0.035em] text-text">Convenios</h2>
+        <p className="m-0 mt-1 text-xs text-text-muted">Do faturamento ao recurso, com pendências visíveis antes de virarem perda.</p>
+      </div>
 
       {/* Faixa de contadores */}
       {contadores && (
@@ -104,29 +106,27 @@ export function ConveniosLayout({
           role="group"
           aria-label="Contadores de convenios"
           aria-live="polite"
-          className="flex rounded-md border border-line bg-surface overflow-hidden"
+          className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"
         >
-          {chaves.map((k, i) => (
+          {chaves.map((k) => (
             <button
               key={k}
               type="button"
               onClick={() => aoFiltrar?.(k)}
               aria-pressed={filtroAtivo === k}
               className={cn(
-                "flex-1 min-h-[44px] cursor-pointer",
-                "grid gap-[var(--s-1)] justify-items-start",
-                "py-[var(--s-5)] px-[var(--s-4)]",
-                "border-0 text-text transition-colors-fast",
-                i > 0 && "border-l border-line",
+                "cadencia-metric min-h-[94px] cursor-pointer",
+                "grid gap-1 justify-items-start content-center px-4 py-3",
+                "text-text",
                 filtroAtivo === k
-                  ? "bg-surface-hover"
-                  : "bg-transparent hover:bg-surface-hover",
+                  ? "border-accent/35 bg-accent-soft ring-1 ring-accent/10"
+                  : "hover:bg-surface-raised",
               )}
             >
-              <span className="text-[28px] font-semibold leading-tight tabular-nums">
+              <span className="text-[28px] font-semibold leading-tight tracking-[-0.055em] tabular-nums">
                 {contadores[k]}
               </span>
-              <span className="text-[var(--fs-11)] uppercase tracking-[.04em] text-text-muted">
+              <span className="text-[9px] font-bold uppercase tracking-[.09em] text-text-muted">
                 {ROTULOS_CONTADORES[k]}
               </span>
             </button>
@@ -151,7 +151,7 @@ export function ConveniosLayout({
         <div
           className={cn(
             "overflow-x-auto scrollbar-thin",
-            "-mx-6 px-6 max-sm:-mx-4 max-sm:px-4",
+            "-mx-1 px-1",
           )}
         >
           <TabsList className="min-w-max">

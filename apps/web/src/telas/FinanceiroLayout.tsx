@@ -44,11 +44,11 @@ export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
 export interface FinanceiroLayoutProps {
   readonly children: ReactNode;
   /** Contagem de recebimentos pendentes (badge na aba "A receber") */
-  readonly pendentesReceber?: number;
+  readonly pendentesReceber?: number | undefined;
   /** Contagem de pagamentos pendentes (badge na aba "A pagar") */
-  readonly pendentesPagar?: number;
+  readonly pendentesPagar?: number | undefined;
   /** Contagem de itens com estoque baixo (badge na aba "Estoque") */
-  readonly baixoEstoque?: number;
+  readonly baixoEstoque?: number | undefined;
 }
 
 /* ── Componente ────────────────────────────────────────────────────── */
@@ -74,9 +74,10 @@ export function FinanceiroLayout({
   };
 
   return (
-    <div className="space-y-6 p-6 max-sm:p-4">
-      <PageHeader titulo="Financeiro" semBreadcrumb />
+    <div className="cadencia-page p-4 space-y-6">
+      <PageHeader titulo="Financeiro" subtitulo="Caixa, recebíveis, repasses e convênios em uma leitura executiva." semBreadcrumb />
 
+      <div className="cadencia-panel overflow-hidden p-1.5 sm:p-2">
       <Tabs
         value={abaAtiva}
         onValueChange={(value: string) => {
@@ -87,7 +88,7 @@ export function FinanceiroLayout({
         <div
           className={cn(
             "overflow-x-auto scrollbar-thin",
-            "-mx-6 px-6 max-sm:-mx-4 max-sm:px-4",
+            "-mx-1 px-1",
           )}
         >
           <TabsList className="min-w-max">
@@ -103,6 +104,7 @@ export function FinanceiroLayout({
           </TabsList>
         </div>
       </Tabs>
+      </div>
 
       {/* Conteudo da rota filha */}
       {children}

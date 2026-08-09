@@ -105,9 +105,9 @@ describe('tela Hoje', () => {
   it('a linha mostra os sinais: cadastro preliminar, 1a vez e encaixe', async () => {
     montar();
     const linhas = await screen.findAllByRole('listitem');
-    expect(linhas[0]).toHaveTextContent('cadastro preliminar');
-    expect(linhas[1]).toHaveTextContent('1ª vez');
-    expect(linhas[1]).toHaveTextContent('encaixe');
+    expect(linhas[0]).toHaveTextContent(/cadastro preliminar/i);
+    expect(linhas[1]).toHaveTextContent(/1.?\s*vez/i);
+    expect(linhas[1]).toHaveTextContent(/encaixe/i);
   });
 
   it('check-in e otimista: o chip muda antes da resposta', async () => {

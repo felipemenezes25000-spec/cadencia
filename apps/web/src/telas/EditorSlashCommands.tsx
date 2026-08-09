@@ -272,9 +272,9 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
       return (
         <div
           className={cn(
-            "z-[var(--z-popover)] w-64 rounded-[var(--r-lg)]",
-            "border border-line bg-surface shadow-[var(--elev-2)]",
-            "overflow-hidden",
+            "z-[var(--z-popover)] w-[min(340px,calc(100vw-24px))] rounded-2xl",
+            "border border-line/80 bg-surface/95 shadow-[var(--elev-float)] backdrop-blur-xl",
+            "overflow-hidden ring-1 ring-white/50",
           )}
           role="listbox"
           aria-label="Comandos de barra"
@@ -289,9 +289,9 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
     return (
       <div
         className={cn(
-          "z-[var(--z-popover)] w-64 rounded-[var(--r-lg)]",
-          "border border-line bg-surface shadow-[var(--elev-2)]",
-          "overflow-hidden",
+          "z-[var(--z-popover)] w-[min(340px,calc(100vw-24px))] rounded-2xl",
+          "border border-line/80 bg-surface/95 shadow-[var(--elev-float)] backdrop-blur-xl",
+          "overflow-hidden ring-1 ring-white/50",
         )}
         role="listbox"
         aria-label="Comandos de barra"
@@ -300,9 +300,9 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
           <div key={secao}>
             <div
               className={cn(
-                "px-[var(--s-5)] py-[var(--s-3)]",
-                "text-[length:10px] font-semibold uppercase tracking-wider",
-                "text-text-muted",
+                "border-t border-line/50 px-4 pb-1.5 pt-3 first:border-t-0",
+                "text-[9px] font-bold uppercase tracking-[.11em]",
+                "text-text-faint",
               )}
               aria-hidden="true"
             >
@@ -319,17 +319,17 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
                   aria-selected={ativo}
                   onClick={() => command(item)}
                   className={cn(
-                    "flex w-full items-center gap-[var(--s-5)] px-[var(--s-5)] py-[var(--s-3)]",
-                    "text-left transition-colors duration-[var(--dur-2)]",
+                    "mx-1.5 mb-1 flex w-[calc(100%-12px)] items-center gap-3 rounded-xl px-3 py-2.5",
+                    "text-left transition-all duration-150",
                     ativo
-                      ? "bg-accent text-accent-on"
-                      : "text-text hover:bg-surface-hover",
+                      ? "bg-accent-soft text-text shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent),transparent_78%)]"
+                      : "text-text hover:bg-surface-raised",
                   )}
                 >
                   <Icone
                     icon={item.icone}
                     size="md"
-                    className={ativo ? "text-accent-on" : "text-text-muted"}
+                    className={ativo ? "text-accent" : "text-text-muted"}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[length:var(--fs-14)] font-[var(--fw-medium)] leading-[var(--lh-ui)]">
@@ -338,7 +338,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
                     <p
                       className={cn(
                         "text-[length:var(--fs-12)] leading-[var(--lh-ui)]",
-                        ativo ? "opacity-75" : "text-text-muted",
+                        ativo ? "text-accent/80" : "text-text-muted",
                       )}
                     >
                       {item.descricao}

@@ -72,8 +72,8 @@ interface InternalChartProps {
   readonly width: number;
   readonly height: number;
   readonly margin: typeof MARGEM;
-  readonly eixoX?: string;
-  readonly eixoY?: string;
+  readonly eixoX?: string | undefined;
+  readonly eixoY?: string | undefined;
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,7 +163,7 @@ function GraficoBarras({ dados, width, height, margin, eixoX, eixoY }: InternalC
           <AxisBottom
             top={innerHeight}
             scale={xScale}
-            label={eixoX}
+            {...(eixoX != null ? { label: eixoX } : {})}
             tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11, textAnchor: 'middle' as const }}
             labelProps={{ fill: 'var(--text-muted)', fontSize: 12 }}
             stroke="var(--line)"
@@ -171,7 +171,7 @@ function GraficoBarras({ dados, width, height, margin, eixoX, eixoY }: InternalC
           />
           <AxisLeft
             scale={yScale}
-            label={eixoY}
+            {...(eixoY != null ? { label: eixoY } : {})}
             tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11, textAnchor: 'end' as const }}
             labelProps={{ fill: 'var(--text-muted)', fontSize: 12 }}
             stroke="var(--line)"
@@ -181,7 +181,11 @@ function GraficoBarras({ dados, width, height, margin, eixoX, eixoY }: InternalC
       </svg>
 
       {tooltipOpen && tooltipData && (
-        <TooltipWithBounds left={tooltipLeft} top={tooltipTop} style={TOOLTIP_STYLE}>
+        <TooltipWithBounds
+          {...(tooltipLeft != null ? { left: tooltipLeft } : {})}
+          {...(tooltipTop != null ? { top: tooltipTop } : {})}
+          style={TOOLTIP_STYLE}
+        >
           <TooltipConteudo data={tooltipData} />
         </TooltipWithBounds>
       )}
@@ -260,7 +264,7 @@ function GraficoLinha({ dados, width, height, margin, eixoX, eixoY }: InternalCh
           <AxisBottom
             top={innerHeight}
             scale={xScale}
-            label={eixoX}
+            {...(eixoX != null ? { label: eixoX } : {})}
             tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11, textAnchor: 'middle' as const }}
             labelProps={{ fill: 'var(--text-muted)', fontSize: 12 }}
             stroke="var(--line)"
@@ -268,7 +272,7 @@ function GraficoLinha({ dados, width, height, margin, eixoX, eixoY }: InternalCh
           />
           <AxisLeft
             scale={yScale}
-            label={eixoY}
+            {...(eixoY != null ? { label: eixoY } : {})}
             tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11, textAnchor: 'end' as const }}
             labelProps={{ fill: 'var(--text-muted)', fontSize: 12 }}
             stroke="var(--line)"
@@ -278,7 +282,11 @@ function GraficoLinha({ dados, width, height, margin, eixoX, eixoY }: InternalCh
       </svg>
 
       {tooltipOpen && tooltipData && (
-        <TooltipWithBounds left={tooltipLeft} top={tooltipTop} style={TOOLTIP_STYLE}>
+        <TooltipWithBounds
+          {...(tooltipLeft != null ? { left: tooltipLeft } : {})}
+          {...(tooltipTop != null ? { top: tooltipTop } : {})}
+          style={TOOLTIP_STYLE}
+        >
           <TooltipConteudo data={tooltipData} />
         </TooltipWithBounds>
       )}
@@ -349,7 +357,11 @@ function GraficoPizza({
       </svg>
 
       {tooltipOpen && tooltipData && (
-        <TooltipWithBounds left={tooltipLeft} top={tooltipTop} style={TOOLTIP_STYLE}>
+        <TooltipWithBounds
+          {...(tooltipLeft != null ? { left: tooltipLeft } : {})}
+          {...(tooltipTop != null ? { top: tooltipTop } : {})}
+          style={TOOLTIP_STYLE}
+        >
           <TooltipConteudo data={tooltipData} />
         </TooltipWithBounds>
       )}
@@ -411,7 +423,7 @@ export function GraficoExplorar({
   return (
     <div
       className={cn(
-        'rounded-[var(--r-lg)] border border-[var(--line)] bg-[var(--surface)]',
+        'rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-elev-1',
         className,
       )}
       role="img"

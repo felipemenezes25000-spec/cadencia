@@ -199,9 +199,9 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
   }
 
   return (
-    <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden md:grid-cols-[1fr_320px]">
+    <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden bg-surface md:grid-cols-[1fr_320px]">
       {/* Cabecalho */}
-      <header className="col-span-full flex items-center gap-3 border-b border-line bg-surface px-4 py-3">
+      <header className="col-span-full flex min-h-[64px] items-center gap-3 border-b border-line/70 bg-surface/95 px-4 py-3 backdrop-blur">
         {/* Botao voltar (mobile) */}
         {p.aoVoltar != null && (
           <button
@@ -221,7 +221,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           <button
             type="button"
             onClick={p.aoVincularPaciente}
-            className="ml-auto cursor-pointer rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-accent transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
+            className="ml-auto cursor-pointer rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-2 py-1 text-[13px] text-accent transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
           >
             Vincular a paciente
           </button>
@@ -270,7 +270,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
       {/* Painel de contexto */}
       <aside
         aria-label="Contexto do paciente"
-        className="overflow-y-auto border-l border-line bg-surface p-4 text-[13px] md:col-start-2 md:row-[2/4]"
+        className="overflow-y-auto border-l border-line bg-surface-sunken/55 p-4 text-[13px] md:col-start-2 md:row-[2/4]"
       >
         {contexto !== null && (
           <div className="grid gap-4">
@@ -326,12 +326,12 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
       </aside>
 
       {/* Input de mensagem */}
-      <div className="col-start-1 flex items-end gap-2 border-t border-line bg-surface p-3">
+      <div className="col-start-1 flex items-end gap-2 border-t border-line bg-surface/95 p-3 backdrop-blur">
         <button
           type="button"
           aria-label="Template"
           onClick={p.aoSelecionarTemplate}
-          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-surface text-sm text-text-muted transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 text-sm text-text-muted transition-colors duration-[var(--dur-2)] hover:bg-surface-hover"
         >
           T
         </button>
@@ -342,7 +342,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={aoTeclarInput}
           rows={1}
-          className="min-h-9 max-h-[120px] flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 font-sans text-sm text-text outline-none transition-colors duration-[var(--dur-2)] focus:border-accent"
+          className="min-h-9 max-h-[120px] flex-1 resize-none rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 py-2 font-sans text-sm text-text outline-none transition-colors duration-[var(--dur-2)] focus:border-accent"
         />
         <button
           type="button"
@@ -350,7 +350,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           onClick={() => {
             void enviar();
           }}
-          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-accent text-sm text-accent-on transition-colors duration-[var(--dur-2)] hover:bg-accent-hover"
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-none bg-accent text-sm text-accent-on transition-colors duration-[var(--dur-2)] hover:bg-accent-hover"
         >
           &gt;
         </button>

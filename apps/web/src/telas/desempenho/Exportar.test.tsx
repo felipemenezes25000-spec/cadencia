@@ -1,10 +1,10 @@
 // apps/web/src/telas/desempenho/Exportar.test.tsx
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { Exportar, type ExportarProps } from './Exportar';
-import type { SavedView, ExportFormat, DataFreshness } from './types';
+import type { SavedView, DataFreshness } from './types';
 
 const VIEWS: SavedView[] = [
   { viewId: 'v1', name: 'Receita por procedimento',

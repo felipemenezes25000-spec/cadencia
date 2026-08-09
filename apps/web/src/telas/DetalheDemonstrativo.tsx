@@ -82,7 +82,7 @@ export function DetalheDemonstrativo({ aberto, titulo, itens, aoFechar }: Detalh
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="border-b border-line">
+              <tr className="border-b border-line/70">
                 <th className="text-left py-2 px-1.5 font-medium text-text-muted">
                   Guia
                 </th>
@@ -100,7 +100,7 @@ export function DetalheDemonstrativo({ aberto, titulo, itens, aoFechar }: Detalh
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-line/65">
               {itens.map((item) => {
                 const temGlosa = item.glosadoCentavos > 0;
                 return (

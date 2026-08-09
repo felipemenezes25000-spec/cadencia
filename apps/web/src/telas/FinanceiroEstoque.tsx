@@ -58,12 +58,12 @@ function EstoqueSkeleton() {
         <Skeleton variant="text" width="150px" height="20px" />
       </div>
       {/* Tabela skeleton */}
-      <div className="rounded-lg border border-line overflow-hidden">
-        <div className="border-b border-line bg-surface-raised px-4 py-2.5">
+      <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+        <div className="border-b border-line/70/70 bg-surface-sunken/45 px-4 py-2.5">
           <Skeleton variant="text" width="80%" height="16px" />
         </div>
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="border-b border-line px-4 py-3">
+          <div key={i} className="border-b border-line/70 px-4 py-3">
             <Skeleton variant="table-row" />
           </div>
         ))}
@@ -171,7 +171,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
             onChange={(e) => setCategoriaFiltro(e.target.value)}
             aria-label="Filtrar por categoria"
             className={cn(
-              'h-9 rounded-md border border-line bg-surface px-3 text-sm text-text',
+              'h-9 rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text',
               'transition-colors duration-[var(--dur-2)]',
               'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',
             )}
@@ -201,7 +201,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
           <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-surface-raised">
+                <tr className="border-b border-line/70/70 bg-surface-sunken/45">
                   <th className="px-4 py-2.5 text-left font-medium text-text-muted">
                     Produto
                   </th>
@@ -219,7 +219,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-line/65">
                 {produtosFiltrados.map((pr) => (
                   <tr
                     key={pr.id}
@@ -266,7 +266,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
           <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-surface-raised">
+                <tr className="border-b border-line/70/70 bg-surface-sunken/45">
                   <th className="px-4 py-2.5 text-left font-medium text-text-muted">
                     Produto
                   </th>
@@ -284,7 +284,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-line/65">
                 {dados.movimentacoes.map((m) => (
                   <tr
                     key={m.id}

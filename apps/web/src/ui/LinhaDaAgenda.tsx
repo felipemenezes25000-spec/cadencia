@@ -12,6 +12,7 @@ import {
   CurrencyDollar,
 } from "@phosphor-icons/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import type { ReactNode } from 'react';
 
 /* ── Dados do agendamento ──────────────────────────────────────────────── */
 
@@ -35,6 +36,7 @@ interface PropsNova {
   readonly agendamento: Agendamento;
   readonly onClick?: () => void;
   readonly className?: string;
+  readonly acoes?: ReactNode;
 }
 
 interface PropsLegada {
@@ -50,6 +52,7 @@ interface PropsLegada {
   readonly teleconsulta?: boolean;
   readonly aoAbrir?: () => void;
   readonly className?: string;
+  readonly acoes?: ReactNode;
 }
 
 export type LinhaDaAgendaProps = PropsNova | PropsLegada;
@@ -76,11 +79,12 @@ interface Normalizado {
   ag: Agendamento;
   onClick: (() => void) | undefined;
   className: string | undefined;
+  acoes: ReactNode | undefined;
 }
 
 function normalizar(props: LinhaDaAgendaProps): Normalizado {
   if ('agendamento' in props) {
-    return { ag: props.agendamento, onClick: props.onClick, className: props.className };
+    return { ag: props.agendamento, onClick: props.onClick, className: props.className, acoes: props.acoes };
   }
   const ag: Agendamento = {
     horario: props.hora,
@@ -94,7 +98,7 @@ function normalizar(props: LinhaDaAgendaProps): Normalizado {
   if (props.teleconsulta !== undefined) ag.teleconsulta = props.teleconsulta;
   if (props.primeiraVez !== undefined) ag.primeiraVez = props.primeiraVez;
   if (props.cadastroPreliminar !== undefined) ag.cadastroPreliminar = props.cadastroPreliminar;
-  return { ag, onClick: props.aoAbrir, className: props.className };
+  return { ag, onClick: props.aoAbrir, className: props.className, acoes: props.acoes };
 }
 
 /* ── Item do menu ──────────────────────────────────────────────────────── */
@@ -178,7 +182,7 @@ function Badge({ texto, cor }: { texto: string; cor: string }) {
 /* ── Componente principal ──────────────────────────────────────────────── */
 
 export function LinhaDaAgenda(props: LinhaDaAgendaProps) {
-  const { ag, onClick, className } = normalizar(props);
+  const { ag, onClick, className, acoes } = normalizar(props);
 
   return (
     <li
@@ -188,10 +192,10 @@ export function LinhaDaAgenda(props: LinhaDaAgendaProps) {
         "grid items-center gap-3",
         "grid-cols-[60px_1fr_auto_auto_auto]",
         "max-sm:grid-cols-[50px_1fr_auto_auto]",
-        "px-4 py-3 min-h-[44px]",
+        "px-4 py-3 min-h-[58px]",
         "border-l-[3px] border-b border-b-line",
         COR_BORDA[ag.status],
-        "bg-surface hover:bg-surface-hover transition-colors-fast",
+        "bg-surface/88 hover:bg-surface-hover transition-colors-fast",
         onClick ? "cursor-pointer" : "cursor-default",
         className,
       )}
@@ -236,6 +240,15 @@ export function LinhaDaAgenda(props: LinhaDaAgendaProps) {
 
       {/* Menu de acoes */}
       <AcoesMenu />
+
+      {acoes && (
+        <div
+          className="col-start-2 col-end-[-1] -mt-1 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2 max-sm:col-start-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {acoes}
+        </div>
+      )}
     </li>
   );
 }

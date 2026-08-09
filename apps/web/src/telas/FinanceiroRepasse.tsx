@@ -92,12 +92,12 @@ function RepasseSkeleton() {
         ))}
       </div>
       {/* Tabela skeleton */}
-      <div className="rounded-lg border border-line overflow-hidden">
-        <div className="border-b border-line bg-surface-raised px-4 py-2.5">
+      <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+        <div className="border-b border-line/70/70 bg-surface-sunken/45 px-4 py-2.5">
           <Skeleton variant="text" width="80%" height="16px" />
         </div>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="border-b border-line px-4 py-3">
+          <div key={i} className="border-b border-line/70 px-4 py-3">
             <Skeleton variant="table-row" />
           </div>
         ))}
@@ -200,7 +200,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
     return (
       <div className="space-y-6">
         {/* Seletor de periodo */}
-        <div className="flex items-center justify-center gap-2" aria-label="Seletor de periodo">
+        <div className="flex items-center justify-center gap-2" role="group" aria-label="Seletor de periodo">
           <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mes anterior">
             {'​'}
           </Botao>
@@ -219,7 +219,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
   return (
     <div className="space-y-6">
       {/* Seletor de periodo */}
-      <div className="flex items-center justify-center gap-2" aria-label="Seletor de periodo">
+      <div className="flex items-center justify-center gap-2" role="group" aria-label="Seletor de periodo">
         <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mes anterior">
           {'​'}
         </Botao>
@@ -247,7 +247,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
           {dados.profissionais.map((pr) => (
             <div
               key={pr.id}
-              className="rounded-lg border border-line bg-surface p-4"
+              className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4"
             >
               <div className="mb-3 flex items-center gap-3">
                 <div
@@ -283,10 +283,10 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
 
       {/* Tabela detalhada */}
       <section aria-label="Repasse por profissional">
-        <div className="overflow-x-auto rounded-lg border border-line">
+        <div className="overflow-x-auto rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line bg-surface-raised">
+              <tr className="border-b border-line/70/70 bg-surface-sunken/45">
                 <th className="px-4 py-2.5 text-left font-medium text-text-muted">
                   Profissional
                 </th>
@@ -307,7 +307,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-line/65">
               {dados.profissionais.map((pr) => (
                 <tr
                   key={pr.id}

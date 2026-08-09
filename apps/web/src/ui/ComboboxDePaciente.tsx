@@ -183,7 +183,7 @@ export function ComboboxDePaciente({
       <div className={cn('relative', className)}>
         <label
           htmlFor={`${id}-input`}
-          className="mb-[var(--s-2)] block text-[length:var(--fs-12)] font-medium leading-tight text-text-muted"
+          className="mb-1.5 block text-[10px] font-bold uppercase tracking-[.08em] leading-tight text-text-muted"
         >
           {rotulo}
         </label>
@@ -191,11 +191,11 @@ export function ComboboxDePaciente({
         <Popover.Anchor asChild>
           <div
             className={cn(
-              'flex items-center gap-2 rounded-[var(--r-md)] border px-3',
-              'transition-colors duration-[var(--dur-2)]',
+              'relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-xl border bg-surface/95 px-3.5 shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.55),var(--elev-1)]',
+              'transition-all duration-[var(--dur-2)] after:pointer-events-none after:absolute after:inset-x-3 after:bottom-0 after:h-px after:scale-x-0 after:bg-[var(--aurora)] after:transition-transform focus-within:after:scale-x-100',
               erro
                 ? 'border-danger'
-                : 'border-line focus-within:border-accent focus-within:ring-1 focus-within:ring-accent',
+                : 'border-line/80 hover:border-line-strong focus-within:border-accent/60 focus-within:ring-[3px] focus-within:ring-accent/10',
               disabled && 'cursor-not-allowed opacity-50',
             )}
           >
@@ -222,7 +222,7 @@ export function ComboboxDePaciente({
               onKeyDown={onKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent py-2 text-[length:var(--fs-14)] text-text outline-none placeholder:text-text-faint disabled:cursor-not-allowed"
+              className="min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-text outline-none placeholder:font-normal placeholder:text-text-faint disabled:cursor-not-allowed"
             />
             {carregando && (
               <Icone
@@ -244,7 +244,7 @@ export function ComboboxDePaciente({
           aria-label="Resultados de pacientes"
           className={cn(
             'z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)]',
-            'overflow-hidden rounded-[var(--r-md)] border border-line bg-surface shadow-elev-2',
+            'overflow-hidden rounded-2xl border border-line/80 bg-surface/96 shadow-elev-3 backdrop-blur-2xl',
           )}
           sideOffset={4}
         >
@@ -252,7 +252,7 @@ export function ComboboxDePaciente({
             id={listboxId}
             role="listbox"
             aria-label="Resultados de pacientes"
-            className="max-h-60 overflow-y-auto py-1"
+            className="max-h-72 overflow-y-auto p-1.5"
           >
             {opcoes.map((op, i) => {
               if ('_criar' in op) {
@@ -264,11 +264,11 @@ export function ComboboxDePaciente({
                     aria-selected={ativo === i}
                     onClick={() => escolher(i)}
                     className={cn(
-                      'flex cursor-pointer items-center gap-2 border-t border-line px-3 py-2 text-sm',
+                      'mt-1 flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-accent/25 px-3 py-2.5 text-sm font-semibold',
                       'transition-colors duration-[var(--dur-1)]',
                       ativo === i
-                        ? 'bg-accent text-accent-on'
-                        : 'text-accent hover:bg-surface-hover',
+                        ? 'bg-accent text-accent-on shadow-elev-1'
+                        : 'bg-accent-soft/45 text-accent hover:bg-accent-soft',
                     )}
                   >
                     <Icone icon={UserPlus} size="sm" />
@@ -284,20 +284,20 @@ export function ComboboxDePaciente({
                   aria-selected={ativo === i}
                   onClick={() => escolher(i)}
                   className={cn(
-                    'flex cursor-pointer items-center gap-3 px-3 py-2 text-sm',
+                    'flex min-h-[58px] cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm',
                     'transition-colors duration-[var(--dur-1)]',
                     ativo === i
-                      ? 'bg-accent text-accent-on'
+                      ? 'bg-accent text-accent-on shadow-elev-1'
                       : 'text-text hover:bg-surface-hover',
                   )}
                 >
                   {/* Avatar com iniciais */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[13px] border border-accent/10 bg-accent-soft text-[11px] font-bold text-accent">
                     {iniciais(op.displayName)}
                   </div>
                   {/* Nome e detalhes */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">
+                    <p className="truncate font-semibold tracking-[-.01em]">
                       <HighlightMatch texto={op.displayName} busca={termo} />
                     </p>
                     {op.hasSocialName && (

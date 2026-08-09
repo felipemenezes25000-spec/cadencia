@@ -86,13 +86,6 @@ function formatarRotulo(valor: number, tipo: string): string {
   return `${tipo === 'negativo' ? '-' : ''}R$ ${grouped}`;
 }
 
-function formatarValorLegado(centavos: number): string {
-  const abs = Math.abs(centavos);
-  const reais = Math.trunc(abs / 100);
-  const grouped = String(reais).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${centavos < 0 ? '-' : '+'}R$ ${grouped}`;
-}
-
 function formatarMoeda(centavos: number): string {
   const abs = Math.abs(centavos);
   const reais = Math.trunc(abs / 100);
@@ -340,7 +333,7 @@ export function WaterfallChart(props: WaterfallChartProps) {
   const { dados, titulo, altura = 300, className } = props;
 
   return (
-    <div className={cn('rounded-lg border border-line bg-surface', className)}>
+    <div className={cn('rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1', className)}>
       {titulo != null && (
         <h3 className="m-0 px-[var(--s-4)] pt-[var(--s-4)] text-sm font-semibold text-text">
           {titulo}

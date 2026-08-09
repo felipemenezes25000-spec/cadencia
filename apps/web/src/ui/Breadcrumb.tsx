@@ -68,27 +68,27 @@ export function Breadcrumb({ itens: itensManuais, className }: BreadcrumbProps) 
   return (
     <nav
       aria-label="Navegacao estrutural"
-      className={cn("flex items-center gap-1 text-sm", className)}
+      className={cn("flex items-center gap-1 text-[11px] font-medium", className)}
     >
-      <ol className="flex items-center gap-1">
+      <ol className="flex items-center gap-1.5">
         {itens.map((item, i) => (
-          <li key={i} className="flex items-center gap-1">
+          <li key={i} className="flex items-center gap-1.5">
             {i > 0 && (
               <Icone
                 icon={CaretRight}
                 size="sm"
-                className="text-[var(--text-soft)]"
+                className="text-text-faint"
               />
             )}
             {item.href ? (
               <Link
                 href={item.href}
-                className="text-[var(--text-soft)] hover:text-[var(--text)] transition-colors duration-[var(--dur-2)]"
+                className="rounded-md text-text-muted transition-colors duration-[var(--dur-2)] hover:text-accent"
               >
                 {item.rotulo}
               </Link>
             ) : (
-              <span className="text-[var(--text)] font-medium" aria-current="page">
+              <span className="text-text font-semibold" aria-current="page">
                 {item.rotulo}
               </span>
             )}

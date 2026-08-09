@@ -6,6 +6,7 @@ import { cn } from '../src/lib/cn';
 import { Providers } from './providers';
 import { BarraDeNavegacao } from '../src/ui/BarraDeNavegacao';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
+import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';
 
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -58,12 +59,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
 
         <Providers>
+          <ConnectivityStatus />
           <div className="flex min-h-screen">
             <BarraDeNavegacao />
 
             <main
               id="conteudo-principal"
-              className="flex-1 min-w-0 ml-[var(--nav-width,0px)] max-md:ml-0 pb-14 md:pb-0 transition-[margin-left] duration-200 ease-[var(--ease-in-out)]"
+              className="relative min-h-screen flex-1 min-w-0 ml-[var(--nav-width,0px)] max-md:ml-0 pb-[calc(var(--nav-height)+8px)] md:pb-0 transition-[margin-left] duration-200 ease-[var(--ease-in-out)]"
             >
               <ErrorBoundary>
                 {children}

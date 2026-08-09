@@ -164,7 +164,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
       {/* Totalizadores */}
       <div
         role="group" aria-label="Totalizadores de retornos" aria-live="polite"
-        className="flex rounded-md border border-line bg-surface overflow-hidden"
+        className="flex rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 overflow-hidden"
       >
         {ROTULOS_TOTAIS.map((t, i) => (
           <div
@@ -210,7 +210,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
             value={tipoFiltro}
             onChange={(e) => setTipoFiltro(e.target.value)}
             aria-label="Tipo"
-            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+            className="h-9 rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="analise">Analise</option>
@@ -226,7 +226,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
             value={operadoraFiltro}
             onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+            className="h-9 rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (
@@ -243,11 +243,11 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
         </div>
       ) : (
         <section aria-label="Demonstrativos importados">
-          <div className="rounded-lg border border-line overflow-hidden">
+          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line bg-surface-raised">
+                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Lote</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Operadora</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Data retorno</th>
@@ -257,7 +257,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-line/65">
                   {demonstrativosFiltrados.map((d) => {
                     const chip = TIPO_CHIP[d.tipo];
                     return (

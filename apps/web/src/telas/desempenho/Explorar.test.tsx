@@ -4,7 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { Explorar, type ExplorarProps } from './Explorar';
-import type { ExploreRow, SavedView, ExploreFilter, ChartKind, DataFreshness } from './types';
+import type { ExploreRow, SavedView, DataFreshness, ChartKind } from './types';
 
 const ROWS: ExploreRow[] = [
   { key: 'r1', label: 'Consulta', valueCents: 1500000, count: 60 },
@@ -27,7 +27,7 @@ function montar(over: Partial<ExplorarProps> = {}) {
     aoMudarFiltros: vi.fn(),
     aoMudarGrafico: vi.fn(),
     carregarDados: vi.fn(async () => ({ rows: ROWS, freshness: FRESHNESS })),
-    aoSalvarVisao: vi.fn(async () => ({ viewId: 'v3', name: 'Nova visao', filters: {}, chartKind: 'bar' })),
+    aoSalvarVisao: vi.fn(async () => ({ viewId: 'v3', name: 'Nova visao', filters: {}, chartKind: 'bar' as ChartKind })),
     aoSelecionarVisao: vi.fn(),
     ...over,
   };

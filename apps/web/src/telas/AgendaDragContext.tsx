@@ -88,12 +88,12 @@ export function AgendaDragContext({
         {activeAgendamento ? (
           <div
             data-testid="drag-overlay"
-            className="rounded-[var(--r-md)] border border-[var(--accent)] bg-[var(--surface)] px-3 py-2 shadow-[var(--elev-2)] opacity-90 pointer-events-none"
+            className="pointer-events-none min-w-[210px] rounded-2xl border border-accent/35 bg-surface/95 px-3.5 py-3 shadow-[var(--elev-float)] backdrop-blur-xl ring-1 ring-white/50"
           >
-            <p className="text-[var(--fs-14)] font-[var(--fw-medium)] text-[var(--text)]">
+            <div className="mb-2 h-0.5 w-10 rounded-full bg-[linear-gradient(90deg,var(--brand-cyan),var(--accent),var(--brand-violet))]" /><p className="text-sm font-semibold tracking-[-.02em] text-text">
               {activeAgendamento.displayName}
             </p>
-            <p className="text-[var(--fs-12)] text-[var(--text-muted)]">
+            <p className="mt-0.5 text-[11px] font-medium text-text-muted">
               {formatarHorario(activeAgendamento.startsAt)}
             </p>
           </div>

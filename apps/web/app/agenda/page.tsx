@@ -26,6 +26,8 @@ export default function PaginaAgenda() {
         `/v1/agenda/dia?dia=${d}`, { clinicId, csrfToken })}
       aoAbrirCompositor={() => {}}
       aoMover={async () => {}}
+      aoConfirmar={async () => {}}
+      aoCobrar={() => {}}
     />
   );
 }

@@ -139,7 +139,7 @@ export function FaixaDeContadores(props: FaixaDeContadoresProps) {
         aria-label="Contadores do dia"
         aria-live="polite"
         className={cn(
-          'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3',
+          'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5',
           props.className,
         )}
       >
@@ -150,19 +150,19 @@ export function FaixaDeContadores(props: FaixaDeContadoresProps) {
               onClick={() => handleClicar?.(c.id)}
               aria-pressed={ativo === c.id}
               className={cn(
-                'flex flex-col items-start gap-1 rounded-lg border p-3',
-                'transition-colors-fast cursor-pointer',
-                'min-h-11',
+                'cadencia-metric group relative flex min-h-[94px] flex-col items-start justify-center gap-1 overflow-hidden p-4 text-left',
+                'cursor-pointer focus-visible:shadow-[var(--focus-ring)]',
                 ativo === c.id
-                  ? 'border-accent bg-accent-soft'
-                  : 'border-line bg-surface hover:bg-surface-raised',
+                  ? 'border-accent/35 bg-accent-soft ring-1 ring-accent/10'
+                  : 'hover:bg-surface-raised',
               )}
             >
               <AnimatedNumber
                 value={c.valor}
-                className="text-2xl font-bold text-text tabular-nums"
+                className="relative z-[1] text-[26px] font-semibold leading-none tracking-[-0.055em] text-text tabular-nums"
               />
-              <span className="text-xs text-text-muted">{c.rotulo}</span>
+              <span className="relative z-[1] text-[10px] font-bold uppercase tracking-[.095em] text-text-muted">{c.rotulo}</span>
+              <span aria-hidden className={cn('absolute right-3 top-3 h-2 w-2 rounded-full opacity-70', c.id === 'faltas' ? 'bg-danger' : c.id === 'atendidos' ? 'bg-ok' : c.id === 'aguardando' ? 'bg-warn' : 'bg-accent')} />
               {c.cor && (
                 <div
                   className={cn('h-0.5 w-8 rounded-full mt-1', corClasses[c.cor])}

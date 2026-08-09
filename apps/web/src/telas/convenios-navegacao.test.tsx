@@ -1,9 +1,18 @@
 // apps/web/src/telas/convenios-navegacao.test.tsx
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { FinanceiroLayout } from './FinanceiroLayout';
+
+/** Wrapper com TooltipProvider exigido pelo Radix Tooltip. */
+function Wrapper({ children }: { children: ReactNode }) {
+  return (
+    <RadixTooltip.Provider delayDuration={0}>{children}</RadixTooltip.Provider>
+  );
+}
 import { ConveniosLayout, type ContadoresConvenios } from './ConveniosLayout';
 import { ConveniosAFaturar, type AFaturarDados } from './ConveniosAFaturar';
 import { ConveniosLotes, type LotesDados } from './ConveniosLotes';
@@ -157,6 +166,7 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
           />
         </ConveniosLayout>
       </FinanceiroLayout>,
+      { wrapper: Wrapper },
     );
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
     expect(screen.getByRole('button', { name: /Nova operadora/i })).toBeVisible();

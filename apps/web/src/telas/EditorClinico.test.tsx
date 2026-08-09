@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { describe, expect, it, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { EditorClinico } from "./EditorClinico";

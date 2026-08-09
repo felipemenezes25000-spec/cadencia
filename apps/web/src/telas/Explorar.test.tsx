@@ -71,7 +71,7 @@ describe('tela Explorar', () => {
   });
 
   it('exibe tabela de resultados apos consulta', async () => {
-    const props = montar();
+    montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(screen.getByRole('table')).toBeVisible());
     expect(screen.getByText('Carlos')).toBeVisible();
@@ -79,7 +79,7 @@ describe('tela Explorar', () => {
   });
 
   it('exibe cabecalhos de coluna na tabela', async () => {
-    const props = montar();
+    montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(screen.getByRole('table')).toBeVisible());
     expect(screen.getByRole('columnheader', { name: /Data/ })).toBeVisible();

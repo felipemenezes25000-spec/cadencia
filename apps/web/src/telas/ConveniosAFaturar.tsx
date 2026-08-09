@@ -65,12 +65,12 @@ function TabelaSkeleton() {
     <div
       role="status"
       aria-label="Carregando guias..."
-      className="rounded-lg border border-line overflow-hidden"
+      className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1"
     >
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line bg-surface-raised">
+            <tr className="border-b border-line/70/70 bg-surface-sunken/45">
               <th className="px-4 py-2.5 w-10">
                 <Skeleton variant="text" width="16px" height="16px" />
               </th>
@@ -82,7 +82,7 @@ function TabelaSkeleton() {
               <th className="px-4 py-2.5 text-left"><Skeleton variant="text" width="80px" /></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody className="divide-y divide-line/65">
             {Array.from({ length: 5 }, (_, i) => (
               <tr key={i}>
                 <td className="px-4 py-3"><Skeleton variant="text" width="16px" height="16px" /></td>
@@ -105,7 +105,7 @@ function TabelaSkeleton() {
 
 function EstadoVazio() {
   return (
-    <div className="rounded-lg border border-line bg-surface p-8 text-center">
+    <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-8 text-center">
       <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
       <p className="text-sm font-medium text-text">Nenhuma guia pendente</p>
       <p className="mt-1 text-xs text-text-muted">
@@ -187,7 +187,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             aria-label="Operadora"
             className={cn(
               "h-8 px-[var(--s-4)]",
-              "border border-line rounded-md",
+              "rounded-lg border border-line",
               "bg-surface text-text text-sm",
               "outline-none focus:border-accent focus:ring-1 focus:ring-accent",
             )}
@@ -215,7 +215,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             aria-label="Status"
             className={cn(
               "h-8 px-[var(--s-4)]",
-              "border border-line rounded-md",
+              "rounded-lg border border-line",
               "bg-surface text-text text-sm",
               "outline-none focus:border-accent focus:ring-1 focus:ring-accent",
             )}
@@ -252,7 +252,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
         <div
           className={cn(
             "flex items-center justify-between",
-            "rounded-lg bg-accent-soft border border-accent/20 p-3",
+            "rounded-xl border border-accent/20 bg-accent-soft p-3",
           )}
         >
           <span className="text-sm text-text">
@@ -280,11 +280,11 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
       ) : (
         /* Tabela de guias */
         <section aria-label="Guias a faturar">
-          <div className="rounded-lg border border-line overflow-hidden">
+          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line bg-surface-raised">
+                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
                     <th className="px-4 py-2.5 w-10">
                       <input
                         type="checkbox"
@@ -316,7 +316,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-line/65">
                   {guias.map((g) => (
                     <tr
                       key={g.id}
