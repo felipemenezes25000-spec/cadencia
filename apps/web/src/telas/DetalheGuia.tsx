@@ -82,7 +82,7 @@ const CAMPOS_AJUSTAVEIS: readonly { value: string; label: string }[] = [
 
 function LinhaInfo({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
   return (
-    <div className="flex justify-between py-1 border-b border-line/70">
+    <div className="flex justify-between py-1 border-b border-line">
       <span className="text-xs text-text-muted uppercase tracking-[0.04em]">
         {rotulo}
       </span>
@@ -149,11 +149,11 @@ export function DetalheGuia(p: DetalheGuiaProps) {
         {/* Dados TISS */}
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-text">Dados TISS</h3>
-          <div className="overflow-x-auto rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1-raised p-3 font-mono text-xs">
+          <div className="overflow-x-auto rounded-lg border border-line bg-surface-raised p-3 font-mono text-xs">
             <div className="grid gap-0">
               <LinhaInfo rotulo="Carteira" valor={p.guia.numeroCarteira} />
               <LinhaInfo rotulo="CNES" valor={p.guia.cnes} />
-              <div className="flex justify-between py-1 border-b border-line/70">
+              <div className="flex justify-between py-1 border-b border-line">
                 <span className="text-xs text-text-muted uppercase tracking-[0.04em]">
                   Conselho
                 </span>
@@ -175,7 +175,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
             Ajustar
           </Botao>
         ) : (
-          <div className="grid gap-2 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1-sunken p-3">
+          <div className="grid gap-2 rounded-xl border border-line bg-surface-sunken p-3">
             <div className="grid gap-1">
               <label
                 htmlFor="ajuste-campo"
@@ -189,7 +189,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
                 onChange={(e) => setCampoAlterado(e.target.value)}
                 aria-label="Campo alterado"
                 className={cn(
-                  'h-9 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-2',
+                  'h-9 rounded-lg border border-line bg-surface px-2',
                   'bg-surface text-text text-sm',
                   'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
                 )}
@@ -221,7 +221,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
                 required
                 rows={3}
                 className={cn(
-                  'rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-2.5 py-2',
+                  'rounded-lg border border-line bg-surface px-2.5 py-2',
                   'bg-surface text-text text-sm font-sans',
                   'resize-y',
                   'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
@@ -247,7 +247,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
             </h3>
             <ul className="list-none m-0 p-0 border border-line rounded-sm overflow-hidden bg-surface-sunken">
               {p.guia.ajustes.map((aj) => (
-                <li key={aj.id} className="px-2 py-1.5 border-b border-line/70 text-[length:var(--fs-13)]">
+                <li key={aj.id} className="px-2 py-1.5 border-b border-line text-[length:var(--fs-13)]">
                   <div className="flex gap-1.5 items-baseline">
                     <span className="font-mono tabular-nums text-accent">
                       {aj.campoAlterado}

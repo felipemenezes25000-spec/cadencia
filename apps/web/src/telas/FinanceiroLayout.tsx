@@ -74,10 +74,9 @@ export function FinanceiroLayout({
   };
 
   return (
-    <div className="cadencia-page p-4 space-y-6">
-      <PageHeader titulo="Financeiro" subtitulo="Caixa, recebíveis, repasses e convênios em uma leitura executiva." semBreadcrumb />
+    <div className="cadencia-page space-y-6 max-sm:p-4">
+      <PageHeader titulo="Financeiro" semBreadcrumb />
 
-      <div className="cadencia-panel overflow-hidden p-1.5 sm:p-2">
       <Tabs
         value={abaAtiva}
         onValueChange={(value: string) => {
@@ -104,7 +103,6 @@ export function FinanceiroLayout({
           </TabsList>
         </div>
       </Tabs>
-      </div>
 
       {/* Conteudo da rota filha */}
       {children}

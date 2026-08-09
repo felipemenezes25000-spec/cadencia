@@ -92,13 +92,11 @@ export function ConveniosLayout({
     : [];
 
   return (
-    <div className="space-y-6 p-4 sm:p-0">
+    <div className="space-y-6 max-sm:p-4">
       {/* h2 porque ConveniosLayout e aninhado dentro de FinanceiroLayout (h1) */}
-      <div>
-        <span className="cadencia-eyebrow">Ciclo TISS</span>
-        <h2 className="m-0 mt-1 text-xl font-semibold tracking-[-0.035em] text-text">Convenios</h2>
-        <p className="m-0 mt-1 text-xs text-text-muted">Do faturamento ao recurso, com pendências visíveis antes de virarem perda.</p>
-      </div>
+      <h2 className="text-lg font-semibold tracking-[-0.02em] text-text">
+        Convenios
+      </h2>
 
       {/* Faixa de contadores */}
       {contadores && (
@@ -115,18 +113,18 @@ export function ConveniosLayout({
               onClick={() => aoFiltrar?.(k)}
               aria-pressed={filtroAtivo === k}
               className={cn(
-                "cadencia-metric min-h-[94px] cursor-pointer",
+                "min-h-[88px] cursor-pointer rounded-xl border border-line bg-surface",
                 "grid gap-1 justify-items-start content-center px-4 py-3",
-                "text-text",
+                "text-text shadow-elev-1 transition-all-fast hover:-translate-y-px hover:shadow-elev-2",
                 filtroAtivo === k
                   ? "border-accent/35 bg-accent-soft ring-1 ring-accent/10"
-                  : "hover:bg-surface-raised",
+                  : "hover:border-line-strong hover:bg-surface-raised",
               )}
             >
-              <span className="text-[28px] font-semibold leading-tight tracking-[-0.055em] tabular-nums">
+              <span className="text-[26px] font-bold leading-tight tracking-[-0.04em] tabular-nums">
                 {contadores[k]}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-[.09em] text-text-muted">
+              <span className="text-[10px] font-semibold uppercase tracking-[.06em] text-text-muted">
                 {ROTULOS_CONTADORES[k]}
               </span>
             </button>

@@ -459,8 +459,13 @@ tbody tr { transition: background-color var(--dur-1) ease; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   CADENCIA PRIME — visual language v3
-   A calmer clinical canvas with unmistakable product character.
+   CADENCIA PRIME — visual language v3 (curated for the Aurora merge)
+   Brand atmosphere + glass panel highlights layered over the calmer
+   Aurora component set. Component-heavy PRIME classes (metric cards,
+   eyebrows, segmented controls, data-grid chrome, select/table polish)
+   were intentionally left out — Aurora's own components own that now.
+   The three cadencia-* classes below are kept because BarraDeNavegacao
+   (PRIME, retained for its command palette) still renders with them.
    ────────────────────────────────────────────────────────────────────── */
 :root {
   --brand-cyan: oklch(78% 0.135 190);
@@ -488,8 +493,8 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(900px 540px at 22% -12%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 67%),
-    radial-gradient(760px 520px at 92% 4%, color-mix(in oklab, var(--brand-cyan) 10%, transparent), transparent 65%),
+    radial-gradient(900px 540px at 22% -12%, color-mix(in oklab, var(--accent) 7%, transparent), transparent 67%),
+    radial-gradient(760px 520px at 92% 4%, color-mix(in oklab, var(--brand-cyan) 6%, transparent), transparent 65%),
     linear-gradient(180deg, color-mix(in oklab, var(--surface) 28%, transparent), transparent 42%);
 }
 
@@ -499,7 +504,7 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: .22;
+  opacity: .12;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");
   mix-blend-mode: multiply;
 }
@@ -507,12 +512,6 @@ body::after {
 .cadencia-page {
   position: relative;
   isolation: isolate;
-}
-
-.cadencia-shell-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  gap: clamp(18px, 2vw, 28px);
 }
 
 .cadencia-panel {
@@ -533,69 +532,6 @@ body::after {
   background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 25%, transparent), transparent);
 }
 
-.cadencia-panel-hero {
-  border: 1px solid color-mix(in oklab, var(--accent) 13%, var(--line));
-  background:
-    radial-gradient(680px 300px at 8% -10%, color-mix(in oklab, var(--brand-cyan) 12%, transparent), transparent 58%),
-    radial-gradient(560px 280px at 96% 0%, color-mix(in oklab, var(--brand-violet) 10%, transparent), transparent 62%),
-    color-mix(in oklab, var(--surface) 96%, transparent);
-  box-shadow: var(--elev-2);
-}
-
-.cadencia-metric {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-xl);
-  background: color-mix(in oklab, var(--surface) 93%, transparent);
-  box-shadow: var(--elev-1);
-  transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-2) ease, box-shadow var(--dur-2) var(--ease-out);
-}
-
-.cadencia-metric:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--accent) 24%, var(--line));
-  box-shadow: var(--elev-2);
-}
-
-.cadencia-metric::after {
-  content: '';
-  position: absolute;
-  inset: auto -20% -70% 15%;
-  height: 120px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--accent) 8%, transparent);
-  filter: blur(28px);
-  pointer-events: none;
-}
-
-.cadencia-aurora-line {
-  height: 2px;
-  background: var(--aurora);
-  box-shadow: 0 0 24px color-mix(in oklab, var(--accent) 26%, transparent);
-}
-
-.cadencia-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: .135em;
-  text-transform: uppercase;
-}
-
-.cadencia-eyebrow::before {
-  content: '';
-  width: 16px;
-  height: 2px;
-  border-radius: 99px;
-  background: var(--aurora);
-}
-
 .cadencia-icon-orb {
   display: grid;
   place-items: center;
@@ -604,32 +540,6 @@ body::after {
   background: var(--aurora-soft);
   color: var(--accent);
   box-shadow: inset 0 1px 0 color-mix(in oklab, white 75%, transparent);
-}
-
-.cadencia-data-grid {
-  overflow: hidden;
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-2xl);
-  background: color-mix(in oklab, var(--surface) 96%, transparent);
-  box-shadow: var(--elev-1);
-}
-
-.cadencia-sticky-rail {
-  position: sticky;
-  top: 16px;
-  align-self: start;
-}
-
-.cadencia-segmented {
-  display: inline-flex;
-  min-width: max-content;
-  align-items: center;
-  gap: 3px;
-  padding: 4px;
-  border: 1px solid var(--hairline);
-  border-radius: 13px;
-  background: color-mix(in oklab, var(--surface-sunken) 78%, transparent);
-  box-shadow: inset 0 1px 2px color-mix(in oklab, var(--text) 4%, transparent);
 }
 
 .cadencia-command-key {
@@ -648,126 +558,4 @@ body::after {
 
 .cadencia-mobile-dock {
   padding-bottom: max(10px, env(safe-area-inset-bottom));
-}
-
-@keyframes cadencia-float {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -4px, 0); }
-}
-
-@keyframes cadencia-breathe {
-  0%, 100% { opacity: .58; transform: scale(.96); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-
-@keyframes cadencia-enter {
-  from { opacity: 0; transform: translateY(10px) scale(.992); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.cadencia-enter {
-  animation: cadencia-enter 420ms var(--ease-out) both;
-}
-
-@media (max-width: 1100px) {
-  .cadencia-shell-grid { grid-template-columns: minmax(0, 1fr); }
-  .cadencia-sticky-rail { position: static; }
-}
-
-@media (max-width: 767px) {
-  .cadencia-page {
-    padding-top: 18px;
-    padding-bottom: calc(var(--nav-height) + 24px);
-  }
-
-  .cadencia-panel,
-  .cadencia-data-grid,
-  .cadencia-metric {
-    border-radius: 18px;
-  }
-
-  body::after { opacity: .12; }
-}
-
-/* ── PRIME interaction polish shared by every product surface ───────── */
-.cadencia-page :where(select) {
-  min-height: 42px;
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  background: color-mix(in oklab, var(--surface) 95%, transparent);
-  padding: 0 34px 0 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: inset 0 1px 0 color-mix(in oklab, white 62%, transparent);
-  transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
-}
-
-.cadencia-page :where(select:hover) {
-  border-color: var(--line-strong);
-  background: var(--surface);
-}
-
-.cadencia-page :where(select:focus-visible) {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 11%, transparent), var(--elev-1);
-}
-
-.cadencia-page :where(table) {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.cadencia-page :where(thead th) {
-  background: color-mix(in oklab, var(--surface-sunken) 68%, transparent);
-  color: var(--text-faint);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: .075em;
-  text-transform: uppercase;
-}
-
-.cadencia-page :where(tbody tr) {
-  transition: background-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
-}
-
-.cadencia-page :where(tbody tr:hover) {
-  background: color-mix(in oklab, var(--accent-soft) 34%, var(--surface));
-}
-
-.cadencia-page :where(input[type='date'], input[type='time'], input[type='number']) {
-  color-scheme: light;
-}
-
-.cadencia-page :where(button, a, input, select, textarea):focus-visible {
-  outline: none;
-}
-
-.cadencia-page :where([role='alert']) {
-  animation: cadencia-enter 260ms var(--ease-out) both;
-}
-
-::selection {
-  background: color-mix(in oklab, var(--accent) 24%, transparent);
-  color: var(--text);
-}
-
-* {
-  scrollbar-color: color-mix(in oklab, var(--text-faint) 34%, transparent) transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .cadencia-page :where(table) { font-size: 12px; }
-  .cadencia-page :where(th, td) { padding-left: 12px !important; padding-right: 12px !important; }
-  .cadencia-page :where(select) { min-height: 44px; }
 }

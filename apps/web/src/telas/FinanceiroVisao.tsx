@@ -126,14 +126,14 @@ function CardResumo({
   readonly variacao?: number;
 }) {
   return (
-    <div className="cadencia-metric group relative overflow-hidden p-4 sm:p-5">
+    <div className="group relative overflow-hidden rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-all-fast hover:-translate-y-px hover:border-line-strong hover:shadow-elev-2">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.09em] text-text-muted">{rotulo}</span>
+        <span className="text-xs font-medium text-text-muted">{rotulo}</span>
         <div className={cn('rounded-md p-1.5', corBgClasses[cor])}>
           <Icone icon={Icon} size="sm" className={corTextClasses[cor]} />
         </div>
       </div>
-      <p className="mt-2 text-[clamp(20px,2.4vw,28px)] font-semibold leading-none tracking-[-0.055em] text-text tabular-nums">{valor}</p>
+      <p className="text-[22px] font-bold tracking-[-0.04em] text-text tabular-nums">{valor}</p>
       {variacao != null && (
         <p
           className={cn(
@@ -167,7 +167,7 @@ function SeletorPeriodo({
   readonly onChange: (p: Periodo) => void;
 }) {
   return (
-    <div className="cadencia-segmented" role="group" aria-label="Seletor de periodo">
+    <div className="flex items-center gap-2" role="group" aria-label="Seletor de periodo">
       {(['dia', 'semana', 'mes'] as const).map((p) => (
         <button
           key={p}
@@ -175,10 +175,10 @@ function SeletorPeriodo({
           onClick={() => onChange(p)}
           aria-pressed={periodo === p}
           className={cn(
-            'rounded-[9px] px-3 py-1.5 text-xs font-semibold transition-all-fast',
+            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors-fast',
             periodo === p
-              ? 'bg-surface text-text shadow-elev-1 ring-1 ring-line/70'
-              : 'text-text-muted hover:text-text',
+              ? 'bg-accent text-accent-on'
+              : 'text-text-muted hover:bg-surface-raised hover:text-text',
           )}
         >
           {ROTULOS_PERIODO[p]}
@@ -194,74 +194,72 @@ function GraficoReceita({
   dados,
   periodo,
 }: {
-  readonly dados: readonly ReceitaVsDespesaItem[];
+  readonly dados: readonly DadosReceita[];
   readonly periodo: string;
 }) {
   if (dados.length === 0) return null;
 
   return (
-    <section className="cadencia-panel p-4 sm:p-5" aria-label="Fluxo financeiro">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <span className="cadencia-eyebrow">Pulso financeiro</span>
-          <h3 className="m-0 mt-1 text-base font-semibold tracking-[-.025em] text-text">Fluxo financeiro · {periodo}</h3>
-        </div>
-        <div className="flex items-center gap-3 text-[10px] font-semibold text-text-muted">
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-accent" />Receita bruta</span>
-          <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded-full bg-danger" />Despesa</span>
-        </div>
-      </div>
-      <div className="h-72" data-testid="grafico-receita">
+    <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
+      <h3 className="mb-4 text-sm font-semibold text-text">Receita por {periodo}</h3>
+      <div className="h-64" data-testid="grafico-receita">
         <ParentSize>
           {({ width, height }) => {
             if (width <= 0 || height <= 0) return null;
-            const margin = { top: 14, right: 14, bottom: 32, left: 62 };
+
+            const margin = { top: 10, right: 10, bottom: 30, left: 60 };
             const innerWidth = width - margin.left - margin.right;
             const innerHeight = height - margin.top - margin.bottom;
+
             if (innerWidth <= 0 || innerHeight <= 0) return null;
 
-            const xScale = scaleBand({ range: [0, innerWidth], domain: dados.map((d) => d.mes.slice(5)), padding: 0.42 });
-            const maximo = Math.max(...dados.flatMap((d) => [d.receita, d.despesa]), 1);
-            const yScale = scaleLinear({ range: [innerHeight, 0], domain: [0, maximo], nice: true });
-            const points = dados.map((d) => {
-              const label = d.mes.slice(5);
-              const x = (xScale(label) ?? 0) + xScale.bandwidth() / 2;
-              return `${x},${yScale(d.despesa)}`;
-            }).join(' ');
+            const xScale = scaleBand({
+              range: [0, innerWidth],
+              domain: dados.map((d) => d.label),
+              padding: 0.3,
+            });
+
+            const yScale = scaleLinear({
+              range: [innerHeight, 0],
+              domain: [0, Math.max(...dados.map((d) => d.valor))],
+              nice: true,
+            });
 
             return (
-              <svg width={width} height={height} role="img" aria-label="Grafico de receita e despesa">
-                <defs>
-                  <linearGradient id="cadenciaRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.95" />
-                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.36" />
-                  </linearGradient>
-                </defs>
+              <svg width={width} height={height} role="img" aria-label="Grafico de receita">
                 <Group left={margin.left} top={margin.top}>
-                  {[0.25, 0.5, 0.75, 1].map((ratio) => (
-                    <line key={ratio} x1={0} x2={innerWidth} y1={innerHeight * (1 - ratio)} y2={innerHeight * (1 - ratio)} stroke="var(--line)" strokeOpacity="0.72" strokeDasharray="3 5" />
+                  {dados.map((d) => (
+                    <Bar
+                      key={d.label}
+                      x={xScale(d.label) ?? 0}
+                      y={yScale(d.valor)}
+                      width={xScale.bandwidth()}
+                      height={innerHeight - yScale(d.valor)}
+                      fill="var(--accent)"
+                      rx={3}
+                    />
                   ))}
-                  {dados.map((d) => {
-                    const label = d.mes.slice(5);
-                    return (
-                      <Bar key={d.mes} x={xScale(label) ?? 0} y={yScale(d.receita)} width={xScale.bandwidth()} height={innerHeight - yScale(d.receita)} fill="url(#cadenciaRevenueGradient)" rx={7} />
-                    );
-                  })}
-                  <polyline points={points} fill="none" stroke="var(--danger)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-                  {dados.map((d) => {
-                    const label = d.mes.slice(5);
-                    const x = (xScale(label) ?? 0) + xScale.bandwidth() / 2;
-                    return <circle key={`p-${d.mes}`} cx={x} cy={yScale(d.despesa)} r={3.5} fill="var(--surface)" stroke="var(--danger)" strokeWidth={2} />;
-                  })}
-                  <AxisBottom top={innerHeight} scale={xScale} tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 600 }} stroke="var(--line)" tickStroke="transparent" />
-                  <AxisLeft scale={yScale} tickFormat={(v) => `R$${((v as number) / 100).toFixed(0)}`} tickLabelProps={{ fill: 'var(--text-faint)', fontSize: 9 }} stroke="transparent" tickStroke="transparent" numTicks={5} />
+                  <AxisBottom
+                    top={innerHeight}
+                    scale={xScale}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)"
+                    tickStroke="var(--line)"
+                  />
+                  <AxisLeft
+                    scale={yScale}
+                    tickFormat={(v) => `R$${((v as number) / 100).toFixed(0)}`}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)"
+                    tickStroke="var(--line)"
+                  />
                 </Group>
               </svg>
             );
           }}
         </ParentSize>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -270,7 +268,7 @@ function GraficoReceita({
 function FinanceiroVisaoSkeleton() {
   return (
     <div className="space-y-6" data-testid="financeiro-visao-skeleton">
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} variant="card" height="100px" />
         ))}
@@ -293,7 +291,7 @@ function SecaoAlertas({ alertas }: { readonly alertas: readonly AlertaItem[] }) 
           key={a.tipo}
           role="alert"
           className={cn(
-            'flex items-center gap-3 rounded-2xl border border-current/10 px-4 py-3 text-[length:var(--fs-13)] font-medium shadow-elev-1',
+            'flex items-center gap-[var(--s-4)] rounded-[var(--r-md)] px-[var(--s-5)] py-[var(--s-4)] text-[length:var(--fs-13)]',
             BG_SEVERIDADE[a.severidade] ?? 'bg-warn-soft',
             TOKEN_SEVERIDADE[a.severidade] ?? 'text-warn',
           )}
@@ -314,21 +312,22 @@ function SecaoCategorias({ categorias }: { readonly categorias: readonly Categor
   return (
     <section
       aria-label="Top categorias"
-      className="cadencia-panel p-5"
+      className="rounded-xl border border-line bg-surface shadow-elev-1 p-[var(--s-6)]"
     >
-      <div className="mb-4"><span className="cadencia-eyebrow">Composição</span><h2 className="m-0 mt-1 text-base font-semibold tracking-[-.025em]">Top categorias</h2></div>
+      <h2 className="mb-[var(--s-4)] text-[length:var(--fs-15)] font-semibold">Top categorias</h2>
       <ul className="m-0 grid list-none gap-[var(--s-3)] p-0">
         {categorias.map((c) => (
           <li
             key={c.nome}
-            className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-2 border-b border-line/65 py-3 text-[length:var(--fs-14)] last:border-b-0"
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-[var(--s-4)] border-b border-line py-[var(--s-2)] text-[length:var(--fs-14)]"
           >
             <span>{c.nome}</span>
             <span className="tabular-nums text-text-muted">
               {centavosParaReais(c.total)}
             </span>
-            <span className="min-w-[3ch] text-right font-semibold tabular-nums">{c.percentual}%</span>
-            <span className="col-span-3 h-1.5 overflow-hidden rounded-full bg-surface-sunken"><span className="block h-full rounded-full bg-[var(--aurora)]" style={{ width: `${Math.min(100, Math.max(0, c.percentual))}%` }} /></span>
+            <span className="min-w-[3ch] text-right font-medium tabular-nums">
+              {c.percentual}%
+            </span>
           </li>
         ))}
       </ul>
@@ -347,14 +346,20 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
 
   useEffect(() => {
     void p.carregarDados().then(setDados);
-  }, [p.carregarDados]);
+  }, [p]);
 
   if (dados === null) return <FinanceiroVisaoSkeleton />;
 
   const resumo = dados.resumoMes;
 
+  // Derivar dados do grafico de receita a partir do receitaVsDespesa
+  const dadosGrafico: DadosReceita[] = dados.receitaVsDespesa.map((item) => ({
+    label: item.mes.slice(5), // e.g. "06", "07", "08"
+    valor: item.receita,
+  }));
+
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-[var(--s-8)]">
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <CardResumo
@@ -389,13 +394,13 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
       <SecaoAlertas alertas={dados.alertas} />
 
       {/* Seletor de periodo */}
-      <div className="flex items-center justify-between gap-3"><div><span className="cadencia-eyebrow">Janela de leitura</span><p className="m-0 mt-1 text-xs text-text-muted">Troque a granularidade sem perder o contexto.</p></div><SeletorPeriodo
+      <SeletorPeriodo
         periodo={periodo as Periodo}
         onChange={(p) => void setPeriodo(p)}
-      /></div>
+      />
 
       {/* Grafico de receita (visx) */}
-      <GraficoReceita dados={dados.receitaVsDespesa} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
+      <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
 
       {/* Top categorias */}
       <SecaoCategorias categorias={dados.topCategorias} />

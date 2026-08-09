@@ -19,7 +19,6 @@ import { Campo } from '../ui/Campo';
 import { Botao } from '../ui/Botao';
 import { Icone } from '../ui/Icone';
 import { Skeleton } from '../ui/Skeleton';
-import { EstadoVazio } from '../ui/EstadoVazio';
 
 /* ── Tipos ─────────────────────────────────────────────────────────────── */
 
@@ -63,29 +62,29 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
   return (
     <div
       className={cn(
-        'cadencia-panel group p-4 transition-[opacity,transform,box-shadow,border-color] duration-[var(--dur-2)] hover:-translate-y-0.5 hover:shadow-elev-2',
-        automacao.ativa ? 'border-accent/10' : 'opacity-58 grayscale-[.14]',
+        'rounded-lg border bg-surface p-4 transition-colors-fast',
+        automacao.ativa ? 'border-line' : 'border-line opacity-60',
       )}
     >
       <div className="flex items-start justify-between gap-4">
         {/* Conteudo do card */}
         <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex items-center gap-2">
+          <div className="mb-1 flex items-center gap-2">
             <Icone
               icon={Lightning}
               size="sm"
               className={automacao.ativa ? 'text-accent' : 'text-text-muted'}
             />
-            <p className="m-0 text-sm font-semibold tracking-[-.015em] text-text">{automacao.nome}</p>
+            <p className="text-sm font-semibold text-text">{automacao.nome}</p>
           </div>
-          <p className="m-0 text-xs leading-relaxed text-text-muted">{automacao.descricao}</p>
+          <p className="text-xs text-text-muted">{automacao.descricao}</p>
 
           {/* Badges de gatilho e acao */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full border border-line/65 bg-surface-sunken/55 px-2.5 py-1 text-[10px] font-semibold text-text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
               Gatilho: {automacao.timing}
             </span>
-            <span className="rounded-full border border-line/65 bg-surface-sunken/55 px-2.5 py-1 text-[10px] font-semibold text-text-muted">
+            <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
               Acao: {automacao.canal} - {automacao.templateNome}
             </span>
           </div>
@@ -97,15 +96,15 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
             checked={automacao.ativa}
             onCheckedChange={onToggle}
             className={cn(
-              'relative h-6 w-11 rounded-full border border-line/60 shadow-inner transition-colors-fast',
+              'relative h-5 w-9 rounded-full transition-colors-fast',
               automacao.ativa ? 'bg-accent' : 'bg-line-strong',
             )}
             aria-label={`${automacao.nome} ${automacao.ativa ? 'ativa' : 'inativa'}`}
           >
             <Switch.Thumb
               className={cn(
-                'block h-[18px] w-[18px] rounded-full bg-white shadow-elev-1 transition-transform',
-                'data-[state=checked]:translate-x-[21px] translate-x-0.5',
+                'block h-4 w-4 rounded-full bg-white transition-transform',
+                'data-[state=checked]:translate-x-4 translate-x-0.5',
               )}
             />
           </Switch.Root>
@@ -114,7 +113,7 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
             <DropdownMenu.Trigger asChild>
               <button
                 type="button"
-                className="grid h-9 w-9 place-items-center rounded-[10px] text-text-muted hover:bg-surface-raised hover:text-text transition-colors-fast"
+                className="rounded-md p-1 text-text-muted hover:bg-surface-raised transition-colors-fast"
                 aria-label={`Acoes de ${automacao.nome}`}
               >
                 <Icone icon={DotsThree} size="md" />
@@ -124,7 +123,7 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
               <DropdownMenu.Content
                 align="end"
                 sideOffset={4}
-                className="z-[60] min-w-[154px] rounded-[14px] border border-line/75 bg-surface/96 p-1.5 shadow-[var(--elev-float)] backdrop-blur-xl"
+                className="z-[60] min-w-[140px] rounded-md border border-line bg-surface p-1 shadow-elev-2"
               >
                 <DropdownMenu.Item
                   onSelect={onEditar}
@@ -256,10 +255,8 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
   useEffect(() => {
-    let ativo = true;
-    void p.carregar().then((itens) => { if (ativo) setAutomacoes(itens); });
-    return () => { ativo = false; };
-  }, [p.carregar]);
+    void p.carregar().then(setAutomacoes);
+  }, [p]);
 
   if (automacoes === null) {
     return <AutomacoesSkeleton />;
@@ -320,19 +317,9 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
         }
       />
 
-      {automacoes.length > 0 && (
-        <section className="cadencia-panel cadencia-panel-hero p-4 sm:p-5" aria-label="Resumo de automacoes">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="cadencia-metric p-3.5"><span className="cadencia-eyebrow">Fluxos</span><strong className="mt-1 block text-2xl tracking-[-.05em] text-text">{automacoes.length}</strong><span className="text-[10px] text-text-faint">configurados</span></div>
-            <div className="cadencia-metric p-3.5"><span className="cadencia-eyebrow">Ativos</span><strong className="mt-1 block text-2xl tracking-[-.05em] text-ok">{automacoes.filter((a) => a.ativa).length}</strong><span className="text-[10px] text-text-faint">executando</span></div>
-            <div className="cadencia-metric p-3.5"><span className="cadencia-eyebrow">Cobertura</span><strong className="mt-1 block text-2xl tracking-[-.05em] text-text">{new Set(automacoes.map((a) => a.canal)).size}</strong><span className="text-[10px] text-text-faint">canais</span></div>
-          </div>
-        </section>
-      )}
-
       {/* Lista de automacoes */}
       {automacoes.length > 0 && (
-        <div className="grid gap-3 lg:grid-cols-2" role="list" aria-label="Lista de automacoes">
+        <div className="space-y-3" role="list" aria-label="Lista de automacoes">
           {automacoes.map((auto) => (
             <div key={auto.automationId} role="listitem">
               <CardAutomacao
@@ -350,12 +337,21 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
 
       {/* Estado vazio */}
       {automacoes.length === 0 && (
-        <EstadoVazio
-          icone={Robot}
-          titulo="Nenhuma automacao configurada"
-          descricao="Crie automacoes para agilizar o atendimento por mensagens"
-          acao={<Botao variante="primario" iconeEsquerda={Plus} onClick={abrirFormulario}>Nova automacao</Botao>}
-        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Icone icon={Robot} size="xl" className="mb-3 text-text-muted" />
+          <p className="text-base font-medium text-text">Nenhuma automacao configurada</p>
+          <p className="mt-1 text-sm text-text-muted">
+            Crie automacoes para agilizar o atendimento por mensagens
+          </p>
+          <Botao
+            variante="primario"
+            className="mt-4"
+            iconeEsquerda={Plus}
+            onClick={abrirFormulario}
+          >
+            Nova automacao
+          </Botao>
+        </div>
       )}
 
       {/* Formulario lateral de criacao/edicao */}

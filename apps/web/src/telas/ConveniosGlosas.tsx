@@ -155,7 +155,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
             aria-label="Status"
-            className="h-10 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
@@ -173,7 +173,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             value={operadoraFiltro}
             onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            className="h-10 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (
@@ -204,11 +204,11 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
         </div>
       ) : (
         <section aria-label="Lista de glosas">
-          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+          <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
+                  <tr className="border-b border-line bg-surface-raised">
                     <th className="w-10 px-4 py-3">
                       <span className="sr-only">Selecionar</span>
                     </th>
@@ -223,7 +223,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {glosasFiltradas.map((g) => {
                     const chip = STATUS_CHIP[g.status];
                     const selecionavel = g.status === 'pendente';

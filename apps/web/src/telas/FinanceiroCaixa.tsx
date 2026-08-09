@@ -144,12 +144,12 @@ function CaixaSkeleton() {
         <Skeleton variant="card" height="80px" />
         <Skeleton variant="card" height="80px" />
       </div>
-      <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
-        <div className="border-b border-line/70/70 bg-surface-sunken/45 px-4 py-2.5">
+      <div className="rounded-lg border border-line overflow-hidden">
+        <div className="border-b border-line bg-surface-raised px-4 py-2.5">
           <Skeleton variant="text" width="80%" height="16px" />
         </div>
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="border-b border-line/70 px-4 py-3">
+          <div key={i} className="border-b border-line px-4 py-3">
             <Skeleton variant="table-row" />
           </div>
         ))}
@@ -260,7 +260,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
   if (!dados) return null;
 
   const selectClasses =
-    'h-8 rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
+    'h-8 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
   const vazio = lancamentosFiltrados.length === 0;
 
   return (
@@ -356,7 +356,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
 
       {/* Totais */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
-        <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4">
+        <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
             Receita
           </span>
@@ -364,7 +364,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
             {centavosParaReais(dados.totalReceita)}
           </p>
         </div>
-        <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4">
+        <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
             Despesa
           </span>
@@ -372,7 +372,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
             {centavosParaReais(dados.totalDespesa)}
           </p>
         </div>
-        <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4">
+        <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
             Saldo
           </span>
@@ -387,11 +387,11 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
         <EstadoVazio />
       ) : (
         <section aria-label="Extrato">
-          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+          <div className="rounded-lg border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
+                  <tr className="border-b border-line bg-surface-raised">
                     <ThSortavel
                       campo="data"
                       rotulo="Data"
@@ -419,7 +419,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {lancamentosFiltrados.map((l) => {
                     const positivo = l.kind === 'receita';
                     const valorExibido = `${positivo ? '+' : '-'} ${centavosParaReais(l.amountCents)}`;

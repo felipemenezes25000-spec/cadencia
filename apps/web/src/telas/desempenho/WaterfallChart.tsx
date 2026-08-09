@@ -333,7 +333,7 @@ export function WaterfallChart(props: WaterfallChartProps) {
   const { dados, titulo, altura = 300, className } = props;
 
   return (
-    <div className={cn('rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1', className)}>
+    <div className={cn('rounded-xl border border-line bg-surface shadow-elev-1', className)}>
       {titulo != null && (
         <h3 className="m-0 px-[var(--s-4)] pt-[var(--s-4)] text-sm font-semibold text-text">
           {titulo}

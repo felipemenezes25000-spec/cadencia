@@ -150,7 +150,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
             aria-label="Status"
-            className="h-10 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="rascunho">Rascunho</option>
@@ -169,7 +169,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
             value={operadoraFiltro}
             onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            className="h-10 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todas</option>
             {operadoras.map((op) => (
@@ -186,11 +186,11 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
         </div>
       ) : (
         <section aria-label="Lista de recursos de glosa">
-          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+          <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
+                  <tr className="border-b border-line bg-surface-raised">
                     <th className="w-10 px-4 py-3">
                       <span className="sr-only">Expandir</span>
                     </th>
@@ -204,7 +204,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {recursosFiltrados.map((rec) => {
                     const chip = STATUS_CHIP[rec.status];
                     const expandido = expandidos.has(rec.id);
@@ -316,9 +316,9 @@ function RecursoLinhas({
       {expandido && rec.itens.length > 0 && (
         <tr>
           <td colSpan={7} className="px-4 pb-4 pt-0">
-            <div className="ml-10 overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1-sunken">
+            <div className="ml-10 overflow-hidden rounded-xl border border-line bg-surface-sunken">
               <table className="w-full text-sm">
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {rec.itens.map((item) => (
                     <tr key={item.id}>
                       <td className="px-3 py-2 font-mono text-xs text-text-muted tabular-nums">{item.guiaNumero}</td>

@@ -3,26 +3,44 @@
 import type { ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'motion/react';
-import { X, Sparkle } from '@phosphor-icons/react';
+import { X } from '@phosphor-icons/react';
 import { Icone } from './Icone';
 import { cn } from '../lib/cn';
 
 type Largura = 'sm' | 'md' | 'lg';
 
 export interface PainelLateralProps {
+  /** Controla visibilidade */
   readonly aberto: boolean;
+  /** Callback para fechar (nome novo) */
   readonly onFechar?: () => void;
-  /** @deprecated Use `onFechar`. */
+  /** @deprecated Use `onFechar`. Mantido para compatibilidade. */
   readonly aoFechar?: () => void;
+  /** Titulo do painel (renderizado no cabecalho) */
   readonly titulo?: string;
+  /** Largura do painel */
   readonly largura?: Largura;
+  /** Conteudo do painel */
   readonly children: ReactNode;
+  /** Classes adicionais */
   readonly className?: string;
 }
 
-const larguraClasses: Record<Largura, string> = { sm: 'w-[360px]', md: 'w-[460px]', lg: 'w-[620px]' };
+const larguraClasses: Record<Largura, string> = {
+  sm: 'w-80',
+  md: 'w-[420px]',
+  lg: 'w-[560px]',
+};
 
-export function PainelLateral({ aberto, onFechar, aoFechar, titulo, largura = 'md', children, className }: PainelLateralProps) {
+export function PainelLateral({
+  aberto,
+  onFechar,
+  aoFechar,
+  titulo,
+  largura = 'md',
+  children,
+  className,
+}: PainelLateralProps) {
   const fechar = onFechar ?? aoFechar ?? (() => {});
 
   return (
@@ -30,37 +48,62 @@ export function PainelLateral({ aberto, onFechar, aoFechar, titulo, largura = 'm
       <AnimatePresence>
         {aberto && (
           <Dialog.Portal forceMount>
+            {/* Overlay com blur */}
             <Dialog.Overlay asChild>
               <motion.div
-                className="fixed inset-0 z-40 bg-[color-mix(in_oklab,var(--brand-ink)_42%,transparent)] backdrop-blur-[8px]"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild aria-label={titulo ? undefined : 'Painel lateral'}>
+
+            {/* Painel */}
+            <Dialog.Content
+              asChild
+              aria-label={titulo ? undefined : 'Painel lateral'}
+            >
               <motion.div
                 className={cn(
-                  'fixed bottom-0 right-0 top-0 z-50 flex max-w-full flex-col overflow-hidden border-l border-line/80 bg-surface/96 shadow-[var(--elev-float)] backdrop-blur-2xl',
-                  'max-md:top-auto max-md:h-[min(92dvh,820px)] max-md:w-full max-md:rounded-t-[26px] max-md:border-l-0 max-md:border-t',
-                  larguraClasses[largura], className,
+                  'fixed right-0 top-0 z-50 flex h-full flex-col',
+                  'bg-surface/95 backdrop-blur-xl border-l border-line shadow-elev-3',
+                  'max-md:w-full',
+                  larguraClasses[largura],
+                  className,
                 )}
-                initial={{ x: '104%', opacity: .6 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '104%', opacity: .7 }}
-                transition={{ type: 'spring', damping: 29, stiffness: 320, mass: .86 }}
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               >
-                <div className="relative flex min-h-[72px] items-center justify-between overflow-hidden border-b border-line/70 px-5 py-4 sm:px-6">
-                  <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-[var(--aurora)] opacity-70" />
-                  <div className="min-w-0">
-                    <span className="cadencia-eyebrow"><Sparkle size={10} weight="fill" /> painel contextual</span>
-                    {titulo ? <Dialog.Title className="m-0 mt-1 truncate text-[17px] font-semibold tracking-[-.025em] text-text">{titulo}</Dialog.Title> : <Dialog.Title className="sr-only">Painel lateral</Dialog.Title>}
-                  </div>
+                {/* Cabecalho */}
+                <div className="flex items-center justify-between border-b border-line px-[var(--s-6)] py-[var(--s-4)]">
+                  {titulo && (
+                    <Dialog.Title className="text-[length:var(--fs-18)] font-[number:var(--fw-semibold)] text-text">
+                      {titulo}
+                    </Dialog.Title>
+                  )}
                   <Dialog.Close asChild>
-                    <motion.button
-                      type="button" whileHover={{ rotate: 4, scale: 1.04 }} whileTap={{ scale: .94 }}
-                      className="ml-4 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line/80 bg-surface-raised/80 text-text-muted shadow-elev-1 transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    <button
+                      type="button"
+                      className={cn(
+                        'ml-auto rounded-lg border border-transparent p-2',
+                        'text-text-muted hover:bg-surface-hover hover:text-text',
+                        'transition-colors-fast',
+                        'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+                      )}
                       aria-label="Fechar painel"
-                    ><Icone icon={X} size="md" /></motion.button>
+                    >
+                      <Icone icon={X} size="md" />
+                    </button>
                   </Dialog.Close>
                 </div>
-                <div className="scrollbar-thin flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">{children}</div>
+
+                {/* Conteudo com scroll */}
+                <div className="flex-1 overflow-y-auto p-[var(--s-6)]">
+                  {children}
+                </div>
               </motion.div>
             </Dialog.Content>
           </Dialog.Portal>

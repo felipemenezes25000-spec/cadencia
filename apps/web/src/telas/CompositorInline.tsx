@@ -367,7 +367,7 @@ export function CompositorInline(p: CompositorInlineProps) {
             side="right"
             sideOffset={8}
             className={cn(
-              'z-[var(--z-popover)] w-80 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 shadow-elev-2',
+              'z-[var(--z-popover)] w-80 rounded-xl border border-line bg-surface shadow-elev-2',
               'data-[state=open]:animate-[scaleIn_150ms_ease]',
               'data-[state=closed]:animate-[fadeOut_100ms_ease]',
             )}

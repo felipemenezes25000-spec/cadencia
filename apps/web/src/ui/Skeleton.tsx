@@ -18,13 +18,13 @@ interface SkeletonProps {
 }
 
 const shimmerClasses =
-  "relative overflow-hidden bg-[linear-gradient(105deg,var(--surface-sunken)_18%,var(--surface-raised)_42%,var(--surface-sunken)_66%)] [background-size:220%_100%] animate-[skeleton-shimmer_1.35s_ease-in-out_infinite]";
+  "bg-[linear-gradient(90deg,var(--line)_25%,var(--surface)_50%,var(--line)_75%)] [background-size:200%_100%] animate-[skeleton-shimmer_1.5s_ease-in-out_infinite]";
 
 const variantClasses: Record<NonNullable<SkeletonProps["variant"]>, string> = {
   text: "w-full h-4 rounded-md",
   avatar: "h-10 w-10 shrink-0 rounded-full",
-  card: "w-full h-[120px] rounded-[20px]",
-  "table-row": "h-12 rounded-xl",
+  card: "w-full h-[120px] rounded-md",
+  "table-row": "h-12 rounded-md",
 };
 
 /**

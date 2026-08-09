@@ -178,19 +178,19 @@ export function Conversas(p: ConversasProps) {
 
   return (
     <div
-      className="relative m-4 flex h-[calc(100vh-var(--nav-height,0px)-32px)] overflow-hidden rounded-[24px] border border-line/80 bg-surface/92 shadow-[var(--elev-float)] backdrop-blur-xl max-md:m-0 max-md:h-[calc(100dvh-var(--nav-height,0px))] max-md:rounded-none max-md:border-0"
+      className="m-4 flex h-[calc(100vh-var(--nav-height,0px)-32px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-2 max-md:m-0 max-md:h-[calc(100vh-var(--nav-height,0px))] max-md:rounded-none max-md:border-0"
       data-testid="split-view"
     >
       {/* ── Painel esquerdo: lista de conversas ──────────────────────────── */}
       <div
         className={cn(
-          'w-[360px] shrink-0 border-r border-line/75 flex flex-col bg-surface/88 backdrop-blur-xl',
+          'w-[340px] shrink-0 border-r border-line flex flex-col bg-surface/90',
           conversaAtiva != null && 'max-md:hidden',
         )}
       >
         {/* Cabecalho */}
-        <div className="relative flex min-h-[72px] items-center justify-between overflow-hidden border-b border-line/70 px-4 py-3">
-          <div><span className="cadencia-eyebrow">Central de relacionamento</span><h1 className="m-0 mt-1 text-[17px] font-semibold tracking-[-.025em] text-text">Conversas</h1></div>
+        <div className="flex min-h-[64px] items-center justify-between border-b border-line px-4 py-3">
+          <h1 className="text-base font-semibold text-text">Conversas</h1>
           <Botao
             variante="fantasma"
             tamanho="sm"
@@ -202,7 +202,7 @@ export function Conversas(p: ConversasProps) {
         </div>
 
         {/* Busca */}
-        <div className="border-b border-line/65 bg-surface-sunken/20 px-3 py-3">
+        <div className="border-b border-line px-3 py-2">
           <Campo
             prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
             placeholder="Buscar conversas..."
@@ -246,8 +246,8 @@ export function Conversas(p: ConversasProps) {
               key={c.conversationId}
               onClick={() => p.aoAbrirConversa(c.conversationId)}
               className={cn(
-                'group grid cursor-pointer grid-cols-[42px_1fr_auto] items-center gap-2.5 border-b border-line/60 px-3.5 py-3.5',
-                'transition-[background-color,transform] duration-[var(--dur-2)] hover:bg-surface-hover/80 active:scale-[.995]',
+                'grid cursor-pointer grid-cols-[40px_1fr_auto] items-center gap-2 border-b border-line px-3 py-3.5',
+                'transition-colors-fast hover:bg-surface-hover',
                 c.unreadCount > 0 && 'bg-surface-hover',
                 c.conversationId === conversaAtiva &&
                   'bg-accent-soft hover:bg-accent-soft',
@@ -256,7 +256,7 @@ export function Conversas(p: ConversasProps) {
               {/* Avatar / iniciais */}
               <span
                 aria-hidden="true"
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-accent/10 bg-[linear-gradient(145deg,var(--accent-soft),var(--surface))] text-xs font-bold text-accent shadow-elev-1 transition-transform group-hover:scale-[1.03]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent"
               >
                 {c.patientName != null ? iniciais(c.patientName) : '#'}
               </span>
@@ -301,7 +301,7 @@ export function Conversas(p: ConversasProps) {
       {/* ── Painel direito: conversa ativa ou estado vazio ────────────────── */}
       <div
         className={cn(
-          'flex min-w-0 flex-1 flex-col bg-[linear-gradient(180deg,var(--surface-sunken)_0%,color-mix(in_oklab,var(--surface)_94%,var(--accent-soft))_100%)]',
+          'flex min-w-0 flex-1 flex-col bg-surface-sunken/35',
           conversaAtiva == null && 'max-md:hidden',
         )}
       >

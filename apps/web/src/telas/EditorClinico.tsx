@@ -83,13 +83,13 @@ function EditorClinicoSkeleton() {
       aria-busy="true"
       aria-label="Carregando editor"
       data-testid="editor-clinico-skeleton"
-      className="relative grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-[22px] border border-line/80 bg-surface/95 shadow-elev-2 backdrop-blur-xl"
+      className="grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
     >
       {/* Toolbar skeleton */}
-      <div className="relative border-b border-line/70/75 bg-surface/88 backdrop-blur-xl">
-        <div className="flex min-h-11 items-center justify-between gap-3 px-3.5 py-2 sm:px-4">
+      <div className="border-b border-line">
+        <div className="flex items-center justify-between px-[var(--s-4)] py-[var(--s-2)]">
           <Skeleton variant="text" width="120px" />
-          <div className="hidden gap-1.5 sm:flex">
+          <div className="flex gap-[var(--s-2)]">
             <Skeleton variant="text" width="50px" height="20px" />
             <Skeleton variant="text" width="50px" height="20px" />
           </div>
@@ -164,14 +164,13 @@ export function EditorClinico(p: EditorClinicoProps) {
           "prose prose-sm max-w-none",
           "font-doc text-text",
           "focus:outline-none",
-          "min-h-[440px] px-5 py-6 sm:px-8 sm:py-8",
-          "mx-auto w-full max-w-[860px]",
-          "[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-.025em] [&_h2]:text-text [&_h2]:mt-8 [&_h2]:mb-3",
-          "[&_h3]:text-base [&_h3]:font-semibold [&_h3]:tracking-[-.015em] [&_h3]:text-text [&_h3]:mt-6 [&_h3]:mb-2",
-          "[&_p]:text-[15px] [&_p]:leading-[1.78] [&_p]:text-text [&_p]:mb-3",
+          "min-h-[400px] p-[var(--s-6)]",
+          "[&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-text [&_h2]:mt-6 [&_h2]:mb-2",
+          "[&_h3]:text-base [&_h3]:font-medium [&_h3]:text-text [&_h3]:mt-4 [&_h3]:mb-1",
+          "[&_p]:text-sm [&_p]:leading-relaxed [&_p]:text-text [&_p]:mb-2",
           "[&_ul]:list-disc [&_ul]:pl-5",
           "[&_ol]:list-decimal [&_ol]:pl-5",
-          "[&_blockquote]:rounded-r-xl [&_blockquote]:border-l-[3px] [&_blockquote]:border-accent [&_blockquote]:bg-accent-soft/45 [&_blockquote]:px-4 [&_blockquote]:py-2 [&_blockquote]:italic",
+          "[&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-4 [&_blockquote]:italic",
           "[&_code]:rounded-[var(--r-sm)] [&_code]:bg-surface-raised [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs",
         ),
       },
@@ -242,14 +241,14 @@ export function EditorClinico(p: EditorClinicoProps) {
   return (
     <RadixTooltip.Provider delayDuration={300}>
     <div
-      className="relative grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-[22px] border border-line/80 bg-surface/95 shadow-elev-2 backdrop-blur-xl"
+      className="grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
       onKeyDown={aoTeclar}
     >
       {/* header: cronometro + atalhos + toolbar */}
-      <div className="border-b border-line/70">
+      <div className="border-b border-line">
         {/* linha do cronometro e atalhos */}
         <div className="flex items-center justify-between px-[var(--s-4)] py-[var(--s-2)]">
-          <span className="inline-flex items-center rounded-full border border-line/70 bg-surface-sunken/55 px-2.5 py-1 font-mono text-[10px] font-semibold tabular-nums text-text-muted">
+          <span className="text-[length:var(--fs-12)] text-text-muted">
             {`Duracao: ${String(minutos).padStart(2, "0")}:${String(segs).padStart(2, "0")}`}
           </span>
           <div className="flex gap-[var(--s-2)]">
@@ -257,7 +256,7 @@ export function EditorClinico(p: EditorClinicoProps) {
               <kbd
                 key={a.acao}
                 title={a.descricao}
-                className="cadencia-command-key border-line/80 bg-surface-raised/75 text-[10px] text-text-faint"
+                className="rounded-[var(--r-sm)] border border-line px-[var(--s-2)] text-[length:var(--fs-11)] leading-5 text-text-muted"
               >
                 {a.combinacao}
               </kbd>
@@ -271,7 +270,7 @@ export function EditorClinico(p: EditorClinicoProps) {
 
       {/* area do editor */}
       <div
-        className="scrollbar-thin relative overflow-y-auto bg-[linear-gradient(180deg,color-mix(in_oklab,var(--surface)_98%,var(--accent-soft))_0%,var(--surface)_28%,var(--surface)_100%)]"
+        className="scrollbar-thin overflow-y-auto"
         role="article"
         aria-label="Editor clinico"
       >
@@ -279,7 +278,7 @@ export function EditorClinico(p: EditorClinicoProps) {
       </div>
 
       {/* barra de status */}
-      <div className="flex min-h-10 items-center justify-between border-t border-line/70 bg-surface-sunken/35 px-4 py-2 print:hidden">
+      <div className="flex items-center justify-between border-t border-line px-[var(--s-4)] py-[var(--s-2)] print:hidden">
         <ContadorDePalavras palavras={palavras} />
         {onSalvar && <IndicadorAutoSave status={saveStatus} />}
       </div>
@@ -293,7 +292,7 @@ export function EditorClinico(p: EditorClinicoProps) {
 function BarraDeFormatacao({ editor }: { readonly editor: Editor }) {
   return (
     <div
-      className="scrollbar-thin flex items-center gap-1 overflow-x-auto border-t border-line/65 bg-surface-sunken/30 px-2.5 py-1.5 print:hidden"
+      className="flex items-center gap-0.5 border-t border-line bg-surface px-2 py-1 print:hidden"
       role="toolbar"
       aria-label="Formatacao de texto"
     >

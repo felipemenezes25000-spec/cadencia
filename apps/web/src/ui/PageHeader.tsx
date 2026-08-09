@@ -1,8 +1,6 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { motion } from "motion/react";
-import { Sparkle } from "@phosphor-icons/react";
 import { cn } from "../lib/cn";
 import { Breadcrumb, type BreadcrumbItem } from "./Breadcrumb";
 
@@ -24,29 +22,17 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-      className={cn("relative pb-7", className)}
-    >
-      {!semBreadcrumb && (
-        <div className="mb-4">
-          {breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />}
-        </div>
-      )}
+    <div className={cn("space-y-3 pb-7", className)}>
+      {!semBreadcrumb &&
+        (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
 
-      <div className="flex items-end justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
-        <div className="min-w-0">
-          <div className="cadencia-eyebrow mb-2">
-            <Sparkle size={11} weight="fill" aria-hidden />
-            Cadencia workspace
-          </div>
-          <h1 className="m-0 max-w-4xl text-[clamp(1.75rem,3vw,2.5rem)] font-semibold leading-[1.02] tracking-[-0.052em] text-text text-balance">
+      <div className="flex items-end justify-between gap-5 max-sm:flex-col max-sm:items-stretch">
+        <div className="min-w-0 space-y-1.5">
+          <h1 className="m-0 text-[clamp(1.55rem,2.4vw,2rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-text">
             {titulo}
           </h1>
           {subtitulo && (
-            <p className="m-0 mt-2 max-w-2xl text-[13px] leading-relaxed text-text-muted sm:text-sm">
+            <p className="m-0 max-w-2xl text-[13px] leading-relaxed text-text-muted sm:text-sm">
               {subtitulo}
             </p>
           )}
@@ -58,6 +44,6 @@ export function PageHeader({
           </div>
         )}
       </div>
-    </motion.header>
+    </div>
   );
 }

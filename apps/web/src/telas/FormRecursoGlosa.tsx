@@ -81,7 +81,7 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
           {p.glosas.map((g) => (
             <li
               key={g.id}
-              className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-3"
+              className="rounded-xl border border-line bg-surface p-3 shadow-elev-1"
             >
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="font-mono tabular-nums text-text-muted text-[length:var(--fs-13)]">
@@ -112,7 +112,7 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
                   onChange={(e) => atualizarJustificativa(g.id, e.target.value)}
                   rows={3}
                   className={cn(
-                    'rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-2.5 py-2',
+                    'rounded-lg border border-line bg-surface px-2.5 py-2',
                     'bg-surface text-text text-sm font-sans',
                     'resize-y',
                     'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
@@ -147,7 +147,7 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
       </h3>
 
       {/* Resumo */}
-      <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-3">
+      <div className="rounded-xl border border-line bg-surface p-3 shadow-elev-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">
             {p.glosas.length} glosa(s)
@@ -173,7 +173,7 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
           onChange={(e) => setJustificativaGeral(e.target.value)}
           rows={4}
           className={cn(
-            'rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-2.5 py-2',
+            'rounded-lg border border-line bg-surface px-2.5 py-2',
             'bg-surface text-text text-sm font-sans',
             'resize-y',
             'focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent',
@@ -182,9 +182,9 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
       </div>
 
       {/* Lista resumida das glosas com justificativas */}
-      <ul className="m-0 list-none overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1-sunken p-0">
+      <ul className="m-0 list-none overflow-hidden rounded-xl border border-line bg-surface-sunken p-0">
         {p.glosas.map((g) => (
-          <li key={g.id} className="px-2 py-1.5 border-b border-line/70 text-xs">
+          <li key={g.id} className="px-2 py-1.5 border-b border-line text-xs">
             <div className="flex gap-1.5 items-center">
               <span className="font-mono text-text-muted">
                 {g.guiaNumero}

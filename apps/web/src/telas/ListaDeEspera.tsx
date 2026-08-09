@@ -91,7 +91,7 @@ function ItemEspera({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-3 rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 px-4 py-3',
+        'flex items-center gap-3 rounded-xl border border-line bg-surface shadow-elev-1 px-4 py-3',
         'transition-shadow duration-[var(--dur-2)]',
         isDragging && 'shadow-elev-2 opacity-75 z-10 relative',
       )}

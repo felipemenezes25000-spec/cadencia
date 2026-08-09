@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CaretLeft, CaretRight, Plus, CalendarCheck, ClockCountdown, CurrencyDollar, UsersThree } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, Plus } from '@phosphor-icons/react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { VISOES, faixasDoDia, type Visao } from './grade';
 import type { LinhaDaFila } from './Hoje';
@@ -197,9 +197,9 @@ function BlocoDeAgendamento({
       aria-roledescription="item arrastavel"
       aria-describedby="dnd-instrucoes"
       className={cn(
-        'absolute left-1.5 right-1.5 rounded-[11px] text-xs',
-        'border border-line/65 border-l-[3px] overflow-hidden shadow-[0_3px_10px_oklch(17%_0.04_264_/_0.06)]',
-        'transition-all duration-150 hover:z-[2] hover:-translate-y-px hover:shadow-elev-2',
+        'absolute left-1 right-1 rounded-[var(--r-sm)] text-xs',
+        'border-l-[3px] overflow-hidden',
+        'transition-shadow duration-150 hover:shadow-elev-1',
         coresDeStatus[item.status],
         isDragging && 'opacity-30',
       )}
@@ -218,7 +218,7 @@ function BlocoDeAgendamento({
         <span
           {...listeners}
           {...dragAttrs}
-          className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1 cursor-grab active:cursor-grabbing px-2.5 py-1 font-semibold tracking-[-.01em]"
+          className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1 cursor-grab active:cursor-grabbing px-2 py-1"
         >
           {item.displayName}
           {item.status === 'confirmado' && (
@@ -313,19 +313,19 @@ function GradeDeHorarios({
   return (
     <div
       aria-label={ariaLabel}
-      className="cadencia-panel overflow-y-auto overflow-x-auto bg-surface/92 shadow-elev-2 scrollbar-thin"
+      className="overflow-y-auto overflow-x-auto rounded-xl border border-line bg-surface shadow-elev-1"
       style={{ maxHeight: 'calc(100vh - 260px)' }}
     >
       {cabecalhos && (
         <div
-          className="grid sticky top-0 z-10 border-b border-line/70 bg-surface/90 backdrop-blur-xl"
+          className="grid sticky top-0 z-10 bg-surface border-b border-line"
           style={{ gridTemplateColumns: `60px repeat(${colunas}, minmax(120px, 1fr))` }}
         >
           <div className="border-r border-line" />
           {cabecalhos.map((c) => (
             <div
               key={c}
-              className="py-3 px-2 text-[10px] font-bold uppercase tracking-[.09em] text-text-muted text-center border-r border-line/70 last:border-r-0"
+              className="py-2 px-2 text-xs font-medium text-text-muted text-center border-r border-line last:border-r-0"
             >
               {c}
             </div>
@@ -342,10 +342,10 @@ function GradeDeHorarios({
           {HORAS.map((h, i) => (
             <div
               key={h}
-              className="absolute right-0 pr-2.5 text-right border-b border-line/55"
+              className="absolute right-0 pr-2 text-right border-b border-line"
               style={{ top: `${i * PX_POR_HORA}px`, height: `${PX_POR_HORA}px` }}
             >
-              <span className="text-[10px] text-text-faint font-mono font-medium leading-none">{h}</span>
+              <span className="text-xs text-text-faint font-mono leading-none">{h}</span>
             </div>
           ))}
         </div>
@@ -354,14 +354,14 @@ function GradeDeHorarios({
         {itensPorColuna.map((itensColuna, colIdx) => (
           <div
             key={colIdx}
-            className="relative border-l border-line/60 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--surface)_94%,transparent),color-mix(in_oklab,var(--surface-sunken)_22%,transparent))]"
+            className="relative border-l border-line"
             style={{ height: `${alturaTotal}px` }}
           >
             {/* Linhas de hora */}
             {HORAS.map((h, i) => (
               <div
                 key={h}
-                className="absolute left-0 right-0 border-b border-line/55"
+                className="absolute left-0 right-0 border-b border-line"
                 style={{ top: `${i * PX_POR_HORA}px`, height: `${PX_POR_HORA}px` }}
               />
             ))}
@@ -417,13 +417,13 @@ function ListaDeAgendamentos({
   }
 
   return (
-    <div className="cadencia-data-grid divide-y divide-line/70">
+    <div className="divide-y divide-line rounded-xl border border-line bg-surface shadow-elev-1">
       {ordenados.map((it) => (
         <div
           key={it.appointmentId}
           data-status={it.status}
           className={cn(
-            'grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 border-l-[3px]',
+            'flex items-center gap-3 px-4 py-3 border-l-[3px]',
             coresDeStatus[it.status],
           )}
           style={it.procedureCor ? { borderLeftColor: it.procedureCor } : undefined}
@@ -435,7 +435,7 @@ function ListaDeAgendamentos({
             <span className="text-sm font-medium truncate block">
               {it.displayName}
               {it.status === 'confirmado' && (
-                <span role="img" aria-label="Confirmado" className="ml-1 text-st-confirmado text-[11px]">
+                <span aria-label="Confirmado" className="ml-1 text-st-confirmado text-[11px]">
                   ✓
                 </span>
               )}
@@ -444,7 +444,7 @@ function ListaDeAgendamentos({
               <span className="text-xs text-text-muted truncate block">{it.procedureNome}</span>
             )}
           </span>
-          <span className="flex flex-wrap justify-end gap-1 shrink-0">
+          <span className="flex gap-1 shrink-0">
             {it.status === 'agendado' && (
               <Botao variante="fantasma" tamanho="sm"
                 carregando={confirmando === it.appointmentId}
@@ -491,7 +491,7 @@ function GradeMes({
 
   return (
     <div
-      className="cadencia-panel overflow-hidden bg-surface/92 shadow-elev-2"
+      className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
       role="grid"
       aria-label="Calendario mensal"
     >
@@ -514,13 +514,13 @@ function GradeMes({
               key={d} type="button" role="gridcell"
               onClick={() => { aoMudarDia(d); aoMudarVisao('dia'); }}
               className={cn(
-                'h-24 p-2 text-sm border-b border-r border-line/65 text-left',
-                'hover:bg-accent/[.045] transition-all duration-150 cursor-pointer',
+                'h-20 p-1 text-sm border-b border-r border-line text-left',
+                'hover:bg-surface-hover transition-colors duration-100 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset',
                 'outline-none',
                 !doMes && 'text-text-faint',
                 doMes && 'text-text',
-                ehSelecionado && 'bg-accent-soft ring-1 ring-inset ring-accent/15',
+                ehSelecionado && 'bg-accent-soft',
               )}
             >
               <span className={cn(
@@ -651,9 +651,6 @@ export function Agenda(p: AgendaProps) {
   const salaItens = useMemo(() => [itens], [itens]);
 
   const rotulos = ROTULOS_NAV[p.visao];
-  const confirmadosHoje = itens.filter((it) => it.status === 'confirmado').length;
-  const pendentesDeConfirmacao = itens.filter((it) => it.status === 'agendado').length;
-  const pagamentosPendentes = itens.filter((it) => it.pagamentoPendente).length;
 
   const acoes = (
     <div className="flex items-center gap-2 flex-wrap">
@@ -685,31 +682,14 @@ export function Agenda(p: AgendaProps) {
 
   return (
     <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Agenda"
-        subtitulo="Tempo, pessoas e salas em uma única superfície operacional."
-        acoes={acoes}
-        semBreadcrumb
-      />
-
-      {!carregando && (
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumo da agenda">
-          <div className="cadencia-metric p-4"><div className="flex items-center gap-2 text-text-muted"><UsersThree size={16} /><span className="text-[10px] font-bold uppercase tracking-[.09em]">Agendamentos</span></div><strong className="mt-2 block text-2xl font-semibold tracking-[-.05em] tabular-nums">{itens.length}</strong></div>
-          <div className="cadencia-metric p-4"><div className="flex items-center gap-2 text-text-muted"><CalendarCheck size={16} /><span className="text-[10px] font-bold uppercase tracking-[.09em]">Confirmados</span></div><strong className="mt-2 block text-2xl font-semibold tracking-[-.05em] tabular-nums">{confirmadosHoje}</strong></div>
-          <div className="cadencia-metric p-4"><div className="flex items-center gap-2 text-text-muted"><ClockCountdown size={16} /><span className="text-[10px] font-bold uppercase tracking-[.09em]">A confirmar</span></div><strong className="mt-2 block text-2xl font-semibold tracking-[-.05em] tabular-nums">{pendentesDeConfirmacao}</strong></div>
-          <div className="cadencia-metric p-4"><div className="flex items-center gap-2 text-text-muted"><CurrencyDollar size={16} /><span className="text-[10px] font-bold uppercase tracking-[.09em]">Cobranças</span></div><strong className="mt-2 block text-2xl font-semibold tracking-[-.05em] tabular-nums">{pagamentosPendentes}</strong></div>
-        </section>
-      )}
+      <PageHeader titulo="Agenda" acoes={acoes} semBreadcrumb />
 
       <Tabs value={p.visao} onValueChange={(v) => p.aoMudarVisao(v as Visao['chave'])}>
-        <div className="mb-4 flex items-center justify-between gap-3 overflow-x-auto">
         <TabsList className="overflow-x-auto">
           {VISOES.map((v) => (
             <TabsTrigger key={v.chave} value={v.chave}>{v.rotulo}</TabsTrigger>
           ))}
         </TabsList>
-        <span className="hidden text-[10px] font-semibold uppercase tracking-[.1em] text-text-faint lg:block">Arraste para reagendar · clique no vazio para criar</span>
-        </div>
 
         {carregando ? (
           <AgendaSkeleton />

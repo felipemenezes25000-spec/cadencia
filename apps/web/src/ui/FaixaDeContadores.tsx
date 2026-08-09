@@ -139,7 +139,7 @@ export function FaixaDeContadores(props: FaixaDeContadoresProps) {
         aria-label="Contadores do dia"
         aria-live="polite"
         className={cn(
-          'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5',
+          'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3',
           props.className,
         )}
       >
@@ -150,19 +150,19 @@ export function FaixaDeContadores(props: FaixaDeContadoresProps) {
               onClick={() => handleClicar?.(c.id)}
               aria-pressed={ativo === c.id}
               className={cn(
-                'cadencia-metric group relative flex min-h-[94px] flex-col items-start justify-center gap-1 overflow-hidden p-4 text-left',
-                'cursor-pointer focus-visible:shadow-[var(--focus-ring)]',
+                'group relative flex min-h-[96px] flex-col items-start justify-center gap-1 overflow-hidden rounded-xl border p-4 text-left shadow-elev-1',
+                'transition-all-fast cursor-pointer hover:-translate-y-px hover:shadow-elev-2',
+                'min-h-11',
                 ativo === c.id
-                  ? 'border-accent/35 bg-accent-soft ring-1 ring-accent/10'
-                  : 'hover:bg-surface-raised',
+                  ? 'border-accent/40 bg-accent-soft ring-1 ring-accent/10'
+                  : 'border-line bg-surface hover:border-line-strong hover:bg-surface-raised',
               )}
             >
               <AnimatedNumber
                 value={c.valor}
-                className="relative z-[1] text-[26px] font-semibold leading-none tracking-[-0.055em] text-text tabular-nums"
+                className="text-2xl font-bold tracking-[-0.04em] text-text tabular-nums"
               />
-              <span className="relative z-[1] text-[10px] font-bold uppercase tracking-[.095em] text-text-muted">{c.rotulo}</span>
-              <span aria-hidden className={cn('absolute right-3 top-3 h-2 w-2 rounded-full opacity-70', c.id === 'faltas' ? 'bg-danger' : c.id === 'atendidos' ? 'bg-ok' : c.id === 'aguardando' ? 'bg-warn' : 'bg-accent')} />
+              <span className="text-[11px] font-medium uppercase tracking-[.06em] text-text-muted">{c.rotulo}</span>
               {c.cor && (
                 <div
                   className={cn('h-0.5 w-8 rounded-full mt-1', corClasses[c.cor])}

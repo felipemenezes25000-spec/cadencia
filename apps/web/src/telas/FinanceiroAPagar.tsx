@@ -149,12 +149,12 @@ function APagarSkeleton() {
         <Skeleton variant="text" width="120px" height="32px" />
         <Skeleton variant="text" width="120px" height="32px" />
       </div>
-      <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
-        <div className="border-b border-line/70/70 bg-surface-sunken/45 px-4 py-2.5">
+      <div className="rounded-lg border border-line overflow-hidden">
+        <div className="border-b border-line bg-surface-raised px-4 py-2.5">
           <Skeleton variant="text" width="80%" height="16px" />
         </div>
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="border-b border-line/70 px-4 py-3">
+          <div key={i} className="border-b border-line px-4 py-3">
             <Skeleton variant="table-row" />
           </div>
         ))}
@@ -255,7 +255,7 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
   if (!dados) return null;
 
   const selectClasses =
-    'h-8 rounded-[16px] border border-line/75 bg-surface/94 shadow-elev-1 px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
+    'h-8 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
   const vazio = despesasFiltradas.length === 0;
 
   return (
@@ -352,11 +352,11 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
         <EstadoVazio />
       ) : (
         <section aria-label="Despesas a pagar">
-          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+          <div className="rounded-lg border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
+                  <tr className="border-b border-line bg-surface-raised">
                     <ThSortavel
                       campo="data"
                       rotulo="Data"
@@ -387,7 +387,7 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {despesasFiltradas.map((d) => (
                     <tr
                       key={d.id}

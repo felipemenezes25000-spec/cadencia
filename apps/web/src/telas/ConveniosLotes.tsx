@@ -76,7 +76,7 @@ function LotesSkeleton() {
       {Array.from({ length: 6 }, (_, i) => (
         <div
           key={i}
-          className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4 space-y-3"
+          className="rounded-xl border border-line bg-surface shadow-elev-1 p-4 space-y-3"
         >
           <div className="flex items-center justify-between">
             <Skeleton variant="text" width="80px" />
@@ -96,7 +96,7 @@ function LotesSkeleton() {
 
 function EstadoVazioLotes() {
   return (
-    <div className="rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-8 text-center">
+    <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-8 text-center">
       <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
       <p className="text-sm font-medium text-text">Nenhum lote encontrado</p>
       <p className="mt-1 text-xs text-text-muted">
@@ -167,7 +167,7 @@ export function ConveniosLotes(p: ConveniosLotesProps) {
               <div
                 key={lote.id}
                 className={cn(
-                  'rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1 p-4 cursor-pointer',
+                  'rounded-xl border border-line bg-surface shadow-elev-1 p-4 cursor-pointer',
                   'hover:bg-surface-raised transition-colors-fast',
                 )}
               >

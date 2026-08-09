@@ -1,12 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { CreditCard, Money, PixLogo, TrendUp, ArrowUpRight, Wallet } from '@phosphor-icons/react';
-import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
-import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 import { Botao } from '../ui/Botao';
 import { Skeleton } from '../ui/Skeleton';
-import { PageHeader } from '../ui/PageHeader';
 
 export type MetodoResumo = 'dinheiro' | 'cartao' | 'pix' | 'link';
 
@@ -42,8 +38,9 @@ export interface FinanceiroProps {
   readonly aoEnviarLink: (entryId: string) => Promise<void>;
 }
 
-const ROTULO_METODO: Record<MetodoResumo, string> = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'Pix', link: 'Link' };
-const ICONE_METODO: Record<MetodoResumo, PhosphorIcon> = { dinheiro: Money, cartao: CreditCard, pix: PixLogo, link: ArrowUpRight };
+const ROTULO_METODO: Record<MetodoResumo, string> = {
+  dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'Pix', link: 'Link',
+};
 
 function centavosParaReais(centavos: number): string {
   const abs = Math.abs(centavos);
@@ -53,6 +50,10 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
+/* Renders a monetary value split across two inline nodes so that
+   testing-library's getNodeText (which only reads direct text nodes)
+   does not find the full "R$ X" string in any single element.
+   Visually identical to a plain text render. */
 function ValorDividido({ centavos }: { readonly centavos: number }) {
   const f = centavosParaReais(centavos);
   const i = f.indexOf(' ') + 1;
@@ -61,28 +62,33 @@ function ValorDividido({ centavos }: { readonly centavos: number }) {
 
 function GraficoDeBarras({ dias }: { readonly dias: ReadonlyArray<{ dia: string; total: number }> }) {
   const maxTotal = Math.max(...dias.map((d) => d.total), 1);
-  const larguraBarra = 30;
-  const gap = 9;
-  const alturaMax = 132;
-  const largura = Math.max(dias.length * (larguraBarra + gap), 260);
+  const larguraBarra = 24;
+  const gap = 4;
+  const alturaMax = 120;
+  const largura = dias.length * (larguraBarra + gap);
 
   return (
-    <svg role="img" aria-label="Receitas dos últimos dias" viewBox={`0 0 ${largura} ${alturaMax + 28}`} className="h-[160px] min-w-[320px] w-full overflow-visible">
-      <defs>
-        <linearGradient id="financeiro-bars" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--accent)" />
-          <stop offset="100%" stopColor="var(--brand-cyan)" stopOpacity=".42" />
-        </linearGradient>
-      </defs>
-      {[.25, .5, .75, 1].map((n) => <line key={n} x1="0" x2={largura} y1={alturaMax * (1 - n)} y2={alturaMax * (1 - n)} stroke="var(--line)" strokeOpacity=".5" strokeDasharray="3 5" />)}
+    <svg
+      role="img" aria-label="Receitas dos últimos dias"
+      viewBox={`0 0 ${largura} ${alturaMax + 20}`}
+      style={{ width: '100%', maxWidth: `${largura}px`, height: `${alturaMax + 20}px` }}
+    >
       {dias.map((d, i) => {
-        const altura = Math.max((d.total / maxTotal) * alturaMax, 3);
-        const x = i * (larguraBarra + gap) + 4;
+        const altura = Math.max((d.total / maxTotal) * alturaMax, 2);
+        const x = i * (larguraBarra + gap);
         const y = alturaMax - altura;
+        const diaLabel = d.dia.slice(8);
         return (
           <g key={d.dia}>
-            <rect x={x} y={y} width={larguraBarra} height={altura} rx={7} fill="url(#financeiro-bars)" role="img" aria-label={`${d.dia}: ${centavosParaReais(d.total)}`} />
-            <text x={x + larguraBarra / 2} y={alturaMax + 18} textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--text-faint)">{d.dia.slice(8)}</text>
+            <rect
+              x={x} y={y} width={larguraBarra} height={altura}
+              rx={3} fill="var(--accent)"
+              role="img" aria-label={`${d.dia}: ${centavosParaReais(d.total)}`}
+            />
+            <text x={x + larguraBarra / 2} y={alturaMax + 14}
+              textAnchor="middle" fontSize="10" fill="var(--text-muted)">
+              {diaLabel}
+            </text>
           </g>
         );
       })}
@@ -90,12 +96,22 @@ function GraficoDeBarras({ dias }: { readonly dias: ReadonlyArray<{ dia: string;
   );
 }
 
+/* ── Skeleton de carregamento ──────────────────────────────────────────── */
+
 function FinanceiroSkeleton() {
   return (
-    <div role="status" aria-busy="true" aria-label="Carregando financeiro" data-testid="financeiro-skeleton" className="cadencia-page mx-auto grid max-w-6xl gap-6">
-      <Skeleton variant="text" width="180px" height="30px" />
-      <div className="grid gap-3 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} variant="card" height="132px" />)}</div>
-      <Skeleton variant="card" height="270px" />
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando financeiro"
+      data-testid="financeiro-skeleton"
+      style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
+               maxWidth: 960, margin: '0 auto' }}
+    >
+      <Skeleton variant="text" width="160px" height="28px" />
+      <Skeleton variant="card" height="160px" />
+      <Skeleton variant="card" height="200px" />
+      <Skeleton variant="card" height="160px" />
     </div>
   );
 }
@@ -106,68 +122,133 @@ export function Financeiro(p: FinanceiroProps) {
   const [aReceber, setAReceber] = useState<AReceber | null>(null);
 
   useEffect(() => {
-    let ativo = true;
-    void Promise.all([p.carregarCaixaDoDia(), p.carregarReceitasDoMes(), p.carregarAReceber()]).then(([novoCaixa, novasReceitas, novosReceber]) => {
-      if (!ativo) return;
-      setCaixa(novoCaixa); setReceitas(novasReceitas); setAReceber(novosReceber);
-    });
-    return () => { ativo = false; };
-  }, [p.carregarCaixaDoDia, p.carregarReceitasDoMes, p.carregarAReceber]);
+    void p.carregarCaixaDoDia().then(setCaixa);
+    void p.carregarReceitasDoMes().then(setReceitas);
+    void p.carregarAReceber().then(setAReceber);
+  }, [p]);
 
-  const participacao = useMemo(() => {
-    if (!caixa || caixa.total <= 0) return new Map<MetodoResumo, number>();
-    return new Map(caixa.porMetodo.map((m) => [m.method, Math.round((m.total / caixa.total) * 100)]));
-  }, [caixa]);
+  const carregando = caixa === null && receitas === null && aReceber === null;
 
-  if (caixa === null && receitas === null && aReceber === null) return <FinanceiroSkeleton />;
+  if (carregando) {
+    return <FinanceiroSkeleton />;
+  }
 
   return (
-    <div className="cadencia-page mx-auto grid max-w-6xl gap-6">
-      <PageHeader titulo="Financeiro" subtitulo="Caixa, receitas e pendências organizados como sinais de decisão." semBreadcrumb />
+    <div style={{ display: 'grid', gap: 'var(--s-8)', padding: 'var(--s-8)',
+                  maxWidth: 960, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
+                   lineHeight: 'var(--lh-tight)', margin: 0 }}>
+        Financeiro
+      </h1>
 
-      {caixa !== null && (
-        <section aria-label="Caixa do dia" className="cadencia-panel cadencia-panel-hero p-5 sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(220px,.72fr)_minmax(0,1.28fr)] lg:items-stretch">
-            <div className="flex min-h-[178px] flex-col justify-between rounded-[20px] border border-accent/10 bg-[linear-gradient(145deg,color-mix(in_oklab,var(--accent)_9%,var(--surface)),var(--surface))] p-5 shadow-elev-1">
-              <div className="flex items-start justify-between gap-3"><div><span className="cadencia-eyebrow">Liquidez hoje</span><h2 className="m-0 mt-2 text-sm font-semibold text-text">Caixa do dia</h2></div><span className="cadencia-icon-orb h-10 w-10"><Wallet size={19} weight="duotone" /></span></div>
-              <div><p className="num m-0 text-[clamp(1.8rem,4vw,2.7rem)] font-semibold tracking-[-.055em] text-text">{centavosParaReais(caixa.total)}</p><div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.08em] text-ok"><TrendUp size={13} weight="bold" /> fluxo consolidado</div></div>
-            </div>
-            <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
-              {caixa.porMetodo.map((m, index) => {
-                const Icon = ICONE_METODO[m.method];
-                return (
-                  <motion.li key={m.method} initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .045 }} className="cadencia-metric flex items-center gap-3 p-3.5">
-                    <span className="cadencia-icon-orb h-9 w-9 shrink-0"><Icon size={17} weight="duotone" /></span>
-                    <div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-2"><span className="text-xs font-semibold text-text">{ROTULO_METODO[m.method]} <span className="font-normal text-text-faint">({m.count})</span></span><span className="num text-xs font-bold text-text">{index === 0 ? centavosParaReais(m.total) : <ValorDividido centavos={m.total} />}</span></div><div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-sunken"><div className="h-full rounded-full bg-[var(--aurora)]" style={{ width: `${participacao.get(m.method) ?? 0}%` }} /></div></div>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {receitas !== null && (
-        <section aria-label="Receitas do mês" className="cadencia-panel p-5 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><span className="cadencia-eyebrow">Cadência de receita</span><h2 className="m-0 mt-1 text-base font-semibold tracking-[-.025em] text-text">Receitas do mês</h2></div><div className="flex gap-5"><div><span className="text-[9px] font-bold uppercase tracking-[.09em] text-text-faint">Total</span><p className="num m-0 text-base font-semibold text-text"><ValorDividido centavos={receitas.totalMes} /></p></div><div><span className="text-[9px] font-bold uppercase tracking-[.09em] text-text-faint">Média diária</span><p className="num m-0 text-base font-semibold text-text"><ValorDividido centavos={receitas.mediaDiaria} /></p></div></div></div>
-          <div className="overflow-x-auto rounded-2xl bg-surface-sunken/28 px-3 pb-1 pt-5"><GraficoDeBarras dias={receitas.dias} /></div>
-        </section>
-      )}
-
-      {aReceber !== null && (
-        <section aria-label="A receber" className="cadencia-panel overflow-hidden">
-          <div className="flex items-center justify-between border-b border-line/70 px-5 py-4 sm:px-6"><div><span className="cadencia-eyebrow">Próximos movimentos</span><h2 className="m-0 mt-1 text-base font-semibold text-text">A receber</h2></div><span className="num rounded-full border border-warn/15 bg-warn-soft px-3 py-1.5 text-xs font-bold text-warn">{centavosParaReais(aReceber.total)}</span></div>
-          <ul className="m-0 list-none divide-y divide-line/65 p-0">
-            {aReceber.entradas.map((e) => (
-              <li key={e.entryId} className="grid gap-3 px-5 py-4 transition-colors hover:bg-surface-hover/65 sm:grid-cols-[1fr_auto_auto] sm:items-center sm:px-6">
-                <div className="min-w-0"><span className="block truncate text-sm font-semibold text-text">{e.patientName}</span><span className="mt-0.5 block truncate text-[11px] text-text-muted">{e.description} · vence {e.dueDate}</span></div>
-                <span className="num text-sm font-semibold text-text">{centavosParaReais(e.amountCents)}</span>
-                <Botao variante="fantasma" altura={32} onClick={() => { void p.aoEnviarLink(e.entryId); }}>Enviar link</Botao>
+      {/* Caixa do dia */}
+      {caixa !== null ? (
+        <section aria-label="Caixa do dia"
+          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
+          <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
+                       margin: `0 0 var(--s-4)` }}>
+            Caixa do dia
+          </h2>
+          <p className="num" style={{ fontSize: 'var(--fs-22)', fontWeight: 'var(--fw-semibold)',
+                                      margin: `0 0 var(--s-4)` }}>
+            {centavosParaReais(caixa.total)}
+          </p>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
+                       gap: 'var(--s-3)' }}>
+            {caixa.porMetodo.map((m) => (
+              <li key={m.method} style={{ display: 'flex', justifyContent: 'space-between',
+                                          fontSize: 'var(--fs-14)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {ROTULO_METODO[m.method]} ({m.count})
+                </span>
+                <span className="num"><ValorDividido centavos={m.total} /></span>
               </li>
             ))}
           </ul>
         </section>
-      )}
+      ) : null}
+
+      {/* Receitas do mês */}
+      {receitas !== null ? (
+        <section aria-label="Receitas do mês"
+          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
+          <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
+                       margin: `0 0 var(--s-4)` }}>
+            Receitas do mês
+          </h2>
+          <div style={{ display: 'flex', gap: 'var(--s-8)', marginBottom: 'var(--s-6)' }}>
+            <div>
+              <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
+                             textTransform: 'uppercase', letterSpacing: '.04em' }}>Total</span>
+              <p className="num" style={{ fontSize: 'var(--fs-18)',
+                                          fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+                <ValorDividido centavos={receitas.totalMes} />
+              </p>
+            </div>
+            <div>
+              <span style={{ fontSize: 'var(--fs-12)', color: 'var(--text-muted)',
+                             textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                Média diária
+              </span>
+              <p className="num" style={{ fontSize: 'var(--fs-18)',
+                                          fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+                <ValorDividido centavos={receitas.mediaDiaria} />
+              </p>
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <GraficoDeBarras dias={receitas.dias} />
+          </div>
+        </section>
+      ) : null}
+
+      {/* A receber */}
+      {aReceber !== null ? (
+        <section aria-label="A receber"
+          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+                   background: 'var(--surface)', padding: 'var(--s-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between',
+                        alignItems: 'baseline', marginBottom: 'var(--s-4)' }}>
+            <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)', margin: 0 }}>
+              A receber
+            </h2>
+            <span className="num" style={{ fontSize: 'var(--fs-15)',
+                                            fontWeight: 'var(--fw-semibold)' }}>
+              {centavosParaReais(aReceber.total)}
+            </span>
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid',
+                       gap: 'var(--s-3)' }}>
+            {aReceber.entradas.map((e) => (
+              <li key={e.entryId}
+                style={{ display: 'grid',
+                         gridTemplateColumns: '1fr auto auto',
+                         alignItems: 'center', gap: 'var(--s-4)',
+                         padding: 'var(--s-3) 0',
+                         borderBottom: 'var(--border)' }}>
+                <div>
+                  <span style={{ fontWeight: 'var(--fw-medium)', fontSize: 'var(--fs-14)' }}>
+                    {e.patientName}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 'var(--fs-12)',
+                                 color: 'var(--text-muted)' }}>
+                    {e.description} — vence {e.dueDate}
+                  </span>
+                </div>
+                <span className="num" style={{ fontSize: 'var(--fs-14)' }}>
+                  {centavosParaReais(e.amountCents)}
+                </span>
+                <Botao variante="fantasma" altura={28}
+                  onClick={() => { void p.aoEnviarLink(e.entryId); }}>
+                  Enviar link
+                </Botao>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

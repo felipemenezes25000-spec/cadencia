@@ -139,12 +139,12 @@ export function PainelDeCobranca({
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 pb-2"
+        className="flex flex-col gap-[var(--s-6)]"
       >
         {/* Informacoes do paciente */}
-        <div className="cadencia-panel cadencia-panel-hero p-4">
-          <p className="m-0 text-sm font-semibold tracking-[-.02em] text-text">{pacienteNome}</p>
-          <p className="m-0 mt-1 text-xs text-text-muted">{procedimentoNome}</p>
+        <div className="rounded-xl border border-line bg-surface-raised p-3.5">
+          <p className="text-sm font-medium text-text">{pacienteNome}</p>
+          <p className="text-xs text-text-muted">{procedimentoNome}</p>
         </div>
 
         {/* Campo de valor */}
@@ -173,10 +173,10 @@ export function PainelDeCobranca({
             <label
               key={m.id}
               className={cn(
-                'group flex min-h-[54px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5',
+                'flex cursor-pointer items-center gap-3 rounded-xl border p-3.5',
                 'transition-colors duration-[var(--dur-2)]',
                 metodoSelecionado === m.id
-                  ? 'border-accent/35 bg-accent-soft shadow-[0_8px_24px_color-mix(in_oklch,var(--accent),transparent_92%)] ring-1 ring-accent/10'
+                  ? 'border-accent/40 bg-accent-soft ring-1 ring-accent/10'
                   : 'border-line bg-surface hover:border-line-strong hover:bg-surface-raised',
               )}
             >
@@ -186,10 +186,10 @@ export function PainelDeCobranca({
                 value={m.id}
                 checked={metodoSelecionado === m.id}
                 onChange={() => setMetodoSelecionado(m.id)}
-                className="h-4 w-4 accent-accent"
+                className="accent-accent"
               />
               <Icone icon={m.icone} size="md" className="text-text-muted" />
-              <span className="text-sm font-semibold text-text">{m.rotulo}</span>
+              <span className="text-sm text-text">{m.rotulo}</span>
             </label>
           ))}
         </fieldset>
@@ -220,8 +220,8 @@ export function PainelDeCobranca({
 
         {/* Link de pagamento gerado */}
         {linkPagamento && (
-          <div className="rounded-2xl border border-accent/15 bg-accent-soft/45 p-4 shadow-elev-1">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[.08em] text-text-muted">Link de pagamento</p>
+          <div className="rounded-xl border border-line bg-surface-raised p-3.5">
+            <p className="mb-2 text-xs text-text-muted">Link de pagamento</p>
             <div className="flex items-center gap-2">
               <input
                 type="text"

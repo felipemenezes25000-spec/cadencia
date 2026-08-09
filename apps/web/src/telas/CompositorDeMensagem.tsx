@@ -50,8 +50,8 @@ function SeletorDeTemplates({
           <button
             type="button"
             className={cn(
-              'grid h-9 w-9 place-items-center rounded-xl border border-transparent text-text-muted',
-              'hover:border-line hover:bg-surface-raised hover:text-text transition-all',
+              'rounded-[var(--r-md)] p-2 text-text-muted',
+              'hover:bg-surface-raised transition-colors-fast',
             )}
           >
             <Icone icon={TextAlignLeft} size="md" />
@@ -65,9 +65,9 @@ function SeletorDeTemplates({
           align="start"
           sideOffset={8}
           className={cn(
-            'z-50 w-80 max-h-72 overflow-y-auto',
-            'rounded-2xl border border-line/80',
-            'bg-surface/95 shadow-[var(--elev-float)] backdrop-blur-xl p-1.5 scrollbar-thin',
+            'z-50 w-72 max-h-60 overflow-y-auto',
+            'rounded-[var(--r-md)] border border-line',
+            'bg-surface shadow-elev-2 p-1 scrollbar-thin',
           )}
         >
           {templates.map((t) => (
@@ -75,8 +75,8 @@ function SeletorDeTemplates({
               key={t.id}
               onSelect={() => onInserir(t.conteudo)}
               className={cn(
-                'rounded-xl px-3 py-2.5 text-left cursor-pointer outline-none transition-colors',
-                'data-[highlighted]:bg-accent-soft data-[highlighted]:text-text',
+                'rounded-[var(--r-sm)] px-3 py-2 text-left cursor-pointer outline-none',
+                'data-[highlighted]:bg-accent data-[highlighted]:text-accent-on',
               )}
             >
               <p className="text-sm font-medium text-text">{t.titulo}</p>
@@ -126,7 +126,7 @@ export function CompositorDeMensagem({
   }, [texto]);
 
   return (
-    <div className="relative border-t border-line/70 bg-surface/95 px-3 py-3 backdrop-blur-xl sm:px-4">
+    <div className="border-t border-line bg-surface px-4 py-3">
       {/* Preview de arquivos anexados */}
       {arquivos.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2" data-testid="arquivos-preview">
@@ -135,7 +135,7 @@ export function CompositorDeMensagem({
               key={`${f.name}-${i}`}
               className={cn(
                 'flex items-center gap-1.5',
-                'rounded-xl border border-line/70 bg-surface-raised px-2.5 py-1.5 text-xs shadow-[0_4px_12px_rgb(15_23_42/.04)]',
+                'rounded-[var(--r-md)] bg-surface-raised px-2 py-1 text-xs',
               )}
             >
               <Icone icon={FileText} size="sm" className="text-text-muted" />
@@ -158,8 +158,8 @@ export function CompositorDeMensagem({
         <Tooltip conteudo="Anexar arquivo">
           <label
             className={cn(
-              'grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-transparent',
-              'text-text-muted hover:border-line hover:bg-surface-raised hover:text-text transition-all',
+              'cursor-pointer rounded-[var(--r-md)] p-2',
+              'text-text-muted hover:bg-surface-raised transition-colors-fast',
             )}
           >
             <Icone icon={Paperclip} size="md" />
@@ -196,9 +196,9 @@ export function CompositorDeMensagem({
           disabled={disabled}
           rows={1}
           className={cn(
-            'min-h-10 flex-1 resize-none rounded-2xl border border-line bg-surface-sunken/55',
-            'px-3.5 py-2.5 text-sm leading-relaxed text-text placeholder:text-text-faint',
-            'focus:border-accent/45 focus:bg-surface focus:ring-4 focus:ring-accent/10 outline-none',
+            'flex-1 resize-none rounded-[var(--r-lg)] border border-line bg-surface-raised',
+            'px-3 py-2 text-sm text-text placeholder:text-text-muted',
+            'focus:border-accent focus:ring-1 focus:ring-accent outline-none',
             'scrollbar-thin transition-colors-fast',
           )}
         />
@@ -216,7 +216,7 @@ export function CompositorDeMensagem({
         </Botao>
       </div>
 
-      <p className="ml-12 mt-1.5 text-[10px] font-medium text-text-faint max-sm:hidden">
+      <p className="text-[length:var(--fs-11)] text-text-muted mt-1">
         Enter para enviar, Shift+Enter para nova linha
       </p>
     </div>

@@ -141,7 +141,7 @@ export function Recibos(p: RecibosProps) {
   }, [recibos, busca]);
 
   return (
-    <div className="cadencia-page cadencia-enter mx-auto max-w-6xl space-y-6">
+    <div className="cadencia-page max-w-5xl space-y-6">
       <PageHeader titulo="Recibos" semBreadcrumb />
 
       {/* Filtros */}
@@ -191,11 +191,11 @@ export function Recibos(p: RecibosProps) {
       {/* Tabela de recibos */}
       {!isLoading && recibosFiltrados.length > 0 && (
         <section aria-label="Lista de recibos">
-          <div className="overflow-hidden rounded-[18px] border border-line/75 bg-surface/94 shadow-elev-1">
+          <div className="rounded-lg border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-line/70/70 bg-surface-sunken/45">
+                  <tr className="border-b border-line bg-surface-raised">
                     <th scope="col" className={thClasses}>
                       Numero
                     </th>
@@ -219,7 +219,7 @@ export function Recibos(p: RecibosProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/65">
+                <tbody className="divide-y divide-line">
                   {recibosFiltrados.map((r) => (
                     <tr
                       key={r.receiptId}
