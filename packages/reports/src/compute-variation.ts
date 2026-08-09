@@ -352,7 +352,7 @@ export async function computeVariation(
     clinicId,
     periodA,
     periodB,
-    computedAt: new Date().toISOString(),
+    computedAt: (await tx.query<{ now: string }>(`SELECT clock_timestamp()::text AS now`)).rows[0]!.now,
     factors,
   };
 }

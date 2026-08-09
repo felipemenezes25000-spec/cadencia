@@ -36,6 +36,10 @@ export async function materializeRecurringEntries(
   tx: TxClient,
   tenantId: string,
 ): Promise<MaterializeResult> {
+  // Obtem "agora" do Postgres, nao do relogio local
+  const dbNow = (await tx.query<{ now: string }>(`SELECT current_date::text AS now`)).rows[0]!.now;
+  const nowDate = parseDateMidday(dbNow);
+
   // Busca templates ativos com next_due_date no horizonte de 30 dias
   const { rows: templates } = await tx.query<TemplateRow>(
     `SELECT id::text, description, kind::text, category_id::text,
@@ -60,7 +64,7 @@ export async function materializeRecurringEntries(
     // Gera entries para todas as datas pendentes ate hoje + 30 dias
     while (true) {
       const dueDateObj = new Date(currentDue + 'T12:00:00Z');
-      const horizonObj = new Date();
+      const horizonObj = parseDateMidday(dbNow);
       horizonObj.setUTCDate(horizonObj.getUTCDate() + 30);
       horizonObj.setUTCHours(23, 59, 59, 999);
 
@@ -118,7 +122,7 @@ export async function materializeRecurringEntries(
 
     // Atualiza next_due_date do template para o proximo vencimento nao materializado
     let nextDue = tpl.next_due_date;
-    const horizonCheck = new Date();
+    const horizonCheck = parseDateMidday(dbNow);
     horizonCheck.setUTCDate(horizonCheck.getUTCDate() + 30);
 
     while (true) {
@@ -180,4 +184,8 @@ function advanceDueDate(
 
 function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+}
+
+function parseDateMidday(iso: string): Date {
+  return new Date(iso + 'T12:00:00Z');
 }

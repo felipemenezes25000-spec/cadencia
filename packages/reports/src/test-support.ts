@@ -210,7 +210,7 @@ export async function criarGlosaAceita(opts: {
   const versionId = uuidv7();
   const guiaId = uuidv7();
   const glosaId = uuidv7();
-  const guiaNumero = `G${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+  const guiaNumero = `G${uuidv7().replace(/-/g, '').slice(0, 16)}`;
 
   const admin = new Pool({ connectionString: adminUrl(), max: 1 });
   const c = await admin.connect();

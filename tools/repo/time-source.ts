@@ -13,14 +13,16 @@ export const TIME_SOURCE_ALLOWLIST: readonly string[] = [
   'packages/kernel/src/uuid.ts',
 ];
 
-const FORBIDDEN = /\bDate\.now\s*\(|\bnew\s+Date\s*\(/;
+// Date.now() is always a clock read.
+// new Date() with no args reads the clock; new Date(arg) is date parsing/arithmetic.
+const CLOCK_READ = /\bDate\.now\s*\(|\bnew\s+Date\s*\(\s*\)/;
 
 export function scanTimeSource(file: string, source: string): TimeSourceViolation[] {
   const violations: TimeSourceViolation[] = [];
   const lines = source.split('\n');
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
-    if (FORBIDDEN.test(line)) {
+    if (CLOCK_READ.test(line)) {
       violations.push({ file, line: index + 1, snippet: line.trim() });
     }
   }
