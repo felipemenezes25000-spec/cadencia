@@ -5,6 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { ToastProvider } from '../src/ui/ToastProvider';
+import { SessaoProvider } from '../src/sessao';
+
+const DEV_SESSAO = {
+  clinicId: 'dev-clinic-00000000',
+  csrfToken: 'dev-csrf-token',
+} as const;
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(() => new QueryClient({
@@ -22,7 +28,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <NuqsAdapter>
         <RadixTooltip.Provider delayDuration={300}>
           <ToastProvider>
-            {children}
+            <SessaoProvider sessao={DEV_SESSAO}>
+              {children}
+            </SessaoProvider>
           </ToastProvider>
         </RadixTooltip.Provider>
       </NuqsAdapter>
