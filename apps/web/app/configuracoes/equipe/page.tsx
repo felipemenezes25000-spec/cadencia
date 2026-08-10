@@ -67,6 +67,18 @@ export default function PaginaEquipe() {
     }
   }
 
+  async function alterarPapel(userId: string, novoRole: string) {
+    try {
+      await apiFetch(`/v1/configuracoes/equipe/${userId}/role`, {
+        method: 'PUT', body: { role: novoRole }, clinicId, csrfToken: lerCsrf(),
+      });
+      await carregarEquipe();
+    } catch (e) {
+      if (e instanceof ApiError) throw new Error(e.codigo);
+      throw e;
+    }
+  }
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
@@ -88,6 +100,7 @@ export default function PaginaEquipe() {
         ehAdmin={ehAdmin}
         aoRevogar={revogar}
         aoDesativarMfa={desativarMfa}
+        {...(ehAdmin ? { aoAlterarPapel: alterarPapel } : {})}
       />
 
       <ConvidarUsuario
