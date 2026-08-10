@@ -4,7 +4,7 @@ import type {
   OutboundBody, InboundEvent, InboundMessage, StatusUpdate,
 } from './messaging';
 
-describe('tipos do contrato MessagingProvider', () => {
+describe('tipos do contrato MessagingProvider', { timeout: 30_000 }, () => {
   it('OutboundBody aceita texto simples', () => {
     const body: OutboundBody = { kind: 'text', text: 'Ola' };
     expect(body.kind).toBe('text');

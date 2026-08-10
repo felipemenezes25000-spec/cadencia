@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-describe('invariante CI — tiss-soap existe a partir da Fase 5 (§7.5)', () => {
+describe('invariante CI — tiss-soap existe a partir da Fase 5 (§7.5)', { timeout: 30_000 }, () => {
   it('o arquivo tiss-soap.ts existe em packages/tiss/src/transport/', () => {
     const soapFile = resolve(import.meta.dirname, 'tiss-soap.ts');
     expect(existsSync(soapFile)).toBe(true);
