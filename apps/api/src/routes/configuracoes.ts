@@ -111,6 +111,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
             ehProfissional: z.boolean(),
             conselho: z.string().nullable(),
             desde: z.string(),
+            temTotp: z.boolean(),
           })),
         }),
       },
@@ -118,7 +119,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
   }, rota('membership.read', async (tx, ctx) => {
     const { rows } = await tx.query<{
       user_id: string; nome: string; email: string; role: string;
-      conselho: string | null; granted_at: Date;
+      conselho: string | null; granted_at: Date; tem_totp: boolean;
     }>(
       `SELECT * FROM app.equipe_da_unidade($1)`, [ctx.actor.clinicId]);
 
@@ -131,6 +132,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
         ehProfissional: x.conselho !== null,
         conselho: x.conselho,
         desde: x.granted_at.toISOString(),
+        temTotp: x.tem_totp,
       })),
     };
   }));

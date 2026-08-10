@@ -62,12 +62,13 @@ describe('configuracoes da clinica', () => {
     expect(r.statusCode).toBe(200);
     const itens = (r.json() as {
       itens: { userId: string; nome: string; email: string; role: string;
-               ehProfissional: boolean }[] }).itens;
+               ehProfissional: boolean; temTotp: boolean }[] }).itens;
 
     const eu = itens.find((x) => x.userId === s.userId);
     expect(eu?.role).toBe('admin_clinico');
     expect(eu?.email).toBe(`${s.userId}@example.test`);
     expect(eu?.ehProfissional).toBe(true);
+    expect(typeof eu?.temTotp).toBe('boolean');
 
     await app.close();
   });
