@@ -30,7 +30,7 @@ function mesAnterior(mes: string): string {
     : `${ano}-${String(m - 1).padStart(2, '0')}`;
 }
 
-/** Primeiro e ultimo dia do mes, no formato que /v1/variation espera. */
+/** Primeiro e ultimo dia do mes, no formato que /v1/reports/variation espera. */
 function limites(mes: string): { inicio: string; fim: string } {
   const [ano, m] = mes.split('-').map(Number) as [number, number];
   const ultimoDia = new Date(Date.UTC(ano, m, 0)).getUTCDate();
@@ -82,7 +82,7 @@ function DesempenhoInner() {
       period_b_start: b.inicio, period_b_end: b.fim,
     });
     const r = await apiFetch<{ factors: FatorDaApi[] }>(
-      `/v1/variation?${q.toString()}`, { clinicId, csrfToken });
+      `/v1/reports/variation/factors?${q.toString()}`, { clinicId, csrfToken });
     return r.factors;
   };
 
@@ -122,7 +122,7 @@ function DesempenhoInner() {
           period_b_start: b.inicio, period_b_end: b.fim,
         });
         const result = await apiFetch<DrillDownResult>(
-          `/v1/variation/drill-down?${q.toString()}`, { clinicId, csrfToken })
+          `/v1/reports/variation/drill-down?${q.toString()}`, { clinicId, csrfToken })
           .catch((e: unknown) => {
             if (e instanceof ApiError && e.status === 422) {
               return { dimension: 'profissional' as const, groups: [], totalCount: 0 };

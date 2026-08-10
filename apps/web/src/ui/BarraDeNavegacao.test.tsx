@@ -65,13 +65,21 @@ beforeEach(() => {
 
 describe('nav.ts', () => {
   it('segue a ordem CRONOLOGICA do dia, nao o organograma do software', () => {
+    // Os quatro primeiros sao o dia acontecendo; Financeiro e o dinheiro que ele
+    // gerou; Convenios e a cobranca que SEGUE esse dinheiro (fatura-se a
+    // operadora depois do atendimento, nao antes); Desempenho e Explorar sao o
+    // olhar para tras. Configuracoes fecha a lista porque nao pertence a
+    // cronologia nenhuma — e preparacao, nao operacao.
     expect(ITENS_NAV.map((i) => i.rotulo)).toEqual([
       'Hoje',
       'Agenda',
       'Conversas',
       'Pacientes',
       'Financeiro',
+      'Convenios',
       'Desempenho',
+      'Explorar',
+      'Configuracoes',
     ]);
   });
 

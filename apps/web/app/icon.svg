@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Cadencia">
+  <!--
+    Marca do produto no formato que o Next serve como icone da aba.
+
+    Tres barras de alturas diferentes, espacadas por igual: e a leitura de
+    "cadencia" — ritmo — e tambem a forma da agenda do dia, que e a tela central
+    do produto. Geometria pura de proposito: aos 16px de uma aba, qualquer
+    detalhe fino vira borrao, entao a marca precisa funcionar como silhueta.
+
+    A cor e o `--royal-600` dos tokens (oklch(53% 0.215 264)), fixada aqui em
+    hexadecimal porque favicon e renderizado fora do documento e nao enxerga as
+    variaveis CSS da pagina.
+  -->
+  <rect width="32" height="32" rx="8" fill="#3a57e8"/>
+  <g fill="#ffffff">
+    <rect x="8"  y="16" width="4" height="9"  rx="2"/>
+    <rect x="14" y="9"  width="4" height="16" rx="2"/>
+    <rect x="20" y="13" width="4" height="12" rx="2"/>
+  </g>
+</svg>

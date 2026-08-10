@@ -11,11 +11,47 @@ import {
   buildQuery,
   exportReport,
   validateCustomViewInput,
+  computeVariation,
+  drillDownFactor,
   type ReportQuery,
   type ExportFormat,
 } from '@cadencia/reports';
 import { uuidv7 } from '@cadencia/kernel';
 import { rota } from '../guard';
+
+/**
+ * Os seis fatores aditivos, na ORDEM em que a tela empilha o waterfall.
+ *
+ * A lista espelha `VALID_FACTORS` de `packages/reports` — nao por acaso: a
+ * funcao de dominio recusa qualquer nome fora dela, e os campos de
+ * `VariationFactors` sao exatamente estes com sufixo `_cents`, o que deixa o
+ * acesso por template (`f[`${nome}_cents`]`) verificavel pelo TypeScript.
+ */
+const FATORES = [
+  'volume', 'mix_procedimento', 'mix_convenio', 'ticket', 'faltas', 'glosas',
+] as const;
+
+const ROTULO_DO_FATOR: Record<(typeof FATORES)[number], string> = {
+  volume: 'Volume de atendimentos',
+  mix_procedimento: 'Mix de procedimentos',
+  mix_convenio: 'Mix de convenios',
+  ticket: 'Ticket medio',
+  faltas: 'Faltas',
+  glosas: 'Glosas',
+};
+
+/**
+ * Dois periodos comparaveis. `clinic_id` e aceito porque o front o envia, e
+ * deliberadamente NAO e lido: a clinica sai da sessao, nunca da query.
+ */
+const PeriodosSchema = z.object({
+  clinic_id: z.string().uuid().optional(),
+  period_a_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  period_a_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  period_b_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  period_b_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+type Periodos = z.infer<typeof PeriodosSchema>;
 
 const FilterSchema = z.object({
   column: z.string().min(1),
@@ -368,6 +404,111 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         previousCents: previousExpenses,
         variationPercent: variacao(currentExpenses, previousExpenses),
       },
+    };
+  }));
+
+  // ── GET /v1/reports/variation/factors — decomposicao aditiva do delta ──
+  //
+  // NAO e a rota `/v1/reports/variation` logo acima: aquela devolve os blocos de
+  // receita e despesa do periodo. Esta responde outra pergunta — POR QUE a
+  // receita mudou — decompondo o delta em fatores que somam exatamente o total.
+  //
+  // A funcao de dominio (`computeVariation`) existia e era testada desde a Fase
+  // 3, mas nunca chegou a ter rota: o teste `variation.int.test.ts` chama o
+  // dominio dentro de uma transacao e diz, no proprio comentario, que montar o
+  // HTTP era "responsabilidade de outro bloco". Esse bloco nao veio, e a tela de
+  // Desempenho chamava um caminho que nao existia.
+  //
+  // `clinic_id` chega na query porque o front o envia, e e IGNORADO de
+  // proposito: a clinica vem de `ctx.actor`, que saiu da sessao. Aceitar o id do
+  // cliente aqui seria deixar o navegador escolher de qual clinica ler.
+  r.get('/v1/reports/variation/factors', {
+    schema: {
+      querystring: PeriodosSchema,
+      response: {
+        200: z.object({
+          factors: z.array(z.object({
+            factor: z.enum(FATORES),
+            label: z.string(),
+            delta_cents: z.number().int(),
+          })),
+          totalACents: z.number().int(),
+          totalBCents: z.number().int(),
+          deltaTotalCents: z.number().int(),
+        }),
+      },
+    },
+  }, rota('report.read', async (tx, ctx, req) => {
+    const q = req.query as Periodos;
+    const snap = await computeVariation(
+      tx, ctx.actor.tenantId, ctx.actor.clinicId,
+      { start: q.period_a_start, end: q.period_a_end },
+      { start: q.period_b_start, end: q.period_b_end },
+    );
+    const f = snap.factors;
+    return {
+      // Os totais ficam FORA da lista: somar `total_a_cents` ao waterfall
+      // dobraria a receita do periodo na tela. Sao contexto, nao fator.
+      factors: FATORES.map((nome) => ({
+        factor: nome,
+        label: ROTULO_DO_FATOR[nome],
+        delta_cents: f[`${nome}_cents`],
+      })),
+      totalACents: f.total_a_cents,
+      totalBCents: f.total_b_cents,
+      deltaTotalCents: f.delta_total_cents,
+    };
+  }));
+
+  // ── GET /v1/reports/variation/drill-down — abre um fator ───────────────
+  //
+  // O dominio calcula as TRES dimensoes de uma vez (profissional, dia da semana
+  // e faixa de horario) porque as tres saem das mesmas linhas. A tela mostra uma
+  // por vez, entao a rota escolhe: `dimension` decide, e o padrao e
+  // `profissional` — a mesma dimensao que o front assume quando falha.
+  r.get('/v1/reports/variation/drill-down', {
+    schema: {
+      querystring: PeriodosSchema.extend({
+        factor: z.enum(FATORES),
+        dimension: z.enum(['profissional', 'dia_semana', 'faixa_horario'])
+          .default('profissional'),
+      }),
+      response: {
+        200: z.object({
+          dimension: z.enum(['profissional', 'dia_semana', 'faixa_horario']),
+          groups: z.array(z.object({
+            key: z.string(),
+            label: z.string(),
+            count: z.number().int(),
+            valueCents: z.number().int(),
+          })),
+          totalCount: z.number().int(),
+        }),
+      },
+    },
+  }, rota('report.read', async (tx, ctx, req) => {
+    const q = req.query as Periodos & {
+      factor: (typeof FATORES)[number];
+      dimension: 'profissional' | 'dia_semana' | 'faixa_horario';
+    };
+    const r2 = await drillDownFactor(
+      tx, ctx.actor.tenantId, ctx.actor.clinicId, q.factor,
+      { start: q.period_a_start, end: q.period_a_end },
+      { start: q.period_b_start, end: q.period_b_end },
+    );
+    const grupos = q.dimension === 'dia_semana' ? r2.byDayOfWeek
+      : q.dimension === 'faixa_horario' ? r2.byTimeSlot
+      : r2.byProfessional;
+
+    return {
+      dimension: q.dimension,
+      // O dominio nao emite `key` separada do rotulo; dentro de uma dimensao o
+      // rotulo ja e unico (um profissional, um dia, uma faixa), entao serve de
+      // chave estavel para o React sem inventar identificador.
+      groups: grupos.map((g) => ({
+        key: g.label, label: g.label, count: g.count, valueCents: g.amount_cents,
+      })),
+      totalCount: grupos.reduce((soma, g) => soma + g.count, 0),
     };
   }));
 
