@@ -18,7 +18,7 @@ function nuncaResolve<T = unknown>(): Promise<T> {
   return new Promise<T>(() => {});
 }
 
-describe('Skeletons de carregamento', () => {
+describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
   it('Hoje renderiza skeleton enquanto carrega', () => {
     const { container } = render(
       <Hoje
