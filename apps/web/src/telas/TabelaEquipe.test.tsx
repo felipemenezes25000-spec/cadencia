@@ -114,6 +114,47 @@ describe('TabelaEquipe', () => {
     expect(screen.queryByRole('button', { name: /confirmar/i })).toBeNull();
   });
 
+  it('mostra botao alterar papel para admin com callback', () => {
+    montar({ aoAlterarPapel: vi.fn(async () => {}) });
+    const rows = screen.getAllByRole('row');
+    const drRow = rows[2]!;
+    expect(within(drRow).getByRole('button', { name: /alterar papel/i })).toBeDefined();
+  });
+
+  it('oculta botao alterar papel para si mesmo', () => {
+    montar({ aoAlterarPapel: vi.fn(async () => {}) });
+    const rows = screen.getAllByRole('row');
+    const adminRow = rows[1]!;
+    expect(within(adminRow).queryByRole('button', { name: /alterar papel/i })).toBeNull();
+  });
+
+  it('nao mostra botao alterar papel sem callback', () => {
+    montar();
+    expect(screen.queryByRole('button', { name: /alterar papel/i })).toBeNull();
+  });
+
+  it('mostra select ao clicar em alterar papel', async () => {
+    montar({ aoAlterarPapel: vi.fn(async () => {}) });
+    const user = userEvent.setup();
+    const rows = screen.getAllByRole('row');
+    const drRow = rows[2]!;
+    await user.click(within(drRow).getByRole('button', { name: /alterar papel/i }));
+    expect(screen.getByRole('combobox', { name: /novo papel/i })).toBeDefined();
+  });
+
+  it('chama aoAlterarPapel com userId e novo papel', async () => {
+    const aoAlterarPapel = vi.fn(async () => {});
+    montar({ aoAlterarPapel });
+    const user = userEvent.setup();
+    const rows = screen.getAllByRole('row');
+    const anaRow = rows[3]!;
+    await user.click(within(anaRow).getByRole('button', { name: /alterar papel/i }));
+    const select = screen.getByRole('combobox', { name: /novo papel/i });
+    await user.selectOptions(select, 'financeiro');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
+    expect(aoAlterarPapel).toHaveBeenCalledWith('u3', 'financeiro');
+  });
+
   it('passa a11y', async () => {
     const { container } = render(
       <TabelaEquipe

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash, ShieldSlash } from '@phosphor-icons/react';
+import { Trash, ShieldSlash, PencilSimple } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
 import { rotulo } from '../sessao';
 
@@ -22,15 +22,21 @@ export interface TabelaEquipeProps {
   readonly ehAdmin: boolean;
   readonly aoRevogar: (userId: string, role: string, motivo?: string) => Promise<void>;
   readonly aoDesativarMfa: (userId: string) => Promise<void>;
+  readonly aoAlterarPapel?: (userId: string, novoRole: string) => Promise<void>;
 }
 
+const PAPEIS: MembroEquipe['role'][] = [
+  'admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro',
+];
+
 export function TabelaEquipe({
-  itens, meuUserId, ehAdmin, aoRevogar, aoDesativarMfa,
+  itens, meuUserId, ehAdmin, aoRevogar, aoDesativarMfa, aoAlterarPapel,
 }: TabelaEquipeProps) {
   const [confirmando, setConfirmando] = useState<{
-    tipo: 'revogar' | 'mfa'; userId: string; role?: string;
+    tipo: 'revogar' | 'mfa' | 'papel'; userId: string; role?: string;
   } | null>(null);
   const [motivo, setMotivo] = useState('');
+  const [novoPapel, setNovoPapel] = useState('');
   const [executando, setExecutando] = useState(false);
 
   async function confirmar() {
@@ -39,11 +45,14 @@ export function TabelaEquipe({
     try {
       if (confirmando.tipo === 'revogar') {
         await aoRevogar(confirmando.userId, confirmando.role!, motivo || undefined);
+      } else if (confirmando.tipo === 'papel' && aoAlterarPapel) {
+        await aoAlterarPapel(confirmando.userId, novoPapel);
       } else {
         await aoDesativarMfa(confirmando.userId);
       }
       setConfirmando(null);
       setMotivo('');
+      setNovoPapel('');
     } finally {
       setExecutando(false);
     }
@@ -52,6 +61,7 @@ export function TabelaEquipe({
   function cancelar() {
     setConfirmando(null);
     setMotivo('');
+    setNovoPapel('');
   }
 
   return (
@@ -78,7 +88,20 @@ export function TabelaEquipe({
                   <span className="block font-medium">{m.nome}</span>
                   <span className="block text-xs text-text-muted">{m.email}</span>
                 </td>
-                <td className="px-4 py-3">{rotulo(m.role)}</td>
+                <td className="px-4 py-3">
+                  {confirmandoEste && confirmando.tipo === 'papel' ? (
+                    <select
+                      value={novoPapel}
+                      onChange={(e) => setNovoPapel(e.target.value)}
+                      className="h-8 rounded-[var(--r-md)] border border-line bg-surface px-2 text-sm"
+                      aria-label="Novo papel"
+                    >
+                      {PAPEIS.filter((p) => p !== m.role).map((p) => (
+                        <option key={p} value={p}>{rotulo(p)}</option>
+                      ))}
+                    </select>
+                  ) : rotulo(m.role)}
+                </td>
                 <td className="px-4 py-3 font-mono text-xs">{m.conselho ?? '—'}</td>
                 <td className="px-4 py-3 text-xs text-text-muted">
                   {m.desde.slice(0, 10).split('-').reverse().join('/')}
@@ -98,8 +121,8 @@ export function TabelaEquipe({
                           />
                         )}
                         <div className="flex gap-2">
-                          <Botao variante="perigo" tamanho="sm"
-                            carregando={executando}
+                          <Botao variante={confirmando.tipo === 'papel' ? 'primario' : 'perigo'}
+                            tamanho="sm" carregando={executando}
                             onClick={() => { void confirmar(); }}>
                             Confirmar
                           </Botao>
@@ -112,6 +135,19 @@ export function TabelaEquipe({
                       </div>
                     ) : (
                       <div className="flex gap-2">
+                        {aoAlterarPapel && (
+                          <Botao variante="secundario" tamanho="sm"
+                            iconeEsquerda={PencilSimple}
+                            onClick={() => {
+                              const primeiro = PAPEIS.find((p) => p !== m.role)!;
+                              setNovoPapel(primeiro);
+                              setConfirmando({
+                                tipo: 'papel', userId: m.userId, role: m.role,
+                              });
+                            }}>
+                            Alterar papel
+                          </Botao>
+                        )}
                         <Botao variante="perigo" tamanho="sm"
                           iconeEsquerda={Trash}
                           onClick={() => setConfirmando({
