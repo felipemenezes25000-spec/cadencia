@@ -71,8 +71,8 @@ describe("FinanceiroLayout", () => {
     montar({ pathname: "/financeiro" });
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("tab", { name: /Convenios/i }));
-    expect(mockPush).toHaveBeenCalledWith("/convenios");
+    await user.click(screen.getByRole("tab", { name: /Cadastros/i }));
+    expect(mockPush).toHaveBeenCalledWith("/financeiro/cadastros");
   });
 
   it("mostra badge de pendentes em A receber", () => {
