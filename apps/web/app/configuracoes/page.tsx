@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../src/api';
 import { useSessao } from '../../src/sessao';
+import { ListaClinicas, type ClinicaResumo } from '../../src/telas/ListaClinicas';
+import { CriarClinica, type DadosCriacaoClinica } from '../../src/telas/CriarClinica';
 
 interface Clinica {
   clinicId: string;
@@ -13,12 +15,6 @@ interface Clinica {
   tenantNome: string;
 }
 
-/**
- * Fusos que cobrem o Brasil. A lista curta e deliberada: o servidor valida
- * contra `pg_timezone_names` (a fonte que `app.local_date` vai usar depois), e
- * um combo com 600 zonas do mundo so aumenta a chance de alguem escolher errado
- * o campo que decide a data de todo evento do sistema.
- */
 const FUSOS = [
   ['America/Sao_Paulo', 'Brasilia (UTC-3)'],
   ['America/Manaus', 'Manaus (UTC-4)'],
@@ -34,20 +30,30 @@ export default function PaginaConfiguracoes() {
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
   const podeEditar = vinculoAtivo.role === 'admin_clinico'
     || vinculoAtivo.role === 'diretor_tecnico';
+  const podeCriar = vinculoAtivo.role === 'admin_clinico';
 
   const [clinica, setClinica] = useState<Clinica | null>(null);
   const [nome, setNome] = useState('');
   const [timezone, setTimezone] = useState('America/Sao_Paulo');
+  const [cnes, setCnes] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  const [clinicas, setClinicas] = useState<ClinicaResumo[]>([]);
+  const [modalAberto, setModalAberto] = useState(false);
 
   useEffect(() => {
     let vivo = true;
     void (async () => {
-      const c = await apiFetch<Clinica>(
-        '/v1/configuracoes/clinica', { clinicId, csrfToken });
+      const [c, lista] = await Promise.all([
+        apiFetch<Clinica>('/v1/configuracoes/clinica', { clinicId, csrfToken }),
+        apiFetch<{ itens: ClinicaResumo[] }>('/v1/configuracoes/clinicas', { clinicId, csrfToken }),
+      ]);
       if (!vivo) return;
       setClinica(c); setNome(c.nome); setTimezone(c.timezone);
+      setCnes(c.cnes ?? ''); setCnpj(c.cnpj ?? '');
+      setClinicas(lista.itens);
     })();
     return () => { vivo = false; };
   }, [clinicId, csrfToken]);
@@ -57,9 +63,13 @@ export default function PaginaConfiguracoes() {
     setAviso(null);
     setSalvando(true);
     try {
+      const body: Record<string, string> = { nome, timezone };
+      if (cnes) body['cnes'] = cnes;
+      if (cnpj) body['cnpj'] = cnpj;
       const c = await apiFetch<Clinica>('/v1/configuracoes/clinica', {
-        method: 'PUT', body: { nome, timezone }, clinicId, csrfToken });
+        method: 'PUT', body, clinicId, csrfToken });
       setClinica(c);
+      setCnes(c.cnes ?? ''); setCnpj(c.cnpj ?? '');
       setAviso({ tipo: 'ok', texto: 'Configuracoes salvas.' });
     } catch (e) {
       setAviso({
@@ -73,16 +83,37 @@ export default function PaginaConfiguracoes() {
     }
   }
 
+  async function criarClinica(dados: DadosCriacaoClinica) {
+    await apiFetch('/v1/configuracoes/clinicas', {
+      method: 'POST', body: dados, clinicId, csrfToken });
+    const lista = await apiFetch<{ itens: ClinicaResumo[] }>(
+      '/v1/configuracoes/clinicas', { clinicId, csrfToken });
+    setClinicas(lista.itens);
+  }
+
   if (clinica === null) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
-        <p className="text-sm text-text-muted">Carregando…</p>
+        <p className="text-sm text-text-muted">Carregando...</p>
       </div>
     );
   }
 
   return (
     <div className="grid gap-8">
+      <ListaClinicas
+        clinicas={clinicas}
+        clinicaAtivaId={clinicId}
+        podeCriar={podeCriar}
+        aoCriar={() => setModalAberto(true)}
+      />
+
+      <CriarClinica
+        aberto={modalAberto}
+        aoFechar={() => setModalAberto(false)}
+        aoCriar={criarClinica}
+      />
+
       <section className="grid gap-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
           Unidade
@@ -115,23 +146,44 @@ export default function PaginaConfiguracoes() {
             </span>
           </label>
 
-          <dl className="grid grid-cols-2 gap-4 rounded-[var(--r-md)] border border-line bg-surface-2 p-4 text-sm">
-            <div>
-              <dt className="text-xs text-text-muted">CNES</dt>
-              <dd className="font-mono">{clinica.cnes ?? '—'}</dd>
+          {podeEditar ? (
+            <div className="grid grid-cols-2 gap-4">
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium">CNES</span>
+                <input
+                  value={cnes} onChange={(e) => setCnes(e.target.value)}
+                  placeholder="1234567" maxLength={7}
+                  className="h-10 rounded-[var(--r-md)] border border-line bg-surface px-3 text-sm font-mono outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                />
+              </label>
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium">CNPJ</span>
+                <input
+                  value={cnpj} onChange={(e) => setCnpj(e.target.value)}
+                  placeholder="12345678000190"
+                  className="h-10 rounded-[var(--r-md)] border border-line bg-surface px-3 text-sm font-mono outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                />
+              </label>
             </div>
-            <div>
-              <dt className="text-xs text-text-muted">CNPJ</dt>
-              <dd className="font-mono">{clinica.cnpj ?? '—'}</dd>
-            </div>
-          </dl>
+          ) : (
+            <dl className="grid grid-cols-2 gap-4 rounded-[var(--r-md)] border border-line bg-surface-2 p-4 text-sm">
+              <div>
+                <dt className="text-xs text-text-muted">CNES</dt>
+                <dd className="font-mono">{clinica.cnes ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-text-muted">CNPJ</dt>
+                <dd className="font-mono">{clinica.cnpj ?? '—'}</dd>
+              </div>
+            </dl>
+          )}
 
           {podeEditar && (
             <button
               type="submit" disabled={salvando}
               className="h-10 w-fit rounded-[var(--r-md)] bg-accent px-5 text-sm font-medium text-accent-on transition hover:opacity-90 disabled:opacity-50"
             >
-              {salvando ? 'Salvando…' : 'Salvar'}
+              {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           )}
 
