@@ -41,9 +41,19 @@ export async function closeRepassePeriod(
       WHERE s.professional_id = $1
         AND s.status = 'pendente'
         AND s.statement_id IS NULL
+        -- O split nasce quando o lancamento e pago, mas o lancamento pode ser
+        -- ESTORNADO depois — e o split fica 'pendente' do mesmo jeito. Sem este
+        -- filtro a clinica devolve o dinheiro ao paciente e ainda repassa a
+        -- parte do profissional sobre uma receita que deixou de existir.
+        AND e.status = 'pago'
+        -- O extrato e gravado com clinic_id, entao os splits tem de ser DESTA
+        -- unidade. Sem o filtro, fechar o periodo numa unidade arrastava junto o
+        -- que o profissional produziu em todas as outras do mesmo tenant, e o
+        -- extrato afirmava uma origem que nao era a verdadeira.
+        AND e.clinic_id = $4
         AND e.paid_at >= $2::date
         AND e.paid_at < ($3::date + 1)`,
-    [i.professionalId, i.periodStart, i.periodEnd]);
+    [i.professionalId, i.periodStart, i.periodEnd, i.clinicId]);
 
   if (pendingSplits.length === 0) {
     return err({ kind: 'sem_splits_pendentes' });

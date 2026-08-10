@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { ehRotaPublica } from '../sessao';
 import {
   CaretLeft,
   DotsThreeVertical,
@@ -208,6 +209,14 @@ export function BarraDeNavegacao() {
 
   const itensVisiveis = ITENS_NAV.filter((item) => item.disponivelNaFase <= FASE_ATUAL);
 
+  // A tela de entrada nao tem navegacao: oferecer atalho para Agenda a quem
+  // ainda nao provou quem e so produz uma sequencia de 401.
+  // Mesma regra do provider de sessao, num lugar so. A barra e a estrutura
+  // INTERNA da clinica: "Financeiro", "Pacientes", "Desempenho". Mostra-la a
+  // quem esta marcando consulta expoe a organizacao da clinica e oferece links
+  // que so vao expulsar a pessoa de volta.
+  const naEntrada = ehRotaPublica(caminho);
+
   useEffect(() => {
     if (isMobile) {
       document.documentElement.style.setProperty('--nav-width', '0px');
@@ -236,6 +245,8 @@ export function BarraDeNavegacao() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [itensVisiveis, router]);
+
+  if (naEntrada) return null;
 
   if (isMobile) {
     const itensMobile = itensVisiveis.slice(0, ITENS_MOBILE_VISIVEIS);

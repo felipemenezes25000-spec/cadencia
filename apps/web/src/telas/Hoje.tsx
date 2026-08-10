@@ -18,6 +18,7 @@ import { Botao } from '../ui/Botao';
 import { Skeleton } from '../ui/Skeleton';
 import { Icone } from '../ui/Icone';
 import type { StatusAgenda } from '../ui/ChipDeStatus';
+import { horaNaClinica } from '../lib/fuso';
 
 export interface LinhaDaFila {
   readonly appointmentId: string;
@@ -26,6 +27,7 @@ export interface LinhaDaFila {
   readonly patientId: string;
   readonly displayName: string;
   readonly professionalId: string;
+  readonly professionalNome?: string;
   readonly procedureNome: string | null;
   readonly procedureCor: string | null;
   readonly operadoraNome: string | null;
@@ -50,6 +52,8 @@ export interface PrecisaDeVoce {
 
 export interface HojeProps {
   readonly dia: string;
+  /** Fuso da UNIDADE. Os carimbos chegam em UTC e sao exibidos neste fuso. */
+  readonly timezone: string;
   readonly filtro?: FiltroDoDia;
   readonly mensagensNaoLidasTotal: number;
   readonly carregarDia: (
@@ -83,12 +87,17 @@ function porExtenso(dia: string): string {
   return fmt.format(d);
 }
 
-function hora(iso: string): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(iso));
+/**
+ * `porExtenso` acima formata em UTC de proposito e esta certo: recebe uma DATA
+ * ('AAAA-MM-DD'), ancora ao meio-dia UTC para escapar de borda de fuso e le de
+ * volta a mesma data. Nao ha instante envolvido.
+ *
+ * `hora` e o oposto: recebe um INSTANTE em UTC vindo da API. Formatar em UTC
+ * mostrava o horario tres horas adiantado no Brasil — a consulta das 14h
+ * aparecia como 17:00 na fila, e a recepcao chamava o paciente errado.
+ */
+function hora(iso: string, fuso: string): string {
+  return horaNaClinica(iso, fuso);
 }
 
 /** Esqueleto de carregamento para a pagina Hoje */
@@ -204,9 +213,9 @@ export function Hoje(p: HojeProps) {
             {fila.map((l) => (
               <LinhaDaAgenda
                 key={l.appointmentId}
-                hora={hora(l.startsAt)}
+                hora={hora(l.startsAt, p.timezone)}
                 paciente={l.displayName}
-                profissional={l.professionalId}
+                profissional={l.professionalNome ?? l.professionalId}
                 {...(l.procedureNome === null ? {} : { procedimento: l.procedureNome })}
                 {...(l.operadoraNome === null ? {} : { convenio: l.operadoraNome })}
                 status={l.status}

@@ -63,3 +63,41 @@ describe('emissao de documento', () => {
     expect(JSON.stringify(rows[0]?.meta)).not.toContain('Atesto');
   });
 });
+
+describe('emissao sem PSC contratado', () => {
+  it('emite o documento e o deixa PENDENTE, sem forjar assinatura', async () => {
+    const { createUncontractedSignatureProvider } = await import('@cadencia/integrations');
+    const r = await withTenantTx(actor, (tx) => issueDocument(tx, {
+      provider: createUncontractedSignatureProvider(),
+      kind: 'atestado', patientId: s.patientId, professionalId: s.professionalId,
+      clinicId: s.clinicId, encounterId: s.encounterId, versionId: s.versionId,
+      issuedDate: '2026-08-04', signerRef: 'signer-1', signerCpf: '00000000000',
+      payload: { texto: 'Atesto sem PSC contratado', diasAfastamento: 1, cid: null },
+    }));
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    // O documento EXISTE e esta no prontuario: nao emitir seria pior, porque o
+    // atendimento aconteceu. O que nao pode e sair com carimbo que nao existe.
+    expect(r.value.documentId).toBeTruthy();
+    expect(r.value.assinatura.estado).toBe('pendente');
+
+    const { rows } = await withTenantTx(actor, (tx) => tx.query<{
+      motivo: string; signature_id: string | null; resolved_at: string | null }>(
+      `SELECT motivo, signature_id, resolved_at FROM clin.signature_pending
+        WHERE subject_id = $1`, [r.value.documentId]));
+
+    // A pendencia fica registrada com o motivo. Quando o PSC for contratado, a
+    // fila e assinada sem reemitir documento nenhum — e por isso o canonico e o
+    // hash ja foram gravados agora.
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.motivo).toBe('rejected');
+    expect(rows[0]?.signature_id).toBeNull();
+    expect(rows[0]?.resolved_at).toBeNull();
+
+    const { rows: doc } = await withTenantTx(actor, (tx) => tx.query<{
+      signature_id: string | null }>(
+      `SELECT signature_id FROM clin.document WHERE id = $1`, [r.value.documentId]));
+    expect(doc[0]?.signature_id).toBeNull();
+  });
+});

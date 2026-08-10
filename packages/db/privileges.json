@@ -6,6 +6,9 @@
         "SELECT",
         "UPDATE"
       ],
+      "id_login": [
+        "SELECT"
+      ],
       "jobs": [
         "DELETE",
         "INSERT",
@@ -13,6 +16,12 @@
         "UPDATE"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "clin_purger": [
+        "SELECT"
+      ],
+      "sched_public": [
         "SELECT"
       ]
     }
@@ -24,6 +33,9 @@
         "SELECT",
         "UPDATE"
       ],
+      "id_login": [
+        "SELECT"
+      ],
       "jobs": [
         "DELETE",
         "INSERT",
@@ -31,6 +43,9 @@
         "UPDATE"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "sched_public": [
         "SELECT"
       ]
     }
@@ -74,10 +89,16 @@
       "clin_writer": [
         "SELECT"
       ],
+      "id_login": [
+        "SELECT"
+      ],
       "jobs": [
         "SELECT"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "sched_public": [
         "SELECT"
       ]
     }
@@ -87,11 +108,17 @@
       "app_rw": [
         "SELECT"
       ],
+      "id_login": [
+        "SELECT"
+      ],
       "jobs": [
         "DELETE",
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "clin_purger": [
+        "SELECT"
       ]
     }
   },
@@ -159,6 +186,10 @@
       "app_rw": [
         "INSERT",
         "SELECT"
+      ],
+      "clin_purger": [
+        "SELECT",
+        "UPDATE"
       ]
     },
     "columns": {
@@ -235,6 +266,9 @@
       ],
       "rpt_owner": [
         "SELECT"
+      ],
+      "clin_purger": [
+        "SELECT"
       ]
     },
     "columns": {
@@ -285,6 +319,10 @@
       "clin_writer": [
         "INSERT",
         "SELECT"
+      ],
+      "clin_purger": [
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
@@ -319,6 +357,9 @@
         "SELECT"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "clin_purger": [
         "SELECT"
       ]
     }
@@ -355,6 +396,10 @@
         "SELECT"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "sched_public": [
+        "INSERT",
         "SELECT"
       ]
     }
@@ -924,6 +969,18 @@
       ]
     }
   },
+  "ref.cid11_term": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
   "ref.observation_code": {
     "table": {
       "app_rw": [
@@ -991,6 +1048,10 @@
       ],
       "rpt_owner": [
         "SELECT"
+      ],
+      "sched_public": [
+        "INSERT",
+        "SELECT"
       ]
     }
   },
@@ -1001,6 +1062,9 @@
         "INSERT",
         "SELECT",
         "UPDATE"
+      ],
+      "sched_public": [
+        "SELECT"
       ]
     }
   },
@@ -1012,6 +1076,9 @@
         "UPDATE"
       ],
       "rpt_owner": [
+        "SELECT"
+      ],
+      "sched_public": [
         "SELECT"
       ]
     }
@@ -1086,6 +1153,35 @@
           "UPDATE"
         ]
       }
+    }
+  },
+  "tiss.encounter_guia_sadt": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
+    },
+    "columns": {
+      "app_rw": {
+        "live": [
+          "UPDATE"
+        ]
+      }
+    }
+  },
+  "tiss.encounter_guia_sadt_item": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
+        "SELECT"
+      ]
     }
   },
   "tiss.glosa": {
@@ -1164,6 +1260,18 @@
       "app_rw": [
         "DELETE",
         "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "tiss.lote_guia_sadt": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT"
+      ],
+      "rpt_owner": [
         "SELECT"
       ]
     }

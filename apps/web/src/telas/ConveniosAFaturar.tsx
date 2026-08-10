@@ -15,6 +15,8 @@ export interface GuiaPendente {
   readonly id: string;
   readonly numeroGuia: string;
   readonly pacienteNome: string;
+  /** O lote pertence a UMA operadora: sem o id nao da para cria-lo. */
+  readonly operadoraId: string;
   readonly operadoraNome: string;
   readonly registroAns: string;
   readonly codigoProcedimento: string;
@@ -44,7 +46,8 @@ export interface FiltrosAFaturar {
 
 export interface ConveniosAFaturarProps {
   readonly carregarDados: (filtros: FiltrosAFaturar) => Promise<AFaturarDados>;
-  readonly aoCriarLote: (guiaIds: readonly string[]) => Promise<void>;
+  readonly aoCriarLote: (
+    guiaIds: readonly string[], operadoraId: string) => Promise<void>;
   readonly aoAbrirGuia: (guiaId: string) => void;
 }
 
@@ -124,10 +127,43 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
   const [status, setStatus] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [criandoLote, setCriandoLote] = useState(false);
+  const [erroLote, setErroLote] = useState<string | null>(null);
 
   useEffect(() => {
     void p.carregarDados({}).then(setDados);
   }, [p]);
+
+  /**
+   * A operadora do lote sai das guias selecionadas.
+   *
+   * `null` quando a selecao mistura operadoras — e ai o botao fica desabilitado
+   * em vez de montar um lote que a operadora recusaria inteiro. Antes disto a
+   * tela mandava `operadoraId: null` para uma rota que exige uuid: a API
+   * respondia 400, a promessa era descartada com `void` sem catch, e o usuario
+   * via o botao "funcionar" sem que nada acontecesse.
+   */
+  const operadoraDaSelecao = ((): string | null => {
+    const ids = new Set(
+      (dados?.guias ?? [])
+        .filter((g) => selecionadas.has(g.id))
+        .map((g) => g.operadoraId),
+    );
+    return ids.size === 1 ? [...ids][0]! : null;
+  })();
+
+  async function criarLote(): Promise<void> {
+    if (operadoraDaSelecao === null) return;
+    setErroLote(null);
+    setCriandoLote(true);
+    try {
+      await p.aoCriarLote(Array.from(selecionadas), operadoraDaSelecao);
+    } catch {
+      setErroLote('Nao foi possivel criar o lote. Nenhuma guia foi alterada.');
+    } finally {
+      setCriandoLote(false);
+    }
+  }
 
   function filtrar(): void {
     void p
@@ -265,13 +301,24 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             variante="primario"
             tamanho="sm"
             iconeEsquerda={Package}
-            onClick={() => {
-              void p.aoCriarLote(Array.from(selecionadas));
-            }}
+            disabled={criandoLote || operadoraDaSelecao === null}
+            onClick={() => { void criarLote(); }}
           >
-            Criar lote
+            {criandoLote ? 'Criando lote...' : 'Criar lote'}
           </Botao>
         </div>
+      )}
+
+      {/* Um lote e de UMA operadora: o XML vai para o webservice dela. */}
+      {selecionadas.size > 0 && operadoraDaSelecao === null && (
+        <p role="alert" className="text-sm text-danger">
+          As guias selecionadas sao de operadoras diferentes. Um lote pertence a
+          uma operadora so — selecione guias de uma de cada vez.
+        </p>
+      )}
+
+      {erroLote !== null && (
+        <p role="alert" className="text-sm text-danger">{erroLote}</p>
       )}
 
       {/* Estado vazio */}

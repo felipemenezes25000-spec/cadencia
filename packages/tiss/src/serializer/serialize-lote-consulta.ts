@@ -1,6 +1,7 @@
 import { XmlBuilder } from './xml-builder';
 import { encodeIso8859 } from './encode-iso8859';
 import { computeTissHash } from './compute-tiss-hash';
+import { emitirCabecalho, emitirEpilogo, valorDecimal } from './envelope';
 import type { LoteConsultaInput, GuiaConsultaInput } from './types';
 
 /**
@@ -34,24 +35,32 @@ export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteRe
   });
 
   // ---- Cabecalho ----
-  emitCabecalho(xml, cabecalho);
+  // A origem sai do contratado da primeira guia: num lote todas as guias sao do
+  // mesmo prestador, por construcao de `tiss.lote`. Sem guia nao ha lote.
+  const primeira = guias[0];
+  if (primeira === undefined) throw new Error('lote sem guias');
+  emitirCabecalho(xml, {
+    cabecalho, origem: primeira.contratado, registroANS: input.registroANS,
+  });
 
-  // ---- Corpo: prestadorParaOperadora > loteGuias ----
+  // ---- Corpo: prestadorParaOperadora > loteGuias > guiasTISS ----
   xml.open('ans:prestadorParaOperadora');
   xml.open('ans:loteGuias');
   xml.tag('ans:numeroLote', numeroLote);
 
+  // `guiasTISS` nao e decoracao: e o `choice` que impede o lote de misturar
+  // consulta com SP/SADT. A operadora processa cada tipo por uma esteira
+  // diferente, e um lote misto seria recusado inteiro.
+  xml.open('ans:guiasTISS');
   for (const guia of guias) {
     emitGuiaConsulta(xml, guia);
   }
+  xml.close('ans:guiasTISS');
 
   xml.close('ans:loteGuias');
   xml.close('ans:prestadorParaOperadora');
 
-  // ---- Epilogo: hash ----
-  xml.open('ans:epilogo');
-  xml.tag('ans:hash', hash);
-  xml.close('ans:epilogo');
+  emitirEpilogo(xml, hash);
 
   xml.close('ans:mensagemTISS');
 
@@ -64,59 +73,73 @@ export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteRe
   };
 }
 
-function emitCabecalho(xml: XmlBuilder, cab: LoteConsultaInput['cabecalho']): void {
-  xml.open('ans:cabecalho');
-  xml.tag('ans:versaoPadrao', cab.versaoPadrao);
-  xml.tag('ans:registroANS', cab.registroANS);
-  xml.tag('ans:dataGeracao', cab.dataGeracao);
-  xml.tag('ans:horaGeracao', cab.horaGeracao);
-  xml.tag('ans:sequencialTransacao', cab.sequencialTransacao);
-  xml.close('ans:cabecalho');
-}
-
+/**
+ * Uma guia de consulta — tipo `ctm_consultaGuia` do XSD.
+ *
+ * A ordem dos elementos e normativa: `sequence`, nao `all`. Trocar dois campos
+ * de lugar produz XML bem-formado que a operadora recusa.
+ */
 function emitGuiaConsulta(xml: XmlBuilder, guia: GuiaConsultaInput): void {
   xml.open('ans:guiaConsulta');
 
+  xml.open('ans:cabecalhoConsulta');
+  xml.tag('ans:registroANS', guia.registroANSOperadora);
   xml.tag('ans:numeroGuiaPrestador', guia.numeroGuiaPrestador);
+  xml.close('ans:cabecalhoConsulta');
+
   xml.optionalTag('ans:numeroGuiaOperadora', guia.numeroGuiaOperadora);
+
+  xml.open('ans:dadosBeneficiario');
   xml.tag('ans:numeroCarteira', guia.numeroCarteira);
   xml.tag('ans:atendimentoRN', guia.atendimentoRN ? 'S' : 'N');
+  xml.close('ans:dadosBeneficiario');
 
-  // Dados do contratado
-  xml.open('ans:dadosContratado');
-  xml.optionalTag('ans:codigoPrestadorNaOperadora', guia.contratado.codigoPrestadorNaOperadora);
-  xml.optionalTag('ans:cpfContratado', guia.contratado.cpfContratado);
-  xml.optionalTag('ans:cnpjContratado', guia.contratado.cnpjContratado);
+  // `ct_contratadoDados` e um CHOICE: exatamente um identificador. O codigo
+  // antigo emitia codigoPrestadorNaOperadora E cnpjContratado juntos.
+  xml.open('ans:contratadoExecutante');
+  emitIdentificacaoContratado(xml, guia);
   xml.tag('ans:CNES', guia.contratado.cnes);
-  xml.close('ans:dadosContratado');
+  xml.close('ans:contratadoExecutante');
 
-  // Profissional executante
   xml.open('ans:profissionalExecutante');
+  xml.optionalTag('ans:nomeProfissional', guia.profissionalExecutante.nome);
   xml.tag('ans:conselhoProfissional', guia.profissionalExecutante.conselhoProfissional);
-  xml.tag('ans:numeroConselho', guia.profissionalExecutante.numeroConselho);
-  xml.tag('ans:ufConselho', guia.profissionalExecutante.ufConselho);
+  // O XSD chama `numeroConselhoProfissional` e `UF`, nao `numeroConselho`/`ufConselho`.
+  xml.tag('ans:numeroConselhoProfissional', guia.profissionalExecutante.numeroConselho);
+  xml.tag('ans:UF', guia.profissionalExecutante.ufConselho);
   xml.tag('ans:CBOS', guia.profissionalExecutante.cbos);
   xml.close('ans:profissionalExecutante');
 
-  // Dados do atendimento
   xml.tag('ans:indicacaoAcidente', guia.indicacaoAcidente);
+
+  xml.open('ans:dadosAtendimento');
+  xml.optionalTag('ans:coberturaEspecial', guia.coberturaEspecial);
   xml.tag('ans:regimeAtendimento', guia.regimeAtendimento);
   xml.optionalTag('ans:saudeOcupacional', guia.saudeOcupacional);
-  xml.optionalTag('ans:coberturaEspecial', guia.coberturaEspecial);
   xml.tag('ans:dataAtendimento', guia.dataAtendimento);
   xml.tag('ans:tipoConsulta', guia.tipoConsulta);
-
-  // Procedimento
+  xml.open('ans:procedimento');
   xml.tag('ans:codigoTabela', guia.codigoTabela);
   xml.tag('ans:codigoProcedimento', guia.codigoProcedimento);
-  xml.tag('ans:valorProcedimento', formatValorReais(guia.valorProcedimentoCentavos));
+  xml.tag('ans:valorProcedimento', valorDecimal(guia.valorProcedimentoCentavos));
+  xml.close('ans:procedimento');
+  xml.close('ans:dadosAtendimento');
+
   xml.optionalTag('ans:observacao', guia.observacao);
 
   xml.close('ans:guiaConsulta');
 }
 
-function formatValorReais(centavos: number): string {
-  const reais = Math.trunc(centavos / 100);
-  const cents = centavos % 100;
-  return `${reais}.${String(cents).padStart(2, '0')}`;
+function emitIdentificacaoContratado(xml: XmlBuilder, guia: GuiaConsultaInput): void {
+  const c = guia.contratado;
+  if (c.cnpjContratado !== undefined && c.cnpjContratado !== '') {
+    xml.tag('ans:cnpjContratado', c.cnpjContratado);
+  } else if (c.cpfContratado !== undefined && c.cpfContratado !== '') {
+    xml.tag('ans:cpfContratado', c.cpfContratado);
+  } else if (c.codigoPrestadorNaOperadora !== undefined
+             && c.codigoPrestadorNaOperadora !== '') {
+    xml.tag('ans:codigoPrestadorNaOperadora', c.codigoPrestadorNaOperadora);
+  } else {
+    throw new Error('contratado sem CNPJ, CPF ou codigo na operadora');
+  }
 }

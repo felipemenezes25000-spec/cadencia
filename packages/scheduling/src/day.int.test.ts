@@ -82,6 +82,10 @@ describe('o dia', () => {
     expect(r[0]?.cadastroPreliminar).toBe(false);
     expect(r[0]?.primeiraVez).toBe(true);
     expect(r[0]?.displayName).toBe('Maria Souza Lima');
+    // A fila mostra COM QUEM o paciente vai ser atendido. Sem o nome, a linha
+    // exibe o uuid do profissional — que nao diz nada para a recepcao.
+    expect(r[0]?.professionalNome).toBeTruthy();
+    expect(r[0]?.professionalNome).not.toMatch(/^[0-9a-f]{8}-/);
   });
 
   it('filtrar por status devolve so aquele grupo — cada numero da faixa e um filtro', async () => {

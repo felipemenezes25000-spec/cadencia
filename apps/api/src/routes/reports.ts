@@ -120,7 +120,11 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         }),
       },
     },
-  }, async () => {
+    // Era a UNICA rota de negocio do repositorio sem `rota()`: sem sessao e sem
+    // checagem de acao. O conteudo e catalogo estatico, nao dado de tenant, mas
+    // uma rota aberta continua sendo superficie de reconhecimento — e as sete
+    // irmas deste mesmo arquivo exigem `report.read`.
+  }, rota('report.read', async () => {
     return {
       views: BUILT_IN_VIEWS.map((v) => ({
         id: v.id,
@@ -130,7 +134,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         chartKind: v.chartKind,
       })),
     };
-  });
+  }));
 
   // -- GET /v1/reports/views/:viewId — executar visao salva ----------------
   r.get('/v1/reports/views/:viewId', {

@@ -4,6 +4,7 @@ import type { GuiaConsultaInput, LoteConsultaInput } from './types';
 
 function guiaBase(): GuiaConsultaInput {
   return {
+    registroANSOperadora: '123456',
     numeroGuiaPrestador: '00001',
     numeroCarteira: '98765432101234567',
     atendimentoRN: false,
@@ -69,14 +70,22 @@ describe('serializeLoteConsulta', () => {
     expect(text).toContain('</ans:mensagemTISS>');
   });
 
-  it('contem cabecalho com todos os campos', () => {
+  it('cabecalho segue a forma da norma: agrupado, nao plano', () => {
     const { xml } = serializeLoteConsulta(loteAmostra());
     const text = new TextDecoder('iso-8859-1').decode(xml);
-    expect(text).toContain('<ans:versaoPadrao>4.01.00</ans:versaoPadrao>');
-    expect(text).toContain('<ans:registroANS>339679</ans:registroANS>');
-    expect(text).toContain('<ans:dataGeracao>2026-08-07</ans:dataGeracao>');
-    expect(text).toContain('<ans:horaGeracao>14:30:00</ans:horaGeracao>');
+
+    // O padrao agrupa por proposito. A versao antiga deste teste afirmava um
+    // cabecalho plano (versaoPadrao, registroANS, dataGeracao... em sequencia),
+    // que era a forma de um XSD de amostra escrito a mao — nunca a da ANS.
+    expect(text).toContain('<ans:identificacaoTransacao>');
+    expect(text).toContain('<ans:tipoTransacao>ENVIO_LOTE_GUIAS</ans:tipoTransacao>');
+    expect(text).toContain('<ans:dataRegistroTransacao>2026-08-07</ans:dataRegistroTransacao>');
+    expect(text).toContain('<ans:horaRegistroTransacao>14:30:00</ans:horaRegistroTransacao>');
     expect(text).toContain('<ans:sequencialTransacao>12345</ans:sequencialTransacao>');
+    // `Padrao`, com P maiusculo, e o nome do elemento no XSD.
+    expect(text).toContain('<ans:Padrao>4.01.00</ans:Padrao>');
+    expect(text).toContain('<ans:destino><ans:registroANS>339679</ans:registroANS></ans:destino>');
+    expect(text).not.toContain('<ans:versaoPadrao>');
   });
 
   it('contem tag ans:hash com hash MD5 proprietario', () => {
@@ -164,6 +173,7 @@ describe('serializeLoteConsulta', () => {
     const guia1 = guiaBase();
     const guia2: GuiaConsultaInput = {
       ...guiaBase(),
+      registroANSOperadora: '123456',
       numeroGuiaPrestador: '00002',
       valorProcedimentoCentavos: 20000,
     };

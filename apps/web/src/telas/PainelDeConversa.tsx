@@ -162,9 +162,29 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
   const [texto, setTexto] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Troca de conversa LIMPA a anterior e descarta resposta atrasada.
+   *
+   * Sem isto duas coisas davam errado, e as duas mostram mensagem de um
+   * paciente sob o nome de outro:
+   *
+   * 1. O estado nao era zerado, entao a thread da conversa anterior continuava
+   *    na tela enquanto a nova carregava — ja com o cabecalho do novo contato.
+   * 2. As duas buscas correm soltas. Clicar em A e logo em B, com A mais lento,
+   *    fazia a resposta de A chegar DEPOIS e sobrescrever a de B.
+   *
+   * `ativo` e fechado sobre esta execucao do efeito: quando o cleanup roda, a
+   * resposta em voo deixa de poder escrever no estado.
+   */
   useEffect(() => {
-    void p.carregarMensagens(p.conversationId).then(setMensagens);
-    void p.carregarContexto(p.conversationId).then(setContexto);
+    let ativo = true;
+    setMensagens([]);
+    setContexto(null);
+    void p.carregarMensagens(p.conversationId)
+      .then((m) => { if (ativo) setMensagens(m); });
+    void p.carregarContexto(p.conversationId)
+      .then((c) => { if (ativo) setContexto(c); });
+    return () => { ativo = false; };
   }, [p, p.conversationId]);
 
   /* Auto-scroll para ultima mensagem */

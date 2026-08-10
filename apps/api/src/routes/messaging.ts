@@ -11,11 +11,19 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 const ConversationSchema = z.object({
   conversationId: z.string().uuid(),
   patientId: z.string().uuid().nullable(),
+  // Nulo e caso NORMAL, nao erro: quem escreve pela primeira vez ainda nao esta
+  // no cadastro, e a recepcao precisa ver o numero para decidir se vincula.
+  patientName: z.string().nullable(),
   channelIdentityId: z.string().uuid(),
   channel: z.string(),
   remotePhone: z.string(),
   status: z.string(),
   lastMessageAt: z.string().nullable(),
+  lastMessageBody: z.string(),
+  lastMessageDirection: z.enum(['inbound', 'outbound']).nullable(),
+  // Derivado de mensagem ENTRANTE sem read_at. Nao existe coluna de contador:
+  // um contador denormalizado erra na primeira corrida entre duas abas abertas.
+  unreadCount: z.number().int(),
 });
 
 const MessageSchema = z.object({
@@ -105,13 +113,32 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
       last_message_at: string | null;
     }>(
       `SELECT c.id AS conversation_id, c.patient_id,
+              p.display_name AS patient_name,
               c.channel_identity_id, ci.channel,
               c.remote_phone, c.status,
               to_char(c.last_message_at AT TIME ZONE 'UTC',
-                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_message_at
+                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_message_at,
+              ult.body_text AS last_message_body,
+              ult.direction  AS last_message_direction,
+              (SELECT count(*) FROM msg.message m
+                WHERE m.tenant_id = c.tenant_id AND m.conversation_id = c.id
+                  AND m.direction = 'inbound' AND m.read_at IS NULL)
+                AS unread_count
          FROM msg.conversation c
          JOIN msg.channel_identity ci
            ON ci.tenant_id = c.tenant_id AND ci.id = c.channel_identity_id
+         LEFT JOIN clin.patient p
+           ON (p.tenant_id, p.id) = (c.tenant_id, c.patient_id)
+         -- LATERAL e nao subconsulta correlacionada por campo: a previa precisa
+         -- do texto E da direcao da MESMA mensagem, e duas subconsultas
+         -- separadas poderiam trazer linhas diferentes se houvesse empate.
+         LEFT JOIN LATERAL (
+           SELECT m.body_text, m.direction
+             FROM msg.message m
+            WHERE m.tenant_id = c.tenant_id AND m.conversation_id = c.id
+            ORDER BY m.created_at DESC, m.id DESC
+            LIMIT 1
+         ) ult ON TRUE
         WHERE TRUE ${where}
         ORDER BY c.last_message_at DESC NULLS LAST
         LIMIT $${idx}`,
@@ -122,11 +149,17 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
     const itens = (hasMore ? rows.slice(0, limite) : rows).map((row) => ({
       conversationId: row.conversation_id,
       patientId: row.patient_id,
+      patientName: (row as { patient_name?: string | null }).patient_name ?? null,
       channelIdentityId: row.channel_identity_id,
       channel: row.channel,
       remotePhone: row.remote_phone,
       status: row.status,
       lastMessageAt: row.last_message_at,
+      lastMessageBody: (row as { last_message_body?: string | null }).last_message_body ?? '',
+      lastMessageDirection:
+        (row as { last_message_direction?: 'inbound' | 'outbound' | null })
+          .last_message_direction ?? null,
+      unreadCount: Number((row as { unread_count?: string }).unread_count ?? 0),
     }));
 
     const nextCursor = hasMore && itens.length > 0
@@ -201,6 +234,108 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
   }));
 
   // ── POST /v1/conversations/:id/messages ──────────────────────────────────
+  /**
+   * O contexto que o painel lateral da conversa mostra.
+   *
+   * Existe para a recepcao responder SEM trocar de tela. Sem ele, cada "posso
+   * remarcar?" obriga a abrir o cadastro em outra aba, e o atendimento por
+   * mensagem deixa de ser mais rapido que o telefone — que e a razao inteira
+   * do modulo existir.
+   */
+  r.get('/v1/conversations/:id/contexto', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      response: {
+        200: z.object({
+          proximoAgendamento: z.object({
+            appointmentId: z.string().uuid(),
+            quando: z.string(),
+            profissional: z.string(),
+            procedimento: z.string().nullable(),
+            status: z.string(),
+          }).nullable(),
+          pendencias: z.array(z.string()),
+          historicoAgendamentos: z.array(z.object({
+            appointmentId: z.string().uuid(),
+            quando: z.string(),
+            status: z.string(),
+          })),
+        }),
+        404: z.object({ erro: z.literal('nao_encontrado') }),
+      },
+    },
+  }, rota('messaging.conversation.read', async (tx, ctx, req, reply) => {
+    const p = req.params as { id: string };
+
+    const { rows: conv } = await tx.query<{ patient_id: string | null }>(
+      `SELECT patient_id FROM msg.conversation WHERE id = $1`, [p.id]);
+    if (conv.length === 0) {
+      return reply.code(404).send({ erro: 'nao_encontrado' as const });
+    }
+
+    const patientId = conv[0]?.patient_id ?? null;
+    // Conversa sem paciente vinculado nao tem contexto — e nao e erro. A tela
+    // mostra o convite para vincular, que e a acao util nesse estado.
+    if (patientId === null) {
+      return { proximoAgendamento: null, pendencias: [], historicoAgendamentos: [] };
+    }
+
+    const { rows: futuros } = await tx.query<{
+      id: string; quando: Date; profissional: string | null;
+      procedimento: string | null; status: string;
+    }>(
+      `SELECT a.id,
+              a.starts_at AS quando,
+              u.full_name AS profissional,
+              pr.nome AS procedimento,
+              a.status::text AS status
+         FROM sched.appointment a
+         LEFT JOIN app.professional prof
+                ON (prof.tenant_id, prof.id) = (a.tenant_id, a.professional_id)
+         LEFT JOIN id."user" u ON u.id = prof.user_id
+         LEFT JOIN sched.procedure pr
+                ON (pr.tenant_id, pr.id) = (a.tenant_id, a.procedure_id)
+        WHERE a.patient_id = $1 AND a.clinic_id = $2
+          AND a.starts_at >= clock_timestamp() AND a.status <> 'cancelado'
+        ORDER BY a.starts_at
+        LIMIT 1`,
+      [patientId, ctx.actor.clinicId]);
+
+    const { rows: passados } = await tx.query<{
+      id: string; quando: Date; status: string }>(
+      `SELECT a.id, a.starts_at AS quando, a.status::text AS status
+         FROM sched.appointment a
+        WHERE a.patient_id = $1 AND a.clinic_id = $2
+          AND a.starts_at < clock_timestamp()
+        ORDER BY a.starts_at DESC
+        LIMIT 5`,
+      [patientId, ctx.actor.clinicId]);
+
+    const { rows: deb } = await tx.query<{ pendencia: string }>(
+      `SELECT 'Cadastro incompleto' AS pendencia
+         FROM clin.patient WHERE id = $1 AND cadastro_status = 'preliminar'
+        UNION ALL
+       SELECT 'Pagamento em aberto'
+         FROM fin.entry
+        WHERE patient_id = $1 AND kind = 'receita' AND status = 'pendente'
+        LIMIT 5`,
+      [patientId]);
+
+    const proximo = futuros[0];
+    return {
+      proximoAgendamento: proximo === undefined ? null : {
+        appointmentId: proximo.id,
+        quando: proximo.quando.toISOString(),
+        profissional: proximo.profissional ?? '',
+        procedimento: proximo.procedimento,
+        status: proximo.status,
+      },
+      pendencias: [...new Set(deb.map((x) => x.pendencia))],
+      historicoAgendamentos: passados.map((x) => ({
+        appointmentId: x.id, quando: x.quando.toISOString(), status: x.status })),
+    };
+  }));
+
   r.post('/v1/conversations/:id/messages', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
@@ -333,7 +468,7 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
 
     if (b.templateId !== undefined) {
       // Upsert — atualizar template existente
-      await tx.query(
+      const r = await tx.query(
         `UPDATE msg.template
             SET name = $2, category = $3,
                 body_template = $4, variables = $5::jsonb,
@@ -342,6 +477,11 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
           WHERE id = $1`,
         [b.templateId, b.name, b.category, b.bodyTemplate,
          JSON.stringify(b.variables)]);
+      // O UPDATE nao reclama de linha inexistente: id errado (ou de outro
+      // tenant, filtrado pela RLS) atualizava zero linhas e a rota respondia
+      // 200 com `status: 'pending'`. A tela mostrava o template salvo, o
+      // usuario fechava, e nada tinha sido gravado.
+      if (r.rowCount === 0) erroDominio('template_nao_encontrado', 404);
       return { templateId: b.templateId, status: 'pending' };
     }
 

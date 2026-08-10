@@ -121,6 +121,37 @@ export async function reprojectGuiaOnAmend(
     [encounterId],
   );
 
+  /**
+   * O lote em montagem passa a apontar para a guia NOVA.
+   *
+   * Este ramo so roda quando o lote ainda nao foi enviado (rascunho ou pronto) —
+   * lote enviado vira pendencia la em cima. Mas o vinculo em `tiss.lote_guia`
+   * continuava apontando para a guia que acabou de virar `live = false`. O lote
+   * seguia com o mesmo numero de itens e, na hora de gerar o XML, levava para a
+   * operadora a versao ANTIGA do atendimento — exatamente a que a retificacao
+   * corrigiu. A correcao clinica existia no prontuario e nao chegava na cobranca.
+   *
+   * `sequencial_item` e preservado: e a posicao no lote, nao identidade da
+   * guia, e renumerar mexeria em itens que a operadora ja pode ter visto.
+   *
+   * DELETE + INSERT e nao UPDATE porque `app_rw` tem exatamente SELECT, INSERT e
+   * DELETE em `tiss.lote_guia` (migration 0122) — o vinculo e criado ou
+   * desfeito, nunca mutado no lugar. O CTE faz os dois no mesmo comando: apagar
+   * antes de inserir e obrigatorio, senao as duas linhas coexistiriam e
+   * violariam o UNIQUE (tenant_id, lote_id, sequencial_item).
+   */
+  if (tableCheck[0]?.exists) {
+    await tx.query(
+      `WITH removidos AS (
+         DELETE FROM tiss.lote_guia WHERE guia_id = $1
+         RETURNING tenant_id, lote_id, sequencial_item
+       )
+       INSERT INTO tiss.lote_guia (tenant_id, lote_id, guia_id, sequencial_item)
+       SELECT tenant_id, lote_id, $2, sequencial_item FROM removidos`,
+      [guiaId, novaGuia[0]!.id],
+    );
+  }
+
   return ok({
     action: 'reprojected' as const,
     oldGuiaId: guiaId,

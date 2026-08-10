@@ -16,13 +16,22 @@ const GlosaResumoSchema = z.object({
   protocolo: z.string(),
   numeroGuiaPrestador: z.string(),
   codigoGlosa: z.string(),
+  // Sem estes tres a lista nao serve para abrir recurso, que e o unico motivo
+  // de olhar glosa: `descricaoGlosa` para quem redige a justificativa,
+  // `pacienteNome` para o faturista conferir o caso, e `encounterVersionId`
+  // porque `POST /v1/tiss/recursos` exige a versao do atendimento.
+  descricaoGlosa: z.string().nullable(),
+  pacienteNome: z.string(),
+  encounterVersionId: z.string().uuid().nullable(),
   valorGlosadoCents: z.number().int(),
   status: z.string(),
   createdAt: z.string(),
 });
 
 const GlosaDetalheSchema = GlosaResumoSchema.extend({
-  descricaoGlosa: z.string(),
+  // `descricaoGlosa` volta a ser nulavel aqui tambem: a operadora manda o codigo
+  // e nem sempre o texto. Forcar string obrigaria a inventar descricao — e
+  // descricao inventada e o que o faturista leria como se fosse da operadora.
   dataProcessamento: z.string(),
 });
 
@@ -76,12 +85,16 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
       id: string; demonstrativo_item_id: string;
       operadora_id: string; operadora_nome: string; protocolo: string;
       numero_guia_prestador: string; codigo_glosa: string;
+      descricao_glosa: string | null; encounter_version_id: string | null;
+      paciente_nome: string;
       valor_glosado_cents: string; status: string; created_at: string;
     }>(
       `SELECT g.id, g.demonstrativo_item_id,
               d.operadora_id, o.razao_social AS operadora_nome,
               d.protocolo_operadora AS protocolo,
               di.numero_guia_prestador, g.codigo_glosa,
+              g.descricao_glosa, g.encounter_version_id,
+              coalesce(pat.display_name, '') AS paciente_nome,
               g.valor_glosado_cents::text, g.status::text,
               to_char(g.created_at AT TIME ZONE 'UTC',
                       'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at
@@ -92,6 +105,14 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
            ON d.tenant_id = di.tenant_id AND d.id = di.demonstrativo_id
          JOIN tiss.operadora o
            ON o.tenant_id = d.tenant_id AND o.id = d.operadora_id
+         -- LEFT: glosa de guia que ainda nao amarrou o atendimento continua
+         -- aparecendo na lista. Some-la esconderia dinheiro a recuperar.
+         LEFT JOIN clin.encounter_version ev
+           ON (ev.tenant_id, ev.id) = (g.tenant_id, g.encounter_version_id)
+         LEFT JOIN clin.encounter enc
+           ON (enc.tenant_id, enc.id) = (ev.tenant_id, ev.encounter_id)
+         LEFT JOIN clin.patient pat
+           ON (pat.tenant_id, pat.id) = (enc.tenant_id, enc.patient_id)
          ${where}
         ORDER BY g.created_at DESC
         LIMIT $${idx}`,
@@ -106,6 +127,9 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
       protocolo: row.protocolo,
       numeroGuiaPrestador: row.numero_guia_prestador,
       codigoGlosa: row.codigo_glosa,
+      descricaoGlosa: row.descricao_glosa,
+      pacienteNome: row.paciente_nome,
+      encounterVersionId: row.encounter_version_id,
       valorGlosadoCents: Number(row.valor_glosado_cents),
       status: row.status,
       createdAt: row.created_at,
@@ -130,14 +154,17 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
       id: string; demonstrativo_item_id: string;
       operadora_id: string; operadora_nome: string; protocolo: string;
       numero_guia_prestador: string; codigo_glosa: string;
-      descricao_glosa: string; valor_glosado_cents: string;
+      descricao_glosa: string | null; encounter_version_id: string | null;
+      paciente_nome: string; valor_glosado_cents: string;
       status: string; data_processamento: string; created_at: string;
     }>(
       `SELECT g.id, g.demonstrativo_item_id,
               d.operadora_id, o.razao_social AS operadora_nome,
               d.protocolo_operadora AS protocolo,
               di.numero_guia_prestador, g.codigo_glosa,
-              g.descricao_glosa, g.valor_glosado_cents::text,
+              g.descricao_glosa, g.encounter_version_id,
+              coalesce(pat.display_name, '') AS paciente_nome,
+              g.valor_glosado_cents::text,
               g.status::text,
               d.data_processamento::text,
               to_char(g.created_at AT TIME ZONE 'UTC',
@@ -149,6 +176,12 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
            ON d.tenant_id = di.tenant_id AND d.id = di.demonstrativo_id
          JOIN tiss.operadora o
            ON o.tenant_id = d.tenant_id AND o.id = d.operadora_id
+         LEFT JOIN clin.encounter_version ev
+           ON (ev.tenant_id, ev.id) = (g.tenant_id, g.encounter_version_id)
+         LEFT JOIN clin.encounter enc
+           ON (enc.tenant_id, enc.id) = (ev.tenant_id, ev.encounter_id)
+         LEFT JOIN clin.patient pat
+           ON (pat.tenant_id, pat.id) = (enc.tenant_id, enc.patient_id)
         WHERE g.id = $1`,
       [p.id]);
 
@@ -164,6 +197,8 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
       numeroGuiaPrestador: row.numero_guia_prestador,
       codigoGlosa: row.codigo_glosa,
       descricaoGlosa: row.descricao_glosa,
+      pacienteNome: row.paciente_nome,
+      encounterVersionId: row.encounter_version_id,
       valorGlosadoCents: Number(row.valor_glosado_cents),
       status: row.status,
       dataProcessamento: row.data_processamento,

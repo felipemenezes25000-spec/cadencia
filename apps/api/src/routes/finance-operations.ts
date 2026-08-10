@@ -30,7 +30,11 @@ const PayableSchema = z.object({
   dueDate: z.string().nullable(),
   paidAt: z.string().nullable(),
   supplierId: z.string().uuid().nullable(),
+  // O NOME junto do id: a tela A Pagar mostra de quem e a conta, e devolver so
+  // o uuid obrigaria o front a N consultas ou a exibir o identificador cru.
+  supplierName: z.string().nullable(),
   categoryId: z.string().uuid().nullable(),
+  categoryName: z.string().nullable(),
   costCenterId: z.string().uuid().nullable(),
   createdAt: z.string(),
 });
@@ -91,17 +95,23 @@ export async function financeOperationsRoutes(app: FastifyInstance): Promise<voi
       paymentMethodId = newPmId;
     }
 
+    // `supplier_id` e `cost_center_id` entram no INSERT: o schema do body ja
+    // aceitava os dois e o INSERT descartava em silencio, entao a despesa
+    // nascia sem fornecedor e sem centro de custo. Quem preenche o formulario
+    // nao tem como perceber — a resposta e 201 igual — e o rateio por centro de
+    // custo passa a nao fechar com o total de despesas do periodo.
     await tx.query(
       `INSERT INTO fin.entry
          (id, kind, description, amount_cents, payment_method_id,
           clinic_id, professional_id, status, due_date,
-          category_id, idempotency_key, created_by)
+          category_id, supplier_id, cost_center_id, idempotency_key, created_by)
        VALUES ($1, 'despesa', $2, $3, $4,
                $5, app.current_professional_id(), 'pendente', $6,
-               $7, $8, app.current_user_id())`,
+               $7, $8, $9, $10, app.current_user_id())`,
       [id, b.description, b.amountCents, paymentMethodId,
        ctx.actor.clinicId, b.dueDate ?? null,
-       b.categoryId ?? null, `payable:${id}`]);
+       b.categoryId ?? null, b.supplierId ?? null, b.costCenterId ?? null,
+       `payable:${id}`]);
 
     void reply.code(201);
     return { payableId: id, status: 'pending' as const };
@@ -160,6 +170,9 @@ export async function financeOperationsRoutes(app: FastifyInstance): Promise<voi
       id: string; description: string; amount_cents: string;
       method: string; status: string; due_date: string | null;
       paid_at: string | null; created_at: string;
+      supplier_id: string | null; supplier_name: string | null;
+      category_id: string | null; category_name: string | null;
+      cost_center_id: string | null;
     }>(
       `SELECT e.id, e.description, e.amount_cents::text,
               pm.kind AS method, e.status::text,
@@ -167,10 +180,15 @@ export async function financeOperationsRoutes(app: FastifyInstance): Promise<voi
               to_char(e.paid_at AT TIME ZONE 'UTC',
                       'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS paid_at,
               to_char(e.created_at AT TIME ZONE 'UTC',
-                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at
+                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at,
+              e.supplier_id, f.name AS supplier_name,
+              e.category_id, c.name AS category_name,
+              e.cost_center_id
          FROM fin.entry e
          JOIN fin.payment_method pm
            ON pm.tenant_id = e.tenant_id AND pm.id = e.payment_method_id
+         LEFT JOIN fin.supplier f ON (f.tenant_id, f.id) = (e.tenant_id, e.supplier_id)
+         LEFT JOIN fin.category c ON (c.tenant_id, c.id) = (e.tenant_id, e.category_id)
         WHERE ${where}
         ORDER BY e.created_at DESC
         LIMIT $${idx}`,
@@ -186,9 +204,11 @@ export async function financeOperationsRoutes(app: FastifyInstance): Promise<voi
       status: STATUS_DB_TO_API[row.status] ?? row.status,
       dueDate: row.due_date,
       paidAt: row.paid_at,
-      supplierId: null,
-      categoryId: null,
-      costCenterId: null,
+      supplierId: row.supplier_id,
+      supplierName: row.supplier_name,
+      categoryId: row.category_id,
+      categoryName: row.category_name,
+      costCenterId: row.cost_center_id,
       createdAt: row.created_at,
     }));
 
@@ -250,29 +270,47 @@ export async function financeOperationsRoutes(app: FastifyInstance): Promise<voi
       paymentMethodId = newPmId;
     }
 
-    // Debito (despesa na conta de origem)
+    // Debito (despesa na conta de ORIGEM)
+    //
+    // `bank_account_id` e o que faz a transferencia transferir. Sem ele os dois
+    // lancamentos nasciam sem conta: o saldo da origem nao caia, o do destino
+    // nao subia, e a operacao inteira era so um par de linhas que se anulava no
+    // total geral. As contas ja eram validadas logo acima e depois descartadas.
     await tx.query(
       `INSERT INTO fin.entry
          (id, kind, description, amount_cents, payment_method_id,
           clinic_id, professional_id, status, paid_at,
-          idempotency_key, created_by)
+          bank_account_id, idempotency_key, created_by)
        VALUES ($1, 'despesa', $2, $3, $4,
                $5, app.current_professional_id(), 'pago', clock_timestamp(),
-               $6, app.current_user_id())`,
+               $6, $7, app.current_user_id())`,
       [debitId, `Transferencia: ${b.description}`, b.amountCents, paymentMethodId,
-       ctx.actor.clinicId, `transfer:debit:${transferId}`]);
+       ctx.actor.clinicId, b.fromBankAccountId, `transfer:debit:${transferId}`]);
 
-    // Credito (receita na conta de destino)
+    // Credito (receita na conta de DESTINO)
     await tx.query(
       `INSERT INTO fin.entry
          (id, kind, description, amount_cents, payment_method_id,
           clinic_id, professional_id, status, paid_at,
-          idempotency_key, created_by)
+          bank_account_id, idempotency_key, created_by)
        VALUES ($1, 'receita', $2, $3, $4,
                $5, app.current_professional_id(), 'pago', clock_timestamp(),
-               $6, app.current_user_id())`,
+               $6, $7, app.current_user_id())`,
       [creditId, `Transferencia: ${b.description}`, b.amountCents, paymentMethodId,
-       ctx.actor.clinicId, `transfer:credit:${transferId}`]);
+       ctx.actor.clinicId, b.toBankAccountId, `transfer:credit:${transferId}`]);
+
+    // A propria transferencia. `fin.transfer` (migration 0093) existe para
+    // AMARRAR os dois lancamentos: sem a linha, `transferId` era um uuid gerado,
+    // devolvido na resposta e jogado fora, e nada no banco dizia que aquele
+    // debito e aquele credito sao a mesma operacao. Conciliar depois virava
+    // adivinhacao por valor e horario.
+    await tx.query(
+      `INSERT INTO fin.transfer
+         (id, from_bank_account_id, to_bank_account_id, amount_cents,
+          description, debit_entry_id, credit_entry_id, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, app.current_user_id())`,
+      [transferId, b.fromBankAccountId, b.toBankAccountId, b.amountCents,
+       b.description, debitId, creditId]);
 
     void reply.code(201);
     return { transferId, debitEntryId: debitId, creditEntryId: creditId };

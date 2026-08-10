@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
-import { uuidv7 } from '@cadencia/kernel';
+import { uuidv7, type UuidV7 } from '@cadencia/kernel';
 
 interface SementeEntryBankCost {
   tenantId: string;
@@ -138,7 +138,7 @@ describe('fin.entry — colunas bank_account_id e cost_center_id', () => {
 
   it('rejeita bank_account_id de outro tenant (FK composta)', async () => {
     const outroTenantId = uuidv7();
-    const outroAccountId = uuidv7();
+    let outroAccountId = uuidv7();
     const admin = new Pool({ connectionString: adminUrl(), max: 1 });
     const c = await admin.connect();
     try {
@@ -147,10 +147,16 @@ describe('fin.entry — colunas bank_account_id e cost_center_id', () => {
         `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
          VALUES ($1, $2, 'Outro Tenant BC', '77ABC88901DE32')`,
         [outroTenantId, `ot2-${outroTenantId}`]);
-      await c.query(
-        `INSERT INTO fin.bank_account (tenant_id, id, name, is_default)
-         VALUES ($1, $2, 'Conta Alheia', true)`,
-        [outroTenantId, outroAccountId]);
+      // A conta padrao do tenant JA EXISTE: `trg_tenant_default_bank_account`
+      // provisiona uma no INSERT de app.tenant. Inserir outra com is_default
+      // estoura `ux_bank_account_default` (uma padrao por tenant) — e o erro
+      // aparecia como se o teste do FK composto estivesse quebrado, quando o
+      // produto estava certo e o cenario e que era impossivel de montar.
+      const { rows: alheia } = await c.query<{ id: UuidV7 }>(
+        `SELECT id::text FROM fin.bank_account
+          WHERE tenant_id = $1 AND is_default LIMIT 1`,
+        [outroTenantId]);
+      outroAccountId = alheia[0]!.id;
       await c.query('COMMIT');
     } catch (e) {
       await c.query('ROLLBACK');

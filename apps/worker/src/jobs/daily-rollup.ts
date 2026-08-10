@@ -18,10 +18,21 @@ export interface DailyRollupResult {
 export async function materializeDailyRollup(
   opts: { dia?: string } = {},
 ): Promise<DailyRollupResult> {
-  // Se nao especificado, processar o dia anterior
+  // Se nao especificado, processar o dia anterior NO FUSO DO FILTRO.
+  //
+  // Era `(clock_timestamp() - interval '1 day')::date`, avaliado no fuso da
+  // SESSAO — que e UTC. Os filtros abaixo, porem, convertem `paid_at` e
+  // `created_at` para America/Sao_Paulo antes de comparar. As duas datas
+  // discordam todo dia entre 21h e meia-noite de Sao Paulo, quando UTC ja virou
+  // e Sao Paulo nao: a janela pedia 09/08 e as linhas do dia diziam 08/08.
+  //
+  // Consequencia em producao: um job agendado para as 23h — horario natural de
+  // fechamento do caixa — agregaria o dia ERRADO toda noite, em silencio. O
+  // rollup nao fica vazio, fica deslocado, que e pior: o numero existe e esta
+  // errado.
   const diaQuery = opts.dia !== undefined
     ? `$1::date`
-    : `(clock_timestamp() - interval '1 day')::date`;
+    : `((clock_timestamp() AT TIME ZONE 'America/Sao_Paulo')::date - 1)`;
   const params = opts.dia !== undefined ? [opts.dia] : [];
 
   // Upsert no rollup — base 'caixa' agrega por paid_at

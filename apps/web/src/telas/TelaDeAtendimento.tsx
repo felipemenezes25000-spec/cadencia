@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Timer,
@@ -10,10 +10,20 @@ import {
   Check,
   CaretDown,
   CaretRight,
+  Paperclip,
+  Microphone,
+  FlaskIcon,
 } from '@phosphor-icons/react';
 import { EditorClinico, type CodigoHit, type ModeloHit, type ValorAnterior } from './EditorClinico';
-import { PainelLateral } from '../ui/PainelLateral';
 import { PainelDeCobranca, type MetodoPagamento } from '../ui/PainelDeCobranca';
+import { PainelDeDocumentos, type TipoDeDocumento } from '../ui/PainelDeDocumentos';
+import { PainelDePrescricao, type SessaoDoPrescritor } from '../ui/PainelDePrescricao';
+import { FichaClinica, type SecaoDaFicha } from '../ui/FichaClinica';
+import { PainelDeAnexos, type Anexo } from '../ui/PainelDeAnexos';
+import {
+  PainelDeSadt, type GuiaSadtEmitida, type NovaGuiaSadt, type ProcedimentoTuss,
+} from '../ui/PainelDeSadt';
+import { PainelDeTranscricao, type SugestaoDaIA } from '../ui/PainelDeTranscricao';
 import { Botao } from '../ui/Botao';
 import { Icone } from '../ui/Icone';
 import { cn } from '../lib/cn';
@@ -43,11 +53,27 @@ export interface TelaDeAtendimentoProps {
   readonly pacienteNome: string;
   readonly procedimentoNome?: string;
   readonly valorSugeridoCentavos?: number;
-  readonly abrirSessaoDoPrescritor: () => Promise<{ mode: string }>;
+  /**
+   * Abre a sessao do prescritor. Chamada ao MONTAR a tela, nao ao clicar em
+   * Prescrever: buscar o token so no clique poe o paciente esperando a ida ate
+   * a Memed. `mode` diferente de 'embedded' significa parceiro indisponivel.
+   */
+  readonly abrirSessaoDoPrescritor: () => Promise<{
+    mode: string;
+    scriptUrl?: string;
+    token?: string;
+    patientPayload?: Readonly<Record<string, string>>;
+  }>;
   readonly buscarCodigo: (termo: string) => Promise<CodigoHit[]>;
   readonly buscarModelo: (termo: string) => Promise<ModeloHit[]>;
   readonly buscarValorAnterior: (campo: string) => Promise<ValorAnterior | null>;
-  readonly aoConfirmarPrescricao: () => Promise<{ prescriptionId: string }>;
+  /**
+   * Registra no prontuario a receita que a Memed acabou de emitir. Recebe o id
+   * DELES: a confirmacao nasce do evento `prescricaoImpressa`, e nao de um botao
+   * nosso — botao nosso registraria receita que talvez nao exista la.
+   */
+  readonly aoConfirmarPrescricao: (dados: { providerPrescriptionId: string })
+    => Promise<{ prescriptionId: string }>;
   readonly aoFinalizar: () => Promise<{ versionId: string; versionNo: number }>;
   readonly aoRegistrarPagamento?: (dados: {
     amountCents: number;
@@ -67,6 +93,44 @@ export interface TelaDeAtendimentoProps {
   readonly conteudoInicial?: string;
   /** Callback de salvamento do editor */
   readonly onSalvar?: (conteudo: Record<string, unknown>) => Promise<void>;
+  /**
+   * Emite atestado, declaracao, pedido de exame ou relatorio. Ausente = a tela
+   * NAO mostra o botao. Botao que abre painel que nao emite nada e pior que
+   * botao ausente: o medico conta com ele na frente do paciente.
+   */
+  /**
+   * Secoes e campos estruturados que a CLINICA configurou. Vazio = a clinica
+   * usa so a evolucao narrativa, e a ficha nao aparece.
+   */
+  readonly secoesDaFicha?: readonly SecaoDaFicha[];
+  readonly valoresDaFicha?: Readonly<Record<string, string>>;
+  readonly aoMudarFicha?: (chave: string, valor: string) => void;
+  /** Anexos do paciente. Ausente = a tela nao mostra o botao. */
+  readonly anexos?: readonly Anexo[];
+  readonly aoEnviarAnexo?: (dados: { arquivo: File; kind: string }) => Promise<void>;
+  readonly aoAbrirAnexo?: (attachmentId: string) => Promise<void>;
+  /**
+   * Guia SP/SADT — a guia de exame. Ausente = sem botao.
+   *
+   * `convenio` nulo significa PARTICULAR: o painel abre e explica por que nao
+   * ha guia, em vez de o botao sumir. Botao ausente parece defeito; a frase
+   * ensina quem nunca faturou convenio.
+   */
+  readonly convenioDoAtendimento?: string | null;
+  readonly guiasSadt?: readonly GuiaSadtEmitida[];
+  /** Rascunho: o painel compoe e a guia sai no finalizar. */
+  readonly emitirAoFinalizar?: boolean;
+  readonly buscarProcedimentoTuss?: (termo: string) => Promise<readonly ProcedimentoTuss[]>;
+  readonly aoEmitirGuiaSadt?: (g: NovaGuiaSadt) => Promise<void>;
+  /** Transcricao por IA. Ausente = sem botao de gravar. */
+  readonly aoTranscrever?: (audio: Blob) => Promise<SugestaoDaIA>;
+  readonly aoAceitarSugestao?: (s: SugestaoDaIA, campos: ReadonlySet<string>) => void;
+  readonly aoEmitirDocumento?: (dados: { kind: TipoDeDocumento; corpo: string })
+    => Promise<{
+      documentId: string; urlPdf: string;
+      /** Falso quando nao ha PSC ICP-Brasil: o documento sai PENDENTE. */
+      assinado: boolean; motivo?: string;
+    }>;
 }
 
 /* ── hook de duracao ────────────────────────────────────────────────── */
@@ -252,18 +316,70 @@ function SidebarPaciente({ paciente }: { readonly paciente: DadosDoPaciente }) {
 export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   const [prescricaoAberta, setPrescricaoAberta] = useState(false);
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
+  const [documentosAberto, setDocumentosAberto] = useState(false);
+  const [sessaoPrescritor, setSessaoPrescritor] = useState<SessaoDoPrescritor | null>(null);
+  const [anexosAberto, setAnexosAberto] = useState(false);
+  const [sadtAberto, setSadtAberto] = useState(false);
+  const [transcricaoAberta, setTranscricaoAberta] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
+  const [erroAoFinalizar, setErroAoFinalizar] = useState<string | null>(null);
 
   const inicio = p.inicio ?? new Date();
   const duracao = useDuracaoAtendimento(inicio);
 
   useEffect(() => {
-    void p.abrirSessaoDoPrescritor();
+    let vivo = true;
+    void p.abrirSessaoDoPrescritor().then((r) => {
+      if (!vivo) return;
+      // So vira sessao utilizavel se vier COMPLETA. Guardar meia sessao faria o
+      // painel injetar script sem token e falhar em silencio.
+      if (r.mode === 'embedded' && typeof r.scriptUrl === 'string'
+          && typeof r.token === 'string' && r.patientPayload !== undefined) {
+        setSessaoPrescritor({
+          scriptUrl: r.scriptUrl, token: r.token, patientPayload: r.patientPayload,
+        });
+      }
+    }).catch(() => { /* parceiro fora do ar nao derruba a consulta */ });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Finaliza uma vez so, e sempre depois de gravar o que esta na tela.
+   *
+   * A trava nao e paranoia com clique duplo: Ctrl+Enter e ouvido pelo editor E
+   * por esta tela, entao um unico atalho chega aqui duas vezes. A segunda
+   * chamada encontra o atendimento fora de rascunho e devolve erro a quem fez
+   * tudo certo. Ref e nao state porque a decisao acontece antes do proximo
+   * render — dois cliques no mesmo tick veriam o mesmo state.
+   */
+  const finalizando = useRef(false);
+  const descarregarEditor = useRef<null | (() => Promise<boolean>)>(null);
+
   async function finalizar() {
-    await p.aoFinalizar();
-    setFinalizado(true);
+    if (finalizando.current || finalizado) return;
+    finalizando.current = true;
+    setErroAoFinalizar(null);
+    try {
+      if (descarregarEditor.current !== null
+          && !(await descarregarEditor.current())) return;
+      await p.aoFinalizar();
+      setFinalizado(true);
+    } catch {
+      /**
+       * Finalizar e a acao mais critica da tela e era a unica sem tratamento de
+       * erro: qualquer recusa da API — cadastro preliminar incompleto,
+       * atendimento fora de rascunho, rede caida — virava unhandled rejection.
+       * O medico clicava, nada mudava na tela, e ele nao tinha como saber se o
+       * prontuario foi selado. Alguns clicavam de novo; outros fechavam a aba
+       * com o atendimento em rascunho.
+       */
+      setErroAoFinalizar(
+        'Nao foi possivel finalizar o atendimento. Nada foi selado — '
+        + 'o conteudo continua salvo como rascunho. Tente de novo.');
+    } finally {
+      finalizando.current = false;
+    }
   }
 
   function prescrever() {
@@ -275,14 +391,18 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   }
 
   function emitirDocumento() {
+    if (p.aoEmitirDocumento !== undefined) { setDocumentosAberto(true); return; }
     // placeholder para futuro painel de documentos
   }
 
   /* ── atalhos de teclado ──────────────────────────────────────────── */
 
   useKeyboardShortcut('p', prescrever, { ctrlKey: true });
+  useKeyboardShortcut('r', prescrever, { ctrlKey: true });
   useKeyboardShortcut('e', pedirExame, { ctrlKey: true });
   useKeyboardShortcut('d', emitirDocumento, { ctrlKey: true });
+  useKeyboardShortcut('Enter', () => { void finalizar(); }, { ctrlKey: true });
+  useKeyboardShortcut('$', () => setCobrancaAberta(true), { ctrlKey: true });
 
   /* ── dados do paciente para o sidebar ────────────────────────────── */
 
@@ -338,12 +458,13 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
       {/* ── Main content: editor + sidebar ─────────────────────────── */}
       <div className="flex flex-1 gap-3 overflow-hidden p-3 max-md:flex-col max-md:gap-2 max-md:p-2">
         {/* Editor */}
-        <div className="min-w-0 flex-[3] overflow-y-auto rounded-xl">
+        <div role="article" className="min-w-0 flex-[3] overflow-y-auto rounded-xl">
           <EditorClinico
             encounterId={p.encounterId}
             buscarCodigo={p.buscarCodigo}
             buscarModelo={p.buscarModelo}
             buscarValorAnterior={p.buscarValorAnterior}
+            registrarDescarga={(fn) => { descarregarEditor.current = fn; }}
             {...(p.conteudoInicial !== undefined ? { conteudoInicial: p.conteudoInicial } : {})}
             {...(p.onSalvar !== undefined ? { onSalvar: p.onSalvar } : {})}
             aoPrescrever={prescrever}
@@ -352,6 +473,25 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             aoFinalizar={() => { void finalizar(); }}
             aoCobrar={() => setCobrancaAberta(true)}
           />
+
+          {/* A ficha estruturada mora ABAIXO do editor, na mesma coluna: e
+              entrada de dado, como o editor. Na barra lateral, que e coluna de
+              consulta, o medico leria os campos como informacao ja registrada e
+              nao perceberia que precisa preencher. */}
+          {p.secoesDaFicha !== undefined && p.secoesDaFicha.length > 0
+            && p.aoMudarFicha !== undefined && (
+            <section
+              aria-label="Ficha do atendimento"
+              className="mt-3 rounded-xl border border-line bg-surface p-4 shadow-elev-1"
+            >
+              <FichaClinica
+                secoes={p.secoesDaFicha}
+                valores={p.valoresDaFicha ?? {}}
+                aoMudar={p.aoMudarFicha}
+                buscarCodigo={p.buscarCodigo}
+              />
+            </section>
+          )}
         </div>
 
         {/* Patient sidebar */}
@@ -363,6 +503,14 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         </aside>
       </div>
 
+      {/* Falha ao finalizar precisa ser VISTA: sem isto o clique nao produzia
+          nem selo nem aviso, e o medico ficava sem saber o que aconteceu. */}
+      {erroAoFinalizar !== null && (
+        <div role="alert" className="bg-danger/10 px-6 py-3 text-sm text-danger">
+          {erroAoFinalizar}
+        </div>
+      )}
+
       {/* ── Finalizado status ──────────────────────────────────────── */}
       {finalizado && (
         <div
@@ -371,7 +519,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         >
           <span className="text-ok font-medium">Atendimento finalizado</span>
           <Botao variante="secundario" tamanho="sm">
-            Proximo paciente (Enter)
+            Próximo paciente (Enter)
           </Botao>
         </div>
       )}
@@ -397,9 +545,29 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             <Botao variante="secundario" iconeEsquerda={TestTube} onClick={pedirExame}>
               Pedir exame
             </Botao>
-            <Botao variante="secundario" iconeEsquerda={FileText} onClick={emitirDocumento}>
-              Emitir documento
-            </Botao>
+            {p.aoEmitirDocumento !== undefined && (
+              <Botao variante="secundario" iconeEsquerda={FileText} onClick={emitirDocumento}>
+                Emitir documento
+              </Botao>
+            )}
+            {p.aoEnviarAnexo !== undefined && (
+              <Botao variante="secundario" iconeEsquerda={Paperclip}
+                onClick={() => setAnexosAberto(true)}>
+                Anexos
+              </Botao>
+            )}
+            {p.aoTranscrever !== undefined && (
+              <Botao variante="secundario" iconeEsquerda={Microphone}
+                onClick={() => setTranscricaoAberta(true)}>
+                Transcrever
+              </Botao>
+            )}
+            {p.aoEmitirGuiaSadt !== undefined && (
+              <Botao variante="secundario" iconeEsquerda={FlaskIcon}
+                onClick={() => setSadtAberto(true)}>
+                Exames
+              </Botao>
+            )}
             <Botao
               variante="primario"
               iconeEsquerda={Check}
@@ -412,13 +580,55 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
       )}
 
       {/* ── Paineis laterais ───────────────────────────────────────── */}
-      <PainelLateral
+      {p.aoEmitirGuiaSadt !== undefined && p.buscarProcedimentoTuss !== undefined && (
+        <PainelDeSadt
+          aberto={sadtAberto}
+          convenio={p.convenioDoAtendimento ?? null}
+          guias={p.guiasSadt ?? []}
+          emitirAoFinalizar={p.emitirAoFinalizar ?? false}
+          buscarProcedimento={p.buscarProcedimentoTuss}
+          aoEmitir={p.aoEmitirGuiaSadt}
+          aoFechar={() => setSadtAberto(false)}
+        />
+      )}
+
+      {p.aoEnviarAnexo !== undefined && p.aoAbrirAnexo !== undefined && (
+        <PainelDeAnexos
+          aberto={anexosAberto}
+          anexos={p.anexos ?? []}
+          aoEnviar={p.aoEnviarAnexo}
+          aoAbrir={p.aoAbrirAnexo}
+          aoFechar={() => setAnexosAberto(false)}
+        />
+      )}
+
+      {p.aoTranscrever !== undefined && p.aoAceitarSugestao !== undefined && (
+        <PainelDeTranscricao
+          aberto={transcricaoAberta}
+          aoTranscrever={p.aoTranscrever}
+          aoAceitar={(sug, campos) => {
+            p.aoAceitarSugestao?.(sug, campos);
+            setTranscricaoAberta(false);
+          }}
+          aoFechar={() => setTranscricaoAberta(false)}
+        />
+      )}
+
+      <PainelDePrescricao
         aberto={prescricaoAberta}
-        titulo="Prescrever"
+        sessao={sessaoPrescritor}
+        aoConfirmar={p.aoConfirmarPrescricao}
         aoFechar={() => setPrescricaoAberta(false)}
-      >
-        <p className="m-0 text-sm text-text">Prescricao embarcada para {p.pacienteNome}</p>
-      </PainelLateral>
+      />
+
+      {p.aoEmitirDocumento !== undefined && (
+        <PainelDeDocumentos
+          aberto={documentosAberto}
+          pacienteNome={p.pacienteNome}
+          aoEmitir={p.aoEmitirDocumento}
+          aoFechar={() => setDocumentosAberto(false)}
+        />
+      )}
 
       {p.aoRegistrarPagamento !== undefined && p.aoCriarLinkPagamento !== undefined ? (
         <PainelDeCobranca

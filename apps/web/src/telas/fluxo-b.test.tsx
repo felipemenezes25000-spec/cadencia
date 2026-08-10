@@ -65,14 +65,14 @@ vi.mock('../ui/PainelLateral', () => ({
     titulo?: string;
     children: ReactNode;
   }) =>
-    aberto ? <div data-testid="painel-lateral" aria-label={titulo}>{children}</div> : null,
+    aberto ? <div data-testid="painel-lateral" role="dialog" aria-label={titulo}>{children}</div> : null,
 }));
 
 /* ── Mock do PainelDeCobranca ─────────────────────────────────────── */
 
 vi.mock('../ui/PainelDeCobranca', () => ({
-  PainelDeCobranca: ({ aberto }: { aberto: boolean }) =>
-    aberto ? <div data-testid="painel-cobranca">Cobranca</div> : null,
+  PainelDeCobranca: ({ aberto, pacienteNome }: { aberto: boolean; pacienteNome?: string }) =>
+    aberto ? <div data-testid="painel-cobranca" role="dialog" aria-label="Cobrar">{pacienteNome}</div> : null,
 }));
 
 /** Wrapper com providers necessarios. */

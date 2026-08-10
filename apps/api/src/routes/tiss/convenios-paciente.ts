@@ -21,6 +21,16 @@ const ConvenioSchema = z.object({
   createdAt: z.string(),
 });
 
+/**
+ * Convenio DO PACIENTE — a carteirinha, nao a operadora.
+ *
+ * As acoes sao `tiss.paciente_convenio.*` e nao `tiss.operadora.*`: cadastrar a
+ * operadora e ato administrativo (admin e financeiro), vincular a carteirinha e
+ * ato de BALCAO. Quem recebe o cartao do paciente e a recepcao, e ela nao tem
+ * `tiss.operadora.write`. Usar a acao da operadora aqui invertia exatamente as
+ * duas pontas: travava a recepcao no cadastro que e dela e liberava o
+ * financeiro num cadastro que nao e.
+ */
 export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
@@ -35,7 +45,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
       }),
       response: { 201: z.object({ convenioId: z.string().uuid() }) },
     },
-  }, rota('tiss.operadora.write', async (tx, _ctx, req, reply) => {
+  }, rota('tiss.paciente_convenio.write', async (tx, _ctx, req, reply) => {
     const p = req.params as { patientId: string };
     const b = req.body as {
       operadoraId: string; numeroCarteira: string; validadeCarteira?: string };
@@ -69,7 +79,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
       params: z.object({ patientId: z.string().uuid() }),
       response: { 200: z.object({ itens: z.array(ConvenioSchema) }) },
     },
-  }, rota('tiss.guia.read', async (tx, _ctx, req) => {
+  }, rota('tiss.paciente_convenio.read', async (tx, _ctx, req) => {
     const p = req.params as { patientId: string };
 
     const { rows } = await tx.query<{
@@ -118,7 +128,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
       }),
       response: { 200: z.object({ convenioId: z.string().uuid() }) },
     },
-  }, rota('tiss.operadora.write', async (tx, _ctx, req) => {
+  }, rota('tiss.paciente_convenio.write', async (tx, _ctx, req) => {
     const p = req.params as { patientId: string };
     const b = req.body as {
       convenioId: string; numeroCarteira?: string; validadeCarteira?: string };
@@ -149,7 +159,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
       }),
       response: { 200: z.object({ convenioId: z.string().uuid() }) },
     },
-  }, rota('tiss.operadora.write', async (tx, _ctx, req) => {
+  }, rota('tiss.paciente_convenio.write', async (tx, _ctx, req) => {
     const p = req.params as { patientId: string; id: string };
     const { rowCount } = await tx.query(
       `UPDATE tiss.paciente_convenio SET active = false

@@ -26,6 +26,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      next:
+        specifier: ^15.5.22
+        version: 15.5.22(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       pg:
         specifier: ^8.22.0
         version: 8.22.0
@@ -83,6 +86,9 @@ importers:
       '@cadencia/scheduling':
         specifier: workspace:*
         version: link:../../packages/scheduling
+      '@cadencia/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@fastify/cookie':
         specifier: ^11.1.2
         version: 11.1.2
@@ -107,6 +113,10 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    devDependencies:
+      otpauth:
+        specifier: ^9.4.0
+        version: 9.5.1
 
   apps/web:
     dependencies:
@@ -116,6 +126,9 @@ importers:
       '@cadencia/reports':
         specifier: workspace:*
         version: link:../../packages/reports
+      '@cadencia/scheduling':
+        specifier: workspace:*
+        version: link:../../packages/scheduling
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -282,6 +295,12 @@ importers:
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@cadencia/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@cadencia/tiss':
+        specifier: workspace:*
+        version: link:../../packages/tiss
       pg-boss:
         specifier: ^10.3.1
         version: 10.4.2
@@ -363,6 +382,9 @@ importers:
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../kernel
+      '@cadencia/storage':
+        specifier: workspace:*
+        version: link:../storage
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
@@ -501,6 +523,9 @@ importers:
         specifier: workspace:*
         version: link:../kernel
     devDependencies:
+      libxml2-wasm:
+        specifier: ^0.7.1
+        version: 0.7.1
       pg:
         specifier: ^8.16.0
         version: 8.22.0
@@ -3311,6 +3336,10 @@ packages:
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
     engines: {node: '>= 0.6.3'}
+
+  libxml2-wasm@0.7.1:
+    resolution: {integrity: sha512-aZpJJL/j6T3D+5TmhG4D0ylR3mN6UzmqmBjyb/p+zEAaouG6GpfHiUNUzKR3vKCEoJt/Z2L15XPDCVPuFJIQhg==}
+    engines: {node: '>=18'}
 
   light-my-request@6.6.0:
     resolution: {integrity: sha512-CHYbu8RtboSIoVsHZ6Ye4cj4Aw/yg2oAFimlF7mNvfDV192LR7nDiKtSIfCuLT7KokPSTn/9kfVLm5OGN0A28A==}
@@ -7306,6 +7335,8 @@ snapshots:
   lazystream@1.0.1:
     dependencies:
       readable-stream: 2.3.8
+
+  libxml2-wasm@0.7.1: {}
 
   light-my-request@6.6.0:
     dependencies:

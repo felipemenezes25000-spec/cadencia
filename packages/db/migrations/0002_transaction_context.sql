@@ -26,6 +26,24 @@ CREATE SCHEMA clin  AUTHORIZATION app_owner;   -- clinico
 CREATE SCHEMA fin   AUTHORIZATION app_owner;   -- financeiro
 CREATE SCHEMA tiss  AUTHORIZATION app_owner;   -- convenios
 CREATE SCHEMA ref   AUTHORIZATION app_owner;   -- referencia global (CID, TUSS)
+
+-- ---------------------------------------------------------------------------
+-- CREATE TRANSITORIO PARA OS DONOS DE OBJETO ESPECIALIZADOS.
+--
+-- Onze objetos deste schema pertencem a papeis que NAO sao o app_owner:
+-- clin_writer (as funcoes SECURITY DEFINER do nucleo clinico), rpt_owner (as
+-- matviews) e id_login (o bootstrap de sessao). O PostgreSQL exige que o NOVO
+-- dono tenha CREATE no schema para aceitar `ALTER ... OWNER TO`.
+--
+-- Superusuario ignora essa checagem, e por isso o cluster local nunca precisou
+-- disto. Postgres gerenciado (Supabase) nao ignora, e a migration 0037 morre
+-- com "permission denied for schema clin".
+--
+-- A concessao e TRANSITORIA: a ultima migration da cadeia (0134) revoga, e o
+-- estado final de privilegio e exatamente o mesmo de antes. O invariante 7
+-- afirma isso tabela a tabela contra privileges.json.
+GRANT CREATE ON SCHEMA clin TO clin_writer;
+-- id_login nasce so na 0132, junto com o schema `id`: a concessao dele mora la.
 CREATE SCHEMA id    AUTHORIZATION app_owner;   -- identidade global, sem tenant_id
 CREATE SCHEMA rpt   AUTHORIZATION rpt_owner;   -- matviews; app_rw nunca recebe GRANT aqui
 

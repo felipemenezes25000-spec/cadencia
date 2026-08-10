@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Pacientes } from '../../src/telas/Pacientes';
 import { apiFetch } from '../../src/api';
@@ -8,7 +9,7 @@ import type { PacienteHit } from '../../src/ui/ComboboxDePaciente';
 
 const CHAVES_FACETA = ['ativos', 'inativos', 'obitos', 'cadastro_preliminar', 'sem_retorno'] as const;
 
-export default function PaginaPacientes() {
+function PacientesInner() {
   const { clinicId, csrfToken } = useSessao();
   const [faceta, setFaceta] = useQueryState('faceta',
     parseAsStringLiteral(CHAVES_FACETA).withDefault('ativos'));
@@ -17,10 +18,20 @@ export default function PaginaPacientes() {
     <Pacientes
       faceta={faceta}
       aoMudarFaceta={(f) => { void setFaceta(f as typeof CHAVES_FACETA[number]); }}
-      buscar={(termo, f) => apiFetch<PacienteHit[]>(
-        `/v1/pacientes?faceta=${f}&termo=${encodeURIComponent(termo)}`,
-        { clinicId, csrfToken })}
+      // /v1/pacientes/lista, e nao /v1/pacientes: a busca do combobox devolve
+      // vazio sem termo, e a tela de lista precisa abrir ja povoada.
+      buscar={(termo, f) => apiFetch<{ itens: PacienteHit[] }>(
+        `/v1/pacientes/lista?faceta=${f}&termo=${encodeURIComponent(termo)}`,
+        { clinicId, csrfToken }).then((r) => r.itens)}
       aoAbrir={(id) => { window.location.href = `/pacientes/${id}`; }}
     />
+  );
+}
+
+export default function PaginaPacientes() {
+  return (
+    <Suspense>
+      <PacientesInner />
+    </Suspense>
   );
 }

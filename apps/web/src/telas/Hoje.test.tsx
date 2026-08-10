@@ -26,7 +26,7 @@ const PRECISA = { confirmacoesSemResposta: 4, prescricoesNaoAssinadas: 1,
 
 function montar(over: Partial<Parameters<typeof Hoje>[0]> = {}) {
   const props = {
-    dia: '2026-08-03', carregarDia: vi.fn(async () => DIA),
+    dia: '2026-08-03', timezone: 'America/Sao_Paulo', carregarDia: vi.fn(async () => DIA),
     carregarPrecisaDeVoce: vi.fn(async () => PRECISA),
     aoCheckIn: vi.fn(async () => {}), aoAbrirAtendimento: vi.fn(),
     aoMudarFiltro: vi.fn(),
@@ -42,7 +42,7 @@ describe('tela Hoje', () => {
   it('renderiza skeleton enquanto carrega', () => {
     render(
       <Hoje
-        dia="2026-08-03"
+        dia="2026-08-03" timezone="America/Sao_Paulo"
         carregarDia={() => new Promise(() => {})}
         carregarPrecisaDeVoce={() => new Promise(() => {})}
         aoCheckIn={vi.fn(async () => {})}
@@ -183,7 +183,7 @@ describe('tela Hoje', () => {
   it('sem violacao de acessibilidade', async () => {
     const { container } = render(
       <Hoje
-        dia="2026-08-03"
+        dia="2026-08-03" timezone="America/Sao_Paulo"
         carregarDia={async () => DIA}
         carregarPrecisaDeVoce={async () => PRECISA}
         aoCheckIn={async () => {}}

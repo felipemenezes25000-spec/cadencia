@@ -43,7 +43,7 @@ const DADOS_FATURAR: AFaturarDados = {
   guias: [
     {
       id: 'g1', numeroGuia: '000001', pacienteNome: 'Carlos Melo',
-      operadoraNome: 'Unimed', registroAns: '123456',
+      operadoraId: 'op1', operadoraNome: 'Unimed', registroAns: '123456',
       codigoProcedimento: '10101012', nomeProcedimento: 'Consulta',
       valorCentavos: 15000, dataAtendimento: '2026-08-01', status: 'completa',
     },

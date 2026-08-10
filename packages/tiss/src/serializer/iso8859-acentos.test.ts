@@ -22,6 +22,7 @@ function loteComAcentos(observacao: string): LoteConsultaInput {
     numeroLote: '0001',
     guias: [
       {
+        registroANSOperadora: '123456',
         numeroGuiaPrestador: '00001',
         numeroCarteira: '98765432101234567',
         atendimentoRN: false,

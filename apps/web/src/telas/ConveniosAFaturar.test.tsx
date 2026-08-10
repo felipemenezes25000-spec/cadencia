@@ -15,6 +15,7 @@ const GUIAS: readonly GuiaPendente[] = [
     id: "g1",
     numeroGuia: "000001",
     pacienteNome: "Maria Souza",
+    operadoraId: '00000000-0000-4000-8000-0000000000aa',
     operadoraNome: "Unimed",
     registroAns: "123456",
     codigoProcedimento: "10101012",
@@ -27,6 +28,7 @@ const GUIAS: readonly GuiaPendente[] = [
     id: "g2",
     numeroGuia: "000002",
     pacienteNome: "Joao Silva",
+    operadoraId: '00000000-0000-4000-8000-0000000000aa',
     operadoraNome: "Bradesco Saude",
     registroAns: "654321",
     codigoProcedimento: "10101012",
@@ -39,6 +41,7 @@ const GUIAS: readonly GuiaPendente[] = [
     id: "g3",
     numeroGuia: "000003",
     pacienteNome: "Ana Costa",
+    operadoraId: '00000000-0000-4000-8000-0000000000aa',
     operadoraNome: "Unimed",
     registroAns: "123456",
     codigoProcedimento: "20201015",
@@ -145,7 +148,7 @@ describe("ConveniosAFaturar", () => {
     expect(screen.getByRole("button", { name: /Criar lote/i })).toBeVisible();
   });
 
-  it("ao clicar Criar lote chama aoCriarLote com os ids selecionados", async () => {
+  it("ao clicar Criar lote chama aoCriarLote com os ids e a operadora", async () => {
     const props = montar();
     await waitFor(() => expect(screen.getByText("Maria Souza")).toBeVisible());
     const checkboxes = screen.getAllByRole("checkbox");
@@ -153,7 +156,11 @@ describe("ConveniosAFaturar", () => {
     await userEvent.click(checkboxes[3]!); // g3
     const botao = screen.getByRole("button", { name: /Criar lote/i });
     await userEvent.click(botao);
-    expect(props.aoCriarLote).toHaveBeenCalledWith(["g1", "g3"]);
+    // A operadora vai junto: `POST /v1/tiss/lotes` exige `operadoraId` uuid, e a
+    // tela mandava `null`. Um lote pertence a uma operadora — e dela o
+    // webservice que recebe o XML.
+    expect(props.aoCriarLote).toHaveBeenCalledWith(
+      ["g1", "g3"], "00000000-0000-4000-8000-0000000000aa");
   });
 
   it("ao clicar no nome do paciente chama aoAbrirGuia com o id", async () => {

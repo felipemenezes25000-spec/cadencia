@@ -29,6 +29,74 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
     return { itens };
   }));
 
+  /**
+   * A LISTA de pacientes, que nao e a busca.
+   *
+   * `searchPatients` devolve conjunto vazio para termo vazio de proposito: um
+   * combobox nao deve despejar a base inteira a cada foco. Mas a tela Pacientes
+   * e uma lista com facetas — chegar nela e nao ver ninguem ate digitar algo faz
+   * o produto parecer quebrado. Sao ferramentas diferentes e por isso rotas
+   * diferentes, cada uma com a consulta que lhe serve.
+   */
+  r.get('/v1/pacientes/lista', {
+    schema: {
+      querystring: z.object({
+        faceta: z.enum(['ativos', 'inativos', 'obitos', 'cadastro_preliminar', 'sem_retorno'])
+          .optional(),
+        termo: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(200).optional(),
+      }),
+      response: { 200: z.object({ itens: z.array(HitSchema) }) },
+    },
+  }, rota('patient.read', async (tx, _ctx, req) => {
+    const q = req.query as { faceta?: string; termo?: string; limit?: number };
+    const faceta = q.faceta ?? 'ativos';
+    const termo = (q.termo ?? '').trim();
+
+    const { rows } = await tx.query<{
+      id: string; display_name: string; full_name: string; nome_social: string | null;
+      birth_date: string | null; cadastro_status: 'preliminar' | 'completo';
+      phone_primary: string | null;
+    }>(
+      `SELECT p.id, p.display_name, p.full_name, p.nome_social,
+              p.birth_date::text AS birth_date, p.cadastro_status, p.phone_primary
+         FROM clin.patient p
+        WHERE p.merged_into_id IS NULL
+          AND CASE $1::text
+                WHEN 'inativos'            THEN p.inactivated_at IS NOT NULL
+                WHEN 'obitos'              THEN p.deceased_at    IS NOT NULL
+                WHEN 'cadastro_preliminar' THEN p.cadastro_status = 'preliminar'
+                                                AND p.deceased_at IS NULL
+                WHEN 'sem_retorno'         THEN p.deceased_at IS NULL
+                                                AND p.inactivated_at IS NULL
+                                                AND NOT EXISTS (
+                                                  SELECT 1 FROM sched.appointment a
+                                                   WHERE a.tenant_id = p.tenant_id
+                                                     AND a.patient_id = p.id
+                                                     AND a.starts_at > clock_timestamp()
+                                                                       - interval '6 months')
+                ELSE p.inactivated_at IS NULL AND p.deceased_at IS NULL
+              END
+          AND ($2::text = '' OR p.search_name LIKE unaccent(lower($2::text)) || '%')
+        -- COLLATE explicito: o cluster e C.UTF-8 e sem isto 'Alvaro' cai depois
+        -- de 'Zulmira' — o paciente "some" da letra onde a recepcao procura.
+        ORDER BY p.display_name COLLATE "pt-BR-x-icu"
+        LIMIT $3`,
+      [faceta, termo, q.limit ?? 100]);
+
+    return {
+      itens: rows.map((x) => ({
+        patientId: x.id,
+        displayName: x.display_name,
+        legalName: x.full_name,
+        hasSocialName: x.nome_social !== null,
+        birthDate: x.birth_date,
+        cadastroStatus: x.cadastro_status,
+        phonePrimary: x.phone_primary,
+      })),
+    };
+  }));
+
   r.get('/v1/pacientes/existe', {
     schema: {
       querystring: z.object({
@@ -88,6 +156,59 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
     return resultado.value;
   }));
 
+  /**
+   * O cadastro de UM paciente, para o cabecalho da ficha.
+   *
+   * Devolve 404 — nao 403 — para paciente de outro tenant. A diferenca importa:
+   * 403 confirma que o cadastro existe em algum lugar, e isso ja e vazamento.
+   * A RLS entrega conjunto vazio e a rota traduz como nao encontrado, que e a
+   * verdade do ponto de vista de quem pergunta.
+   */
+  r.get('/v1/pacientes/:id', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      response: {
+        200: HitSchema.extend({
+          email: z.string().nullable(),
+          nomeSocial: z.string().nullable(),
+          inativoEm: z.string().nullable(),
+          obitoEm: z.string().nullable(),
+        }),
+        404: z.object({ erro: z.literal('nao_encontrado') }),
+      },
+    },
+  }, rota('patient.read', async (tx, _ctx, req, reply) => {
+    const p = req.params as { id: string };
+    const { rows } = await tx.query<{
+      id: string; display_name: string; full_name: string;
+      nome_social: string | null; birth_date: string | null;
+      cadastro_status: 'preliminar' | 'completo';
+      phone_primary: string | null; email: string | null;
+      inactivated_at: Date | null; deceased_at: Date | null;
+    }>(
+      `SELECT id, display_name, full_name, nome_social, birth_date::text AS birth_date,
+              cadastro_status, phone_primary, email, inactivated_at, deceased_at
+         FROM clin.patient
+        WHERE id = $1 AND merged_into_id IS NULL`, [p.id]);
+
+    const x = rows[0];
+    if (x === undefined) return reply.code(404).send({ erro: 'nao_encontrado' as const });
+
+    return {
+      patientId: x.id,
+      displayName: x.display_name,
+      legalName: x.full_name,
+      hasSocialName: x.nome_social !== null,
+      nomeSocial: x.nome_social,
+      birthDate: x.birth_date,
+      cadastroStatus: x.cadastro_status,
+      phonePrimary: x.phone_primary,
+      email: x.email,
+      inativoEm: x.inactivated_at === null ? null : x.inactivated_at.toISOString(),
+      obitoEm: x.deceased_at === null ? null : x.deceased_at.toISOString(),
+    };
+  }));
+
   r.get('/v1/pacientes/:id/pendencias', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
@@ -106,16 +227,22 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
     const p = req.params as { id: string };
     const { rows } = await tx.query<{
       encounterId: string; occurredDate: string; status: string;
-      professionalId: string; clinicId: string;
+      professionalId: string; profissionalNome: string; clinicId: string;
       headVersionId: string | null; versionCount: number;
     }>(
-      `SELECT id AS "encounterId", occurred_date::text AS "occurredDate",
-              status::text AS status, professional_id AS "professionalId",
-              clinic_id AS "clinicId", head_version_id AS "headVersionId",
-              version_count AS "versionCount"
-         FROM clin.encounter
-        WHERE patient_id = $1
-        ORDER BY occurred_date DESC, created_at DESC
+      // O nome do profissional vem junto: a linha do historico diz COM QUEM o
+      // paciente esteve, e um uuid nao responde isso para ninguem.
+      `SELECT e.id AS "encounterId", e.occurred_date::text AS "occurredDate",
+              e.status::text AS status, e.professional_id AS "professionalId",
+              coalesce(u.full_name, '') AS "profissionalNome",
+              e.clinic_id AS "clinicId", e.head_version_id AS "headVersionId",
+              e.version_count AS "versionCount"
+         FROM clin.encounter e
+         LEFT JOIN app.professional pr
+                ON (pr.tenant_id, pr.id) = (e.tenant_id, e.professional_id)
+         LEFT JOIN id."user" u ON u.id = pr.user_id
+        WHERE e.patient_id = $1
+        ORDER BY e.occurred_date DESC, e.created_at DESC
         LIMIT 200`, [p.id]);
     return { itens: rows };
   }));

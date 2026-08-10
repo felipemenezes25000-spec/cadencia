@@ -12,9 +12,12 @@ export {
   createFakeSignatureProvider, type FakeSignatureOptions, type ModoFake,
 } from './fakes/signature-fake';
 export {
-  type PrescriberSession, type PrescriptionItem, type PrescriptionProvider,
-  type PrescriptionRecord,
+  type PrescriberRef, type PrescriberSession, type PrescriptionDocument,
+  type PrescriptionItem, type PrescriptionProvider, type PrescriptionRecord,
 } from './contracts/prescription';
+export {
+  createMemedProvider, type MemedConfig, type MemedDeps,
+} from './adapters/memed';
 export {
   createFakePrescriptionProvider, type FakePrescriptionOptions,
 } from './fakes/prescription-fake';
@@ -34,6 +37,13 @@ export {
   type PaymentLinkInput, type PaymentLinkResult, type PaymentProvider,
   type PaymentSnapshot, type PaymentStatus, type Settlement,
 } from './contracts/payment';
+export { createUncontractedSignatureProvider } from './adapters/assinatura-nao-contratada';
 export {
   createFakePaymentProvider, type FakePaymentOptions,
 } from './fakes/payment-fake';
+export type {
+  TranscriptionProvider, TranscricaoBruta, SugestaoClinica, FalaTranscrita,
+} from './contracts/transcription';
+export { createFakeTranscriptionProvider } from './fakes/transcription-fake';
+export { createOpenAiTranscriptionProvider,
+  type OpenAiTranscricaoConfig } from './adapters/openai-transcricao';

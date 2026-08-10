@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
 import { uuidv7 } from '@cadencia/kernel';
 import { semearAtendimento, type Semente } from './test-support';
+import { finalizeEncounter } from './finalize';
 
 let s: Semente;
 let actor: Actor;
@@ -113,5 +114,45 @@ describe('clin.finalize_encounter', () => {
         `SELECT clin.finalize_encounter($1, 'original', '{}'::jsonb,
                  decode('00','hex'), 'jcs-1', NULL, NULL, false)`, [s.encounterId])),
     ).rejects.toThrow(/32 bytes|violates check constraint/);
+  });
+});
+
+describe('finalizeEncounter com sinais vitais', () => {
+  it('grava a observacao ligada ao CAMPO que a originou', async () => {
+    const s2 = await semearAtendimento();
+    const actor2: Actor = { kind: 'user', tenantId: s2.tenantId, userId: s2.userId,
+                            clinicId: s2.clinicId, requestId: uuidv7() };
+
+    const r = await withTenantTx(actor2, (tx) => finalizeEncounter(tx, {
+      encounterId: s2.encounterId,
+      fields: [{
+        fieldId: s2.fieldQueixaId, fieldGeneration: 1,
+        labelSnapshot: 'Queixa principal', displaySnapshot: null,
+        terminologyVersion: null, sectionInstance: 1, ordinal: 0,
+        value: { slot: 'value_text', text: 'consulta de rotina' },
+      }],
+      // `clin.observation.field_id` e NOT NULL: a observacao existe como
+      // PROJECAO de um campo, e sem saber de qual campo veio nao da para
+      // reprojetar nem retificar. O contrato nao tinha `fieldId` e o codigo
+      // alcancava por cast — resultado: qualquer atendimento com sinal vital
+      // falhava com 23502, e o caminho nunca tinha sido exercitado.
+      observations: [{
+        fieldId: s2.fieldPaId, observationCode: 'PA_SIS',
+        valueNum: '120', unit: 'mmHg', componentOrdinal: 1,
+      }],
+      diagnoses: [], findings: [], procedures: [],
+    }));
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+
+    const { rows } = await withTenantTx(actor2, (tx) => tx.query<{
+      observation_code: string; value_num: string; field_id: string }>(
+      `SELECT observation_code, value_num::text, field_id
+         FROM clin.observation WHERE version_id = $1`, [r.value.versionId]));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.observation_code).toBe('PA_SIS');
+    expect(rows[0]?.field_id).toBe(s2.fieldPaId);
   });
 });

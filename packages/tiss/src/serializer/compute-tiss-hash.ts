@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CabecalhoInput, GuiaConsultaInput, ItemRecursoGlosaInput } from './types';
+import type { CabecalhoInput, ItemRecursoGlosaInput } from './types';
 
 /**
  * Calcula o hash MD5 proprietario do padrao TISS.
@@ -15,10 +15,32 @@ import type { CabecalhoInput, GuiaConsultaInput, ItemRecursoGlosaInput } from '.
  *
  * O valor do procedimento e formatado como reais com 2 casas decimais (ex: 15000 centavos -> "150.00").
  */
+/**
+ * O minimo que uma guia precisa expor para entrar no hash do lote.
+ *
+ * Nao e `GuiaConsultaInput` porque SP/SADT tambem passa por aqui, e uma guia de
+ * SADT tem N procedimentos em vez de um. Aceitar a forma reduzida deixa o hash
+ * servir aos dois tipos sem cada um conhecer o outro.
+ */
+export interface GuiaParaHash {
+  readonly numeroGuiaPrestador: string;
+  readonly dataAtendimento?: string;
+  readonly codigoProcedimento?: string;
+  readonly valorProcedimentoCentavos?: number;
+  /** SP/SADT: os itens executados, quando a guia os tiver. */
+  readonly procedimentos?: readonly {
+    readonly dataExecucao: string;
+    readonly codigoProcedimento: string;
+    readonly valorUnitarioCentavos: number;
+    readonly quantidadeExecutada: number;
+    readonly reducaoAcrescimo?: number;
+  }[];
+}
+
 export function computeTissHash(
   cabecalho: CabecalhoInput,
   numeroLote: string,
-  guias: readonly GuiaConsultaInput[],
+  guias: readonly GuiaParaHash[],
 ): string {
   const parts: string[] = [];
 
@@ -34,9 +56,21 @@ export function computeTissHash(
   // Campos de cada guia na ordem de insercao no lote
   for (const guia of guias) {
     parts.push(guia.numeroGuiaPrestador);
-    parts.push(guia.dataAtendimento);
-    parts.push(guia.codigoProcedimento);
-    parts.push(formatValorReais(guia.valorProcedimentoCentavos));
+    if (guia.procedimentos !== undefined) {
+      // SP/SADT: cada item entra, na ordem em que aparece na guia. Reduzir a
+      // guia a um so procedimento faria duas guias com os mesmos itens em ordem
+      // diferente colidirem no hash.
+      for (const p of guia.procedimentos) {
+        parts.push(p.dataExecucao);
+        parts.push(p.codigoProcedimento);
+        parts.push(formatValorReais(Math.round(
+          p.valorUnitarioCentavos * p.quantidadeExecutada * (p.reducaoAcrescimo ?? 1))));
+      }
+    } else {
+      parts.push(guia.dataAtendimento ?? '');
+      parts.push(guia.codigoProcedimento ?? '');
+      parts.push(formatValorReais(guia.valorProcedimentoCentavos ?? 0));
+    }
   }
 
   const concatenated = parts.join('');

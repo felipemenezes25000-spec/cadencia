@@ -62,10 +62,26 @@ export function createFakePrescriptionProvider(
       if (f) return f;
       return success<PrescriptionRecord>({
         providerPrescriptionId: i.providerPrescriptionId,
+        providerPrescriptionUuid: `fake-uuid-${i.providerPrescriptionId}`,
         createdAt: agora(),
         patientLinkUrl: `https://parceiro.fake/r/${i.providerPrescriptionId}`,
         validationCode: '482913',
         pdfUrl: `https://parceiro.fake/pdf/${i.providerPrescriptionId}`,
+        // O fake devolve ASSINADA porque o caminho feliz do produto e a receita
+        // assinada; quem quiser exercer o caminho de recusa usa `modo` para
+        // forcar falha. O que o fake nao pode e mentir de graca: se um dia
+        // existir opcao `semAssinatura`, e ela que muda este campo.
+        signed: true,
+        documents: [{
+          documentId: '1',
+          uuid: `fake-doc-${i.providerPrescriptionId}`,
+          type: 'full',
+          status: 'saved',
+          signed: true,
+          fileName: `${i.providerPrescriptionId}_FULL.pdf`,
+          fileHash: createHash('sha256')
+            .update(`fake:${i.providerPrescriptionId}`).digest('hex'),
+        }],
         items: [{
           nome: 'Losartana potássica 50 mg',
           principioAtivo: 'losartana potássica', concentracao: '50 mg',

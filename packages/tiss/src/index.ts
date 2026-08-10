@@ -59,6 +59,9 @@ export type {
 } from './serializer/types';
 
 export { serializeLoteConsulta, type SerializeLoteResult } from './serializer/serialize-lote-consulta';
+export { serializeLoteSadt, type SerializeLoteSadtResult } from './serializer/serialize-lote-sadt';
+export { ufParaCodigoIbge } from './serializer/uf-ibge';
+export { gerarXmlDoLote, type XmlDoLote } from './gerar-xml-lote';
 
 export type {
   RecursoGlosaInput,

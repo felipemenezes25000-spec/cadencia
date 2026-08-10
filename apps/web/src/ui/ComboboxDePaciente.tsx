@@ -108,7 +108,7 @@ export function ComboboxDePaciente({
   const inputRef = useRef<HTMLInputElement>(null);
   const gen = useRef(0);
 
-  const termoDebounced = useDebounce(termo, 300);
+  const termoDebounced = useDebounce(termo, 100);
 
   /* Busca quando o valor debounced muda (minimo 2 caracteres) */
   useEffect(() => {

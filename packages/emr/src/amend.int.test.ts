@@ -19,7 +19,7 @@ beforeAll(async () => {
                value: { slot: 'value_text', text: 'cefaleia ha 3 dias' } }],
     diagnoses: [{ codeSystem: 'CID10', code: 'J45', displaySnapshot: 'Asma',
                   terminologyVersion: '2026-01', isPrincipal: true }],
-    observations: [], findings: [], procedures: [], ai: [],
+    observations: [], findings: [], procedures: [],
   }));
   if (!r.ok) throw new Error(JSON.stringify(r.error));
   v1 = r.value.versionId;
@@ -36,7 +36,7 @@ describe('retificacao, adendo e o conjunto vigente', () => {
     const r = await withTenantTx(actor, (tx) => amendEncounter(tx, {
       encounterId: s.encounterId, kind: 'retificacao', supersedesVersionId: v1,
       justificativa: 'errado',
-      fields: [], diagnoses: [], observations: [], findings: [], procedures: [], ai: [],
+      fields: [], diagnoses: [], observations: [], findings: [], procedures: [],
     }));
     expect(r).toEqual({ ok: false, error: { kind: 'justificativa_curta' } });
   });
@@ -50,7 +50,7 @@ describe('retificacao, adendo e o conjunto vigente', () => {
                  value: { slot: 'value_text', text: 'cefaleia ha 3 dias, sem febre' } }],
       diagnoses: [{ codeSystem: 'CID10', code: 'I10', displaySnapshot: 'Hipertensao essencial',
                     terminologyVersion: '2026-01', isPrincipal: true }],
-      observations: [], findings: [], procedures: [], ai: [],
+      observations: [], findings: [], procedures: [],
     }));
     expect(r.ok).toBe(true);
 
@@ -69,7 +69,7 @@ describe('retificacao, adendo e o conjunto vigente', () => {
       fields: [{ fieldId: s.fieldQueixaId, fieldGeneration: 1, labelSnapshot: 'Hemograma',
                  displaySnapshot: null, terminologyVersion: null, sectionInstance: 2, ordinal: 0,
                  value: { slot: 'value_text', text: 'Hb 13,2 — chegou dois dias depois' } }],
-      diagnoses: [], observations: [], findings: [], procedures: [], ai: [],
+      diagnoses: [], observations: [], findings: [], procedures: [],
     }));
     expect(r.ok).toBe(true);
     const depois = await withTenantTx(actor, (tx) => tx.query<{ head: string; n: number }>(
@@ -78,4 +78,39 @@ describe('retificacao, adendo e o conjunto vigente', () => {
     expect(depois.rows[0]?.head).toBe(antes.rows[0]?.head);
     expect(depois.rows[0]?.n).toBe(3);
   });
+
+  /**
+   * Anulacao aberta em A nao pode superar versao de B.
+   *
+   * `clin.finalize_encounter` apaga o bit `live` das filhas filtrando so por
+   * `version_id`. Sem guarda, bastava passar o `headVersionId` de OUTRO
+   * atendimento — valor que a leitura do prontuario entrega de bandeja — para o
+   * registro vigente daquele atendimento sumir de `clin.read_encounter`, sem
+   * nenhuma linha dele ter sido tocada e com o 'anulado' gravado no atendimento
+   * errado. Prontuario finalizado e imutavel; isto era um caminho para apaga-lo.
+   */
+  it('nao supera versao de OUTRO atendimento', async () => {
+    // Atendimento B, finalizado normalmente: ganha a versao 1 'original'.
+    const b = await withTenantTx(actor, (tx) => finalizeEncounter(tx, {
+      encounterId: s.outroEncounterId,
+      fields: [], diagnoses: [], observations: [], findings: [], procedures: [],
+    }));
+    if (!b.ok) throw new Error(JSON.stringify(b.error));
+
+    // A anulacao e aberta em A e aponta para a versao de B.
+    const r = await withTenantTx(actor, (tx) => amendEncounter(tx, {
+      encounterId: s.encounterId, kind: 'anulacao',
+      supersedesVersionId: b.value.versionId,
+      justificativa: 'ajuste administrativo solicitado pela diretoria',
+      fields: [], diagnoses: [], observations: [], findings: [], procedures: [],
+    }));
+    expect(r).toEqual({ ok: false, error: { kind: 'supersedes_de_outro_atendimento' } });
+
+    // E o atendimento B continua de pe.
+    const bDepois = await withTenantTx(actor, (tx) => tx.query<{ status: string }>(
+      `SELECT status::text AS status FROM clin.encounter WHERE id = $1`,
+      [s.outroEncounterId]));
+    expect(bDepois.rows[0]?.status).toBe('finalizado');
+  });
+
 });

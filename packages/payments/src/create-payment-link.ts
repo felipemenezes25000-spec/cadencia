@@ -9,6 +9,13 @@ export interface CreatePaymentLinkInput {
   readonly description: string;
   readonly expiresInMinutes?: number;
   readonly providerId: string;
+  /**
+   * Quem PEDIU o link. Obrigatorio quando a criacao roda fora de uma requisicao
+   * de usuario — no consumidor do outbox, `app.current_user_id()` e NULL porque
+   * o ator e o sistema, e `created_by` e NOT NULL de proposito: link de cobranca
+   * sem autor identificado e cobranca que ninguem responde por.
+   */
+  readonly createdBy?: string;
 }
 
 export interface PaymentLinkCreated {
@@ -71,9 +78,10 @@ export async function createPaymentLink(
     `INSERT INTO fin.payment_link
        (tenant_id, id, entry_id, provider_link_id, url, status,
         amount_cents, provider_id, idempotency_key, created_by)
-     VALUES (app.require_tenant_id(), $1, $2, $3, $4, 'pending', $5, $6, $7, app.current_user_id())`,
+     VALUES (app.require_tenant_id(), $1, $2, $3, $4, 'pending', $5, $6, $7,
+             coalesce($8::uuid, app.current_user_id()))`,
     [paymentLinkId, input.entryId, result.value.providerPaymentId, result.value.paymentUrl,
-     input.amountCents, input.providerId, idempotencyKey],
+     input.amountCents, input.providerId, idempotencyKey, input.createdBy ?? null],
   );
 
   return ok({

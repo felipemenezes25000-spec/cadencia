@@ -55,6 +55,7 @@ export interface QueueRow {
   readonly patientId: string;
   readonly displayName: string;
   readonly professionalId: string;
+  readonly professionalNome: string;
   readonly procedureNome: string | null;
   readonly procedureCor: string | null;
   readonly operadoraNome: string | null;
@@ -75,7 +76,8 @@ export interface QueueRow {
 export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {
   const { rows } = await tx.query<{
     id: string; starts: string; ends: string; patient_id: string; display_name: string;
-    professional_id: string; proc_nome: string | null; proc_cor: string | null;
+    professional_id: string; professional_nome: string;
+    proc_nome: string | null; proc_cor: string | null;
     operadora_nome: string | null; status: AppointmentStatus; encaixe: boolean;
     teleconsulta: boolean; primeira_vez: boolean; cadastro_status: string;
     encounter_id: string | null;
@@ -84,6 +86,9 @@ export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {
             to_char(a.starts_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS starts,
             to_char(a.ends_at   AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS ends,
             a.patient_id, p.display_name, a.professional_id,
+            -- O nome vem de id."user" porque a identidade e GLOBAL (§10 item 2):
+            -- app.professional carrega o vinculo e o conselho, nao o nome.
+            coalesce(u.full_name, '') AS professional_nome,
             pr.nome AS proc_nome, pr.cor AS proc_cor, a.operadora_nome,
             a.status::text AS status, a.encaixe, a.teleconsulta, a.primeira_vez,
             p.cadastro_status,
@@ -92,6 +97,9 @@ export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {
        FROM sched.appointment a
        JOIN clin.patient p ON (p.tenant_id, p.id) = (a.tenant_id, a.patient_id)
        LEFT JOIN sched.procedure pr ON (pr.tenant_id, pr.id) = (a.tenant_id, a.procedure_id)
+       LEFT JOIN app.professional prof
+              ON (prof.tenant_id, prof.id) = (a.tenant_id, a.professional_id)
+       LEFT JOIN id."user" u ON u.id = prof.user_id
       WHERE a.clinic_id = $1 AND a.appointment_date = $2::date
         AND a.status <> 'cancelado'
         AND ($3::uuid IS NULL OR a.professional_id = $3::uuid)
@@ -102,7 +110,7 @@ export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {
   return rows.map((r) => ({
     appointmentId: r.id, startsAt: r.starts, endsAt: r.ends,
     patientId: r.patient_id, displayName: r.display_name,
-    professionalId: r.professional_id,
+    professionalId: r.professional_id, professionalNome: r.professional_nome,
     procedureNome: r.proc_nome, procedureCor: r.proc_cor,
     operadoraNome: r.operadora_nome, status: r.status,
     encaixe: r.encaixe, teleconsulta: r.teleconsulta, primeiraVez: r.primeira_vez,

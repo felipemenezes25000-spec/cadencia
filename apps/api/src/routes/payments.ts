@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { uuidv7 } from '@cadencia/kernel';
+import { escapeHtml } from '@cadencia/documents';
 import { rota } from '../guard';
 
 function erroDominio(kind: string, status: number, extra: Record<string, unknown> = {}): never {
@@ -100,6 +101,18 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       [paymentId, b.patientId, ctx.actor.clinicId, b.amountCents,
        paymentMethodId, b.description ?? 'Pagamento',
        b.categoryId ?? null, `pay:${paymentId}`]);
+
+    // Calcular o repasse do profissional na MESMA transacao do pagamento.
+    //
+    // Esta rota reimplementa `recordPayment` de @cadencia/payments, e a copia
+    // perdeu justamente esta chamada — a unica linha que alimenta `fin.split`.
+    // Sem ela nenhuma regra de repasse produz valor: `closeRepassePeriod` acha
+    // zero splits, o extrato sai R$ 0,00 e o profissional simplesmente nao
+    // recebe. A funcao e SECURITY DEFINER, tem GRANT para app_rw (migration
+    // 0096) e so age em receita paga, entao chamar aqui e seguro e idempotente.
+    await tx.query(
+      `SELECT fin.calculate_splits(app.require_tenant_id(), $1)`,
+      [paymentId]);
 
     // Alocar numero sequencial de recibo via fin.receipt_counter
     const { rows: counterRows } = await tx.query<{ consumed: string }>(
@@ -241,17 +254,35 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     const p = req.params as { id: string };
     const b = req.body as { reason: string; amountCents?: number };
 
-    // Verificar que o lancamento existe e esta pago
+    // Verificar que o lancamento existe, e receita desta unidade e esta pago.
+    //
+    // A RLS filtra o TENANT, nao a clinica: sem `clinic_id` aqui, quem tem
+    // `payment.refund` numa unidade estorna o pagamento de qualquer outra
+    // unidade do mesmo grupo — e a rota que CRIA o lancamento grava
+    // `clinic_id = ctx.actor.clinicId`, entao o escopo existe e so nao estava
+    // sendo respeitado. `kind = 'receita'` pelo mesmo motivo: sem ele o id de
+    // uma DESPESA (contas a pagar) entra por aqui e vira "estornado".
     const { rows: payRows } = await tx.query<{
       id: string; status: string; amount_cents: string;
       external_ref: string | null;
     }>(
       `SELECT id, status::text, amount_cents::text, external_ref
-         FROM fin.entry WHERE id = $1`, [p.id]);
+         FROM fin.entry
+        WHERE id = $1 AND clinic_id = $2 AND kind = 'receita'`,
+      [p.id, ctx.actor.clinicId]);
 
     if (payRows.length === 0) erroDominio('pagamento_nao_encontrado', 404);
     const pay = payRows[0]!;
     if (pay.status !== 'pago') erroDominio('pagamento_nao_estornavel', 422);
+
+    // Estorno parcial nao existe no dominio: `fin.entry` tem um unico status e
+    // `refundPayment` de @cadencia/payments so conhece estorno integral. Aceitar
+    // `amountCents` menor e marcar o lancamento INTEIRO como estornado tirava do
+    // caixa um valor diferente do que o operador pediu, em silencio. Enquanto
+    // nao houver lancamento compensatorio, o pedido parcial e recusado.
+    if (b.amountCents !== undefined && b.amountCents !== Number(pay.amount_cents)) {
+      erroDominio('estorno_parcial_nao_suportado', 422);
+    }
 
     const refundId = uuidv7();
 
@@ -331,16 +362,64 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       [entryId, b.patientId, ctx.actor.clinicId, b.amountCents,
        paymentMethodId, b.description, `link:${entryId}`]);
 
-    // Enfileirar no outbox para criacao do link no PSP
+    // Enfileirar no outbox para criacao do link no PSP. A chamada ao parceiro
+    // NAO acontece aqui: HTTP a terceiro dentro da transacao segura a conexao do
+    // banco pelo tempo do parceiro, e parceiro lento vira pool esgotado.
+    //
+    // `solicitadoPor` viaja no evento porque no consumidor o ator e o sistema e
+    // `app.current_user_id()` e NULL. Link de cobranca sem autor identificado e
+    // cobranca por que ninguem responde.
     await tx.query(
       `INSERT INTO app.outbox (event_type, aggregate_id, payload)
        VALUES ('create_payment_link', $1::uuid,
                jsonb_build_object('entryId', $2::text, 'amountCents', $3::bigint,
-                 'description', $4::text))`,
-      [entryId, entryId, b.amountCents, b.description]);
+                 'description', $4::text, 'solicitadoPor', $5::text))`,
+      [entryId, entryId, b.amountCents, b.description, ctx.actor.userId]);
 
     void reply.code(201);
     return { paymentLinkId: entryId, status: 'pending' as const };
+  }));
+
+  /**
+   * O link ja saiu do PSP?
+   *
+   * A criacao e assincrona (outbox), entao a tela que pediu o link precisa de
+   * um lugar para perguntar. Enquanto nao saiu, `url` e null e `status` diz
+   * `processando` — que e diferente de "nao existe" e diferente de "falhou".
+   * Devolver string vazia faria a tela mostrar um link quebrado ao paciente.
+   */
+  r.get('/v1/payment-links/:id', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      response: {
+        200: z.object({
+          paymentLinkId: z.string().uuid(),
+          status: z.enum(['processando', 'pronto']),
+          url: z.string().nullable(),
+        }),
+        404: z.object({ erro: z.literal('nao_encontrado') }),
+      },
+    },
+  }, rota('payment.read', async (tx, _ctx, req, reply) => {
+    const p = req.params as { id: string };
+    // O id devolvido pelo POST e o do LANCAMENTO (entry), nao o do link — o link
+    // ainda nao existia naquele momento. Por isso a busca e por entry_id.
+    const { rows } = await tx.query<{ id: string; url: string | null }>(
+      `SELECT l.id, l.url
+         FROM fin.payment_link l
+        WHERE l.entry_id = $1
+        ORDER BY l.created_at DESC
+        LIMIT 1`,
+      [p.id]);
+
+    const link = rows[0];
+    if (link === undefined) {
+      const { rows: entry } = await tx.query(
+        `SELECT 1 FROM fin.entry WHERE id = $1`, [p.id]);
+      if (entry.length === 0) return reply.code(404).send({ erro: 'nao_encontrado' as const });
+      return { paymentLinkId: p.id, status: 'processando' as const, url: null };
+    }
+    return { paymentLinkId: link.id, status: 'pronto' as const, url: link.url };
   }));
 
   // ── GET /v1/receipts/:id/pdf — download do recibo ────────────────────────
@@ -380,20 +459,34 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     const rec = rows[0]!;
 
     // Gerar HTML simples do recibo (PDF real sera implementado pelo worker)
+    //
+    // `nome do paciente`, `nome da clinica` e `forma de pagamento` sao texto
+    // livre digitado por quem usa o sistema, e esta pagina volta como text/html
+    // na ORIGEM DA API. Sem escape, um paciente cadastrado como
+    // `<img src=x onerror=...>` executa script nessa origem ao abrir o recibo —
+    // e o cookie de CSRF nasce com httpOnly:false, entao o script leria o token
+    // e emitiria requisicao autenticada. O projeto ja resolve isso em todo
+    // documento gerado por `@cadencia/documents`; aqui faltava usar.
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><title>Recibo ${rec.receipt_id}</title></head>
+<head><meta charset="utf-8"><title>Recibo ${escapeHtml(rec.receipt_id)}</title></head>
 <body style="font-family:sans-serif;max-width:600px;margin:auto;padding:2rem">
 <h1>Recibo de Pagamento</h1>
-<p><strong>Clinica:</strong> ${rec.clinic_nome}</p>
-<p><strong>Paciente:</strong> ${rec.patient_nome}</p>
+<p><strong>Clinica:</strong> ${escapeHtml(rec.clinic_nome)}</p>
+<p><strong>Paciente:</strong> ${escapeHtml(rec.patient_nome)}</p>
 <p><strong>Valor:</strong> R$ ${(Number(rec.amount_cents) / 100).toFixed(2)}</p>
-<p><strong>Forma:</strong> ${rec.method}</p>
-<p><strong>Data:</strong> ${rec.paid_at}</p>
-<p style="color:#666;font-size:12px">Recibo #${rec.receipt_id}</p>
+<p><strong>Forma:</strong> ${escapeHtml(rec.method)}</p>
+<p><strong>Data:</strong> ${escapeHtml(rec.paid_at)}</p>
+<p style="color:#666;font-size:12px">Recibo #${escapeHtml(rec.receipt_id)}</p>
 </body></html>`;
 
     void reply.header('content-type', 'text/html; charset=utf-8');
+    // Segunda camada, para o caso de um campo novo entrar aqui sem escape:
+    // `default-src 'none'` derruba script, imagem e fetch, e sem `unsafe-inline`
+    // em script-src o navegador ignora handler inline (onerror, onload). O
+    // recibo so precisa dos atributos `style`, que style-src libera.
+    void reply.header('content-security-policy',
+      "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'");
     void reply.header('content-disposition',
       `inline; filename="recibo-${rec.receipt_id}.html"`);
     return html;

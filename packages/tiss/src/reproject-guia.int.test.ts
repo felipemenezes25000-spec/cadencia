@@ -222,10 +222,15 @@ describe('reprojectGuiaOnAmend — com lote enviado', () => {
     try {
       const loteId = uuidv7();
       await adminClient.query(
+        // `sent_at` NAO e opcional quando o status e 'enviado': o CHECK do lote
+        // amarra os dois. Lote marcado como enviado sem hora de envio nao existe
+        // — e essa e a data que a operadora cobra quando o prazo do recurso e
+        // questionado.
         `INSERT INTO tiss.lote
            (tenant_id, id, operadora_id, numero_lote, status, tiss_version,
-            guia_count, total_value_cents, created_by)
-         VALUES ($1, $2, $3, '000001', 'enviado', '4.01', 1, 25000, $4)`,
+            guia_count, total_value_cents, sent_at, created_by)
+         VALUES ($1, $2, $3, '000001', 'enviado', '4.01', 1, 25000,
+                 clock_timestamp(), $4)`,
         [s3.tenantId, loteId, s3.operadoraId, s3.userId],
       );
       await adminClient.query(

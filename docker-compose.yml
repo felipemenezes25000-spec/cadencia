@@ -55,5 +55,55 @@ services:
       timeout: 3s
       retries: 40
 
+  # API da CID-11 publicada pela propria OMS, rodando localmente.
+  #
+  # ATRAS DE UM PROFILE de proposito: a imagem tem alguns GB e so serve para
+  # CARREGAR o catalogo, algumas vezes por ano. Deixa-la no caminho de
+  # `pnpm db:up` obrigaria todo mundo a baixar isso para rodar um teste.
+  #
+  #   pnpm icd:up        # sobe
+  #   pnpm icd:down      # derruba
+  #
+  # NAO EXIGE OAUTH: a documentacao da OMS e explicita — "the locally deployed
+  # versions do not require OAUTH-2 authentication". As credenciais de
+  # `ICD_CLIENT_ID`/`ICD_CLIENT_SECRET` so valem contra id.who.int.
+  #
+  # POR QUE INSTANCIA PROPRIA e nao o servidor da OMS: a carga do catalogo sao
+  # dezenas de milhares de requisicoes descendo a arvore da linearizacao. Fazer
+  # isso contra um servico publico e abusivo, fica refem da latencia
+  # transatlantica, e para se a OMS estiver fora do ar.
+  icd-api:
+    image: whoicd/icd-api
+    container_name: cadencia-icd-api
+    profiles: ["icd"]
+    environment:
+      # Obrigatorio. Licenca CC BY-ND 3.0 IGO: uso comercial permitido,
+      # atribuicao obrigatoria, PROIBIDO publicar versao derivada.
+      acceptLicense: "true"
+      # A OMS coleta as buscas feitas para melhorar as ferramentas dela. Num
+      # produto de prontuario o termo buscado E dado clinico: o medico digita
+      # "neoplasia de mama" porque tem um paciente com isso na frente. Mandar
+      # para fora seria vazamento por conveniencia.
+      saveAnalytics: "false"
+      # Portugues nao existe como pacote isolado; vem nesta combinacao.
+      include: "2026-01_en-es-pt"
+    ports:
+      # Mesmo cuidado do Postgres: bind em loopback. O container nao tem
+      # autenticacao nenhuma — publicar em 0.0.0.0 deixaria a API aberta na rede.
+      - "127.0.0.1:8081:80"
+    healthcheck:
+      # Basta o app RESPONDER HTTP — inclusive 404, que ja prova que subiu e
+      # esta roteando. Dois detalhes que custaram tempo:
+      #   - `127.0.0.1` e nao `localhost`: dentro do container o nome resolve
+      #     para ::1 e o app so escuta em IPv4, entao daria "connection refused"
+      #     com o servico perfeitamente no ar;
+      #   - `--spider` com grep no status, e nao o codigo de saida do wget, que
+      #     e diferente de zero em qualquer 4xx.
+      test: ["CMD-SHELL", "wget -S --spider -q http://127.0.0.1/ 2>&1 | grep -q 'HTTP/'"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+
 volumes:
   cadencia-pgdata:

@@ -67,14 +67,18 @@ describe('T1 e T2 — isolamento de leitura e de escrita entre tenants', () => {
     // e audit.event tem uma por mes. Exigir linha do tenant B em todas obrigaria o
     // seed a escrever em todo mes do calendario. O que precisa ter linha e a tabela
     // logica; a particao e armazenamento dela.
+    // Junta TODAS as tabelas descobertas antes de reprovar. Falhar na primeira
+    // faria cada rodada de 35 s revelar uma tabela so, e quem adiciona um bloco
+    // inteiro de tabelas novas descobriria isso uma por uma.
+    const semTenantB: string[] = [];
     for (const { nsp, rel } of tabelas.filter((t) => !t.particao)) {
       const { rows } = await admin.query<{ n: number }>(
         `SELECT count(*)::int AS n FROM "${nsp}"."${rel}" WHERE tenant_id = $1`,
         [F.TENANT_B],
       );
-      expect(rows[0]!.n, `${nsp}.${rel} nao tem linha do tenant B no seed`)
-        .toBeGreaterThan(0);
+      if (rows[0]!.n === 0) semTenantB.push(`${nsp}.${rel}`);
     }
+    expect(semTenantB, `sem linha do tenant B no seed: ${semTenantB.join(', ')}`).toEqual([]);
   });
 
   it('T1 — o tenant A nao le nenhuma linha do tenant B, tabela a tabela', async () => {

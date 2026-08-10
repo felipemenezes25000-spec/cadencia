@@ -5,6 +5,7 @@ import { systemClock, uuidv7 } from '@cadencia/kernel';
 import { closePdfPool, documentHtml, escapeHtml, renderPdf, stampPageNumbers } from '@cadencia/documents';
 import { exportRecord } from './export-record';
 import { semearProntuarioCompleto, type SementeExport } from './test-support';
+import { InMemoryStorageAdapter } from '@cadencia/storage';
 
 const NOTURNO = process.env['CADENCIA_LOAD_TESTS'] === '1';
 
@@ -70,7 +71,8 @@ describe.skipIf(!NOTURNO)('exportacao sob carga — Apendice A: p95 < 60 s', () 
   it('exporta 20 anos com 500 anexos em menos de 60 s, sem estouro de memoria', async () => {
     const antes = process.memoryUsage().heapUsed;
     const t0 = Date.now();
-    const deps = { clock: systemClock, docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } };
+    const deps = { clock: systemClock, storage: new InMemoryStorageAdapter(),
+       docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } };
     const r = await withTenantTx(actor, (tx) => exportRecord(tx, {
       patientId: s.patientId, requesterKind: 'judicial', blocosPorLote: 20 }, deps));
     const ms = Date.now() - t0;

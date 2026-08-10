@@ -160,14 +160,41 @@ describe('rotas de lotes TISS', () => {
     await app.close();
   });
 
-  it('GET /v1/tiss/lotes/:id/xml retorna 404 quando XML nao disponivel', async () => {
+  it('GET /v1/tiss/lotes/:id/xml serializa as guias do lote sob demanda', async () => {
     const app = await buildApp();
     const r = await app.inject({
       method: 'GET', url: `/v1/tiss/lotes/${loteId}/xml`, ...auth(admin),
     });
-    // XML e gerado assincronamente pelo worker; antes disso, retorna 404
-    expect(r.statusCode).toBe(404);
+    // Antes esta rota devolvia `<lote>0001</lote>` e o teste afirmava 404 "ate
+    // o worker gerar". Nao ha worker: o XML e serializado a partir das guias na
+    // hora, porque enquanto o lote e rascunho as guias ainda podem mudar e um
+    // arquivo congelado antes disso descreveria um lote que nao existe mais.
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('ISO-8859-1');
     expect(r.headers['cache-control']).toBe('no-store');
+
+    const texto = r.rawPayload.toString('latin1');
+    expect(texto).toContain('<?xml version="1.0" encoding="ISO-8859-1"?>');
+    expect(texto).toContain('<ans:tipoTransacao>ENVIO_LOTE_GUIAS</ans:tipoTransacao>');
+    expect(texto).toContain('<ans:guiasTISS>');
+    await app.close();
+  });
+
+  it('GET .../xml recusa lote vazio em vez de entregar envelope sem guia', async () => {
+    const app = await buildApp();
+    const criado = await app.inject({
+      method: 'POST', url: '/v1/tiss/lotes', ...auth(admin),
+      payload: { operadoraId },
+    });
+    const vazioId = (criado.json() as { loteId: string }).loteId;
+
+    const r = await app.inject({
+      method: 'GET', url: `/v1/tiss/lotes/${vazioId}/xml`, ...auth(admin),
+    });
+    // Lote vazio e ACEITO pela operadora e nao paga nada: parece sucesso ate o
+    // demonstrativo chegar zerado semanas depois.
+    expect(r.statusCode).toBe(422);
+    expect((r.json() as { erro: string }).erro).toBe('lote_sem_guias');
     await app.close();
   });
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeAll, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { TelaDeAtendimento, type TelaDeAtendimentoProps } from './TelaDeAtendimento';
@@ -49,17 +49,23 @@ beforeAll(() => {
 
 /* ── mock do EditorClinico (evita TipTap no jsdom) ────────────────────── */
 
+const descargaEspia = vi.fn(async () => true);
+
 vi.mock('./EditorClinico', () => ({
   EditorClinico: (props: {
     encounterId: string;
     aoPrescrever: () => void;
     aoFinalizar: () => void;
-  }) => (
-    <div data-testid="editor-clinico" data-encounter={props.encounterId}>
-      <button type="button" onClick={props.aoPrescrever}>Mock prescrever</button>
-      <button type="button" onClick={props.aoFinalizar}>Mock finalizar</button>
-    </div>
-  ),
+    registrarDescarga?: (fn: () => Promise<boolean>) => void;
+  }) => {
+    props.registrarDescarga?.(descargaEspia);
+    return (
+      <div data-testid="editor-clinico" data-encounter={props.encounterId}>
+        <button type="button" onClick={props.aoPrescrever}>Mock prescrever</button>
+        <button type="button" onClick={props.aoFinalizar}>Mock finalizar</button>
+      </div>
+    );
+  },
 }));
 
 /* ── mock do PainelLateral ────────────────────────────────────────────── */
@@ -78,6 +84,24 @@ vi.mock('../ui/PainelLateral', () => ({
 vi.mock('../ui/PainelDeCobranca', () => ({
   PainelDeCobranca: ({ aberto }: { aberto: boolean }) =>
     aberto ? <div data-testid="painel-cobranca">Cobranca</div> : null,
+}));
+
+/* ── mock do PainelDeDocumentos ───────────────────────────────────────── */
+
+vi.mock('../ui/PainelDeDocumentos', () => ({
+  PainelDeDocumentos: ({ aberto }: { aberto: boolean }) =>
+    aberto ? <div data-testid="painel-documentos">Documentos</div> : null,
+}));
+
+/* ── mock do PainelDePrescricao ───────────────────────────────────────── */
+
+vi.mock('../ui/PainelDePrescricao', () => ({
+  PainelDePrescricao: ({ aberto, sessao }: { aberto: boolean; sessao: unknown }) =>
+    aberto
+      ? <div data-testid="painel-prescricao" data-sessao={sessao === null ? 'nao' : 'sim'}>
+          Prescricao
+        </div>
+      : null,
 }));
 
 /* ── factory de props ─────────────────────────────────────────────────── */
@@ -208,7 +232,9 @@ describe('TelaDeAtendimento', () => {
   });
 
   it('renderiza barra de acoes', () => {
-    renderTela();
+    // Com o gancho de emissao: a barra completa. Sem ele o botao de documento
+    // some, e isso e coberto pelo teste 'sem gancho de emissao'.
+    renderTela({ aoEmitirDocumento: vi.fn() });
     // Verifica a barra de acoes via aria-label
     const barraAcoes = screen.getByRole('navigation', { name: /acoes do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
@@ -236,6 +262,119 @@ describe('TelaDeAtendimento', () => {
     expect(aoFinalizar).toHaveBeenCalledTimes(1);
   });
 
+  it('descarrega o editor ANTES de finalizar', async () => {
+    const ordem: string[] = [];
+    descargaEspia.mockImplementation(async () => { ordem.push('descarregou'); return true; });
+    const aoFinalizar = vi.fn(async () => {
+      ordem.push('finalizou');
+      return { versionId: 'v-1', versionNo: 1 };
+    });
+    renderTela({ aoFinalizar });
+
+    const botoes = screen.getAllByRole('button', { name: /finalizar/i });
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    await act(async () => { fireEvent.click(botaoFinalizar); });
+
+    // O botao do cabecalho nao passa pelo editor. Sem descarga explicita, o que
+    // foi digitado nos ultimos 2s do debounce nunca chega ao servidor — e a
+    // versao selada e imutavel.
+    expect(ordem).toEqual(['descarregou', 'finalizou']);
+  });
+
+  it('nao finaliza duas vezes com dois cliques', async () => {
+    descargaEspia.mockImplementation(async () => true);
+    const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
+    renderTela({ aoFinalizar });
+
+    const botoes = screen.getAllByRole('button', { name: /finalizar/i });
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    await act(async () => {
+      fireEvent.click(botaoFinalizar);
+      fireEvent.click(botaoFinalizar);
+    });
+
+    // Finalizar duas vezes nao e clique duplo distraido apenas: Ctrl+Enter e
+    // ouvido pelo editor E pela tela. A segunda chamada acha o atendimento fora
+    // de rascunho e devolve erro ao medico que fez tudo certo.
+    expect(aoFinalizar).toHaveBeenCalledTimes(1);
+  });
+
+  it('a sessao do prescritor abre ANTES de o medico pedir', async () => {
+    const abrirSessaoDoPrescritor = vi.fn().mockResolvedValue({
+      mode: 'embedded', scriptUrl: 'https://memed.test/s.js', token: 't',
+      patientPayload: { nome: 'Maria Silva' },
+    });
+    renderTela({ abrirSessaoDoPrescritor });
+
+    // Buscar o token so quando o medico clica em Prescrever custa a ida a Memed
+    // com o paciente esperando. A sessao e aberta ao montar a tela.
+    await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalledTimes(1));
+
+    const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
+    await act(async () => { fireEvent.click(botao); });
+
+    const painel = screen.getByTestId('painel-prescricao');
+    expect(painel.dataset['sessao']).toBe('sim');
+  });
+
+  it('Memed fora do ar nao impede o atendimento', async () => {
+    const abrirSessaoDoPrescritor = vi.fn().mockResolvedValue({ mode: 'indisponivel' });
+    renderTela({ abrirSessaoDoPrescritor });
+    await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalled());
+
+    const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
+    await act(async () => { fireEvent.click(botao); });
+
+    // O painel abre dizendo que nao da; a consulta continua. Travar a tela
+    // inteira porque um parceiro caiu e transformar indisponibilidade deles em
+    // indisponibilidade nossa.
+    expect(screen.getByTestId('painel-prescricao').dataset['sessao']).toBe('nao');
+    expect(screen.getByTestId('editor-clinico')).toBeInTheDocument();
+  });
+
+  it('a ficha estruturada aparece quando a clinica configurou campos', () => {
+    renderTela({
+      secoesDaFicha: [{
+        sectionId: 's1', code: 'antecedentes', label: 'Antecedentes',
+        campos: [{
+          fieldId: 'f1', code: 'alergias', label: 'Alergias', kind: 'texto_curto',
+          generation: 1, required: false, unit: null, options: null,
+          refSource: null, observationCode: null, componentes: [],
+        }],
+      }],
+      aoMudarFicha: vi.fn(),
+    });
+    expect(screen.getByRole('region', { name: /ficha do atendimento/i }))
+      .toBeInTheDocument();
+    expect(screen.getByLabelText(/alergias/i)).toBeInTheDocument();
+  });
+
+  it('sem campos configurados a ficha nao ocupa espaco', () => {
+    renderTela({ secoesDaFicha: [], aoMudarFicha: vi.fn() });
+    // Clinica que usa so evolucao narrativa nao ve caixa vazia pedindo atencao.
+    expect(screen.queryByRole('region', { name: /ficha do atendimento/i }))
+      .not.toBeInTheDocument();
+  });
+
+  it('Emitir documento abre o painel de documentos', async () => {
+    renderTela({ aoEmitirDocumento: vi.fn() });
+    expect(screen.queryByTestId('painel-documentos')).not.toBeInTheDocument();
+
+    const botao = screen.getAllByRole('button', { name: /emitir documento/i })[0]!;
+    await act(async () => { fireEvent.click(botao); });
+
+    // O botao existia e nao fazia nada — placeholder que parece funcionalidade
+    // e pior que botao ausente, porque o medico conta com ele na frente do
+    // paciente e descobre no pior momento que nao emite nada.
+    expect(screen.getByTestId('painel-documentos')).toBeInTheDocument();
+  });
+
+  it('sem gancho de emissao o botao de documento nao aparece', () => {
+    renderTela();
+    expect(screen.queryAllByRole('button', { name: /emitir documento/i }))
+      .toHaveLength(0);
+  });
+
   it('mostra status finalizado apos clicar Finalizar', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
@@ -257,7 +396,9 @@ describe('TelaDeAtendimento', () => {
       fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
     });
 
-    expect(screen.getByTestId('painel-lateral')).toBeInTheDocument();
+    // Agora a prescricao tem painel proprio (Memed embarcada), e nao mais o
+    // PainelLateral generico com um paragrafo de placeholder dentro.
+    expect(screen.getByTestId('painel-prescricao')).toBeInTheDocument();
   });
 
   it('renderiza botao Voltar quando aoVoltar fornecido', () => {

@@ -4,12 +4,15 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
-    "@cadencia/kernel": "workspace:*",
-    "@cadencia/db": "workspace:*"
+    "@cadencia/db": "workspace:*",
+    "@cadencia/kernel": "workspace:*"
   },
   "devDependencies": {
+    "libxml2-wasm": "^0.7.1",
     "pg": "^8.16.0",
     "vitest": "^3.2.1"
   }

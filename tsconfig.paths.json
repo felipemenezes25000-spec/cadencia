@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": { "@cadencia/*": ["packages/*/src"] }
+    "paths": {
+      "@cadencia/scheduling/recorrencia": ["packages/scheduling/src/recorrencia"],
+      "@cadencia/*": ["packages/*/src"]
+    }
   }
 }

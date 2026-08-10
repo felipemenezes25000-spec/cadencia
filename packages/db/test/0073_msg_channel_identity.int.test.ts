@@ -94,6 +94,14 @@ afterAll(async () => {
     [TENANT_A, TENANT_B],
   ]);
   await admin.query(`DELETE FROM id."user" WHERE id = ANY($1::uuid[])`, [[USER_A, USER_B]]);
+  // A conta bancaria e provisionada por gatilho quando o tenant nasce. Deixar
+  // ela para tras era o que produzia orfaos: o tenant sumia, a conta ficava, e a
+  // proxima rodada com o mesmo id fixo esbarrava no unique de nome. Desde a
+  // migration 0144 existe FK, entao o DELETE do tenant simplesmente falha — o
+  // que e melhor: erro alto agora em vez de lixo silencioso depois.
+  await admin.query('DELETE FROM fin.bank_account WHERE tenant_id = ANY($1::uuid[])', [
+    [TENANT_A, TENANT_B],
+  ]);
   await admin.query('DELETE FROM app.tenant WHERE id = ANY($1::uuid[])', [[TENANT_A, TENANT_B]]);
   await admin.end();
   await businessPoolInstance.end();

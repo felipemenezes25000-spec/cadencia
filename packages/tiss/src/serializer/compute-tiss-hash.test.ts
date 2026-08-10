@@ -13,6 +13,7 @@ describe('computeTissHash — hash MD5 proprietario TISS', () => {
   };
 
   const guiaBase: GuiaConsultaInput = {
+    registroANSOperadora: '123456',
     numeroGuiaPrestador: '00001',
     numeroCarteira: '98765432101234567',
     atendimentoRN: false,
@@ -69,6 +70,7 @@ describe('computeTissHash — hash MD5 proprietario TISS', () => {
   it('muda quando a ordem das guias muda', () => {
     const guia2: GuiaConsultaInput = {
       ...guiaBase,
+      registroANSOperadora: '123456',
       numeroGuiaPrestador: '00002',
       valorProcedimentoCentavos: 20000,
     };

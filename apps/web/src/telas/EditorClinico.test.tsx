@@ -278,7 +278,26 @@ describe("EditorClinico", () => {
 
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "Enter", ctrlKey: true });
-    expect(props.aoFinalizar).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(props.aoFinalizar).toHaveBeenCalledTimes(1));
+  });
+
+  it("Ctrl+Enter SALVA o documento antes de finalizar", async () => {
+    const ordem: string[] = [];
+    const onSalvar = vi.fn(async () => { ordem.push("salvou"); });
+    const aoFinalizar = vi.fn(() => { ordem.push("finalizou"); });
+    const props = propsBase({ onSalvar, aoFinalizar });
+    renderComProvider(<EditorClinico {...props} />);
+
+    const container = screen.getByRole("article").closest("div")!.parentElement!;
+    fireEvent.keyDown(container, { key: "Enter", ctrlKey: true });
+
+    // O autosave tem debounce de 2s. Quem digita e aperta Ctrl+Enter em seguida
+    // nao pode perder a ultima frase — e a frase final costuma ser a conduta.
+    // Finalizar tem que descarregar o que esta na tela ANTES de selar a versao,
+    // porque depois de selada a versao e imutavel: o texto perdido nao volta.
+    await waitFor(() => expect(onSalvar).toHaveBeenCalled());
+    await waitFor(() => expect(aoFinalizar).toHaveBeenCalled());
+    expect(ordem).toEqual(["salvou", "finalizou"]);
   });
 
   it("nao esconde toolbar quando nao e readOnly", async () => {

@@ -7,11 +7,6 @@ import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { ToastProvider } from '../src/ui/ToastProvider';
 import { SessaoProvider } from '../src/sessao';
 
-const DEV_SESSAO = {
-  clinicId: 'dev-clinic-00000000',
-  csrfToken: 'dev-csrf-token',
-} as const;
-
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(() => new QueryClient({
     defaultOptions: {
@@ -28,7 +23,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <NuqsAdapter>
         <RadixTooltip.Provider delayDuration={300}>
           <ToastProvider>
-            <SessaoProvider sessao={DEV_SESSAO}>
+            <SessaoProvider>
               {children}
             </SessaoProvider>
           </ToastProvider>

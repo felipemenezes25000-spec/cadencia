@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { PDFDocument } from 'pdf-lib';
+import { InMemoryStorageAdapter } from '@cadencia/storage';
 import { closePools, withTenantTx, type Actor } from '@cadencia/db';
 import { systemClock, uuidv7 } from '@cadencia/kernel';
 import { closePdfPool, documentHtml, escapeHtml, renderPdf, stampPageNumbers } from '@cadencia/documents';
@@ -16,7 +18,13 @@ beforeAll(async () => {
 });
 afterAll(async () => { await closePools(); await closePdfPool(); });
 
-const deps = { clock: systemClock, docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } };
+// `storage` entra no deps compartilhado: exportar sem lugar para guardar o PDF
+// deixou de ser possivel, e e isso que se quer — o tipo agora obriga.
+const deps = {
+  clock: systemClock,
+  docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers },
+  storage: new InMemoryStorageAdapter(),
+};
 
 describe('exportacao integral ECF.18', () => {
   it('o recibo tem os dezenove campos indissociaveis', () => {
@@ -67,4 +75,35 @@ describe('exportacao integral ECF.18', () => {
       `SELECT meta FROM audit.event WHERE event_type='RECORD_EXPORT' ORDER BY id DESC LIMIT 1`));
     expect(rows[0]?.meta.paginas).toBeGreaterThan(0);
   });
+});
+
+describe('o PDF exportado precisa EXISTIR', () => {
+  it('grava os bytes no armazenamento sob a chave que a linha aponta', async () => {
+    const armazem = new InMemoryStorageAdapter();
+    const r = await withTenantTx(actor, (tx) => exportRecord(
+      tx, { patientId: s.patientId, requesterKind: 'titular' },
+      { ...deps, storage: armazem }));
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+
+    const { rows } = await withTenantTx(actor, (tx) => tx.query<{
+      pdf_key: string; pdf_sha256: Buffer }>(
+      `SELECT pdf_key, pdf_sha256 FROM clin.record_export WHERE id = $1`,
+      [r.value.exportId]));
+    const chave = rows[0]!.pdf_key;
+
+    // A linha guardava `pdf_key` e o hash, e ninguem escrevia o arquivo: a
+    // exportacao devolvia 201 com recibo de um documento que nao existia. Um
+    // pedido de portabilidade da LGPD terminava em nada, e o titular so
+    // descobria ao tentar abrir.
+    const bytes = await armazem.get(`exportacoes/${chave}`);
+    expect(bytes).not.toBeNull();
+    expect(Buffer.from(bytes!).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+
+    // E os bytes gravados batem com o hash registrado — senao o recibo atesta
+    // um arquivo diferente do que foi guardado.
+    const sha = createHash('sha256').update(bytes!).digest();
+    expect(sha.equals(rows[0]!.pdf_sha256)).toBe(true);
+  }, 120_000);
 });

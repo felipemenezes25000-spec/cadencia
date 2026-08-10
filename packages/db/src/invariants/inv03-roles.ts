@@ -12,10 +12,15 @@ export interface RoleRow {
 }
 
 /**
- * Os nove papeis da §3.1 — os unicos sujeitos ao invariante 3. O superusuario do
+ * Os papeis da §3.1 — os unicos sujeitos ao invariante 3. O superusuario do
  * cluster (o `postgres` do compose, o mestre do RDS) tem `rolbypassrls = true` por
  * construcao do initdb e nao e papel de aplicacao. Por isso o check varre este
  * conjunto fechado e, separadamente, afirma que nenhum deles e superuser.
+ *
+ * `id_login` entrou na migration 0132 como o decimo. Entrar NESTA lista e o
+ * ponto: papel que existe no cluster e fica de fora do conjunto varrido nao e
+ * um papel seguro — e um papel sem vigilancia. Se um dia alguem lhe der
+ * BYPASSRLS ou LOGIN, e aqui que o CI reprova.
  */
 export const APP_ROLES: ReadonlySet<string> = new Set([
   'app_owner',
@@ -27,6 +32,7 @@ export const APP_ROLES: ReadonlySet<string> = new Set([
   'api',
   'support',
   'jobs',
+  'id_login',
 ]);
 
 const ROLES_SQL = `
@@ -94,6 +100,17 @@ SELECT n.nspname || '.' || c.relname AS object,
    AND c.relname <> 'refresh_log'
  ORDER BY 1, 2, 3`;
 
+/** Qualquer privilegio de escrita concedido a id_login, em qualquer relacao. */
+const ID_LOGIN_WRITES_SQL = `
+SELECT n.nspname || '.' || c.relname AS relation, a.privilege_type AS privilege
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+  LEFT JOIN pg_roles g ON g.oid = a.grantee
+ WHERE g.rolname = 'id_login'
+   AND a.privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')
+ ORDER BY 1, 2`;
+
 export async function readRoles(db: Queryable): Promise<RoleRow[]> {
   const { rows } = await db.query<{
     name: string;
@@ -150,6 +167,25 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
     if (api.createRole) out.push('api tem CREATEROLE');
     if (api.inherit) out.push('api tem INHERIT — deve ser NOINHERIT e usar SET LOCAL ROLE app_rw');
     if (!api.config.includes('row_security=on')) out.push('api sem row_security=on no papel');
+  }
+
+  // id_login e o unico papel cujas policies sao `USING (true)` (migration 0132).
+  // Isso so e seguro enquanto ele nao puder conectar nem escrever: a leitura
+  // ampla existe para UMA funcao SECURITY DEFINER que filtra por user_id. Se
+  // ganhar LOGIN, vira credencial que le o vinculo de todos os tenants; se
+  // ganhar escrita, vira caminho para conceder vinculo a si mesmo.
+  const login = papeis.find((r) => r.name === 'id_login');
+  if (login) {
+    if (login.canLogin) {
+      out.push('id_login tem LOGIN — as policies USING (true) da 0132 deixam de ser seguras');
+    }
+    if (login.bypassRls) out.push('id_login tem BYPASSRLS');
+    const { rows: escritas } = await db.query<{ relation: string; privilege: string }>(
+      ID_LOGIN_WRITES_SQL);
+    for (const w of escritas) {
+      out.push(
+        `id_login recebeu ${w.privilege} em ${w.relation} — o papel do bootstrap de login so le`);
+    }
   }
 
   const { rows } = await db.query<{ object: string }>(OWNED_SQL);

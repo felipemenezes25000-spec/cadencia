@@ -22,7 +22,7 @@ describe('Skeletons de carregamento', () => {
   it('Hoje renderiza skeleton enquanto carrega', () => {
     const { container } = render(
       <Hoje
-        dia="2026-01-01"
+        dia="2026-01-01" timezone="America/Sao_Paulo"
         mensagensNaoLidasTotal={0}
         carregarDia={() => nuncaResolve()}
         carregarPrecisaDeVoce={() => nuncaResolve()}

@@ -22,6 +22,24 @@ import { providers } from '../providers';
 export async function paymentWebhookRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
+  /**
+   * Preserva os BYTES que o PSP enviou, como ja faz o webhook de mensageria.
+   *
+   * Sem este parser o Fastify entrega `req.body` ja convertido em objeto, e a
+   * rota reserializava com `JSON.stringify` para conferir o HMAC. Assinatura e
+   * calculada sobre bytes: reserializar troca ordem de chave, espaco e escape
+   * de unicode, entao o digest resultante nao e o que o PSP assinou. Contra um
+   * PSP de verdade a verificacao nunca fecharia — o webhook so "funciona" hoje
+   * porque as duas pontas sao o mesmo fake e erram igual.
+   */
+  r.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    (_req, body, done) => {
+      done(null, body);
+    },
+  );
+
   r.post('/v1/payments/webhook', {
     schema: {
       response: {
@@ -109,12 +127,33 @@ export async function paymentWebhookRoutes(app: FastifyInstance): Promise<void> 
       // Processar evento de pagamento confirmado
       if (parsed.eventType === 'payment.confirmed' && entryId !== null) {
         // Atualizar o lancamento para pago
-        await tx.query(
+        const atualizado = await tx.query(
           `UPDATE fin.entry
               SET status = 'pago', paid_at = clock_timestamp(),
                   external_ref = $2
             WHERE id = $1 AND status = 'pendente'`,
           [entryId, parsed.providerPaymentId ?? null]);
+
+        /**
+         * A TRANSICAO e a chave de idempotencia.
+         *
+         * PSP reentrega evento — e da norma do PSP fazer isso ate receber 200.
+         * O UPDATE ja era idempotente pelo `status = 'pendente'`: na segunda
+         * vez ele nao muda linha nenhuma. O que NAO era idempotente e o que vem
+         * depois: o contador de recibo era consumido e um segundo `fin.receipt`
+         * nascia para o mesmo lancamento. Resultado: dois recibos com numeros
+         * diferentes para um pagamento so, e um buraco na sequencia fiscal que
+         * ninguem consegue explicar depois.
+         *
+         * Se o UPDATE nao mexeu em nada, este evento ja foi processado.
+         */
+        if (atualizado.rowCount === 0) return;
+
+        // Repasse do profissional na mesma transacao — a rota POST /v1/payments
+        // faz o mesmo. Sem isto, pagamento confirmado por link nunca gera split.
+        await tx.query(
+          `SELECT fin.calculate_splits(app.require_tenant_id(), $1)`,
+          [entryId]);
 
         // Atualizar status do link (se existir)
         if (paymentLinkId !== null) {

@@ -4,6 +4,7 @@ import { ok, uuidv7, type Clock, type Result } from '@cadencia/kernel';
 import type { TxClient } from '@cadencia/db';
 import { collectRecord, type CollectedRecord, type ExportBlock } from './collect';
 import { buildReceipt, receiptHtml } from './receipt';
+import type { StorageAdapter } from '@cadencia/storage';
 
 export interface ExportRecordInput {
   readonly patientId: string;
@@ -61,7 +62,18 @@ function blocoHtml(b: ExportBlock, escape: (t: string) => string): string {
 }
 
 export async function exportRecord(
-  tx: TxClient, i: ExportRecordInput, deps: { readonly clock: Clock; readonly docs: ExportDocumentAdapter },
+  tx: TxClient, i: ExportRecordInput,
+  deps: {
+    readonly clock: Clock;
+    readonly docs: ExportDocumentAdapter;
+    /**
+     * Onde o PDF exportado e guardado. Sem isto o arquivo era gerado, hasheado,
+     * a linha era gravada apontando para `pdf_key` — e os bytes eram
+     * descartados: a exportacao devolvia recibo de um documento inexistente, e
+     * o titular so descobria ao tentar abrir.
+     */
+    readonly storage: StorageAdapter;
+  },
 ): Promise<Result<ExportedRecord, { kind: 'paciente_nao_encontrado' }>> {
   const inicio = deps.clock.monotonicMs();
   const { escapeHtml, documentHtml, renderPdf, stampPageNumbers } = deps.docs;
@@ -155,6 +167,11 @@ export async function exportRecord(
   const pdfKey = uuidv7();
   const pageCount = (await PDFDocument.load(carimbado)).getPageCount();
   const durationMs = Math.round(deps.clock.monotonicMs() - inicio);
+
+  // Grava o OBJETO antes da linha. Na ordem inversa, uma falha de escrita
+  // deixaria no acervo um recibo assinado de um PDF que nao existe — e recibo de
+  // exportacao e o que a clinica apresenta quando o titular reclama na ANPD.
+  await deps.storage.put(`exportacoes/${pdfKey}`, carimbado, 'application/pdf');
 
   await tx.query(
     `INSERT INTO clin.record_export (

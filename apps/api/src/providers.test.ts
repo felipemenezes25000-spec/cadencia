@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { providers, type Providers } from './providers';
 
+/**
+ * Ambiente minimo de um modo que nao e `fake`.
+ *
+ * Os segredos de webhook entram aqui junto das chaves da Memed porque sao
+ * exigencia do MESMO nivel: `real` e `memed` registram as rotas de webhook, que
+ * atendem sem sessao e tem o HMAC como unica barreira.
+ */
+function ambienteNaoFake(): void {
+  process.env['MEMED_BASE_URL'] ??= 'https://api.memed.test/v1';
+  process.env['MEMED_SCRIPT_URL'] ??= 'https://memed.test/s.js';
+  process.env['MEMED_API_KEY'] ??= 'k';
+  process.env['MEMED_SECRET_KEY'] ??= 's';
+  process.env['PSP_WEBHOOK_SECRET'] ??= 'segredo-de-teste-psp';
+  process.env['WHATSAPP_APP_SECRET'] ??= 'segredo-de-teste-whatsapp';
+}
+
 describe('registry de providers (fake)', () => {
   it('inclui signature, prescription, messaging e payment', () => {
     const p: Providers = providers();
@@ -21,4 +37,107 @@ describe('registry de providers (fake)', () => {
     expect(p.messaging.capabilities.size).toBeGreaterThan(0);
     expect(p.payment.capabilities.size).toBeGreaterThan(0);
   });
+});
+
+describe('modo so-prescricao', () => {
+  it('CADENCIA_PROVIDERS=memed liga a Memed sem exigir assinatura ICP-Brasil', async () => {
+    // A chave existe porque `real` e tudo-ou-nada e trava no boot enquanto nao
+    // houver adaptador ICP-Brasil. Sem este meio-termo a Memed nunca poderia ser
+    // ligada — e para RECEITA a propria Memed e a camada de assinatura
+    // qualificada, entao a trava estava protegendo o documento errado.
+    const anterior = process.env['CADENCIA_PROVIDERS'];
+    process.env['CADENCIA_PROVIDERS'] = 'memed';
+    ambienteNaoFake();
+    const { providers: recarregado } = await import(`./providers?memed=${Date.now()}`);
+    try {
+      const p = recarregado() as Providers;
+      expect(p.prescription.id).toBe('memed');
+      // Assinatura NAO e fake: e a que RECUSA. O fake assina com sucesso e
+      // reporta 'valida' — num modo que emite receita de verdade isso gravaria
+      // atestado 'assinado' sem valor legal, indistinguivel no banco.
+      expect(p.signature.id).toBe('signature-nao-contratado');
+    } finally {
+      if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
+      else process.env['CADENCIA_PROVIDERS'] = anterior;
+    }
+  });
+});
+
+describe('assinatura fora de desenvolvimento', () => {
+  it('modo memed NAO usa assinatura fake', async () => {
+    const anterior = process.env['CADENCIA_PROVIDERS'];
+    process.env['CADENCIA_PROVIDERS'] = 'memed';
+    ambienteNaoFake();
+    const { providers: recarregado } = await import(`./providers?assin=${Date.now()}`);
+    try {
+      const p = recarregado() as Providers;
+      // O fake ASSINA e reporta 'valida'. Num ambiente que emite documento de
+      // verdade isso grava atestado com estado 'assinado' e sem valor legal —
+      // e ninguem consegue distinguir depois. Aqui tem que recusar.
+      expect(p.signature.id).toBe('signature-nao-contratado');
+      expect(p.signature.capabilities.has('ad-rt')).toBe(false);
+    } finally {
+      if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
+      else process.env['CADENCIA_PROVIDERS'] = anterior;
+    }
+  });
+
+  it('modo real SOBE — documento nasce pendente em vez de o sistema nao subir', async () => {
+    const anterior = process.env['CADENCIA_PROVIDERS'];
+    process.env['CADENCIA_PROVIDERS'] = 'real';
+    ambienteNaoFake();
+    const { providers: recarregado } = await import(`./providers?real=${Date.now()}`);
+    try {
+      // Antes isto lancava no boot. Travar o sistema inteiro nao protegia
+      // ninguem: com a API no chao ninguem emite documento nenhum, nem os que
+      // funcionam. Com o provedor que recusa, a clinica opera e o atestado fica
+      // explicitamente pendente ate haver PSC.
+      const p = recarregado() as Providers;
+      expect(p.signature.id).toBe('signature-nao-contratado');
+    } finally {
+      if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
+      else process.env['CADENCIA_PROVIDERS'] = anterior;
+    }
+  });
+});
+
+describe('segredo de webhook fora de desenvolvimento', () => {
+  /**
+   * `POST /v1/payments/webhook` e `POST /v1/messaging/webhook/:channel` sao
+   * registradas sem sessao: quem chama e o PSP e a Meta. A unica coisa que
+   * separa um evento legitimo de um forjado e o HMAC.
+   *
+   * Os adaptadores reais ainda nao existem, entao os dois modos de producao
+   * usam o fake — e o fake tem segredo DEFAULT escrito no repositorio
+   * (`fake-payment-secret`). Subir assim significa que qualquer leitor deste
+   * codigo assina um `payment.confirmed` valido e marca lancamento como pago,
+   * em qualquer tenant, sem que dinheiro nenhum tenha entrado.
+   *
+   * Este teste existe para que o default NUNCA mais chegue a producao: fora de
+   * `fake`, sem segredo no ambiente, o processo tem de recusar subir.
+   */
+  for (const [modo, variavel] of [
+    ['real', 'PSP_WEBHOOK_SECRET'],
+    ['real', 'WHATSAPP_APP_SECRET'],
+    ['memed', 'PSP_WEBHOOK_SECRET'],
+    ['memed', 'WHATSAPP_APP_SECRET'],
+  ] as const) {
+    it(`modo ${modo} nao sobe sem ${variavel}`, async () => {
+      const antesModo = process.env['CADENCIA_PROVIDERS'];
+      const antesVar = process.env[variavel];
+      process.env['CADENCIA_PROVIDERS'] = modo;
+      ambienteNaoFake();
+      delete process.env[variavel];
+      const { providers: recarregado } =
+        await import(`./providers?semsegredo=${modo}${variavel}${Date.now()}`);
+      try {
+        expect(() => (recarregado as () => Providers)()).toThrow(variavel);
+      } finally {
+        if (antesVar === undefined) delete process.env[variavel];
+        else process.env[variavel] = antesVar;
+        if (antesModo === undefined) delete process.env['CADENCIA_PROVIDERS'];
+        else process.env['CADENCIA_PROVIDERS'] = antesModo;
+      }
+    });
+  }
 });

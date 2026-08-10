@@ -152,7 +152,7 @@ describe('Auditoria de acessibilidade', () => {
   it('Hoje nao tem violacoes de acessibilidade', async () => {
     const { container } = render(
       <Hoje
-        dia="2026-08-03"
+        dia="2026-08-03" timezone="America/Sao_Paulo"
         carregarDia={async () => ({
           contadores: { agendados: 1, confirmados: 0, aguardando: 0, atendidos: 0, faltas: 0 },
           fila: FILA,

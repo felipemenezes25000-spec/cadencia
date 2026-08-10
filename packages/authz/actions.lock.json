@@ -1,6 +1,15 @@
 {
-  "checksum": "15a40982680ff3ac850384529433ee54b0db6de5728c4efe9b6e760faee555a4",
+  "checksum": "85ee087d0c8094bc0a4421f1fa67b81f5c91329d3917be615469146a8c3b5382",
   "rows": [
+    {
+      "key": "ai.transcribe",
+      "description": "Transcrever consulta com assistencia de IA",
+      "roles": [
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
     {
       "key": "appointment.checkin",
       "description": "Fazer check-in do paciente",
@@ -25,6 +34,27 @@
     {
       "key": "appointment.write",
       "description": "Agendar, mover e cancelar",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "attachment.read",
+      "description": "Ler anexo do prontuario",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "attachment.write",
+      "description": "Anexar arquivo ao prontuario",
       "roles": [
         "admin_clinico",
         "diretor_tecnico",
@@ -98,6 +128,17 @@
       "roles": [
         "diretor_tecnico",
         "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "document.read",
+      "description": "Ler e imprimir documento emitido",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
       ],
       "requiresMfa": false
     },
@@ -507,6 +548,16 @@
         "financeiro",
         "profissional",
         "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tiss.guia.write",
+      "description": "Emitir guia SP/SADT a partir do atendimento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
       ],
       "requiresMfa": false
     },

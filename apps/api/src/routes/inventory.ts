@@ -63,6 +63,30 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
          (id, name, sku, unit, min_stock, current_stock)
        VALUES ($1, $2, $3, $4::inv.unit_kind, $5, $6)`,
       [id, b.name, b.sku ?? null, b.unit, b.minStock, b.currentStock]);
+
+    /**
+     * O saldo inicial precisa existir como MOVIMENTO, nao so como coluna.
+     *
+     * `inv.product.current_stock` e um valor derivado: o trigger
+     * `trg_update_current_stock` (migration 0101) recalcula a coluna com
+     * `SUM` sobre TODOS os movimentos do produto e sobrescreve o que estava la.
+     * Gravar o saldo inicial so na coluna deixava o produto fora do razao — e o
+     * PRIMEIRO movimento apagava esse saldo: produto criado com 100 unidades,
+     * uma saida de 5, e a soma dos movimentos da -5, que vira o novo estoque.
+     * Cem unidades somem do sistema no primeiro uso.
+     *
+     * Registrando a abertura como `ajuste`, a coluna e o razao passam a contar
+     * a mesma historia, e o inventario tem de onde reconstruir o saldo.
+     */
+    if (b.currentStock > 0) {
+      await tx.query(
+        `INSERT INTO inv.stock_movement
+           (id, product_id, kind, quantity, reason, reference_type, moved_by)
+         VALUES ($1, $2, 'ajuste'::inv.movement_kind, $3, $4,
+                 'ajuste_manual'::inv.reference_type, app.current_user_id())`,
+        [uuidv7(), id, b.currentStock, 'Saldo inicial do cadastro do produto']);
+    }
+
     void reply.code(201);
     return { productId: id };
   }));
@@ -227,6 +251,72 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
         minStock: Number(row.min_stock),
         currentStock: Number(row.current_stock),
         deficit: Number(row.min_stock) - Number(row.current_stock),
+      })),
+    };
+  }));
+
+  /**
+   * O HISTORICO de movimentacao. So havia POST: dava para registrar entrada e
+   * saida e nao dava para ver o que aconteceu.
+   *
+   * Sem isso, "temos 85 caixas" e um numero sem origem — ninguem consegue dizer
+   * se a diferenca veio de uso, perda ou erro de contagem, e a primeira suspeita
+   * numa clinica sempre recai sobre pessoas.
+   */
+  r.get('/v1/stock-movements', {
+    schema: {
+      querystring: z.object({
+        productId: z.string().uuid().optional(),
+        limit: z.coerce.number().int().min(1).max(200).optional(),
+      }),
+      response: {
+        200: z.object({
+          itens: z.array(z.object({
+            movementId: z.string().uuid(),
+            productId: z.string().uuid(),
+            productNome: z.string(),
+            kind: z.string(),
+            quantity: z.number(),
+            reason: z.string().nullable(),
+            referenceType: z.string(),
+            movedAt: z.string(),
+            movedByNome: z.string(),
+          })),
+        }),
+      },
+    },
+  }, rota('inventory.read', async (tx, _ctx, req) => {
+    const q = req.query as { productId?: string; limit?: number };
+    const { rows } = await tx.query<{
+      id: string; product_id: string; produto: string; kind: string;
+      quantity: string; reason: string | null; reference_type: string;
+      moved_at: string; nome: string | null;
+    }>(
+      `SELECT m.id, m.product_id, p.name AS produto, m.kind::text AS kind,
+              m.quantity::text, m.reason, m.reference_type::text,
+              to_char(m.moved_at, 'YYYY-MM-DD"T"HH24:MI:SSOF:00') AS moved_at,
+              u.full_name AS nome
+         FROM inv.stock_movement m
+         JOIN inv.product p ON (p.tenant_id, p.id) = (m.tenant_id, m.product_id)
+         LEFT JOIN id."user" u ON u.id = m.moved_by
+        WHERE ($1::uuid IS NULL OR m.product_id = $1)
+        ORDER BY m.moved_at DESC
+        LIMIT $2`,
+      [q.productId ?? null, q.limit ?? 100]);
+
+    return {
+      itens: rows.map((x) => ({
+        movementId: x.id,
+        productId: x.product_id,
+        productNome: x.produto,
+        kind: x.kind,
+        // `quantity` e numeric: node-postgres devolve string para nao perder
+        // casas. Meia caixa existe, entao Number e nao parseInt.
+        quantity: Number(x.quantity),
+        reason: x.reason,
+        referenceType: x.reference_type,
+        movedAt: x.moved_at,
+        movedByNome: x.nome ?? '',
       })),
     };
   }));

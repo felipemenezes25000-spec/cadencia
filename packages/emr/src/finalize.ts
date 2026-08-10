@@ -16,7 +16,15 @@ export interface FinalizeInput {
   readonly observations: readonly ObservationSnapshot[];
   readonly findings: readonly FindingSnapshot[];
   readonly procedures: readonly ProcedureSnapshot[];
-  readonly ai: readonly AiSnapshot[];
+  /**
+   * NAO existe `ai` aqui de proposito.
+   *
+   * O registro de assistencia por IA e escrito durante o atendimento e vive em
+   * `clin.ai_assistance`; a finalizacao apenas o reivindica. Aceitar a lista de
+   * quem chama daria ao cliente o poder de decidir o que entra no hash de um
+   * documento que a assinatura qualificada assina — e, na pratica, so servia
+   * para divergir do que o banco realmente sela.
+   */
   readonly incompleto?: boolean;
 }
 
@@ -31,6 +39,7 @@ export type FinalizeFailure =
   | { kind: 'atendimento_nao_esta_em_rascunho' }
   | { kind: 'justificativa_curta' }
   | { kind: 'supersedes_obrigatorio' }
+  | { kind: 'supersedes_de_outro_atendimento' }
   | { kind: 'adendo_nao_supera' }
   | { kind: 'cadastro_preliminar_bloqueia_finalizacao'; faltando: readonly string[] };
 
@@ -78,7 +87,7 @@ function montarPayloadSql(i: FinalizeInput): string {
     observations: i.observations.map((o) => ({
       observation_code: o.observationCode, value_num: o.valueNum, unit: o.unit,
       component_ordinal: o.componentOrdinal,
-      field_id: (o as ObservationSnapshot & { fieldId?: string }).fieldId ?? null })),
+      field_id: o.fieldId })),
     findings: i.findings.map((f) => ({
       field_code: f.fieldCode, option_code: f.optionCode,
       display_snapshot: f.displaySnapshot, ordinal: f.ordinal })),
@@ -111,6 +120,50 @@ async function selar(
     }
   }
 
+  /**
+   * A versao superada tem de ser DESTE atendimento.
+   *
+   * `clin.finalize_encounter` apaga o bit `live` de diagnosis, observation,
+   * finding e procedure filtrando so por `version_id` — nao confere o
+   * `encounter_id`. Sem esta guarda, uma anulacao aberta no atendimento A que
+   * aponte `supersedesVersionId` para a versao vigente do atendimento B faz o
+   * registro de B sumir da leitura, sem que uma linha de B tenha sido tocada e
+   * com o status 'anulado' gravado em A. Os ids de versao de todos os
+   * atendimentos do paciente saem na leitura do prontuario, entao o valor
+   * necessario esta a um passo de quem tem acesso legitimo.
+   */
+  if (supersedes !== null) {
+    const sup = await tx.query<{ encounter_id: string }>(
+      `SELECT encounter_id FROM clin.encounter_version WHERE id = $1`, [supersedes]);
+    if (sup.rows[0]?.encounter_id !== i.encounterId) {
+      return err({ kind: 'supersedes_de_outro_atendimento' });
+    }
+  }
+
+  /**
+   * As linhas de IA do hash sao as que o banco vai selar, nao as que o cliente
+   * mandou.
+   *
+   * `clin.finalize_encounter` reivindica toda `clin.ai_assistance` do
+   * atendimento que ainda esta com `version_id IS NULL` — essas linhas nascem
+   * durante a consulta, na rota de transcricao, e o cliente nem as conhece: o
+   * front manda `ai: []` sempre. Fazer o hash sobre o array do cliente selava
+   * `[]` enquanto a verificacao re-derivava as linhas reais, entao
+   * `verifyVersionHash` acusava adulteracao em TODO atendimento que usou IA —
+   * um alarme de integridade disparando em prontuario integro, que e a maneira
+   * mais rapida de ensinar todo mundo a ignorar o alarme.
+   *
+   * A projecao e identica a de `verifyVersionHash` de proposito: as duas pontas
+   * do hash tem de ler a mesma coisa da mesma forma.
+   */
+  const aiASelar = await tx.query<AiSnapshot>(
+    `SELECT provider, model_id AS "modelId", model_version AS "modelVersion", purpose,
+            risk_class AS "riskClass", residency,
+            encode(input_hash,'hex') AS "inputHash", encode(output_hash,'hex') AS "outputHash",
+            clinician_decision::text AS "clinicianDecision"
+       FROM clin.ai_assistance
+      WHERE encounter_id = $1 AND version_id IS NULL`, [i.encounterId]);
+
   const snapshot: VersionSnapshot = {
     encounterId: i.encounterId,
     patientId: cab.patient_id,
@@ -127,7 +180,7 @@ async function selar(
     cosignerProfessionalId: null,
     incompleto: i.incompleto ?? false,
     fields: i.fields, diagnoses: i.diagnoses, observations: i.observations,
-    findings: i.findings, procedures: i.procedures, ai: i.ai,
+    findings: i.findings, procedures: i.procedures, ai: aiASelar.rows,
   };
 
   // author_user_id vem do GUC dentro da transacao: e a mesma fonte que a funcao

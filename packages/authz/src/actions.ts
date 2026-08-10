@@ -66,7 +66,23 @@ export const ACTIONS = [
   // ── Fase 1 · Documentos e prescricao ─────────────────────────────────────
   { key: 'document.issue', description: 'Emitir atestado, pedido, relatorio ou declaracao',
     roles: ['diretor_tecnico', 'profissional'] },
+  // Ler e imprimir e mais amplo que emitir: a recepcao reimprime o atestado que
+  // o paciente perdeu, e admin auditando documento emitido nao precisa poder
+  // emitir um novo em nome do medico.
+  { key: 'document.read', description: 'Ler e imprimir documento emitido',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
   { key: 'prescription.write', description: 'Prescrever',
+    roles: ['diretor_tecnico', 'profissional'] },
+  // Anexo e resultado de exame, laudo, foto de lesao: dado clinico. A recepcao
+  // recebe o papel do paciente no balcao, entao PODE anexar — mas nao pode
+  // abrir o que ja esta la.
+  { key: 'attachment.write', description: 'Anexar arquivo ao prontuario',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'attachment.read', description: 'Ler anexo do prontuario',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  // So quem ATENDE transcreve: o audio e a consulta inteira, e quem nao esta na
+  // sala nao tem por que ouvi-la.
+  { key: 'ai.transcribe', description: 'Transcrever consulta com assistencia de IA',
     roles: ['diretor_tecnico', 'profissional'] },
   // ── Fase 2 · Mensageria ──────────────────────────────────────────────────
   { key: 'messaging.conversation.read', description: 'Ler conversas do tenant',
@@ -137,6 +153,12 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'tiss.guia.adjust', description: 'Ajustar codigo de procedimento na guia para faturamento',
     roles: ['admin_clinico', 'financeiro'] },
+  // Emitir SP/SADT e ato CLINICO: quem pede exame e quem atende. A recepcao
+  // nao entra — pedido de exame em nome de um medico que nao pediu e o comeco
+  // de uma glosa por procedimento nao justificado, quando nao de coisa pior.
+  // O financeiro tambem nao: ele fatura o que foi pedido, nao pede.
+  { key: 'tiss.guia.write', description: 'Emitir guia SP/SADT a partir do atendimento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   { key: 'tiss.lote.manage', description: 'Criar, montar e cancelar lotes TISS',
     roles: ['admin_clinico', 'recepcao', 'financeiro'] },
   { key: 'tiss.lote.send', description: 'Enviar lote TISS para operadora (gera XML)',

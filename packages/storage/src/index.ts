@@ -1,14 +1,10 @@
+import type { StorageAdapter } from './contract';
 /**
  * L0 — Adaptador abstrato de armazenamento de objetos.
  * Implementacao local (fs) para dev; S3-compatible para producao.
  * Chaves sao opacos UUIDv7 com prefixo de namespace (ex: "tiss/lote-001.xml").
  */
-export interface StorageAdapter {
-  put(key: string, data: Uint8Array, contentType: string): Promise<void>;
-  get(key: string): Promise<Uint8Array | null>;
-  exists(key: string): Promise<boolean>;
-  delete(key: string): Promise<void>;
-}
+export type { StorageAdapter } from './contract';
 
 /**
  * InMemoryStorageAdapter — para testes unitarios e de integracao.
@@ -44,3 +40,5 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.store.clear();
   }
 }
+
+export { FsStorageAdapter } from './fs-adapter';

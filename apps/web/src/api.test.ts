@@ -34,6 +34,16 @@ describe('cliente da API', () => {
                                dados: { encaixePossivel: true } });
   });
 
+  it('204 e sucesso sem corpo — nao pode virar erro de parse', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(null, { status: 204 }));
+    // `resposta.json()` num corpo vazio estoura SyntaxError. Como isso acontece
+    // DEPOIS de a operacao ter sido feita, quem chamou ve "nao foi possivel" e
+    // tenta de novo — enquanto o servidor ja apagou. Vale para todo DELETE.
+    await expect(apiFetch('/v1/agenda/bloqueios/abc', {
+      method: 'DELETE', clinicId: 'c', csrfToken: 't' })).resolves.toBeNull();
+  });
+
   it('401 vira ApiError sem_sessao, para a casca redirecionar ao login', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ erro: 'sem_sessao' }),

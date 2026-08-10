@@ -46,17 +46,17 @@ describe('tiss.guia_counter e tiss.next_guia_number — contador auto-provisiona
   });
 
   it('next_guia_number auto-provisiona na primeira chamada para tenant sem contador', async () => {
-    // O seed ja provisionou o contador para os dois tenants com next_value=2.
-    // Para testar a auto-provisao, usamos um tenant ficticio criado dentro da
-    // transacao que sera revertida.
+    // O seed provisiona o contador dos dois tenants com next_value=3: a
+    // sequencia e UNICA por tenant e vale para os dois tipos de guia
+    // (`guias-sadt.ts` chama a mesma `tiss.next_guia_number`), entao o seed
+    // consumiu o 1 na guia de consulta e o 2 na guia SP/SADT.
     await comoAtor(rw, actorAna, async (c) => {
-      // O seed ja inseriu o counter com next_value=2.
-      // A proxima chamada deve retornar 2 (consumindo e incrementando para 3).
+      // A proxima chamada devolve 3 e incrementa para 4.
       const { rows } = await c.query<{ next_guia_number: string }>(
         `SELECT tiss.next_guia_number($1) AS next_guia_number`,
         [F.TENANT_A],
       );
-      expect(Number(rows[0]?.next_guia_number)).toBe(2);
+      expect(Number(rows[0]?.next_guia_number)).toBe(3);
     });
   });
 

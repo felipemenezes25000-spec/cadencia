@@ -140,13 +140,16 @@ function verificarGridsResponsivos(container: HTMLElement): void {
 }
 
 /**
- * Verifica que o padding raiz adapta para mobile (max-sm:p-4 ou similar).
+ * Verifica que o padding raiz adapta para mobile.
+ * Aceita Tailwind utilities (max-sm:p-4, p-3 etc.) ou a classe
+ * cadencia-page, que aplica padding responsivo via CSS custom property.
  */
 function verificarPaddingResponsivo(container: HTMLElement): boolean {
   const raiz = container.firstElementChild;
   if (!raiz) return false;
   const classes = raiz.className || '';
   return (
+    classes.includes('cadencia-page') ||
     classes.includes('max-sm:p-4') ||
     classes.includes('max-sm:p-3') ||
     classes.includes('p-4') ||
@@ -175,7 +178,7 @@ describe('Auditoria responsiva', () => {
     it('Hoje: grid de contadores adapta para mobile', async () => {
       const { container } = render(
         <Hoje
-          dia="2026-08-03"
+          dia="2026-08-03" timezone="America/Sao_Paulo"
           carregarDia={async () => ({
             contadores: { agendados: 1, confirmados: 0, aguardando: 0, atendidos: 0, faltas: 0 },
             fila: FILA,
@@ -200,7 +203,7 @@ describe('Auditoria responsiva', () => {
     it('Hoje usa padding responsivo (max-sm:p-4)', async () => {
       const { container } = render(
         <Hoje
-          dia="2026-08-03"
+          dia="2026-08-03" timezone="America/Sao_Paulo"
           carregarDia={async () => ({
             contadores: { agendados: 1, confirmados: 0, aguardando: 0, atendidos: 0, faltas: 0 },
             fila: FILA,
@@ -336,7 +339,7 @@ describe('Auditoria responsiva', () => {
   });
 
   describe('contadores tem touch target minimo', () => {
-    it('ConveniosLayout: botoes de contadores tem min-h-[44px]', () => {
+    it('ConveniosLayout: botoes de contadores tem min-h >= 44px', () => {
       render(
         <ConveniosLayout contadores={CONTADORES} aoFiltrar={vi.fn()}>
           <div>Conteudo</div>
@@ -345,7 +348,9 @@ describe('Auditoria responsiva', () => {
       const grupo = screen.getByRole('group', { name: /Contadores de convenios/i });
       const botoes = within(grupo).getAllByRole('button');
       botoes.forEach((botao) => {
-        expect(botao.className).toContain('min-h-[44px]');
+        const match = botao.className.match(/min-h-\[(\d+)px\]/);
+        expect(match).toBeTruthy();
+        expect(Number(match![1])).toBeGreaterThanOrEqual(44);
       });
     });
   });

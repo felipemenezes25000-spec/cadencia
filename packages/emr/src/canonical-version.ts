@@ -44,6 +44,17 @@ export interface DiagnosisSnapshot {
 }
 
 export interface ObservationSnapshot {
+  /**
+   * De qual CAMPO esta observacao e projecao. `clin.observation.field_id` e NOT
+   * NULL porque observacao solta nao pode ser reprojetada nem retificada: sem
+   * saber a origem, retificar o peso de um atendimento deixaria a serie
+   * numerica antiga viva ao lado da nova.
+   *
+   * O tipo nao declarava isto e `finalize.ts` alcancava o valor por cast — o
+   * que fazia todo atendimento com sinal vital falhar com 23502, porque nenhum
+   * chamador sabia que precisava enviar.
+   */
+  readonly fieldId: string;
   readonly observationCode: string; readonly valueNum: string;
   readonly unit: string | null; readonly componentOrdinal: number;
 }

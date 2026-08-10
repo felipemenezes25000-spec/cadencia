@@ -32,6 +32,17 @@ export interface CompositorInlineProps {
     patientId: string;
     procedureId: string;
     operadoraNome: string;
+    /**
+     * Dia e hora DE PAREDE, como o usuario digitou nos campos do formulario.
+     *
+     * Estavam faltando neste contrato, e por isso os dois campos — visiveis,
+     * obrigatorios e editaveis — eram simplesmente descartados no submit: o
+     * agendamento saia sempre no slot que tinha sido clicado na grade. Quem
+     * abria o compositor as 09:00 e corrigia para 10:30 marcava as 09:00, e so
+     * descobria quando o paciente aparecia na hora errada.
+     */
+    data: string;
+    horario: string;
     encaixe: boolean;
   }) => Promise<{ appointmentId: string }> | Promise<void>;
   readonly aoFechar: () => void;
@@ -173,6 +184,8 @@ export function CompositorInline(p: CompositorInlineProps) {
         patientId: dados.patientId,
         procedureId: dados.procedureId,
         operadoraNome: dados.operadoraNome,
+        data: dados.data,
+        horario: dados.horario,
         encaixe,
       });
       setConflito(false);
@@ -205,6 +218,7 @@ export function CompositorInline(p: CompositorInlineProps) {
       role="form"
       aria-label="Novo agendamento"
       onKeyDown={aoTeclar}
+      onChange={() => setTocado(true)}
       onSubmit={handleSubmit((dados) => submitInterno(dados, false))}
       className={cn(
         'grid gap-[var(--s-4)] p-[var(--s-5)]',

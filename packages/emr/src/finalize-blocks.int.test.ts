@@ -34,7 +34,7 @@ describe('divida de dados bloqueia a finalizacao — no momento certo', () => {
   it('recusa finalizar e diz EXATAMENTE o que falta', async () => {
     const r = await withTenantTx(actor, (tx) => finalizeEncounter(tx, {
       encounterId: s.encounterId,
-      fields: [], diagnoses: [], observations: [], findings: [], procedures: [], ai: [] }));
+      fields: [], diagnoses: [], observations: [], findings: [], procedures: [] }));
     expect(r).toEqual({
       ok: false,
       error: { kind: 'cadastro_preliminar_bloqueia_finalizacao',
@@ -53,7 +53,7 @@ describe('divida de dados bloqueia a finalizacao — no momento certo', () => {
     await definirCadastro('completo', '1988-03-14');
     const r = await withTenantTx(actor, (tx) => finalizeEncounter(tx, {
       encounterId: s.encounterId,
-      fields: [], diagnoses: [], observations: [], findings: [], procedures: [], ai: [] }));
+      fields: [], diagnoses: [], observations: [], findings: [], procedures: [] }));
     expect(r.ok).toBe(true);
   });
 });

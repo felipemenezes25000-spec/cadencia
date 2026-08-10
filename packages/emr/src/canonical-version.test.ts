@@ -32,8 +32,10 @@ const SNAPSHOT: VersionSnapshot = {
       terminologyVersion: '2026-01', isPrincipal: true },
   ],
   observations: [
-    { observationCode: 'PA_SIS', valueNum: '120', unit: 'mmHg', componentOrdinal: 1 },
-    { observationCode: 'PA_DIA', valueNum: '80', unit: 'mmHg', componentOrdinal: 2 },
+    { fieldId: '0198f2a0-0000-7000-8000-0000000000pa'.replace('pa', 'aa'),
+      observationCode: 'PA_SIS', valueNum: '120', unit: 'mmHg', componentOrdinal: 1 },
+    { fieldId: '0198f2a0-0000-7000-8000-0000000000pa'.replace('pa', 'aa'),
+      observationCode: 'PA_DIA', valueNum: '80', unit: 'mmHg', componentOrdinal: 2 },
   ],
   findings: [
     { fieldCode: 'comorbidades', optionCode: 'Hipertensao',

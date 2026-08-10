@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CaretLeft, CaretRight, Plus } from '@phosphor-icons/react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { VISOES, faixasDoDia, type Visao } from './grade';
@@ -12,6 +12,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Skeleton } from '../ui/Skeleton';
 import { AgendaDragContext } from './AgendaDragContext';
 import { cn } from '../lib/cn';
+import { diaNaClinica } from '../lib/fuso';
 
 export interface AgendaProps {
   readonly dia: string;
@@ -21,9 +22,19 @@ export interface AgendaProps {
   readonly aoMudarVisao: (v: Visao['chave']) => void;
   readonly aoMudarDia: (dia: string) => void;
   readonly aoAbrirCompositor: (inicioMin: number) => void;
-  readonly aoMover: (appointmentId: string, novoInicioIso: string) => Promise<void>;
+  /**
+   * Entrega DIA e MINUTO DE PAREDE, nao um instante.
+   *
+   * O slot da grade sabe a hora do relogio da clinica e, na visao semana, o dia
+   * pela coluna. Quem converte para instante e a pagina, que tem o fuso da
+   * unidade — a mesma regra do compositor e dos bloqueios.
+   */
+  readonly aoMover: (
+    appointmentId: string, dia: string, minutoDoDia: number) => Promise<void>;
   readonly aoConfirmar: (appointmentId: string) => Promise<void>;
   readonly aoCobrar: (appointmentId: string) => void;
+  /** Acoes extras no cabecalho (ex.: bloqueios), decididas pela pagina. */
+  readonly acoesExtras?: ReactNode;
 }
 
 /* ── Constantes ─────────────────────────────────────────── */
@@ -597,12 +608,31 @@ export function Agenda(p: AgendaProps) {
 
   /* Mover agendamento via drag-and-drop */
   function moverAgendamento(agendamentoId: string, novoSlotId: string): void {
-    // O novoSlotId tem o formato "slot-{colIdx}-{horario}" onde horario e "HH:MM"
-    const parts = novoSlotId.split('-');
-    const horario = parts.slice(2).join('-'); // "HH:MM" (rejoin in case of unexpected dashes)
-    if (horario) {
-      void p.aoMover(agendamentoId, horario);
-    }
+    /**
+     * "slot-{colIdx}-{HH:MM}" — a coluna diz o DIA, o HH:MM diz a hora.
+     *
+     * O codigo antigo pegava so o "HH:MM" e mandava essa string como
+     * `startsAt`, num campo que a rota valida com `z.string().datetime()`. A API
+     * respondia 400 sempre, e como a chamada era `void p.aoMover(...)` sem
+     * catch, a rejeicao virava unhandled rejection: nenhum aviso na tela, o
+     * bloco voltava para o lugar de origem no proximo recarregamento e arrastar
+     * simplesmente nunca movia nada, em nenhuma das visoes com grade.
+     *
+     * O `colIdx` tambem era jogado fora, entao mesmo com o formato certo um
+     * arrasto de terca para quinta na visao semana teria mudado so o horario.
+     */
+    const [, col, hhmm] = novoSlotId.split('-');
+    if (col === undefined || hhmm === undefined) return;
+
+    const coluna = Number(col);
+    const dia = p.visao === 'semana' && Number.isInteger(coluna)
+      ? adicionarDias(inicioSemana(p.dia), coluna)
+      : p.dia;
+
+    const minuto = Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+    if (!Number.isFinite(minuto)) return;
+
+    void p.aoMover(agendamentoId, dia, minuto);
   }
 
   /* Navegacao de data */
@@ -623,8 +653,11 @@ export function Agenda(p: AgendaProps) {
     if (p.visao !== 'semana') return [[]];
     const seg = inicioSemana(p.dia);
     const dias = Array.from({ length: 7 }, (_, i) => adicionarDias(seg, i));
-    return dias.map((d) => itens.filter((it) => it.startsAt.slice(0, 10) === d));
-  }, [p.visao, p.dia, itens]);
+    // `startsAt` chega em UTC. Fatiar a string dava a data UTC, e no Brasil
+    // (UTC-3) tudo a partir das 21h caia na coluna do dia seguinte.
+    return dias.map((d) => itens.filter(
+      (it) => diaNaClinica(it.startsAt, p.timezone) === d));
+  }, [p.visao, p.dia, p.timezone, itens]);
 
   const semanaCabecalhos = useMemo(() => {
     if (p.visao !== 'semana') return [];
@@ -666,6 +699,7 @@ export function Agenda(p: AgendaProps) {
       <span className="text-sm text-text-muted hidden sm:inline ml-1">
         {formatarData(p.dia)}
       </span>
+      {p.acoesExtras}
       <Botao iconeEsquerda={Plus} tamanho="sm" onClick={() => p.aoAbrirCompositor(INICIO_MIN)}>
         Novo
       </Botao>

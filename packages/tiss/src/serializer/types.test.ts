@@ -37,6 +37,7 @@ describe('tipos de entrada do serializador TISS', () => {
     };
 
     const guia: GuiaConsultaInput = {
+      registroANSOperadora: '123456',
       numeroGuiaPrestador: '00001',
       numeroCarteira: '98765432101234567',
       atendimentoRN: false,
@@ -65,6 +66,7 @@ describe('tipos de entrada do serializador TISS', () => {
 
   it('GuiaConsultaInput aceita campos opcionais omitidos', () => {
     const guia: GuiaConsultaInput = {
+      registroANSOperadora: '123456',
       numeroGuiaPrestador: '00002',
       numeroCarteira: '11111111111111111',
       atendimentoRN: true,

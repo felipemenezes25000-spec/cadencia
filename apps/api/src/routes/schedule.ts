@@ -119,7 +119,8 @@ export async function scheduleRoutes(app: FastifyInstance): Promise<void> {
             aguardando: z.number(), atendidos: z.number(), faltas: z.number() }),
           fila: z.array(z.object({
             appointmentId: z.string(), startsAt: z.string(), endsAt: z.string(),
-            patientId: z.string(), displayName: z.string(), professionalId: z.string(),
+            patientId: z.string(), displayName: z.string(),
+            professionalId: z.string(), professionalNome: z.string(),
             procedureNome: z.string().nullable(), procedureCor: z.string().nullable(),
             operadoraNome: z.string().nullable(), status: STATUS,
             encaixe: z.boolean(), teleconsulta: z.boolean(), primeiraVez: z.boolean(),

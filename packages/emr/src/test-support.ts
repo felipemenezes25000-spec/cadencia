@@ -10,7 +10,7 @@ import { uuidv7 } from '@cadencia/kernel';
 export interface Semente {
   tenantId: string; clinicId: string; userId: string;
   professionalId: string; patientId: string;
-  encounterId: string; finalizedEncounterId: string;
+  encounterId: string; outroEncounterId: string; finalizedEncounterId: string;
   sectionId: string; fieldQueixaId: string; fieldPaId: string; fieldCidId: string;
 }
 
@@ -28,7 +28,7 @@ export async function semearAtendimento(): Promise<Semente> {
   const s: Semente = {
     tenantId: uuidv7(), clinicId: uuidv7(), userId: uuidv7(),
     professionalId: uuidv7(), patientId: uuidv7(),
-    encounterId: uuidv7(), finalizedEncounterId: uuidv7(),
+    encounterId: uuidv7(), outroEncounterId: uuidv7(), finalizedEncounterId: uuidv7(),
     sectionId: uuidv7(), fieldQueixaId: uuidv7(), fieldPaId: uuidv7(), fieldCidId: uuidv7(),
   };
   const admin = new Pool({ connectionString: adminUrl(), max: 1 });
@@ -89,8 +89,15 @@ export async function semearAtendimento(): Promise<Semente> {
        VALUES ($1, $2, $3, 'cid', 'CID-10', 'busca_tabela', 'CID10', 3)`,
       [s.tenantId, s.fieldCidId, s.sectionId]);
 
+    // `outroEncounterId` nasce em rascunho como o primeiro: e o SEGUNDO
+    // atendimento finalizavel do mesmo paciente, necessario para exercitar
+    // regra que cruza atendimentos (superar versao alheia, por exemplo).
+    // `finalizedEncounterId` nao serve para isso: nasce finalizado e sem
+    // versao nenhuma, e o CHECK `version_no = 1 <=> kind = 'original'` impede
+    // criar a primeira versao dele por adendo.
     for (const [id, status] of
-         [[s.encounterId, 'rascunho'], [s.finalizedEncounterId, 'finalizado']] as const) {
+         [[s.encounterId, 'rascunho'], [s.outroEncounterId, 'rascunho'],
+          [s.finalizedEncounterId, 'finalizado']] as const) {
       await c.query(
         `INSERT INTO clin.encounter
            (tenant_id, id, patient_id, professional_id, clinic_id, occurred_at, occurred_date, status)

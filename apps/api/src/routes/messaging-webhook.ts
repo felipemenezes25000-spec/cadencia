@@ -158,8 +158,18 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
   }, async (req, reply) => {
     const q = req.query as {
       'hub.mode'?: string; 'hub.verify_token'?: string; 'hub.challenge'?: string };
-    const verifyToken = process.env['WHATSAPP_VERIFY_TOKEN'] ?? '';
-    if (q['hub.mode'] === 'subscribe' && q['hub.verify_token'] === verifyToken) {
+    // Sem token configurado a resposta e SEMPRE 403.
+    //
+    // Com o `?? ''` antigo, `WHATSAPP_VERIFY_TOKEN` ausente fazia o segredo
+    // esperado virar string vazia — e `hub.verify_token` e opcional no schema.
+    // Bastava chamar `?hub.mode=subscribe&hub.verify_token=&hub.challenge=x`
+    // para o handshake da Meta passar, ou seja, qualquer um registrava este
+    // endpoint no proprio app da Meta. Ambiente mal configurado tem de recusar,
+    // nao aceitar todo mundo.
+    const verifyToken = process.env['WHATSAPP_VERIFY_TOKEN'];
+    if (verifyToken !== undefined && verifyToken !== ''
+        && q['hub.mode'] === 'subscribe'
+        && q['hub.verify_token'] === verifyToken) {
       return reply.code(200).send(q['hub.challenge'] ?? '');
     }
     return reply.code(403).send({ erro: 'token_invalido' });

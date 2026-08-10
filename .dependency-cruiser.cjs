@@ -102,7 +102,19 @@ module.exports = {
     {
       name: 'web-nao-fala-com-banco',
       severity: 'error',
-      comment: 'So api e worker abrem conexao: web nao recebe DATABASE_URL por task role (§2.1).',
+      comment:
+        'So api e worker abrem conexao: web nao recebe DATABASE_URL por task role (§2.1). ' +
+        'ESTA REGRA E DE IMPORT DIRETO, e isso deixa um vao conhecido: a web pode alcancar o ' +
+        'banco DE FORMA TRANSITIVA importando o barrel de um pacote de L2 que reexporta o ' +
+        'modulo que fala com o banco. Foi assim que `PainelDeRecorrencia` importou ' +
+        '`@cadencia/scheduling` inteiro, arrastou `@cadencia/db` e `node:crypto` para o bundle ' +
+        'do navegador e derrubou o `next build` — com o arch:check verde. ' +
+        'Trocar para `reachable: true` NAO resolve: com `tsPreCompilationDeps` ligado o ' +
+        '`import type` tambem conta como aresta, e a regra passa a reprovar os imports ' +
+        'type-only de `@cadencia/reports`, que o TypeScript apaga e nunca entram no bundle. ' +
+        'O schema de regra de alcance nao aceita `dependencyTypesNot: [type-only]` para separar ' +
+        'os dois casos. Quem fecha o vao e o `build:web` no prepush e no CI: o bundler e a unica ' +
+        'fonte de verdade sobre o que de fato entra no navegador.',
       from: { path: '^apps/web/' },
       to: { path: '^packages/(db|jobs|outbox)/' },
     },

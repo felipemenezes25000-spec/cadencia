@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { uuidv7 } from '@cadencia/kernel';
+import { gerarXmlDoLote } from '@cadencia/tiss';
 import { rota } from '../../guard';
 
 function erroDominio(kind: string, status: number, extra: Record<string, unknown> = {}): never {
@@ -82,6 +83,14 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     if (loteRows.length === 0) erroDominio('lote_nao_encontrado', 404);
     if (loteRows[0]!.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
 
+    // Guarda simetrica a de `/guias-sadt`: `guiasTISS` e um `choice` na norma,
+    // e a operadora recusa o lote inteiro se vier consulta junto com SADT.
+    const { rowCount: temSadt } = await tx.query(
+      `SELECT 1 FROM tiss.lote_guia_sadt WHERE lote_id = $1 LIMIT 1`, [p.id]);
+    if (temSadt !== null && temSadt > 0) {
+      erroDominio('lote_ja_tem_guia_sadt', 422);
+    }
+
     const lote = loteRows[0]!;
     let adicionadas = 0;
     let guiaCount = lote.guia_count;
@@ -129,6 +138,88 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
         [p.id, guiaCount, totalCents]);
     }
 
+    return { adicionadas };
+  }));
+
+  /**
+   * Anexa guias SP/SADT ao lote.
+   *
+   * Rota separada, e nao um campo `tipo` na de cima, porque as tabelas de
+   * vinculo sao duas: `tiss.lote_guia` tem FK para a guia de consulta e
+   * `tiss.lote_guia_sadt` para a de SADT. Isso torna o lote MISTO impossivel de
+   * montar — que e o que a norma exige, ja que `guiasTISS` e um `choice` e a
+   * operadora recusa o lote inteiro se vier consulta junto com SADT.
+   */
+  r.post('/v1/tiss/lotes/:id/guias-sadt', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      body: z.object({ guiaIds: z.array(z.string().uuid()).min(1).max(100) }),
+      response: { 200: z.object({ adicionadas: z.number().int() }) },
+    },
+  }, rota('tiss.lote.manage', async (tx, _ctx, req) => {
+    const p = req.params as { id: string };
+    const b = req.body as { guiaIds: string[] };
+
+    const { rows: loteRows } = await tx.query<{
+      status: string; operadora_id: string; guia_count: number;
+      total_value_cents: string;
+    }>(
+      `SELECT status::text, operadora_id, guia_count, total_value_cents
+         FROM tiss.lote WHERE id = $1 FOR UPDATE`, [p.id]);
+    if (loteRows.length === 0) erroDominio('lote_nao_encontrado', 404);
+    const lote = loteRows[0]!;
+    if (lote.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
+
+    // Um lote que ja tem guia de consulta nao pode receber SADT. As FKs
+    // impedem a linha errada, mas nao a MISTURA — que so as duas tabelas
+    // juntas revelam.
+    const { rowCount: temConsulta } = await tx.query(
+      `SELECT 1 FROM tiss.lote_guia WHERE lote_id = $1 LIMIT 1`, [p.id]);
+    if (temConsulta !== null && temConsulta > 0) {
+      erroDominio('lote_ja_tem_guia_de_consulta', 422);
+    }
+
+    let adicionadas = 0;
+    let guiaCount = lote.guia_count;
+    let totalCents = Number(lote.total_value_cents);
+
+    for (const guiaId of b.guiaIds) {
+      const { rows: guiaRows } = await tx.query<{ operadora_id: string }>(
+        `SELECT operadora_id FROM tiss.encounter_guia_sadt
+          WHERE id = $1 AND live = true`, [guiaId]);
+      if (guiaRows.length === 0) continue;
+      if (guiaRows[0]!.operadora_id !== lote.operadora_id) continue;
+
+      const { rowCount: jaVinculada } = await tx.query(
+        `SELECT 1 FROM tiss.lote_guia_sadt WHERE guia_id = $1`, [guiaId]);
+      if (jaVinculada !== null && jaVinculada > 0) continue;
+
+      const { rows: seqRows } = await tx.query<{ max_seq: number | null }>(
+        `SELECT MAX(sequencial_item) AS max_seq
+           FROM tiss.lote_guia_sadt WHERE lote_id = $1`, [p.id]);
+      await tx.query(
+        `INSERT INTO tiss.lote_guia_sadt (lote_id, guia_id, sequencial_item)
+         VALUES ($1, $2, $3)`,
+        [p.id, guiaId, (seqRows[0]?.max_seq ?? 0) + 1]);
+
+      // O valor da guia SADT e a SOMA dos itens, calculada no banco. Nao ha
+      // coluna de total na guia justamente para nao poder divergir dos itens.
+      const { rows: valorRows } = await tx.query<{ total: string }>(
+        `SELECT coalesce(sum(
+                  round(valor_unitario * quantidade_executada * reducao_acrescimo, 2)
+                ), 0)::text AS total
+           FROM tiss.encounter_guia_sadt_item WHERE guia_id = $1`, [guiaId]);
+
+      guiaCount += 1;
+      totalCents += Math.round(Number(valorRows[0]?.total ?? '0') * 100);
+      adicionadas += 1;
+    }
+
+    if (adicionadas > 0) {
+      await tx.query(
+        `UPDATE tiss.lote SET guia_count = $2, total_value_cents = $3 WHERE id = $1`,
+        [p.id, guiaCount, totalCents]);
+    }
     return { adicionadas };
   }));
 
@@ -382,9 +473,18 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     }
     if (prevStatus === 'cancelado') erroDominio('lote_ja_cancelado', 422);
 
-    // Liberar guias do lote (remove vinculos da tabela de juncao)
+    // Liberar guias do lote — as DUAS tabelas de juncao.
+    //
+    // `tiss.lote_guia_sadt` (migration 0152) nasceu depois desta rota e ficou de
+    // fora do cancelamento. O efeito: a guia SP/SADT continuava vinculada a um
+    // lote cancelado para sempre. Como a montagem de lote so aceita guia sem
+    // vinculo, aquela guia nao entrava em nenhum lote novo — ficava invisivel
+    // para o faturamento, sem erro em lugar nenhum, e o servico prestado nunca
+    // era cobrado da operadora.
     await tx.query(
       `DELETE FROM tiss.lote_guia WHERE lote_id = $1`, [p.id]);
+    await tx.query(
+      `DELETE FROM tiss.lote_guia_sadt WHERE lote_id = $1`, [p.id]);
 
     // Marcar como cancelado e zerar contadores
     await tx.query(
@@ -408,22 +508,35 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
   }, rota('tiss.lote.manage', async (tx, _ctx, req, reply) => {
     const p = req.params as { id: string };
 
-    const { rows } = await tx.query<{
-      status: string; xml_storage_key: string | null; numero_lote: string;
-    }>(
-      `SELECT status::text, xml_storage_key, numero_lote
-         FROM tiss.lote WHERE id = $1`, [p.id]);
+    const { rows } = await tx.query<{ numero_lote: string }>(
+      `SELECT numero_lote FROM tiss.lote WHERE id = $1`, [p.id]);
     if (rows.length === 0) erroDominio('lote_nao_encontrado', 404);
-    if (rows[0]!.xml_storage_key === null) erroDominio('xml_nao_disponivel', 404);
 
-    // XML sera lido do storage (S3/local) via xml_storage_key quando o
-    // worker de serializacao estiver pronto. Por ora, retorna placeholder.
+    // Serializado sob demanda a partir das guias, e nao lido de um arquivo
+    // guardado: enquanto o lote nao foi enviado, as guias ainda podem mudar, e
+    // um XML congelado antes disso descreveria um lote que nao existe mais.
+    // Depois do envio, `xml_hash_md5` prova que o conteudo nao mudou.
+    const { xml, warnings, quantidadeDeGuias } = await gerarXmlDoLote(tx, p.id)
+      .catch((e: unknown) => {
+        const dominio = (e as { dominio?: string }).dominio;
+        if (dominio === 'lote_sem_guias') erroDominio('lote_sem_guias', 422);
+        if (dominio === 'uf_desconhecida') erroDominio('uf_do_conselho_invalida', 422);
+        throw e;
+      });
+
+    // Caractere fora do ISO-8859-1 vira '?' no arquivo. Avisar no cabecalho
+    // deixa rastro sem barrar o download — quem confere o lote antes de enviar
+    // precisa VER o arquivo para decidir se o nome truncado importa.
+    if (warnings.length > 0) {
+      void reply.header('x-cadencia-avisos', String(warnings.length));
+      req.log.warn({ loteId: p.id, warnings }, 'lote_com_caractere_fora_do_iso8859');
+    }
+
     void reply.header('content-type', 'application/xml; charset=ISO-8859-1');
     void reply.header('content-disposition',
       `attachment; filename="lote-${rows[0]!.numero_lote}.xml"`);
     void reply.header('cache-control', 'no-store');
-    return Buffer.from(
-      `<?xml version="1.0" encoding="ISO-8859-1"?><lote>${rows[0]!.numero_lote}</lote>`,
-      'latin1');
+    void reply.header('x-cadencia-guias', String(quantidadeDeGuias));
+    return Buffer.from(xml);
   }));
 }

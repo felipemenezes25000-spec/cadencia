@@ -12,12 +12,22 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 const GuiaResumoSchema = z.object({
   guiaId: z.string().uuid(),
   encounterId: z.string().uuid(),
+  // O ID, e nao so o nome: quem monta lote precisa dele. Sem isto a tela "A
+  // faturar" tinha o nome da operadora para exibir e nada para ENVIAR, e
+  // acabava mandando `operadoraId: null` na criacao do lote.
+  operadoraId: z.string().uuid(),
   operadoraNome: z.string(),
   registroAns: z.string(),
   numeroGuiaPrestador: z.string(),
   numeroCarteira: z.string(),
+  pacienteNome: z.string(),
   dataAtendimento: z.string(),
   codigoProcedimento: z.string(),
+  // O nome do procedimento vem da TUSS VIGENTE NA DATA DO ATENDIMENTO, nunca da
+  // vigente hoje (§3.9 e decisao irreversivel 11). A ANS altera descricao entre
+  // competencias, e uma guia de marco reapresentada em julho com o texto de
+  // julho e exatamente o lote que volta glosado meses depois.
+  nomeProcedimento: z.string(),
   valorProcedimento: z.number(),
   loteId: z.string().uuid().nullable(),
   createdAt: z.string(),
@@ -102,23 +112,45 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
       params.push(q.to); idx += 1;
     }
     if (q.cursor !== undefined) {
-      condicoes.push(`g.created_at < $${idx}`);
-      params.push(q.cursor); idx += 1;
+      /**
+       * O cursor tem de usar a MESMA chave da ordenacao.
+       *
+       * A lista ordena por `(data_atendimento DESC, created_at DESC)` e o cursor
+       * filtrava so `created_at <`. Como `data_atendimento` e a chave primaria
+       * da ordem, as duas nao coincidem: uma guia lancada hoje para um
+       * atendimento de semana passada tem `created_at` alto e
+       * `data_atendimento` baixo. Ela aparece tarde na ordem mas e cortada cedo
+       * pelo filtro — some da paginacao inteira. E guia que some da tela "A
+       * faturar" e guia que ninguem fatura.
+       *
+       * Comparacao de TUPLA resolve com a semantica exata da ordem. O cursor
+       * carrega os dois campos separados por '|'.
+       */
+      const [dataCursor, criadoCursor] = q.cursor.split('|');
+      if (dataCursor === undefined || criadoCursor === undefined) {
+        erroDominio('cursor_invalido', 400);
+      }
+      condicoes.push(
+        `(g.data_atendimento, g.created_at) < ($${idx}::date, $${idx + 1}::timestamptz)`);
+      params.push(dataCursor, criadoCursor); idx += 2;
     }
 
     params.push(limite + 1);
     const where = condicoes.join(' AND ');
 
     const { rows } = await tx.query<{
-      id: string; encounter_id: string; operadora_nome: string;
+      id: string; encounter_id: string; operadora_id: string; operadora_nome: string;
       registro_ans: string; numero_guia_prestador: string;
       numero_carteira: string; data_atendimento: string;
+      paciente_nome: string | null; nome_procedimento: string | null;
       codigo_procedimento: string; valor_procedimento: string;
       lote_id: string | null; created_at: string;
     }>(
-      `SELECT g.id, g.encounter_id, o.razao_social AS operadora_nome,
+      `SELECT g.id, g.encounter_id, g.operadora_id, o.razao_social AS operadora_nome,
               g.registro_ans, g.numero_guia_prestador, g.numero_carteira,
               g.data_atendimento::text,
+              p.display_name AS paciente_nome,
+              t.termo AS nome_procedimento,
               g.codigo_procedimento, g.valor_procedimento::text,
               lg.lote_id,
               to_char(g.created_at AT TIME ZONE 'UTC',
@@ -126,6 +158,15 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
          FROM tiss.encounter_guia_consulta g
          JOIN tiss.operadora o
            ON o.tenant_id = g.tenant_id AND o.id = g.operadora_id
+         LEFT JOIN clin.encounter e
+           ON (e.tenant_id, e.id) = (g.tenant_id, g.encounter_id)
+         LEFT JOIN clin.patient p
+           ON (p.tenant_id, p.id) = (e.tenant_id, e.patient_id)
+         -- vigencia @> data_atendimento: o termo do DIA DO EVENTO.
+         LEFT JOIN ref.tuss_term t
+           ON t.tabela = g.codigo_tabela::smallint
+          AND t.codigo = g.codigo_procedimento
+          AND t.vigencia @> g.data_atendimento
          LEFT JOIN tiss.lote_guia lg
            ON lg.tenant_id = g.tenant_id AND lg.guia_id = g.id
          LEFT JOIN tiss.lote l
@@ -139,10 +180,13 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
     const itens = (hasMore ? rows.slice(0, limite) : rows).map((row) => ({
       guiaId: row.id,
       encounterId: row.encounter_id,
+      operadoraId: row.operadora_id,
       operadoraNome: row.operadora_nome,
       registroAns: row.registro_ans,
       numeroGuiaPrestador: row.numero_guia_prestador,
       numeroCarteira: row.numero_carteira,
+      pacienteNome: row.paciente_nome ?? 'Paciente nao localizado',
+      nomeProcedimento: row.nome_procedimento ?? row.codigo_procedimento,
       dataAtendimento: row.data_atendimento,
       codigoProcedimento: row.codigo_procedimento,
       valorProcedimento: Number(row.valor_procedimento),
@@ -150,8 +194,9 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
       createdAt: row.created_at,
     }));
 
-    const nextCursor = hasMore && itens.length > 0
-      ? itens[itens.length - 1]!.createdAt
+    const ultimo = itens[itens.length - 1];
+    const nextCursor = hasMore && ultimo !== undefined
+      ? `${ultimo.dataAtendimento}|${ultimo.createdAt}`
       : null;
 
     return { itens, nextCursor };
@@ -177,6 +222,7 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
       data_atendimento: string; tipo_consulta: string;
       codigo_tabela: string; codigo_procedimento: string;
       valor_procedimento: string; observacao: string | null;
+      paciente_nome: string | null; nome_procedimento: string | null;
       lote_id: string | null; created_at: string;
     }>(
       `SELECT g.id, g.encounter_id, g.encounter_version_id,
@@ -188,10 +234,20 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
               g.data_atendimento::text, g.tipo_consulta,
               g.codigo_tabela, g.codigo_procedimento,
               g.valor_procedimento::text, g.observacao,
+              p2.display_name AS paciente_nome,
+              t.termo AS nome_procedimento,
               lg.lote_id,
               to_char(g.created_at AT TIME ZONE 'UTC',
                       'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at
          FROM tiss.encounter_guia_consulta g
+         LEFT JOIN clin.encounter e2
+           ON (e2.tenant_id, e2.id) = (g.tenant_id, g.encounter_id)
+         LEFT JOIN clin.patient p2
+           ON (p2.tenant_id, p2.id) = (e2.tenant_id, e2.patient_id)
+         LEFT JOIN ref.tuss_term t
+           ON t.tabela = g.codigo_tabela::smallint
+          AND t.codigo = g.codigo_procedimento
+          AND t.vigencia @> g.data_atendimento
          JOIN tiss.operadora o
            ON o.tenant_id = g.tenant_id AND o.id = g.operadora_id
          LEFT JOIN tiss.lote_guia lg
@@ -226,6 +282,8 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
       registroAns: row.registro_ans,
       numeroGuiaPrestador: row.numero_guia_prestador,
       numeroCarteira: row.numero_carteira,
+      pacienteNome: row.paciente_nome ?? 'Paciente nao localizado',
+      nomeProcedimento: row.nome_procedimento ?? row.codigo_procedimento,
       atendimentoRn: row.atendimento_rn,
       cnes: row.cnes,
       conselhoProfissional: row.conselho_profissional,

@@ -16,6 +16,12 @@ const OperadoraSchema = z.object({
   cnpj: z.string(),
   tissVersion: z.string(),
   transportMode: z.enum(['arquivo', 'webservice']),
+  telefone: z.string().nullable(),
+  email: z.string().nullable(),
+  // Quantos pacientes tem carteirinha desta operadora. E o numero que decide se
+  // vale a pena manter o contrato: operadora com dois pacientes e trabalho de
+  // faturamento igual ao de uma com duzentos.
+  totalPacientes: z.number().int(),
   active: z.boolean(),
   createdAt: z.string(),
 });
@@ -90,13 +96,16 @@ export async function operadoraRoutes(app: FastifyInstance): Promise<void> {
       tiss_version: string; transport_mode: string;
       active: boolean; created_at: string;
     }>(
-      `SELECT id, razao_social, registro_ans, cnpj, tiss_version, transport_mode,
-              active,
-              to_char(created_at AT TIME ZONE 'UTC',
+      `SELECT o.id, o.razao_social, o.registro_ans, o.cnpj, o.tiss_version,
+              o.transport_mode, o.telefone, o.email, o.active,
+              (SELECT count(*) FROM tiss.paciente_convenio pc
+                WHERE pc.tenant_id = o.tenant_id AND pc.operadora_id = o.id
+                  AND pc.active) AS total_pacientes,
+              to_char(o.created_at AT TIME ZONE 'UTC',
                       'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at
          FROM tiss.operadora o
         WHERE true ${where}
-        ORDER BY razao_social COLLATE "pt-BR-x-icu"`,
+        ORDER BY o.razao_social COLLATE "pt-BR-x-icu"`,
       params);
 
     return {
@@ -107,6 +116,9 @@ export async function operadoraRoutes(app: FastifyInstance): Promise<void> {
         cnpj: row.cnpj,
         tissVersion: row.tiss_version,
         transportMode: row.transport_mode as 'arquivo' | 'webservice',
+        telefone: (row as { telefone?: string | null }).telefone ?? null,
+        email: (row as { email?: string | null }).email ?? null,
+        totalPacientes: Number((row as { total_pacientes?: string }).total_pacientes ?? 0),
         active: row.active,
         createdAt: row.created_at,
       })),
@@ -141,6 +153,9 @@ export async function operadoraRoutes(app: FastifyInstance): Promise<void> {
       cnpj: row.cnpj,
       tissVersion: row.tiss_version,
       transportMode: row.transport_mode as 'arquivo' | 'webservice',
+      telefone: (row as { telefone?: string | null }).telefone ?? null,
+      email: (row as { email?: string | null }).email ?? null,
+      totalPacientes: Number((row as { total_pacientes?: string }).total_pacientes ?? 0),
       active: row.active,
       createdAt: row.created_at,
     };

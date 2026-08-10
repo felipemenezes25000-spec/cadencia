@@ -23,7 +23,11 @@ export async function openPrescriberSession(
 ): Promise<Result<PrescriberSession, PrescriptionFailure>> {
   const prof = await tx.query<{
     full_name: string; cpf: string | null; conselho: string; numero: string; uf: string }>(
-    `SELECT u.full_name, NULL::text AS cpf, p.conselho_profissional AS conselho,
+    // O CPF vem de id."user" e nao de um NULL fixo. A Memed identifica o
+    // prescritor por ele (external_id): sem CPF o parceiro recusa a sessao
+    // inteira, e a receita nao abre para um medico que existe, tem CRM e esta
+    // com o paciente na sala.
+    `SELECT u.full_name, u.cpf, p.conselho_profissional AS conselho,
             p.numero_conselho AS numero, p.uf_conselho AS uf
        FROM app.professional p JOIN id."user" u ON u.id = p.user_id
       WHERE p.id = $1`, [i.professionalId]);

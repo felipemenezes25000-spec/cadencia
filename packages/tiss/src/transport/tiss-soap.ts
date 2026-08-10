@@ -31,6 +31,21 @@ function agora(): Rfc3339 {
   return asRfc3339(isoFromMs(systemClock.nowMs())) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
 }
 
+/**
+ * Remove o prologo XML de um fragmento que vai ser EMBUTIDO em outro documento.
+ *
+ * `XmlBuilder` abre todo documento com
+ * `<?xml version="1.0" encoding="ISO-8859-1"?>` — correto para o arquivo do
+ * lote, que e um documento inteiro. Mas o mesmo texto entra aqui como FILHO de
+ * `<soap:Body>`, e declaracao XML so e valida na primeira posicao do documento.
+ * Embutida no meio, o envelope inteiro deixa de ser XML bem formado e qualquer
+ * parser conformante — o da operadora inclusive — recusa antes de olhar o
+ * conteudo. O erro que volta e de sintaxe, entao ninguem associa ao lote.
+ */
+function semPrologo(xml: string): string {
+  return xml.replace(/^﻿?\s*<\?xml[^?]*\?>\s*/i, '');
+}
+
 export function buildSoapEnvelope(operacao: string, innerXml: string): string {
   return (
     '<?xml version="1.0" encoding="ISO-8859-1"?>\n' +
@@ -38,7 +53,7 @@ export function buildSoapEnvelope(operacao: string, innerXml: string): string {
     ` xmlns:ans="${TISS_NS}">\n` +
     '<soap:Body>\n' +
     `<ans:${operacao}>\n` +
-    innerXml + '\n' +
+    semPrologo(innerXml) + '\n' +
     `</ans:${operacao}>\n` +
     '</soap:Body>\n' +
     '</soap:Envelope>'

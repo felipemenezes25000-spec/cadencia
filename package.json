@@ -9,10 +9,13 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "// test:web": "O vitest da raiz nao alcanca o frontend: `include` casa *.test.ts e glob nao trata .tsx como .ts, entao os 97 arquivos de teste de apps/web ficavam de fora de TODO gate. Alem disso eles precisam de jsdom e do plugin do React, que a config da raiz nao tem — por isso rodam pela config propria de apps/web.",
+    "test:web": "pnpm --filter @cadencia/web test",
+    "build:web": "pnpm --filter @cadencia/web build",
     "test:int": "vitest run --config vitest.int.config.ts",
     "test:iso": "vitest run --config vitest.iso.config.ts",
     "test:load": "CADENCIA_LOAD_TESTS=1 vitest run --config vitest.int.config.ts --testTimeout 900000",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && pnpm typecheck:web",
     "arch:check": "depcruise --config .dependency-cruiser.cjs --output-type err-long packages apps",
     "lint:session-guc": "tsx tools/check-session-guc.ts",
     "lint:terminology-clock": "tsx tools/check-terminology-clock.ts",
@@ -26,10 +29,15 @@
     "db:privileges": "tsx packages/db/src/invariants/write-privileges.ts",
     "db:invariants": "tsx packages/db/src/invariants-cli.ts",
     "restore:drill": "tsx scripts/restore-drill.ts",
-    "prepush": "pnpm typecheck && pnpm arch:check && pnpm lint:terminology-clock && pnpm lint:session-guc && pnpm test && pnpm test:int && pnpm test:iso",
-    "prepare": "husky"
+    "prepush": "pnpm typecheck && pnpm arch:check && pnpm lint:terminology-clock && pnpm lint:session-guc && pnpm authz:check && pnpm test && pnpm test:web && pnpm build:web && pnpm test:int && pnpm test:iso",
+    "prepare": "husky",
+    "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
+    "icd:up": "docker compose --profile icd up -d --wait icd-api",
+    "icd:down": "docker compose --profile icd down icd-api",
+    "cid11:load": "tsx --env-file=.env scripts/carregar-cid11.ts"
   },
   "devDependencies": {
+    "next": "^15.5.22",
     "@aws-sdk/client-rds": "^3.1102.0",
     "@testcontainers/postgresql": "^12.0.4",
     "@types/node": "^24.13.3",

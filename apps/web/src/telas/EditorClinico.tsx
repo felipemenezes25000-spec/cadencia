@@ -59,6 +59,12 @@ export interface EditorClinicoProps {
   readonly onSalvar?: (conteudo: Record<string, unknown>) => Promise<void>;
   /** Modo somente leitura */
   readonly readOnly?: boolean;
+  /**
+   * Entrega ao pai uma funcao que grava AGORA o que esta na tela, devolvendo se
+   * conseguiu. Existe porque quem finaliza pelo botao do cabecalho esta fora do
+   * editor e nao tem como esperar o debounce de 2s do autosave.
+   */
+  readonly registrarDescarga?: (descarregar: () => Promise<boolean>) => void;
 }
 
 /* ── mapa de atalhos clinicos ─────────────────────────────────────────── */
@@ -199,6 +205,62 @@ export function EditorClinico(p: EditorClinicoProps) {
     return () => clearTimeout(timer);
   }, [editor?.state.doc, editor, onSalvar, readOnly]);
 
+  /**
+   * Descarrega o que esta na tela e so entao finaliza.
+   *
+   * O autosave tem 2s de debounce. Quem digita a conduta e aperta Ctrl+Enter em
+   * seguida perderia a ultima frase — e a versao clinica, uma vez selada, e
+   * imutavel por design: o texto nao volta por retentativa nem por suporte.
+   * Salvar antes custa uma ida ao servidor; nao salvar custa registro clinico.
+   */
+  const descarregar = useCallback(async (): Promise<boolean> => {
+    // Sem condicional de "so se editou": o contador de edicoes e otimizacao, e
+    // otimizacao decidindo se o registro clinico e gravado e a troca errada.
+    // Uma escrita a mais por atendimento custa uma requisicao.
+    if (!editor || !onSalvar || readOnly) return true;
+    setSaveStatus("saving");
+    try {
+      await onSalvar(editor.getJSON() as Record<string, unknown>);
+      setSaveStatus("saved");
+      return true;
+    } catch {
+      setSaveStatus("error");
+      return false;
+    }
+  }, [editor, onSalvar, readOnly]);
+
+  const { registrarDescarga } = p;
+  useEffect(() => { registrarDescarga?.(descarregar); }, [registrarDescarga, descarregar]);
+
+  /**
+   * `conteudoInicial` que muda DEPOIS da montagem precisa entrar no editor.
+   *
+   * `useEditor({ content })` so usa o valor na CRIACAO — e o editor e criado
+   * assim que a tela de atendimento abre, muito antes de a transcricao por IA
+   * existir. Quando o medico gravava a consulta e clicava em "aceitar", o texto
+   * subia pela cadeia ate virar `conteudoInicial` e parava ali: a evolucao
+   * aceita nunca aparecia, e o medico redigitava tudo achando que a IA falhou.
+   *
+   * `aplicado` guarda o ultimo valor JA aplicado, entao um re-render com o
+   * mesmo texto nao mexe no editor nem move o cursor de quem esta digitando.
+   */
+  const aplicado = useRef(conteudoInicial ?? '');
+  useEffect(() => {
+    const novo = conteudoInicial ?? '';
+    if (editor === null || novo === '' || novo === aplicado.current) return;
+    aplicado.current = novo;
+    // `emitUpdate: true` de proposito: o autosave escuta o update, e conteudo
+    // que entra sem disparar salvamento se perde ao fechar a aba.
+    editor.commands.setContent(novo, { emitUpdate: true });
+  }, [conteudoInicial, editor]);
+
+  const finalizarDescarregando = useCallback(async () => {
+    // Falhou o salvamento: NAO finaliza. Selar por cima de um rascunho que o
+    // servidor nao recebeu transforma queda de rede em perda de registro.
+    if (!(await descarregar())) return;
+    p.aoFinalizar();
+  }, [descarregar, p]);
+
   /* atalhos clinicos (Ctrl+R, Ctrl+E, etc.) */
   const aoTeclar = useCallback(
     (e: KeyboardEvent) => {
@@ -223,7 +285,7 @@ export function EditorClinico(p: EditorClinicoProps) {
           p.aoCobrar?.();
           break;
         case "finalizar":
-          p.aoFinalizar();
+          void finalizarDescarregando();
           break;
       }
     },

@@ -19,9 +19,22 @@ CREATE ROLE api     LOGIN IN ROLE app_rw;      -- pool da aplicacao
 CREATE ROLE support LOGIN IN ROLE app_support; -- break-glass, pool separado
 CREATE ROLE jobs    LOGIN;                     -- UNICO papel com BYPASSRLS
 
-ALTER ROLE api     NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT;
-ALTER ROLE support NOSUPERUSER NOBYPASSRLS;
-ALTER ROLE jobs    NOSUPERUSER BYPASSRLS;      -- selo, drift, expurgo, partman, carga TUSS
+-- NOSUPERUSER foi REMOVIDO destas tres linhas, e a ausencia e deliberada.
+--
+-- Em Postgres gerenciado por plataforma (Supabase, e outros que usam o mesmo
+-- hook `supautils`), o papel administrativo NAO e superusuario, e o servidor
+-- recusa qualquer `ALTER ROLE ... NOSUPERUSER` com 42501 — mesmo sobre um papel
+-- que ja nasceu sem superusuario. A clausula travava a PRIMEIRA migration e
+-- impedia o schema inteiro de subir.
+--
+-- Remover nao afrouxa nada: `CREATE ROLE` ja cria NOSUPERUSER por padrao, e o
+-- invariante 3 (inv03-roles) afirma explicitamente que nenhum papel de
+-- aplicacao e superuser — se algum dia um virar, o CI reprova. A garantia
+-- mudou de "declarada na DDL" para "verificada no CI", e a segunda e a que
+-- realmente pega uma regressao.
+ALTER ROLE api     NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT;
+ALTER ROLE support NOBYPASSRLS;
+ALTER ROLE jobs    BYPASSRLS;                  -- selo, drift, expurgo, partman, carga TUSS
 ALTER ROLE api SET row_security = on;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 
@@ -42,3 +55,30 @@ GRANT audit_owner TO app_owner;
 -- Por que `jobs` tem BYPASSRLS: o selo diario da auditoria, o detector de divergencia
 -- do financeiro e a carga bimestral da TUSS precisam ver todos os tenants. Sem
 -- BYPASSRLS eles veriam zero linhas e reportariam sucesso para sempre.
+
+-- ---------------------------------------------------------------------------
+-- PORTABILIDADE PARA POSTGRES GERENCIADO.
+--
+-- Desde o PostgreSQL 16, quando um papel com CREATEROLE (e sem SUPERUSER) cria
+-- outro papel, a associacao resultante vem com `set_option = false`: o criador
+-- administra o papel mas NAO consegue `SET ROLE` para ele. As migrations
+-- seguintes dependem disso o tempo todo — `CREATE SCHEMA ... AUTHORIZATION
+-- app_owner`, `SET ROLE audit_owner`, `ALTER ... OWNER TO rpt_owner` — e todas
+-- falhariam com "must be able to SET ROLE".
+--
+-- Em cluster proprio, onde as migrations rodam como superusuario ou como o
+-- proprio app_owner, este bloco e no-op. Em Supabase e similares, e o que
+-- permite o schema subir.
+--
+-- Nao amplia privilegio: quem executa ja e ADMIN dos papeis que acabou de criar
+-- e poderia se conceder isso a qualquer momento. Apenas torna explicito, uma vez,
+-- o que a DDL abaixo pressupoe.
+DO $portabilidade$
+BEGIN
+  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user)
+     AND current_user <> 'app_owner' THEN
+    EXECUTE format(
+      'GRANT app_owner, audit_owner, rpt_owner, clin_writer, app_support, app_rw
+         TO %I WITH SET TRUE', current_user);
+  END IF;
+END $portabilidade$;

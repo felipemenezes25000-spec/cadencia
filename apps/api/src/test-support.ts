@@ -146,3 +146,49 @@ export async function semearSessao(
     token, csrf, clinicIdDeOutroTenant: clinicB,
   };
 }
+
+/**
+ * Um SEGUNDO profissional dentro do MESMO tenant e da mesma unidade.
+ *
+ * `semearSessao` sempre cria um tenant novo, o que e certo para isolamento mas
+ * inutil para testar o que separa dois medicos da mesma clinica: a politica
+ * RESTRICTIVE `clinical_scope`. Entre tenants a RLS ja barra por outro caminho,
+ * e o teste passaria sem provar nada.
+ *
+ * Serve para compartilhamento de prontuario, quebra-vidro e transferencia.
+ */
+export async function semearColega(
+  dono: SementeSessao, opts: { role?: Role } = {},
+): Promise<SementeSessao> {
+  const role = opts.role ?? 'profissional';
+  const userId = uuidv7();
+  const professionalId = uuidv7();
+  const csrf = newCsrfToken();
+  const admin = new Pool({ connectionString: adminUrl(), max: 1 });
+  try {
+    await admin.query(
+      `INSERT INTO id."user" (id, email, full_name, cpf)
+       VALUES ($1, $2, 'Dr. Colega', NULL)`,
+      [userId, `colega-${userId.slice(0, 13)}@teste.local`]);
+    await admin.query(
+      `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [dono.tenantId, uuidv7(), userId, dono.clinicId, role]);
+    await admin.query(
+      `INSERT INTO app.professional
+         (tenant_id, id, user_id, conselho_profissional, numero_conselho, uf_conselho)
+       VALUES ($1,$2,$3,'06','999888','SP')`,
+      [dono.tenantId, professionalId, userId]);
+
+    const { token } = await createSession(admin, {
+      userId, activeTenantId: dono.tenantId, activeClinicId: dono.clinicId,
+    });
+    await admin.query(
+      `UPDATE id.session SET mfa_at = clock_timestamp()
+        WHERE user_id = $1 AND revoked_at IS NULL`, [userId]);
+
+    return { ...dono, userId, professionalId, token, csrf };
+  } finally {
+    await admin.end();
+  }
+}

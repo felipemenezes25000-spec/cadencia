@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { serializeLoteConsulta } from './serialize-lote-consulta';
+import { validarContraXsdTiss } from '../../test/xsd';
 import type { LoteConsultaInput } from './types';
 
 /**
@@ -21,6 +22,7 @@ function loteAmostraDeterministico(): LoteConsultaInput {
     numeroLote: '0001',
     guias: [
       {
+        registroANSOperadora: '123456',
         numeroGuiaPrestador: '00001',
         numeroGuiaOperadora: 'OP98765',
         numeroCarteira: '98765432101234567',
@@ -32,7 +34,7 @@ function loteAmostraDeterministico(): LoteConsultaInput {
         profissionalExecutante: {
           conselhoProfissional: '06',
           numeroConselho: '123456',
-          ufConselho: 'SP',
+          ufConselho: '35',
           cbos: '225120',
         },
         indicacaoAcidente: '9',
@@ -45,6 +47,7 @@ function loteAmostraDeterministico(): LoteConsultaInput {
         observacao: 'Paciente com pressão elevada',
       },
       {
+        registroANSOperadora: '123456',
         numeroGuiaPrestador: '00002',
         numeroCarteira: '11111111111111111',
         atendimentoRN: true,
@@ -55,13 +58,13 @@ function loteAmostraDeterministico(): LoteConsultaInput {
         profissionalExecutante: {
           conselhoProfissional: '06',
           numeroConselho: '654321',
-          ufConselho: 'RJ',
+          ufConselho: '33',
           cbos: '225120',
         },
         indicacaoAcidente: '0',
         regimeAtendimento: '01',
-        saudeOcupacional: '1',
-        coberturaEspecial: '0',
+        saudeOcupacional: '01',
+        coberturaEspecial: '01',
         dataAtendimento: '2026-07-15',
         tipoConsulta: '2',
         codigoTabela: '22',
@@ -90,6 +93,16 @@ describe('snapshot byte a byte do lote de consulta', () => {
       console.log(`Snapshot criado: ${FIXTURE_PATH} (${xml.byteLength} bytes)`);
       // NAO falha na primeira execucao — o snapshot acabou de ser criado.
     }
+
+    // O snapshot congelado tem de ser, ele proprio, XML VALIDO pela norma.
+    //
+    // Sem esta ancora o teste vira um espelho: alguem regenera o fixture depois
+    // de uma mudanca errada e ele volta a passar, congelando o defeito. Foi
+    // exatamente o que aconteceu ate aqui — o fixture anterior guardava um
+    // cabecalho plano que nenhuma operadora aceitaria, e o snapshot dizia
+    // "identico", porque era identico a si mesmo.
+    const doFixture = validarContraXsdTiss(new Uint8Array(readFileSync(FIXTURE_PATH)));
+    expect(doFixture.erros.join('\n')).toBe('');
 
     const expected = new Uint8Array(readFileSync(FIXTURE_PATH));
     expect(xml.byteLength).toBe(expected.byteLength);

@@ -36,6 +36,8 @@ export interface ContratadoInput {
 
 /** Dados do profissional executante — tag <ans:profissionalExecutante>. */
 export interface ProfissionalExecutanteInput {
+  /** Nome, opcional na norma (`nomeProfissional`, minOccurs=0). */
+  readonly nome?: string;
   /** Conselho profissional do executante, 2 digitos (ex: '06' = CRM). */
   readonly conselhoProfissional: string;
   /** Numero do registro no conselho. */
@@ -48,6 +50,13 @@ export interface ProfissionalExecutanteInput {
 
 /** Uma guia de consulta individual — tag <ans:guiaConsulta>. */
 export interface GuiaConsultaInput {
+  /**
+   * Registro ANS da operadora, repetido no `cabecalhoConsulta` de CADA guia.
+   *
+   * Parece redundante com o `destino` do envelope e nao e: a operadora
+   * desmembra o lote e cada guia segue sozinha pelo processamento dela.
+   */
+  readonly registroANSOperadora: string;
   /** Numero da guia atribuido pelo prestador, unico por operadora. */
   readonly numeroGuiaPrestador: string;
   /** Numero da guia atribuido pela operadora (autorizacao), opcional. */
@@ -92,6 +101,86 @@ export interface LoteConsultaInput {
   readonly numeroLote: string;
   /** Guias do lote. Minimo 1, maximo 100. */
   readonly guias: readonly GuiaConsultaInput[];
+}
+
+/* ── SP/SADT ───────────────────────────────────────────────────────────────
+ *
+ * Guia de Servico Profissional / Servico Auxiliar de Diagnostico e Terapia: e
+ * a guia de exame, procedimento e terapia — tudo que nao e consulta simples nem
+ * internacao. Na pratica e a guia que mais fatura numa clinica.
+ */
+
+/** Um procedimento executado — tipo `ct_procedimentoExecutadoSadt`. */
+export interface ProcedimentoSadtInput {
+  /** Ordem do item na guia, comecando em 1. */
+  readonly sequencialItem: number;
+  /** Data de execucao, 'YYYY-MM-DD'. Pode diferir da data da guia. */
+  readonly dataExecucao: string;
+  readonly horaInicial?: string;
+  readonly horaFinal?: string;
+  readonly codigoTabela: string;
+  readonly codigoProcedimento: string;
+  readonly descricaoProcedimento: string;
+  readonly quantidadeExecutada: number;
+  /**
+   * Fator de reducao ou acrescimo, ex.: 0.5 para segundo procedimento na mesma
+   * via de acesso. Ausente vale 1.00 — que e o caso comum.
+   */
+  readonly reducaoAcrescimo?: number;
+  /** Valor unitario em centavos. O total do item e derivado, nunca recebido. */
+  readonly valorUnitarioCentavos: number;
+  readonly viaAcesso?: string;
+  readonly tecnicaUtilizada?: string;
+}
+
+/** Prestador solicitante ou executante da SP/SADT. */
+export interface ContratadoSadtInput {
+  readonly codigoPrestadorNaOperadora?: string;
+  readonly cpfContratado?: string;
+  readonly cnpjContratado?: string;
+  readonly cnes: string;
+}
+
+/** Uma guia SP/SADT — tipo `ctm_sp-sadtGuia`. */
+export interface GuiaSadtInput {
+  readonly registroANSOperadora: string;
+  readonly numeroGuiaPrestador: string;
+  /** Guia principal a que esta se vincula, quando houver. */
+  readonly guiaPrincipal?: string;
+  /** Autorizacao previa da operadora, quando o procedimento exigiu. */
+  readonly autorizacao?: {
+    readonly numeroGuiaOperadora?: string;
+    readonly dataAutorizacao: string;
+    readonly senha?: string;
+    readonly dataValidadeSenha?: string;
+  };
+  readonly numeroCarteira: string;
+  readonly atendimentoRN: boolean;
+  readonly contratadoSolicitante: ContratadoSadtInput;
+  readonly nomeContratadoSolicitante: string;
+  readonly profissionalSolicitante: ProfissionalExecutanteInput;
+  readonly dataSolicitacao?: string;
+  /** Carater: '1' eletivo, '2' urgencia/emergencia. */
+  readonly caraterAtendimento: '1' | '2';
+  readonly indicacaoClinica?: string;
+  readonly contratadoExecutante: ContratadoSadtInput;
+  /** Tipo de atendimento, dominio `dm_tipoAtendimento` (ex.: '05' exame). */
+  readonly tipoAtendimento: string;
+  readonly indicacaoAcidente: '0' | '1' | '2' | '9';
+  readonly tipoConsulta?: '1' | '2' | '3' | '4';
+  readonly regimeAtendimento: string;
+  readonly saudeOcupacional?: string;
+  readonly procedimentos: readonly ProcedimentoSadtInput[];
+  readonly observacao?: string;
+}
+
+/** Entrada completa para serializar um lote de guias SP/SADT. */
+export interface LoteSadtInput {
+  readonly cabecalho: CabecalhoInput;
+  readonly registroANS: string;
+  readonly numeroLote: string;
+  /** Minimo 1, maximo 100 — `maxOccurs="100"` no XSD. */
+  readonly guias: readonly GuiaSadtInput[];
 }
 
 /** Um item de recurso de glosa individual — tag <ans:itemRecursoGlosa>. */

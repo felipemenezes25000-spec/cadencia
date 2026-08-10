@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChatCircle, Stethoscope } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -58,6 +58,15 @@ export interface FichaDoPacienteProps {
   readonly carregando?: boolean;
   /** Historico de atendimentos para a timeline */
   readonly atendimentos?: readonly AtendimentoResumo[];
+  /**
+   * Acoes extras no cabecalho.
+   *
+   * E um slot e nao um callback porque quem pode compartilhar prontuario depende
+   * de `record.share`, e o papel da sessao vive na PAGINA. Receber um callback
+   * obrigaria esta tela a ganhar tambem um `podeCompartilhar`, duplicando uma
+   * decisao de autorizacao que ja existe um nivel acima.
+   */
+  readonly acoesExtras?: ReactNode;
 }
 
 /* ── Constantes de acesso ────────────────────────────────────────────── */
@@ -375,6 +384,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
         ]}
         acoes={
           <>
+            {p.acoesExtras}
             <Botao variante="secundario" iconeEsquerda={ChatCircle}>
               Mensagem
             </Botao>

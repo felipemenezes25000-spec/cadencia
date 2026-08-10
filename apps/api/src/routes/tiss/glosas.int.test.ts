@@ -239,3 +239,28 @@ describe('rotas de glosas TISS', () => {
     await app.close();
   });
 });
+
+describe('a lista precisa carregar o que o RECURSO exige', () => {
+  it('devolve descricao, paciente e encounterVersionId', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'GET', url: '/v1/tiss/glosas', ...auth(admin) });
+
+    expect(r.statusCode).toBe(200);
+    const itens = (r.json() as { itens: {
+      glosaId: string; descricaoGlosa: string | null;
+      pacienteNome: string; encounterVersionId: string | null }[] }).itens;
+    expect(itens.length).toBeGreaterThan(0);
+
+    // Sem `encounterVersionId` nao da para abrir recurso: `POST /v1/tiss/recursos`
+    // exige a versao do atendimento. A tela teria a glosa na mao e nada com que
+    // recorrer — e glosa nao recorrida no prazo vira perda definitiva.
+    expect(itens[0]).toHaveProperty('encounterVersionId');
+    // Codigo sozinho ("1707") nao diz nada a quem redige a justificativa.
+    expect(itens[0]).toHaveProperty('descricaoGlosa');
+    // O nome do paciente e como o faturista confere se a glosa e daquele caso.
+    expect(itens[0]?.pacienteNome).toBeTruthy();
+
+    await app.close();
+  });
+});

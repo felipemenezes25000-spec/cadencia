@@ -13,3 +13,11 @@ coverage/
 .tmp-blocos/
 .tasks/
 .tasks-fase1/
+.tasks-fase3/
+.tasks-fase5/
+.tasks-frontend/
+
+# worktrees de agente: sao repositorios git aninhados, nunca versionados
+.claude/worktrees/
+
+.vercel

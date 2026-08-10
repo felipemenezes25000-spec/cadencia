@@ -8,6 +8,7 @@ import { exportRecord } from '@cadencia/export';
 import { systemClock } from '@cadencia/kernel';
 import { rota } from '../guard';
 import { providers } from '../providers';
+import { armazenamento } from '../storage';
 
 function erroDominio(kind: string, status: number, extra: Record<string, unknown> = {}): never {
   throw Object.assign(new Error(kind), { statusCode: status, dominio: kind, extra });
@@ -139,11 +140,46 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
     const b = req.body as { requesterKind: never; from?: string; to?: string;
                             requesterNote?: string };
     const resultado = await exportRecord(tx, { patientId: p.id, ...b },
-      { clock: systemClock, docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } });
+      { clock: systemClock, storage: armazenamento(),
+        docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers } });
     if (!resultado.ok) erroDominio(resultado.error.kind, 404);
     void reply.code(201);
     return {
       exportId: resultado.value.exportId, pageCount: resultado.value.pageCount,
       pdfSha256Hex: resultado.value.pdfSha256Hex, durationMs: resultado.value.durationMs };
+  }));
+
+  /**
+   * O PDF da exportacao.
+   *
+   * `POST /exportacoes` devolvia o recibo — paginas, hash, duracao — e nao havia
+   * como BAIXAR o arquivo. Pedido de portabilidade que termina em recibo nao
+   * cumpre a LGPD: o titular tem direito ao dado, nao ao comprovante de que ele
+   * foi gerado.
+   *
+   * Sob `record.export`, que exige MFA: exportacao integral e o unico jeito de
+   * tirar o prontuario inteiro de dentro do sistema numa requisicao so.
+   */
+  r.get('/v1/exportacoes/:id/pdf', {
+    schema: { params: z.object({ id: z.string().uuid() }) },
+  }, rota('record.export', async (tx, _ctx, req, reply) => {
+    const p = req.params as { id: string };
+    const { rows } = await tx.query<{ pdf_key: string; pdf_sha256: Buffer }>(
+      `SELECT pdf_key, pdf_sha256 FROM clin.record_export WHERE id = $1`, [p.id]);
+    const e = rows[0];
+    if (e === undefined) erroDominio('exportacao_nao_encontrada', 404);
+
+    const bytes = await armazenamento().get(`exportacoes/${e.pdf_key}`);
+    if (bytes === null) erroDominio('exportacao_sem_arquivo', 404);
+
+    // O hash vai no cabecalho para quem recebe poder conferir sem depender de
+    // nos: e o mesmo valor que consta no recibo assinado da exportacao.
+    void reply
+      .header('content-type', 'application/pdf')
+      .header('content-disposition',
+        `attachment; filename="prontuario-${p.id.slice(0, 8)}.pdf"`)
+      .header('x-conteudo-sha256', e.pdf_sha256.toString('hex'))
+      .header('cache-control', 'private, no-store');
+    return reply.send(Buffer.from(bytes));
   }));
 }

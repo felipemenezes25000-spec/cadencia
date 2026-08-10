@@ -1200,12 +1200,12 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // tiss.guia_counter nasceu na Fase 4 (bloco 03, migration 0117): contador de
-  // numero_guia_prestador por tenant. O seed provisiona com next_value = 2
-  // porque a guia do seed consumiu o numero 1.
+  // numero_guia_prestador por tenant. next_value = 3 porque o seed consome DOIS
+  // numeros: o '1' da guia de consulta e o '2' da guia SP/SADT, mais abaixo.
   await admin.query(
     `INSERT INTO tiss.guia_counter (tenant_id, next_value) VALUES
-       ($1, 2),
-       ($2, 2)`,
+       ($1, 3),
+       ($2, 3)`,
     [F.TENANT_A, F.TENANT_B],
   );
 
@@ -1229,11 +1229,15 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   // tiss.lote_number_counter nasceu na Fase 4 (bloco 06, migration 0121):
   // contador de numero de lote por operadora. Como toda tabela multi-tenant,
   // precisa de linha do tenant B.
+  //
+  // next_value = 3 porque o seed consome DOIS numeros de lote: o '1' do lote de
+  // consulta e o '2' do lote de SP/SADT, mais abaixo. Contador que nao reflete o
+  // que ja foi gasto entrega numero repetido na primeira criacao real.
   await admin.query(
     `INSERT INTO tiss.lote_number_counter
        (tenant_id, operadora_id, next_value) VALUES
-       ($1, $3, 2),
-       ($2, $4, 2)`,
+       ($1, $3, 3),
+       ($2, $4, 3)`,
     [F.TENANT_A, F.TENANT_B, F.OPERADORA_A, F.OPERADORA_B],
   );
 
@@ -1265,5 +1269,212 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B,
      F.LOTE_A, F.LOTE_B,
      F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B],
+  );
+
+  // ── Fase 4, blocos 07-09 — SP/SADT, retorno, glosa e recurso ─────────────
+  //
+  // Nove tabelas multi-tenant tinham linha do tenant A e NENHUMA do tenant B.
+  // O canario de 04-t1-t2 ("o seed realmente criou linha do tenant B em toda
+  // tabela multi-tenant") reprovava, e reprovava com razao: sem linha do B, o
+  // T1 daquelas tabelas passava por vacuidade — nao existia dado alheio para
+  // vazar, entao a RLS nunca chegou a ser exercitada ali. Sao justamente as
+  // tabelas de valor a receber e de contestacao de glosa.
+  //
+  // Onde um CHECK tem dois ramos, o seed usa um em cada tenant de proposito:
+  // demonstrativo A e 'pagamento' (exige data_pagamento) e B e 'analise' (exige
+  // data_pagamento nula); a guia SADT de A vai sem autorizacao e a de B com
+  // senha e data. Assim uma linha nao passa a valer pela outra.
+
+  // tiss.encounter_guia_sadt (migration 0151): guia de servico profissional /
+  // SADT projetada do atendimento. Os dados do prestador saem da CLINICA e do
+  // PROFISSIONAL do atendimento, nunca repetidos como literal — mesmo padrao da
+  // guia de consulta.
+  await admin.query(
+    `INSERT INTO tiss.encounter_guia_sadt
+       (tenant_id, id, encounter_id, encounter_version_id, operadora_id,
+        registro_ans, numero_guia_prestador, numero_carteira, atendimento_rn,
+        data_autorizacao, senha_autorizacao,
+        sol_codigo_prestador, sol_nome_contratado, sol_conselho_profissional,
+        sol_numero_conselho, sol_uf_conselho, sol_cbos,
+        carater_atendimento, exe_codigo_prestador, exe_cnes,
+        tipo_atendimento, indicacao_acidente, regime_atendimento, created_by)
+     SELECT $1::uuid, $3::uuid, e.id, $5::uuid, $7::uuid,
+            '326305', '2', '00998877665544', false,
+            NULL::date, NULL,
+            '900123', c.nome, p.conselho_profissional,
+            p.numero_conselho, p.uf_conselho, p.cbos,
+            '1', '900123', c.cnes,
+            '05', '9', '01', $9::uuid
+       FROM clin.encounter e
+       JOIN app.clinic c       ON (c.tenant_id, c.id) = (e.tenant_id, e.clinic_id)
+       JOIN app.professional p ON (p.tenant_id, p.id) = (e.tenant_id, e.professional_id)
+      WHERE e.id = $11::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, e.id, $6::uuid, $8::uuid,
+            '412589', '2', '00112233445566', false,
+            DATE '2026-08-01', 'AUT-778899',
+            '800456', c.nome, p.conselho_profissional,
+            p.numero_conselho, p.uf_conselho, p.cbos,
+            '2', '800456', c.cnes,
+            '05', '9', '01', $10::uuid
+       FROM clin.encounter e
+       JOIN app.clinic c       ON (c.tenant_id, c.id) = (e.tenant_id, e.clinic_id)
+       JOIN app.professional p ON (p.tenant_id, p.id) = (e.tenant_id, e.professional_id)
+      WHERE e.id = $12::uuid`,
+    [F.TENANT_A, F.TENANT_B,
+     F.GUIA_SADT_A, F.GUIA_SADT_B,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.OPERADORA_A, F.OPERADORA_B,
+     F.USER_A_ANA, F.USER_B_DIEGO,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
+  // tiss.encounter_guia_sadt_item (migration 0151): os procedimentos da guia
+  // SADT. `codigo_tabela` nunca e '18' (CHECK): 18 e a tabela de pacotes, que
+  // nao se detalha item a item.
+  await admin.query(
+    `INSERT INTO tiss.encounter_guia_sadt_item
+       (tenant_id, guia_id, sequencial_item, data_execucao, codigo_tabela,
+        codigo_procedimento, descricao_procedimento, quantidade_executada,
+        reducao_acrescimo, valor_unitario)
+     SELECT $1::uuid, $3::uuid, 1, e.occurred_date, '22',
+            '40304361', 'Hemograma completo', 1, 1.00, 35.00
+       FROM clin.encounter e WHERE e.id = $5::uuid
+     UNION ALL
+     SELECT $2::uuid, $4::uuid, 1, e.occurred_date, '22',
+            '40304361', 'Hemograma completo', 1, 1.00, 42.00
+       FROM clin.encounter e WHERE e.id = $6::uuid`,
+    [F.TENANT_A, F.TENANT_B,
+     F.GUIA_SADT_A, F.GUIA_SADT_B,
+     F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
+  );
+
+  // Lote SO de SP/SADT. Ver o comentario de LOTE_SADT_A em fixtures.ts: o XSD
+  // trata `guiasTISS` como choice, entao lote nao mistura consulta com SADT.
+  await admin.query(
+    `INSERT INTO tiss.lote
+       (tenant_id, id, operadora_id, numero_lote, tiss_version, created_by) VALUES
+       ($1, $3, $5, '2', '3.05', $7),
+       ($2, $4, $6, '2', '3.05', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LOTE_SADT_A, F.LOTE_SADT_B,
+     F.OPERADORA_A, F.OPERADORA_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // tiss.lote_guia_sadt (migration 0152): juncao lote x guia SADT.
+  await admin.query(
+    `INSERT INTO tiss.lote_guia_sadt
+       (tenant_id, lote_id, guia_id, sequencial_item) VALUES
+       ($1, $3, $5, 1),
+       ($2, $4, $6, 1)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LOTE_SADT_A, F.LOTE_SADT_B,
+     F.GUIA_SADT_A, F.GUIA_SADT_B],
+  );
+
+  // tiss.demonstrativo (migration 0123): o retorno da operadora. O CHECK amarra
+  // `kind` a `data_pagamento` — 'pagamento' exige a data, 'analise' exige nula.
+  await admin.query(
+    `INSERT INTO tiss.demonstrativo
+       (tenant_id, id, operadora_id, lote_id, protocolo_operadora, kind,
+        data_processamento, data_pagamento, xml_storage_key,
+        total_apresentado_cents, total_processado_cents,
+        total_liberado_cents, total_glosa_cents, imported_by) VALUES
+       ($1, $3, $5, $7, 'PROT-2026-000123', 'pagamento',
+        DATE '2026-08-05', DATE '2026-08-12', 'demonstrativos/a-000123.xml',
+        25000, 25000, 20000, 5000, $9),
+       ($2, $4, $6, $8, 'PROT-2026-000456', 'analise',
+        DATE '2026-08-06', NULL, 'demonstrativos/b-000456.xml',
+        30000, 30000, 25000, 5000, $10)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.DEMONSTRATIVO_A, F.DEMONSTRATIVO_B,
+     F.OPERADORA_A, F.OPERADORA_B,
+     F.LOTE_A, F.LOTE_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // tiss.demonstrativo_item (migration 0124): a linha do demonstrativo que
+  // corresponde a uma guia. `glosa_codigo` e `glosa_descricao` andam juntos —
+  // o CHECK aceita os dois nulos ou os dois preenchidos, nunca um so.
+  await admin.query(
+    `INSERT INTO tiss.demonstrativo_item
+       (tenant_id, id, demonstrativo_id, guia_id, numero_guia_prestador,
+        valor_apresentado_cents, valor_processado_cents,
+        valor_liberado_cents, valor_glosa_cents,
+        glosa_codigo, glosa_descricao) VALUES
+       ($1, $3, $5, $7, '1', 25000, 25000, 20000, 5000,
+        '1707', 'Procedimento nao coberto pelo plano contratado'),
+       ($2, $4, $6, $8, '1', 30000, 30000, 25000, 5000,
+        '1902', 'Falta de autorizacao previa para o procedimento')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.DEMONSTRATIVO_ITEM_A, F.DEMONSTRATIVO_ITEM_B,
+     F.DEMONSTRATIVO_A, F.DEMONSTRATIVO_B,
+     F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B],
+  );
+
+  // tiss.glosa (migration 0125): o valor recusado, ja individualizado. Status
+  // 'contestada' nos dois porque cada um recebe um recurso logo abaixo — o
+  // CHECK exige resolved_at/resolved_by NULOS fora de 'aceita'/'revertida'.
+  await admin.query(
+    `INSERT INTO tiss.glosa
+       (tenant_id, id, demonstrativo_item_id, guia_id, encounter_version_id,
+        codigo_glosa, descricao_glosa, valor_glosado_cents, status) VALUES
+       ($1, $3, $5, $7, $9, '1707',
+        'Procedimento nao coberto pelo plano contratado', 5000, 'contestada'),
+       ($2, $4, $6, $8, $10, '1902',
+        'Falta de autorizacao previa para o procedimento', 5000, 'contestada')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.GLOSA_A, F.GLOSA_B,
+     F.DEMONSTRATIVO_ITEM_A, F.DEMONSTRATIVO_ITEM_B,
+     F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL],
+  );
+
+  // tiss.recurso_glosa (migration 0126): a contestacao. 'rascunho' satisfaz os
+  // tres CHECKs de estado de uma vez — sent_at, protocolo_operadora e
+  // resolved_at todos nulos.
+  await admin.query(
+    `INSERT INTO tiss.recurso_glosa
+       (tenant_id, id, operadora_id, numero_recurso, status,
+        justificativa_geral, encounter_version_id,
+        item_count, total_recursado_cents, created_by) VALUES
+       ($1, $3, $5, '1', 'rascunho',
+        'Procedimento consta no rol da ANS vigente na data do atendimento',
+        $7, 1, 5000, $9),
+       ($2, $4, $6, '1', 'rascunho',
+        'Autorizacao previa foi concedida por telefone, protocolo em anexo',
+        $8, 1, 5000, $10)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECURSO_GLOSA_A, F.RECURSO_GLOSA_B,
+     F.OPERADORA_A, F.OPERADORA_B,
+     F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  // tiss.recurso_glosa_item (migration 0126): a glosa especifica que o recurso
+  // contesta, com o valor pedido de volta.
+  await admin.query(
+    `INSERT INTO tiss.recurso_glosa_item
+       (tenant_id, id, recurso_id, glosa_id,
+        justificativa_item, valor_recursado_cents) VALUES
+       ($1, $3, $5, $7,
+        'Cobertura obrigatoria conforme rol da ANS vigente', 5000),
+       ($2, $4, $6, $8,
+        'Autorizacao concedida sob protocolo 99887, anexado ao recurso', 5000)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.RECURSO_GLOSA_ITEM_A, F.RECURSO_GLOSA_ITEM_B,
+     F.RECURSO_GLOSA_A, F.RECURSO_GLOSA_B,
+     F.GLOSA_A, F.GLOSA_B],
+  );
+
+  // tiss.recurso_number_counter (migration 0126): contador de numero de recurso
+  // por operadora. next_value = 2 porque o recurso '1' acima ja foi consumido.
+  await admin.query(
+    `INSERT INTO tiss.recurso_number_counter
+       (tenant_id, operadora_id, next_value) VALUES
+       ($1, $3, 2),
+       ($2, $4, 2)`,
+    [F.TENANT_A, F.TENANT_B, F.OPERADORA_A, F.OPERADORA_B],
   );
 }

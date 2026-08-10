@@ -58,8 +58,16 @@ function centavosParaReais(centavos: number): string {
   return `R$ ${centavos < 0 ? '-' : ''}${formatado},${decimais}`;
 }
 
+/**
+ * Aceita 'AAAA-MM-DD' e tambem o ISO completo.
+ *
+ * A versao anterior fazia `split('-')` e montava DD/MM/AAAA com as partes cruas:
+ * dado um '2026-08-09T04:49:13Z' ela devolvia '09T04:49:13Z/08/2026' — uma data
+ * que nao existe, exibida com a mesma confianca de uma correta. Recortar os dez
+ * primeiros caracteres antes de partir e o que impede o formato de inventar.
+ */
 function formatarData(data: string): string {
-  const partes = data.split('-');
+  const partes = data.slice(0, 10).split('-');
   if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
   return data;
 }

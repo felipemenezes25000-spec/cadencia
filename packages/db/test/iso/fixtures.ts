@@ -292,6 +292,52 @@ export const LOTE_B = '01930000-0000-7000-8000-000000001062';
 export const LOTE_GUIA_A = '01930000-0000-7000-8000-000000001063';
 export const LOTE_GUIA_B = '01930000-0000-7000-8000-000000001064';
 
+/* ── Fase 4, blocos 07-09: retorno, glosa, recurso e SP/SADT ──────────────
+ *
+ * Estas nove tabelas entraram sem linha do tenant B, e o canario de
+ * 04-t1-t2-isolamento existe exatamente para pegar isso: sem dado do tenant B,
+ * o teste T1 ("o tenant A nao le nenhuma linha do tenant B") passa por
+ * VACUIDADE — nao ha o que vazar, entao nada vaza, e o isolamento da tabela
+ * nunca chega a ser exercitado. Sao dados de faturamento e de contestacao de
+ * glosa, com valor e vinculo a paciente: a tabela mais sensivel e a que mais
+ * precisa da prova.
+ */
+
+/** Demonstrativo de retorno da operadora: um em cada tenant. */
+export const DEMONSTRATIVO_A = '01930000-0000-7000-8000-000000001065';
+export const DEMONSTRATIVO_B = '01930000-0000-7000-8000-000000001066';
+
+/** Item do demonstrativo: um em cada tenant. */
+export const DEMONSTRATIVO_ITEM_A = '01930000-0000-7000-8000-000000001067';
+export const DEMONSTRATIVO_ITEM_B = '01930000-0000-7000-8000-000000001068';
+
+/** Glosa: uma em cada tenant. */
+export const GLOSA_A = '01930000-0000-7000-8000-000000001069';
+export const GLOSA_B = '01930000-0000-7000-8000-00000000106a';
+
+/** Recurso de glosa: um em cada tenant. */
+export const RECURSO_GLOSA_A = '01930000-0000-7000-8000-00000000106b';
+export const RECURSO_GLOSA_B = '01930000-0000-7000-8000-00000000106c';
+
+/** Item do recurso de glosa: um em cada tenant. */
+export const RECURSO_GLOSA_ITEM_A = '01930000-0000-7000-8000-00000000106d';
+export const RECURSO_GLOSA_ITEM_B = '01930000-0000-7000-8000-00000000106e';
+
+/** Guia SP/SADT: uma em cada tenant. */
+export const GUIA_SADT_A = '01930000-0000-7000-8000-00000000106f';
+export const GUIA_SADT_B = '01930000-0000-7000-8000-000000001070';
+
+/**
+ * Lote SO de SP/SADT: um em cada tenant.
+ *
+ * Separado do lote de consulta de proposito. No XSD, `guiasTISS` e um `choice`:
+ * um lote nao mistura consulta com SP/SADT, e a operadora recusa o arquivo
+ * inteiro se misturar. O banco nao impede — a regra vive no serializador —
+ * entao o seed segue a regra do dominio em vez do minimo que o banco aceita.
+ */
+export const LOTE_SADT_A = '01930000-0000-7000-8000-000000001071';
+export const LOTE_SADT_B = '01930000-0000-7000-8000-000000001072';
+
 /** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
 export const CPF_VALIDO = '52998224725';
 

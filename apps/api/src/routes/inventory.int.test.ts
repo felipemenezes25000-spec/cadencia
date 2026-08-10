@@ -92,9 +92,16 @@ describe('rotas de movimentacao de estoque', () => {
     expect(r.statusCode).toBe(201);
     const body = r.json() as { movementId: string; newStock: number };
     expect(body.movementId).toBeTruthy();
-    // O trigger recalcula current_stock da soma das movimentacoes (30 entrada).
-    // O currentStock inicial (20) do INSERT nao e contabilizado pelo trigger.
-    expect(body.newStock).toBe(30);
+    // 20 do saldo inicial + 30 da entrada.
+    //
+    // Este numero era 30, com um comentario explicando que o saldo inicial "nao
+    // e contabilizado pelo trigger" — o teste registrava o defeito em vez de
+    // reprova-lo. `current_stock` e derivado: o trigger da migration 0101 soma
+    // TODOS os movimentos e sobrescreve a coluna. Saldo inicial gravado so na
+    // coluna, sem movimento, era apagado pela primeira movimentacao — as 20
+    // gazes sumiam do sistema no primeiro uso. Agora o cadastro abre o razao
+    // com um `ajuste`, e coluna e razao contam a mesma historia.
+    expect(body.newStock).toBe(50);
     await app.close();
   });
 
@@ -111,8 +118,8 @@ describe('rotas de movimentacao de estoque', () => {
     });
     expect(r.statusCode).toBe(201);
     const body = r.json() as { movementId: string; newStock: number };
-    // Trigger: 30 (entrada) - 5 (saida) = 25
-    expect(body.newStock).toBe(25);
+    // 20 (saldo inicial) + 30 (entrada) - 5 (saida) = 45
+    expect(body.newStock).toBe(45);
     await app.close();
   });
 });

@@ -14,6 +14,16 @@ export interface DispatchResult {
   readonly errors: number;
 }
 
+/**
+ * Quantos eventos um ciclo reivindica.
+ *
+ * Constante e nao parametro: o valor certo depende da cadencia do polling (5 s)
+ * e do custo de um envio ao pg-boss, nao de quem chama. Cem por ciclo sao 1200
+ * por minuto — muito acima do que a clinica produz — e mantem pequena a janela
+ * entre "marcado como despachado" e "de fato na fila".
+ */
+const LOTE_POR_CICLO = 100;
+
 export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
   let dispatched = 0;
   let errors = 0;
@@ -21,17 +31,41 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
   // Despachar eventos pendentes da tabela unica app.outbox.
   // O papel jobs tem BYPASSRLS e GRANT SELECT, UPDATE (migration 0070).
   // Filtra por dispatched_at IS NULL (pendente) e attempts < 5 (nao dead-letter).
+  //
+  // Tres coisas que o UPDATE direto nao tinha:
+  //
+  // 1. LIMITE. Sem ele, um acumulo de eventos — worker parado meia hora, carga
+  //    de importacao — era reivindicado INTEIRO num unico statement, que commita
+  //    sozinho. Se o processo morresse na metade do laco de envio, todos os
+  //    eventos restantes ficavam com `dispatched_at` preenchido e nunca chegavam
+  //    a fila: perda silenciosa proporcional ao tamanho do acumulo. Com lote de
+  //    100, o prejuizo de uma queda e no maximo 100 eventos, e o ciclo de 5 s
+  //    esvazia a fila do mesmo jeito.
+  //
+  // 2. ORDEM. Sem `ORDER BY`, a entrega saia na ordem fisica das linhas. Evento
+  //    de dominio tem ordem: APPOINTMENT_CANCELLED chegando antes do
+  //    APPOINTMENT_CREATED correspondente manda a mensagem errada ao paciente.
+  //
+  // 3. SKIP LOCKED. Dois workers rodando ao mesmo tempo — durante um deploy, por
+  //    exemplo — nao brigam mais pela mesma linha: o segundo pula o que o
+  //    primeiro reservou em vez de ficar bloqueado ate o commit dele.
   const { rows: events } = await jobsPool().query<{
     id: string; event_type: string; aggregate_id: string;
     payload: Record<string, unknown>; tenant_id: string;
   }>(
-    `UPDATE app.outbox
+    `UPDATE app.outbox o
         SET dispatched_at = clock_timestamp(),
             attempts = attempts + 1
-      WHERE dispatched_at IS NULL
-        AND attempts < 5
-        AND created_at < clock_timestamp() - interval '100 milliseconds'
-      RETURNING id, event_type, aggregate_id, payload, tenant_id`);
+      WHERE o.id IN (
+              SELECT p.id
+                FROM app.outbox p
+               WHERE p.dispatched_at IS NULL
+                 AND p.attempts < 5
+                 AND p.created_at < clock_timestamp() - interval '100 milliseconds'
+               ORDER BY p.created_at, p.id
+                 FOR UPDATE SKIP LOCKED
+               LIMIT ${LOTE_POR_CICLO})
+      RETURNING o.id, o.event_type, o.aggregate_id, o.payload, o.tenant_id`);
 
   for (const ev of events) {
     try {

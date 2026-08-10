@@ -32,8 +32,23 @@ jobs:
       # `pnpm test` inclui tools/arch/arch-check.test.ts, que prova que a config
       # do dependency-cruiser realmente reprova cada violacao que ela promete pegar.
       - run: pnpm test
+      # O vitest da raiz casa `*.test.ts`, e glob nao trata `.tsx` como `.ts`:
+      # os 97 arquivos de teste de apps/web nunca rodaram em gate nenhum.
+      # Precisam de jsdom e do plugin do React, entao vao pela config propria.
+      - name: 'test:web — os testes do frontend, que a config da raiz nao alcanca'
+        run: pnpm test:web
+      # `tsc` e `vitest` rodam em Node e resolvem `node:crypto` sem reclamar. Só
+      # o bundler sabe o que de fato entra no navegador — foi assim que um import
+      # de barrel arrastou `@cadencia/db` para o bundle e derrubou o deploy com
+      # `tsc`, testes e arch:check todos verdes.
+      - name: 'build:web — a unica prova de que o app compila para producao'
+        run: pnpm build:web
       - name: 'lint:session-guc — `SET app.` so em packages/db/src/tx.ts'
         run: pnpm lint:session-guc
+      - name: 'lint:terminology-clock — terminologia nao le relogio'
+        run: pnpm lint:terminology-clock
+      - name: 'authz:check — catalogo de acoes em dia com o lock'
+        run: pnpm authz:check
       - name: 'arch:check — setas so descem, irmao nunca importa irmao, sem ciclo'
         run: pnpm arch:check
 

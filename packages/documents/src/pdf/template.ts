@@ -9,6 +9,16 @@ export interface DocumentTemplateInput {
   readonly paciente: {
     readonly nome: string; readonly nascimento: string | null; readonly cpf: string | null };
   readonly emitidoEm: string;
+  /**
+   * HTML JA CONFIAVEL. Diferente de todo outro campo deste input, `corpo` NAO
+   * passa por `escapeHtml` — e o unico ponto de extensao do template, e o
+   * exportador de prontuario depende disso para montar `<ol>`/`<li>`.
+   *
+   * Quem entrega texto digitado por pessoa (atestado, relatorio) escapa ANTES
+   * de chamar, como faz `export-record.ts`. Passar texto cru aqui nao e so
+   * risco de injecao: `saturacao <95%` perde tudo a partir do `<` porque o
+   * parser trata como tag aberta, e o medico so descobre no papel impresso.
+   */
   readonly corpo: string;
 }
 
