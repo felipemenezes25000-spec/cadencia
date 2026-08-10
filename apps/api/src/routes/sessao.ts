@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { appPool } from '@cadencia/db';
 import { systemClock } from '@cadencia/kernel';
 import {
-  createSession, resolveSession, revokeSession, verifyPassword, verifyTotpForUser,
+  createSession, resolveSession, revokeSession, revokeAllSessionsOfUser,
+  verifyPassword, hashPassword, verifyTotpForUser,
   CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE, SESSION_IDLE_MINUTES,
   csrfMatches, newCsrfToken, type ResolvedSession,
 } from '@cadencia/authn';
@@ -348,5 +349,53 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     reply.clearCookie(SESSION_COOKIE, { path: '/' });
     reply.clearCookie(CSRF_COOKIE, { path: '/' });
     return reply.code(204).send(null);
+  });
+
+  r.put('/v1/sessao/senha', {
+    schema: {
+      body: z.object({
+        senhaAtual: z.string().min(1),
+        senhaNova: z.string().min(1),
+      }),
+      response: {
+        200: z.object({ ok: z.literal(true) }),
+        401: Erro('sem_sessao', 'senha_incorreta'),
+        403: Erro('csrf_invalido'),
+        422: Erro('senha_fraca'),
+      },
+    },
+  }, async (req, reply) => {
+    if (!csrfOk(req)) return reply.code(403).send({ erro: 'csrf_invalido' });
+
+    const sessao = await sessaoDaRequisicao(req);
+    if (sessao === null) return reply.code(401).send({ erro: 'sem_sessao' });
+
+    const { senhaAtual, senhaNova } = req.body as { senhaAtual: string; senhaNova: string };
+    const db = appPool();
+
+    const { rows } = await db.query(
+      `SELECT password_hash FROM id.user_credential WHERE user_id = $1`,
+      [sessao.userId]);
+    const cred = rows[0] as { password_hash: string } | undefined;
+    if (cred === undefined) return reply.code(401).send({ erro: 'sem_sessao' });
+
+    const senhaOk = await verifyPassword(cred.password_hash, senhaAtual);
+    if (!senhaOk) return reply.code(401).send({ erro: 'senha_incorreta' });
+
+    if (senhaNova.length < 8 || senhaNova === senhaAtual) {
+      return reply.code(422).send({ erro: 'senha_fraca' });
+    }
+
+    const novoHash = await hashPassword(senhaNova);
+    await db.query(
+      `UPDATE id.user_credential SET password_hash = $1 WHERE user_id = $2`,
+      [novoHash, sessao.userId]);
+
+    await revokeAllSessionsOfUser(db, sessao.userId, 'troca_de_senha');
+
+    const { token } = await createSession(db, { userId: sessao.userId });
+    emitirCookies(reply, token);
+
+    return reply.code(200).send({ ok: true as const });
   });
 }

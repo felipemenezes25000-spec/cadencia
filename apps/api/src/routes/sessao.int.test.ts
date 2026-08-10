@@ -350,3 +350,144 @@ describe('segundo fator', () => {
     await app.close();
   });
 });
+
+describe('troca de senha', () => {
+  let p: SementeSessao;
+
+  beforeAll(async () => {
+    p = await semearSessao({ role: 'recepcao' });
+    await semearCredencial(p.userId, SENHA);
+  });
+
+  async function logarComoP(app: Awaited<ReturnType<typeof buildApp>>) {
+    const r = await app.inject({
+      method: 'POST', url: '/v1/sessao', ...anonimo(),
+      payload: { email: `${p.userId}@example.test`, senha: SENHA },
+    });
+    const le = (nome: string): string => {
+      const c = r.cookies.find((x) => x.name === nome);
+      if (c === undefined) throw new Error(`login nao emitiu o cookie ${nome}`);
+      return c.value as string;
+    };
+    return { sid: le('__Host-cadencia_sid'), csrf: le('__Host-cadencia_csrf') };
+  }
+
+  it('PUT /v1/sessao/senha com senha correta troca e revoga sessoes anteriores', async () => {
+    const app = await buildApp();
+    const sessaoAntiga = await logarComoP(app);
+    const novaSenha = 'NovaSenha@2026';
+
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessaoAntiga.sid, '__Host-cadencia_csrf': sessaoAntiga.csrf },
+      headers: { 'x-csrf-token': sessaoAntiga.csrf },
+      payload: { senhaAtual: SENHA, senhaNova: novaSenha },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ ok: true });
+
+    // Sessao antiga invalidada
+    const comAntiga = await app.inject({
+      method: 'GET', url: '/v1/sessao',
+      cookies: { '__Host-cadencia_sid': sessaoAntiga.sid, '__Host-cadencia_csrf': sessaoAntiga.csrf },
+    });
+    expect(comAntiga.statusCode).toBe(401);
+
+    // Nova sessao emitida nos cookies da resposta
+    const novaSid = r.cookies.find((c) => c.name === '__Host-cadencia_sid');
+    expect(novaSid).toBeDefined();
+    const novoCsrf = r.cookies.find((c) => c.name === '__Host-cadencia_csrf');
+    expect(novoCsrf).toBeDefined();
+
+    const comNova = await app.inject({
+      method: 'GET', url: '/v1/sessao',
+      cookies: { '__Host-cadencia_sid': novaSid!.value as string, '__Host-cadencia_csrf': novoCsrf!.value as string },
+    });
+    expect(comNova.statusCode).toBe(200);
+
+    // Login com senha nova funciona
+    const loginNovo = await app.inject({
+      method: 'POST', url: '/v1/sessao', ...anonimo(),
+      payload: { email: `${p.userId}@example.test`, senha: novaSenha },
+    });
+    expect(loginNovo.statusCode).toBe(200);
+
+    // Restaura a senha original para nao quebrar outros testes
+    const sessaoRestaurar = {
+      sid: loginNovo.cookies.find((c) => c.name === '__Host-cadencia_sid')!.value as string,
+      csrf: loginNovo.cookies.find((c) => c.name === '__Host-cadencia_csrf')!.value as string,
+    };
+    const restaurar = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessaoRestaurar.sid, '__Host-cadencia_csrf': sessaoRestaurar.csrf },
+      headers: { 'x-csrf-token': sessaoRestaurar.csrf },
+      payload: { senhaAtual: novaSenha, senhaNova: SENHA },
+    });
+    expect(restaurar.statusCode).toBe(200);
+
+    await app.close();
+  });
+
+  it('PUT /v1/sessao/senha com senha atual incorreta retorna 401', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoP(app);
+
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+      payload: { senhaAtual: 'errada', senhaNova: 'NovaSenha@2026' },
+    });
+    expect(r.statusCode).toBe(401);
+    expect(r.json()).toMatchObject({ erro: 'senha_incorreta' });
+
+    await app.close();
+  });
+
+  it('PUT /v1/sessao/senha com senha nova curta retorna 422', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoP(app);
+
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+      payload: { senhaAtual: SENHA, senhaNova: 'curta' },
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'senha_fraca' });
+
+    await app.close();
+  });
+
+  it('PUT /v1/sessao/senha com senha nova igual a atual retorna 422', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoP(app);
+
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+      payload: { senhaAtual: SENHA, senhaNova: SENHA },
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'senha_fraca' });
+
+    await app.close();
+  });
+
+  it('PUT /v1/sessao/senha sem CSRF retorna 403', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoP(app);
+
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/sessao/senha',
+      cookies: { '__Host-cadencia_sid': sessao.sid },
+      payload: { senhaAtual: SENHA, senhaNova: 'NovaSenha@2026' },
+    });
+    expect(r.statusCode).toBe(403);
+    expect(r.json()).toMatchObject({ erro: 'csrf_invalido' });
+
+    await app.close();
+  });
+});
