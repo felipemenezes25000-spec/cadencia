@@ -232,3 +232,62 @@ describe('convite de equipe', () => {
     await app.close();
   });
 });
+
+describe('revogacao de vinculo', () => {
+  it('revogar vinculo ativo: 200', async () => {
+    const app = await buildApp();
+    const email = `rev-${Date.now()}@test.local`;
+
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Para Revogar', role: 'recepcao',
+        senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+    const userId = (invite.json() as { userId: string }).userId;
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${userId}/role/recepcao`,
+      ...auth(s),
+      payload: { motivo: 'Saiu da clinica' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ ok: true });
+
+    const lista = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/equipe', ...auth(s),
+    });
+    const itens = (lista.json() as { itens: { userId: string }[] }).itens;
+    expect(itens.some((x) => x.userId === userId)).toBe(false);
+
+    await app.close();
+  });
+
+  it('revogar vinculo inexistente: 404', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/00000000-0000-0000-0000-000000000000/role/recepcao`,
+      ...auth(s),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(404);
+    expect(r.json()).toMatchObject({ erro: 'vinculo_nao_encontrado' });
+    await app.close();
+  });
+
+  it('auto-revogacao: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${s.userId}/role/admin_clinico`,
+      ...auth(s),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'auto_revogacao' });
+    await app.close();
+  });
+});

@@ -213,4 +213,51 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       throw e;
     }
   }));
+
+  // ── Revogacao ────────────────────────────────────────────────────────────
+
+  r.delete('/v1/configuracoes/equipe/:userId/role/:role', {
+    schema: {
+      params: z.object({
+        userId: z.string().uuid(),
+        role: z.enum(['admin_clinico', 'diretor_tecnico', 'profissional',
+                      'recepcao', 'financeiro']),
+      }),
+      body: z.object({
+        motivo: z.string().optional(),
+      }),
+      response: {
+        200: z.object({ ok: z.literal(true) }),
+        404: z.object({ erro: z.literal('vinculo_nao_encontrado') }),
+        422: z.object({ erro: z.literal('auto_revogacao') }),
+      },
+    },
+  }, rota('membership.revoke', async (tx, ctx, req, reply) => {
+    const p = req.params as { userId: string; role: string };
+    const b = req.body as { motivo?: string };
+
+    if (p.userId === ctx.actor.userId) {
+      return reply.code(422).send({ erro: 'auto_revogacao' as const });
+    }
+
+    const { rows } = await tx.query<{ revogar_vinculo: number }>(
+      `SELECT app.revogar_vinculo($1, $2, $3, $4)`,
+      [ctx.actor.clinicId, p.userId, p.role, b.motivo ?? null],
+    );
+
+    const count = rows[0]?.revogar_vinculo ?? 0;
+    if (count === 0) {
+      return reply.code(404).send({
+        erro: 'vinculo_nao_encontrado' as const,
+      });
+    }
+
+    await tx.query(
+      `SELECT audit.log('MEMBERSHIP_REVOKE', 'app', 'membership', NULL, 'sucesso',
+              jsonb_build_object('role', $1::text, 'target_user_id', $2::text,
+                                 'motivo', coalesce($3::text, '')), $4)`,
+      [p.role, p.userId, b.motivo ?? '', ctx.actor.clinicId]);
+
+    return { ok: true as const };
+  }));
 }
