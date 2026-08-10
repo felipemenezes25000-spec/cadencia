@@ -22,7 +22,7 @@ import { ConveniosRetornos, type RetornosDados } from './ConveniosRetornos';
 /* ── Mocks de next/navigation ──────────────────────────────────────── */
 
 const mockPush = vi.fn();
-let pathnameMock = '/financeiro/convenios';
+let pathnameMock = '/convenios';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathnameMock,
@@ -31,7 +31,7 @@ vi.mock('next/navigation', () => ({
 
 beforeEach(() => {
   mockPush.mockClear();
-  pathnameMock = '/financeiro/convenios';
+  pathnameMock = '/convenios';
 });
 
 const CONTADORES: ContadoresConvenios = {

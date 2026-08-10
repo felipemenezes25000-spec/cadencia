@@ -35,7 +35,12 @@ export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
     href: "/financeiro/recebimentos",
   },
   { value: "repasse", rotulo: "Repasse", href: "/financeiro/repasse" },
-  { value: "convenios", rotulo: "Convenios", href: "/financeiro/convenios" },
+  // Aponta para `/convenios`, no topo — e NAO para `/financeiro/convenios`, que
+  // nunca existiu como pagina. A aba estava visivel e levava a 404 desde que o
+  // modulo TISS foi entregue em `/convenios` por um plano paralelo. Duplicar as
+  // dez rotas do modulo sob `/financeiro/` para casar com este href seria pagar
+  // caro por um caminho errado.
+  { value: "convenios", rotulo: "Convenios", href: "/convenios" },
   { value: "estoque", rotulo: "Estoque", href: "/financeiro/estoque" },
 ];
 

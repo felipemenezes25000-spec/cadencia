@@ -72,7 +72,7 @@ describe("FinanceiroLayout", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: /Convenios/i }));
-    expect(mockPush).toHaveBeenCalledWith("/financeiro/convenios");
+    expect(mockPush).toHaveBeenCalledWith("/convenios");
   });
 
   it("mostra badge de pendentes em A receber", () => {
