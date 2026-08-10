@@ -53,7 +53,13 @@ export function collectTerminologyFiles(
   const out: { path: string; content: string }[] = [];
   const visitar = (dir: string): void => {
     for (const nome of readdirSync(dir)) {
-      if (['node_modules', '.git', 'dist', '.next', 'coverage'].includes(nome)) continue;
+      // `.claude` guarda os worktrees de agente — o repositorio dentro do
+      // repositorio. Hoje os globs ancorados em `^packages/` ja nao casam com
+      // `.claude/worktrees/<nome>/packages/...`, entao a varredura sobrevive por
+      // acidente da ancoragem. O lint irmao (session-guc) NAO teve essa sorte e
+      // reprovou a si mesmo atraves de uma copia sua. Pular explicitamente custa
+      // uma palavra e nao depende de ninguem lembrar de ancorar o proximo glob.
+      if (['node_modules', '.git', 'dist', '.next', 'coverage', '.claude'].includes(nome)) continue;
       const p = join(dir, nome);
       if (statSync(p).isDirectory()) { visitar(p); continue; }
       const rel = p.slice(raiz.length + 1).split('\\').join('/');

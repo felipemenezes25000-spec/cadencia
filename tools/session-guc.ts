@@ -28,7 +28,18 @@ const ALLOWED_FILES = new Set([
   'tools/check-session-guc.ts',
 ]);
 
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage']);
+/**
+ * `.claude` entra aqui porque abriga os worktrees de agente — o repositorio
+ * clonado DENTRO do repositorio. Sem pular, o lint acha a copia dos arquivos que
+ * ele proprio autoriza (`tools/session-guc.ts` vira
+ * `.claude/worktrees/<nome>/tools/session-guc.ts`, ausente de ALLOWED_FILES) e
+ * reprova a si mesmo. Nao e hipotese: derrubou um `git push` com typecheck,
+ * arch, as tres suites e o build todos verdes, e a mensagem apontava para
+ * arquivos que ninguem tinha editado.
+ */
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', '.next', 'coverage', '.claude',
+]);
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.sql'];
 
 function walk(dir: string, out: string[]): void {

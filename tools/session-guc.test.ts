@@ -84,6 +84,18 @@ describe('lint: SET app. so pode existir em packages/db/src/tx.ts', () => {
     expect(findSessionGucViolations(root)).toEqual([]);
   });
 
+  it('ignora .claude/worktrees, onde vive uma copia inteira do repositorio', () => {
+    // Um worktree de agente e o repositorio clonado dentro do proprio repositorio.
+    // Sem pular `.claude`, o lint encontra a COPIA dos arquivos que ele mesmo
+    // autoriza — `tools/session-guc.ts` vira `.claude/worktrees/x/tools/
+    // session-guc.ts`, que nao consta de ALLOWED_FILES — e reprova a si mesmo.
+    // Aconteceu de verdade: derrubou um `git push` com o gate inteiro verde.
+    escrever('.claude/worktrees/x/tools/session-guc.ts', 'const F = /SET app\\./;');
+    escrever('.claude/worktrees/x/packages/db/src/tx.ts', "client.query('SET app.tenant_id = $1')");
+
+    expect(findSessionGucViolations(root)).toEqual([]);
+  });
+
   it('lista todas as violacoes, nao apenas a primeira', () => {
     escrever('apps/api/src/a.ts', "query('SET app.tenant_id = 1')");
     escrever('apps/api/src/b.ts', "query('SET app.user_id = 1')");
