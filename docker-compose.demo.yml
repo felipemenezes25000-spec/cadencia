@@ -1,0 +1,97 @@
+# Ambiente de DEMONSTRACAO — dado ficticio, nunca paciente real.
+# Ver docs/superpowers/specs/2026-08-10-ambiente-de-demonstracao-design.md
+#
+# Diferencas deliberadas em relacao ao docker-compose.yml de desenvolvimento:
+#   - o banco NAO publica porta: so existe dentro da rede do compose;
+#   - `trust` da sessao local da lugar a senha, gerada na propria instancia;
+#   - api e worker sobem aqui, coisa que o compose de desenvolvimento nao faz.
+name: cadencia
+
+services:
+  db:
+    image: postgres:18
+    container_name: cadencia-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: cadencia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env da instancia}
+      TZ: UTC
+      PGTZ: UTC
+      # Identico ao compose de desenvolvimento, e nao por simetria estetica: o
+      # locale do cluster so se define no initdb. Divergir aqui produziria um banco
+      # que ordena texto diferente do que os testes provaram, sem aviso nenhum.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    command:
+      - postgres
+      - -c
+      - timezone=UTC
+      - -c
+      - log_timezone=UTC
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      # postgres:18 declara o VOLUME em /var/lib/postgresql, nao em .../data.
+      # Montar no caminho antigo deixaria o volume vazio e o banco morreria no
+      # primeiro `docker compose down`.
+      - cadencia-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cadencia"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cadencia-runtime:local
+    container_name: cadencia-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
+      # `fake` nao e placeholder: e a guarda que impede este ambiente de virar
+      # producao por inercia. Receita nao chega a Memed, atestado sai pendente.
+      CADENCIA_PROVIDERS: fake
+      CADENCIA_TOTP_KEY: ${CADENCIA_TOTP_KEY:?}
+      STORAGE_DIR: /var/lib/cadencia/anexos
+      LOG_LEVEL: info
+    ports:
+      # Publica porque a funcao da Vercel precisa alcancar: e o unico servico que
+      # sai da rede interna.
+      - "3001:3001"
+    volumes:
+      - cadencia-anexos:/var/lib/cadencia/anexos
+
+  worker:
+    # Mesma imagem da api — construida uma vez pelo servico acima.
+    image: cadencia-runtime:local
+    container_name: cadencia-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
+      CADENCIA_PROVIDERS: fake
+      CADENCIA_TOTP_KEY: ${CADENCIA_TOTP_KEY:?}
+      STORAGE_DIR: /var/lib/cadencia/anexos
+      LOG_LEVEL: info
+    volumes:
+      - cadencia-anexos:/var/lib/cadencia/anexos
+    command: ["pnpm", "--filter", "@cadencia/worker", "exec", "tsx", "src/worker.ts"]
+
+volumes:
+  cadencia-pgdata:
+  cadencia-anexos:

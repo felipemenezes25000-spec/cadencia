@@ -1,0 +1,27 @@
+# Sem este arquivo o `COPY . .` arrasta node_modules e .next da maquina de quem
+# builda para dentro da imagem: gigabytes de binario compilado para a plataforma
+# ERRADA, que ainda por cima mascaram o `pnpm install` do Dockerfile.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+coverage
+**/coverage
+*.tsbuildinfo
+
+.git
+.github
+.vercel
+.claude
+.superpowers
+.tasks*
+.tmp-blocos
+
+# Segredo nao entra em imagem. O .env da demo nasce na propria instancia.
+.env
+.env.*
+!.env.example
+
+*.log
