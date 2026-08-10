@@ -91,7 +91,8 @@ const DADOS_RETORNOS: RetornosDados = {
 };
 
 describe('Navegacao completa: Financeiro > Convenios', () => {
-  it('renderiza FinanceiroLayout com aba Convenios ativa contendo ConveniosLayout', () => {
+  it('renderiza FinanceiroLayout com aba Cadastros ativa contendo ConveniosLayout', () => {
+    pathnameMock = '/financeiro/cadastros';
     render(
       <FinanceiroLayout>
         <ConveniosLayout
@@ -103,9 +104,9 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
       </FinanceiroLayout>,
     );
     expect(screen.getByRole('heading', { level: 1, name: /Financeiro/ })).toBeVisible();
-    /* Aba Convenios ativa via Radix Tabs (tab, nao link) */
-    const abaConvenios = screen.getByRole('tab', { name: /Convenios/i });
-    expect(abaConvenios).toHaveAttribute('data-state', 'active');
+    /* Aba Cadastros ativa via Radix Tabs (tab, nao link) */
+    const abaCadastros = screen.getByRole('tab', { name: /Cadastros/i });
+    expect(abaCadastros).toHaveAttribute('data-state', 'active');
     expect(screen.getByRole('heading', { level: 2, name: /Convenios/ })).toBeVisible();
     /* "7" aparece no grupo de contadores e como badge na aba */
     const grupo = screen.getByRole('group', { name: /Contadores de convenios/i });
