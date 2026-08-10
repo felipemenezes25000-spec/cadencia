@@ -120,6 +120,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@cadencia/authz':
+        specifier: workspace:*
+        version: link:../../packages/authz
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
