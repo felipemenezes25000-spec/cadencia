@@ -1,17 +1,60 @@
 'use client';
 import { useState } from 'react';
 import { User, Buildings, SignOut } from '@phosphor-icons/react';
-import { useSessao, rotulo } from '../../../src/sessao';
+import { useSessao, rotulo, lerCsrf } from '../../../src/sessao';
+import { apiFetch, ApiError } from '../../../src/api';
 import { Botao } from '../../../src/ui/Botao';
+import { TrocaDeSenha } from '../../../src/telas/TrocaDeSenha';
+import { CadastroMfa } from '../../../src/telas/CadastroMfa';
 
 export default function PaginaPerfil() {
-  const { usuario, vinculoAtivo, trocarUnidade, sair } = useSessao();
+  const { usuario, vinculoAtivo, trocarUnidade, sair, clinicId } = useSessao();
   const [trocando, setTrocando] = useState<string | null>(null);
   const [saindo, setSaindo] = useState(false);
 
   const outrasUnidades = usuario.vinculos.filter(
     (v) => v.clinicId !== vinculoAtivo.clinicId,
   );
+
+  async function trocarSenha(senhaAtual: string, senhaNova: string) {
+    try {
+      await apiFetch('/v1/sessao/senha', {
+        method: 'PUT',
+        body: { senhaAtual, senhaNova },
+        clinicId,
+        csrfToken: lerCsrf(),
+      });
+    } catch (e) {
+      if (e instanceof ApiError) throw new Error(e.codigo);
+      throw e;
+    }
+  }
+
+  async function iniciarMfa() {
+    try {
+      return await apiFetch<{ qrcodeUri: string; segredo: string }>(
+        '/v1/sessao/mfa/cadastrar',
+        { method: 'POST', clinicId, csrfToken: lerCsrf() },
+      );
+    } catch (e) {
+      if (e instanceof ApiError) throw new Error(e.codigo);
+      throw e;
+    }
+  }
+
+  async function confirmarMfa(codigo: string) {
+    try {
+      await apiFetch('/v1/sessao/mfa', {
+        method: 'POST',
+        body: { codigo },
+        clinicId,
+        csrfToken: lerCsrf(),
+      });
+    } catch (e) {
+      if (e instanceof ApiError) throw new Error(e.codigo);
+      throw e;
+    }
+  }
 
   return (
     <div className="grid max-w-2xl gap-8">
@@ -34,11 +77,23 @@ export default function PaginaPerfil() {
             </div>
             <div>
               <dt className="text-xs text-text-muted">MFA</dt>
-              <dd className="font-medium">{usuario.mfaOk ? 'Ativo' : 'Nao configurado'}</dd>
+              <dd className="font-medium">{usuario.mfaCadastrado ? 'Ativo' : 'Nao configurado'}</dd>
             </div>
           </dl>
         </div>
-        <p className="text-xs text-text-muted">Troca de senha e cadastro de MFA chegam em breve.</p>
+      </section>
+
+      <section className="grid gap-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Seguranca</h2>
+        <div className="rounded-xl border border-line bg-surface p-5 grid gap-6">
+          <TrocaDeSenha aoTrocar={trocarSenha} />
+          <hr className="border-line" />
+          <CadastroMfa
+            mfaCadastrado={usuario.mfaCadastrado}
+            aoIniciar={iniciarMfa}
+            aoConfirmar={confirmarMfa}
+          />
+        </div>
       </section>
 
       <section className="grid gap-4">
