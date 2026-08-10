@@ -491,3 +491,123 @@ describe('troca de senha', () => {
     await app.close();
   });
 });
+
+describe('cadastro de MFA', () => {
+  let e: SementeSessao;
+
+  beforeAll(async () => {
+    process.env['CADENCIA_TOTP_KEY'] = CHAVE_TOTP.toString('base64');
+    e = await semearSessao({ role: 'profissional', comMfa: false });
+    await semearCredencial(e.userId, SENHA);
+  });
+
+  async function logarComoE(app: Awaited<ReturnType<typeof buildApp>>) {
+    const r = await app.inject({
+      method: 'POST', url: '/v1/sessao', ...anonimo(),
+      payload: { email: `${e.userId}@example.test`, senha: SENHA },
+    });
+    const le = (nome: string): string => {
+      const c = r.cookies.find((x) => x.name === nome);
+      if (c === undefined) throw new Error(`login nao emitiu o cookie ${nome}`);
+      return c.value as string;
+    };
+    return { sid: le('__Host-cadencia_sid'), csrf: le('__Host-cadencia_csrf') };
+  }
+
+  it('POST /v1/sessao/mfa/cadastrar retorna URI e segredo', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoE(app);
+
+    const r = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa/cadastrar',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+    });
+
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { qrcodeUri: string; segredo: string };
+    expect(body.qrcodeUri).toContain('otpauth://totp/');
+    expect(body.segredo).toBeTruthy();
+    expect(body.segredo.length).toBeGreaterThanOrEqual(16);
+
+    await app.close();
+  });
+
+  it('fluxo completo: cadastrar + confirmar com codigo valido', async () => {
+    const app = await buildApp();
+    const sessao = await logarComoE(app);
+
+    const cadastro = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa/cadastrar',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+    });
+    expect(cadastro.statusCode).toBe(200);
+    const { segredo } = cadastro.json() as { segredo: string };
+
+    const codigo = codigoEm(segredo, new Date());
+    const confirma = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+      headers: { 'x-csrf-token': sessao.csrf },
+      payload: { codigo },
+    });
+    expect(confirma.statusCode).toBe(200);
+
+    const quem = await app.inject({
+      method: 'GET', url: '/v1/sessao',
+      cookies: { '__Host-cadencia_sid': sessao.sid, '__Host-cadencia_csrf': sessao.csrf },
+    });
+    expect(quem.json()).toMatchObject({ mfaCadastrado: true, mfaOk: true });
+
+    await app.close();
+  });
+
+  it('re-cadastro invalida segredo anterior', async () => {
+    const app = await buildApp();
+    const f = await semearSessao({ role: 'profissional', comMfa: false });
+    await semearCredencial(f.userId, SENHA);
+
+    const login = await app.inject({
+      method: 'POST', url: '/v1/sessao', ...anonimo(),
+      payload: { email: `${f.userId}@example.test`, senha: SENHA },
+    });
+    const sid = (login.cookies.find((c) => c.name === '__Host-cadencia_sid')!.value) as string;
+    const csrf = (login.cookies.find((c) => c.name === '__Host-cadencia_csrf')!.value) as string;
+    const cookies = { '__Host-cadencia_sid': sid, '__Host-cadencia_csrf': csrf };
+
+    const primeiro = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa/cadastrar',
+      cookies, headers: { 'x-csrf-token': csrf },
+    });
+    const segredo1 = (primeiro.json() as { segredo: string }).segredo;
+
+    const segundo = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa/cadastrar',
+      cookies, headers: { 'x-csrf-token': csrf },
+    });
+    const segredo2 = (segundo.json() as { segredo: string }).segredo;
+    expect(segredo2).not.toBe(segredo1);
+
+    const codigo = codigoEm(segredo2, new Date());
+    const confirma = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa',
+      cookies, headers: { 'x-csrf-token': csrf },
+      payload: { codigo },
+    });
+    expect(confirma.statusCode).toBe(200);
+
+    await app.close();
+  });
+
+  it('POST /v1/sessao/mfa/cadastrar sem sessao retorna 401', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/sessao/mfa/cadastrar',
+      ...anonimo(),
+    });
+    expect(r.statusCode).toBe(401);
+    expect(r.json()).toMatchObject({ erro: 'sem_sessao' });
+    await app.close();
+  });
+});

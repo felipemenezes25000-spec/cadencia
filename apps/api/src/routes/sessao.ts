@@ -5,7 +5,7 @@ import { appPool } from '@cadencia/db';
 import { systemClock } from '@cadencia/kernel';
 import {
   createSession, resolveSession, revokeSession, revokeAllSessionsOfUser,
-  verifyPassword, hashPassword, verifyTotpForUser,
+  verifyPassword, hashPassword, verifyTotpForUser, enrollTotp,
   CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE, SESSION_IDLE_MINUTES,
   csrfMatches, newCsrfToken, type ResolvedSession,
 } from '@cadencia/authn';
@@ -397,5 +397,30 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     emitirCookies(reply, token);
 
     return reply.code(200).send({ ok: true as const });
+  });
+
+  r.post('/v1/sessao/mfa/cadastrar', {
+    schema: {
+      response: {
+        200: z.object({
+          qrcodeUri: z.string(),
+          segredo: z.string(),
+        }),
+        401: Erro('sem_sessao'),
+        403: Erro('csrf_invalido'),
+      },
+    },
+  }, async (req, reply) => {
+    if (!csrfOk(req)) return reply.code(403).send({ erro: 'csrf_invalido' });
+
+    const sessao = await sessaoDaRequisicao(req);
+    if (sessao === null) return reply.code(401).send({ erro: 'sem_sessao' });
+
+    const resultado = await enrollTotp(appPool(), sessao.userId, chaveTotp());
+
+    return reply.code(200).send({
+      qrcodeUri: resultado.uri,
+      segredo: resultado.secretBase32,
+    });
   });
 }
