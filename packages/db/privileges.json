@@ -6,6 +6,12 @@
         "SELECT",
         "UPDATE"
       ],
+      "clin_purger": [
+        "SELECT"
+      ],
+      "id_equipe": [
+        "SELECT"
+      ],
       "id_login": [
         "SELECT"
       ],
@@ -18,9 +24,6 @@
       "rpt_owner": [
         "SELECT"
       ],
-      "clin_purger": [
-        "SELECT"
-      ],
       "sched_public": [
         "SELECT"
       ]
@@ -29,6 +32,11 @@
   "app.membership": {
     "table": {
       "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
+      "id_equipe": [
         "INSERT",
         "SELECT",
         "UPDATE"
@@ -89,6 +97,11 @@
       "clin_writer": [
         "SELECT"
       ],
+      "id_equipe": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ],
       "id_login": [
         "SELECT"
       ],
@@ -108,6 +121,9 @@
       "app_rw": [
         "SELECT"
       ],
+      "clin_purger": [
+        "SELECT"
+      ],
       "id_login": [
         "SELECT"
       ],
@@ -116,9 +132,6 @@
         "INSERT",
         "SELECT",
         "UPDATE"
-      ],
-      "clin_purger": [
-        "SELECT"
       ]
     }
   },
@@ -257,6 +270,9 @@
         "INSERT",
         "SELECT"
       ],
+      "clin_purger": [
+        "SELECT"
+      ],
       "clin_writer": [
         "INSERT",
         "SELECT"
@@ -265,9 +281,6 @@
         "SELECT"
       ],
       "rpt_owner": [
-        "SELECT"
-      ],
-      "clin_purger": [
         "SELECT"
       ]
     },
@@ -316,13 +329,13 @@
       "app_rw": [
         "SELECT"
       ],
-      "clin_writer": [
-        "INSERT",
-        "SELECT"
-      ],
       "clin_purger": [
         "SELECT",
         "UPDATE"
+      ],
+      "clin_writer": [
+        "INSERT",
+        "SELECT"
       ]
     }
   },
@@ -349,6 +362,9 @@
       "app_rw": [
         "SELECT"
       ],
+      "clin_purger": [
+        "SELECT"
+      ],
       "clin_writer": [
         "INSERT",
         "SELECT"
@@ -357,9 +373,6 @@
         "SELECT"
       ],
       "rpt_owner": [
-        "SELECT"
-      ],
-      "clin_purger": [
         "SELECT"
       ]
     }
