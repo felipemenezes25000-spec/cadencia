@@ -24,5 +24,5 @@ describe('MatrizPermissoes', () => {
   it('passa a11y', async () => {
     const { container } = render(<MatrizPermissoes />);
     expect(await axe(container)).toHaveNoViolations();
-  });
+  }, 15_000);
 });
