@@ -27,6 +27,8 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'clinic.write', description: 'Editar dados da unidade',
     roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'clinic.create', description: 'Criar nova unidade',
+    roles: ['admin_clinico'], requiresMfa: true },
   { key: 'membership.read', description: 'Listar vinculos da unidade',
     roles: ['admin_clinico', 'diretor_tecnico'] },
   { key: 'membership.grant', description: 'Conceder vinculo a um usuario',

@@ -1,5 +1,5 @@
 {
-  "checksum": "9b2f3159378103687cfa0b8c92c0910daa54ccf739559811eb6b1d68a02963e8",
+  "checksum": "483c569cb0bac9d1dac894ccea01993cd841a0da7853849a4577dd28f88ae08f",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -101,6 +101,14 @@
         "recepcao"
       ],
       "requiresMfa": false
+    },
+    {
+      "key": "clinic.create",
+      "description": "Criar nova unidade",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
     },
     {
       "key": "clinic.read",
