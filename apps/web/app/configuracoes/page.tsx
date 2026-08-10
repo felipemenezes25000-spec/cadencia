@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../src/api';
 import { rotulo, useSessao } from '../../src/sessao';
-import { PageHeader } from '../../src/ui/PageHeader';
 
 interface Clinica {
   clinicId: string;
@@ -92,19 +91,14 @@ export default function PaginaConfiguracoes() {
 
   if (clinica === null) {
     return (
-      <div className="cadencia-page grid min-h-[50vh] place-items-center">
+      <div className="grid min-h-[50vh] place-items-center">
         <p className="text-sm text-text-muted">Carregando…</p>
       </div>
     );
   }
 
   return (
-    <div className="cadencia-page grid gap-8">
-      <PageHeader
-        titulo="Configuracoes"
-        subtitulo={`${clinica.tenantNome} · ${equipe.length} pessoa${equipe.length === 1 ? '' : 's'} com acesso`}
-      />
-
+    <div className="grid gap-8">
       <section className="grid gap-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
           Unidade
