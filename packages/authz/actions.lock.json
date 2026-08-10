@@ -1,5 +1,5 @@
 {
-  "checksum": "483c569cb0bac9d1dac894ccea01993cd841a0da7853849a4577dd28f88ae08f",
+  "checksum": "084c7ab3d399d7615be3b9a5ff4f8f85962411e74954c4daf8ba12b6afb1a049",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -244,6 +244,14 @@
         "financeiro"
       ],
       "requiresMfa": false
+    },
+    {
+      "key": "membership.edit",
+      "description": "Alterar papel de membro",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
     },
     {
       "key": "membership.grant",

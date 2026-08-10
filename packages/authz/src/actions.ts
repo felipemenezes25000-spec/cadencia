@@ -35,6 +35,8 @@ export const ACTIONS = [
     roles: ['admin_clinico'], requiresMfa: true },
   { key: 'membership.revoke', description: 'Revogar vinculo de um usuario',
     roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'membership.edit', description: 'Alterar papel de membro',
+    roles: ['admin_clinico'], requiresMfa: true },
   { key: 'mfa.admin_disable', description: 'Desativar MFA de outro usuario',
     roles: ['admin_clinico'], requiresMfa: true },
   { key: 'catalog.read', description: 'Consultar terminologia (CID-10, TUSS)',
