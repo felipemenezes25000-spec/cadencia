@@ -471,6 +471,116 @@ describe('criacao de clinica', () => {
   });
 });
 
+describe('edicao de papel', () => {
+  it('altera papel de recepcao para financeiro', async () => {
+    const app = await buildApp();
+    const email = `papel-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: { email, nome: 'Papel Test', role: 'recepcao',
+                 senhaTemporaria: 'Temp@2026xx' },
+    });
+    expect(invite.statusCode).toBe(201);
+    const { userId: targetId } = invite.json() as { userId: string };
+
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${targetId}/role`,
+      ...auth(s), payload: { role: 'financeiro' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual({ ok: true });
+
+    const equipe = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/equipe', ...auth(s) });
+    const membro = (equipe.json() as { itens: { userId: string; role: string }[] })
+      .itens.find((m) => m.userId === targetId);
+    expect(membro?.role).toBe('financeiro');
+
+    await app.close();
+  });
+
+  it('rejeita auto-edicao: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${s.userId}/role`,
+      ...auth(s), payload: { role: 'recepcao' },
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'auto_edicao' });
+    await app.close();
+  });
+
+  it('rejeita mesmo papel: 422', async () => {
+    const app = await buildApp();
+    const email = `mesmo-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: { email, nome: 'Mesmo', role: 'recepcao',
+                 senhaTemporaria: 'Temp@2026xx' },
+    });
+    const { userId: targetId } = invite.json() as { userId: string };
+
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${targetId}/role`,
+      ...auth(s), payload: { role: 'recepcao' },
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'mesmo_papel' });
+    await app.close();
+  });
+
+  it('rejeita papel profissional sem dados profissionais: 422', async () => {
+    const app = await buildApp();
+    const email = `semprof-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: { email, nome: 'Sem Prof', role: 'recepcao',
+                 senhaTemporaria: 'Temp@2026xx' },
+    });
+    const { userId: targetId } = invite.json() as { userId: string };
+
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${targetId}/role`,
+      ...auth(s), payload: { role: 'profissional' },
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'dados_profissionais_ausentes' });
+    await app.close();
+  });
+
+  it('permite alterar para diretor_tecnico com dados profissionais', async () => {
+    const app = await buildApp();
+    const email = `comprof-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: { email, nome: 'Com Prof', role: 'profissional',
+                 senhaTemporaria: 'Temp@2026xx',
+                 conselho: '06', numeroConselho: '54321', ufConselho: 'RJ',
+                 cbos: '225125' },
+    });
+    const { userId: targetId } = invite.json() as { userId: string };
+
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${targetId}/role`,
+      ...auth(s), payload: { role: 'diretor_tecnico' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual({ ok: true });
+    await app.close();
+  });
+
+  it('recepcao nao pode alterar papel: 403', async () => {
+    const app = await buildApp();
+    const recepcao = await semearSessao({ role: 'recepcao' });
+    const r = await app.inject({
+      method: 'PUT', url: `/v1/configuracoes/equipe/${s.userId}/role`,
+      ...auth(recepcao), payload: { role: 'financeiro' },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+});
+
 describe('edicao de CNES e CNPJ', () => {
   it('PUT /v1/configuracoes/clinica atualiza CNES e CNPJ', async () => {
     const app = await buildApp();

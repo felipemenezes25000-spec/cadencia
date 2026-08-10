@@ -384,4 +384,92 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
 
     return { ok: true as const };
   }));
+
+  // ── Edicao de papel ─────────────────────────────────────────────────────
+
+  r.put('/v1/configuracoes/equipe/:userId/role', {
+    schema: {
+      params: z.object({
+        userId: z.string().uuid(),
+      }),
+      body: z.object({
+        role: z.enum(['admin_clinico', 'diretor_tecnico', 'profissional',
+                      'recepcao', 'financeiro']),
+      }),
+      response: {
+        200: z.object({ ok: z.literal(true) }),
+        404: z.object({ erro: z.literal('vinculo_nao_encontrado') }),
+        422: z.object({
+          erro: z.enum(['auto_edicao', 'ultimo_admin',
+                        'dados_profissionais_ausentes', 'mesmo_papel']),
+        }),
+      },
+    },
+  }, rota('membership.edit', async (tx, ctx, req, reply) => {
+    const p = req.params as { userId: string };
+    const b = req.body as { role: string };
+
+    if (p.userId === ctx.actor.userId) {
+      return reply.code(422).send({ erro: 'auto_edicao' as const });
+    }
+
+    const { rows: equipe } = await tx.query<{
+      user_id: string; role: string;
+    }>(`SELECT user_id, role FROM app.equipe_da_unidade($1)`,
+      [ctx.actor.clinicId]);
+
+    const alvo = equipe.find((m) => m.user_id === p.userId);
+    if (alvo === undefined) {
+      return reply.code(404).send({ erro: 'vinculo_nao_encontrado' as const });
+    }
+
+    if (alvo.role === b.role) {
+      return reply.code(422).send({ erro: 'mesmo_papel' as const });
+    }
+
+    if (alvo.role === 'admin_clinico') {
+      const outrosAdmins = equipe.filter(
+        (m) => m.role === 'admin_clinico' && m.user_id !== p.userId);
+      if (outrosAdmins.length === 0) {
+        return reply.code(422).send({ erro: 'ultimo_admin' as const });
+      }
+    }
+
+    if (b.role === 'profissional' || b.role === 'diretor_tecnico') {
+      const { rows: prof } = await tx.query<{ existe: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM app.professional
+            WHERE tenant_id = app.current_tenant_id() AND user_id = $1
+         ) AS existe`,
+        [p.userId]);
+      if (prof[0]?.existe !== true) {
+        return reply.code(422).send({
+          erro: 'dados_profissionais_ausentes' as const,
+        });
+      }
+    }
+
+    const { rows: resultado } = await tx.query<{
+      r_membership_id: string; r_antigo_role: string;
+    }>(`SELECT * FROM app.alterar_papel_vinculo($1, $2, $3)`,
+      [ctx.actor.clinicId, p.userId, b.role]);
+
+    const r = resultado[0];
+    if (r === undefined) {
+      return reply.code(404).send({ erro: 'vinculo_nao_encontrado' as const });
+    }
+
+    await tx.query(
+      `SELECT audit.log('MEMBERSHIP_ROLE_CHANGE', 'app', 'membership', $1,
+              'sucesso', jsonb_build_object(
+                'target_user_id', $2::text,
+                'role', $3::text,
+                'antigo_role', $4::text,
+                'membership_id', $5::text
+              ), $6)`,
+      [r.r_membership_id, p.userId, b.role, r.r_antigo_role,
+       r.r_membership_id, ctx.actor.clinicId]);
+
+    return { ok: true as const };
+  }));
 }
