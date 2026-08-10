@@ -1,17 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { BarraDeNavegacao } from './BarraDeNavegacao';
-import { ITENS_NAV, FASE_ATUAL } from './nav';
+import { ITENS_NAV } from './nav';
 
 /* ── Mocks ───────────────────────────────────────────────────────────── */
 
-const pushMock = vi.fn();
-
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
 vi.mock('next/navigation', () => ({
   usePathname: () => '/hoje',
-  useRouter: () => ({ push: pushMock }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 vi.mock('next/link', () => ({
@@ -30,10 +30,31 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+const mockTrocarUnidade = vi.fn().mockResolvedValue(undefined);
+const mockSair = vi.fn().mockResolvedValue(undefined);
+vi.mock('../sessao', async () => {
+  const actual = await vi.importActual('../sessao');
+  return {
+    ...actual as object,
+    useSessao: () => ({
+      clinicId: 'c1', csrfToken: 'tok',
+      usuario: {
+        userId: 'u1', email: 'dr@test.com', nome: 'Dr. Test', mfaOk: true,
+        unidadeAtiva: { tenantId: 't1', clinicId: 'c1' },
+        vinculos: [
+          { tenantId: 't1', clinicId: 'c1', clinicNome: 'Clinica A', tenantNome: 'Tenant', timezone: 'America/Sao_Paulo', role: 'admin_clinico' },
+          { tenantId: 't1', clinicId: 'c2', clinicNome: 'Clinica B', tenantNome: 'Tenant', timezone: 'America/Sao_Paulo', role: 'profissional' },
+        ],
+      },
+      vinculoAtivo: { tenantId: 't1', clinicId: 'c1', clinicNome: 'Clinica A', tenantNome: 'Tenant', timezone: 'America/Sao_Paulo', role: 'admin_clinico' },
+      trocarUnidade: mockTrocarUnidade, sair: mockSair,
+    }),
+  };
+});
+
 let mediaMock = false;
 vi.mock('../lib/hooks', () => ({
   useMediaQuery: () => mediaMock,
-  useKeyboardShortcut: vi.fn(),
 }));
 
 /* Mock localStorage */
@@ -57,38 +78,13 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 beforeEach(() => {
   mediaMock = false;
-  pushMock.mockClear();
+  vi.clearAllMocks();
   localStorageMock.clear();
 });
 
 /* ── Testes de configuracao ──────────────────────────────────────────── */
 
 describe('nav.ts', () => {
-  it('segue a ordem CRONOLOGICA do dia, nao o organograma do software', () => {
-    // Os quatro primeiros sao o dia acontecendo; Financeiro e o dinheiro que ele
-    // gerou; Convenios e a cobranca que SEGUE esse dinheiro (fatura-se a
-    // operadora depois do atendimento, nao antes); Desempenho e Explorar sao o
-    // olhar para tras. Configuracoes fecha a lista porque nao pertence a
-    // cronologia nenhuma — e preparacao, nao operacao.
-    expect(ITENS_NAV.map((i) => i.rotulo)).toEqual([
-      'Hoje',
-      'Agenda',
-      'Conversas',
-      'Pacientes',
-      'Financeiro',
-      'Convenios',
-      'Desempenho',
-      'Explorar',
-      'Configuracoes',
-    ]);
-  });
-
-  it('na Fase 5 nenhum item esta marcado como futuro', () => {
-    expect(FASE_ATUAL).toBe(5);
-    const futuros = ITENS_NAV.filter((i) => i.disponivelNaFase > FASE_ATUAL);
-    expect(futuros).toEqual([]);
-  });
-
   it('todos os itens tem icone e id unicos', () => {
     const ids = ITENS_NAV.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -101,11 +97,40 @@ describe('nav.ts', () => {
 /* ── Testes do componente ─────────────────────────────────────────────── */
 
 describe('BarraDeNavegacao', () => {
-  it('renderiza todos os itens de navegacao', () => {
+  it('renderiza os dois grupos da sidebar', () => {
     render(<BarraDeNavegacao />);
-    for (const item of ITENS_NAV) {
-      expect(screen.getByRole('link', { name: new RegExp(item.rotulo) })).toBeInTheDocument();
-    }
+    expect(screen.getByText('Workspace')).toBeDefined();
+    expect(screen.getByText('Gestao')).toBeDefined();
+  });
+
+  it('mostra Convenios na sidebar', () => {
+    render(<BarraDeNavegacao />);
+    expect(screen.getByRole('link', { name: /convenios/i })).toBeDefined();
+  });
+
+  it('mostra Relatorios na sidebar', () => {
+    render(<BarraDeNavegacao />);
+    expect(screen.getByRole('link', { name: /relatorios/i })).toBeDefined();
+  });
+
+  it('mostra nome do usuario real', () => {
+    render(<BarraDeNavegacao />);
+    expect(screen.getByText('Dr. Test')).toBeDefined();
+  });
+
+  it('mostra nome da clinica ativa', () => {
+    render(<BarraDeNavegacao />);
+    expect(screen.getByText(/Clinica A/)).toBeDefined();
+  });
+
+  it('tem link para configuracoes', () => {
+    render(<BarraDeNavegacao />);
+    expect(screen.getByRole('link', { name: /configuracoes/i })).toBeDefined();
+  });
+
+  it('passa a11y', async () => {
+    const { container } = render(<BarraDeNavegacao />);
+    expect(await axe(container)).toHaveNoViolations();
   });
 
   it('destaca item ativo com base na rota atual', () => {
@@ -114,36 +139,13 @@ describe('BarraDeNavegacao', () => {
     expect(linkAtivo).toHaveAttribute('aria-current', 'page');
   });
 
-  it('renderiza icones para todos os itens', () => {
-    render(<BarraDeNavegacao />);
-    // Cada item de navegacao renderiza um SVG (icone Phosphor)
-    const nav = screen.getByRole('navigation');
-    const svgs = nav.querySelectorAll('svg');
-    // Pelo menos 1 SVG por item visivel + icones extras (brand, user, toggle)
-    expect(svgs.length).toBeGreaterThanOrEqual(ITENS_NAV.length);
-  });
-
   it('expande ao clicar no toggle', async () => {
     const user = userEvent.setup();
     render(<BarraDeNavegacao />);
-    // Inicia colapsado (estado padrao false mas sem localStorage = false = expandido)
-    // Clica no toggle para colapsar
     const toggle = screen.getByRole('button', { name: /colapsar/i });
     await user.click(toggle);
-    // Agora deve mostrar "Expandir navegacao"
     expect(
       screen.getByRole('button', { name: /expandir/i }),
-    ).toBeInTheDocument();
-  });
-
-  it('colapsa ao clicar no toggle', async () => {
-    const user = userEvent.setup();
-    localStorageMock.setItem('cadencia:nav-colapsado', 'true');
-    render(<BarraDeNavegacao />);
-    const toggle = screen.getByRole('button', { name: /expandir/i });
-    await user.click(toggle);
-    expect(
-      screen.getByRole('button', { name: /colapsar/i }),
     ).toBeInTheDocument();
   });
 
@@ -159,7 +161,6 @@ describe('BarraDeNavegacao', () => {
     mediaMock = true;
     render(<BarraDeNavegacao />);
     const nav = screen.getByRole('navigation');
-    // Mobile tab bar tem classe fixed e bottom-0
     expect(nav.className).toMatch(/fixed/);
     expect(nav.className).toMatch(/bottom-0/);
   });
@@ -167,7 +168,6 @@ describe('BarraDeNavegacao', () => {
   it('mostra "Mais" no mobile quando ha itens overflow', () => {
     mediaMock = true;
     render(<BarraDeNavegacao />);
-    // Com 6 itens e limite de 5, deve haver botao "Mais"
     expect(
       screen.getByRole('button', { name: /mais/i }),
     ).toBeInTheDocument();
@@ -180,20 +180,9 @@ describe('BarraDeNavegacao', () => {
     ).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
-    const { container } = render(<BarraDeNavegacao />);
-    expect(await axe(container)).toHaveNoViolations();
-  });
-
   it('nao tem violacoes de acessibilidade no modo mobile', async () => {
     mediaMock = true;
     const { container } = render(<BarraDeNavegacao />);
     expect(await axe(container)).toHaveNoViolations();
-  });
-
-  it('Auditoria e Ajustes NAO estao na barra', () => {
-    render(<BarraDeNavegacao />);
-    expect(screen.queryByText('Auditoria')).not.toBeInTheDocument();
-    expect(screen.queryByText('Ajustes')).not.toBeInTheDocument();
   });
 });

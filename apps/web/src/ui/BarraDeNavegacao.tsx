@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ehRotaPublica } from '../sessao';
+import { ehRotaPublica, useSessao, rotulo as rotuloRole } from '../sessao';
 import {
   CaretLeft,
   DotsThreeVertical,
@@ -12,6 +12,8 @@ import {
   MagnifyingGlass,
   ArrowRight,
   WifiHigh,
+  GearSix,
+  SignOut,
 } from '@phosphor-icons/react';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import * as RadixPopover from '@radix-ui/react-popover';
@@ -19,7 +21,7 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/cn';
 import { useMediaQuery } from '../lib/hooks';
-import { FASE_ATUAL, ITENS_NAV } from './nav';
+import { ITENS_NAV, CONFIG_NAV, FASE_ATUAL, indiceDeNavegacao } from './nav';
 
 const CHAVE_COLAPSADO = 'cadencia:nav-colapsado';
 const ITENS_MOBILE_VISIVEIS = 5;
@@ -71,11 +73,15 @@ function CommandPalette({ aberto, setAberto }: {
 }) {
   const router = useRouter();
   const [busca, setBusca] = useState('');
+  const todosOsDestinos = useMemo(() => indiceDeNavegacao(), []);
   const itens = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase('pt-BR');
-    return ITENS_NAV.filter((item) => item.disponivelNaFase <= FASE_ATUAL)
-      .filter((item) => !termo || item.rotulo.toLocaleLowerCase('pt-BR').includes(termo));
-  }, [busca]);
+    if (!termo) return todosOsDestinos;
+    return todosOsDestinos.filter((item) =>
+      item.rotulo.toLocaleLowerCase('pt-BR').includes(termo) ||
+      (item.descricao?.toLocaleLowerCase('pt-BR').includes(termo) ?? false),
+    );
+  }, [busca, todosOsDestinos]);
 
   function ir(href: string) {
     setAberto(false);
@@ -113,27 +119,22 @@ function CommandPalette({ aberto, setAberto }: {
           <div className="max-h-[52vh] overflow-y-auto p-2.5 scrollbar-thin">
             <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[.13em] text-text-faint">Navegacao</p>
             <div className="grid gap-1">
-              {itens.map((item) => {
-                const Icone = item.icone;
-                return (
+              {itens.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => ir(item.href)}
                     className="group flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left text-sm text-text transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover"
                   >
-                    <span className="cadencia-icon-orb h-9 w-9 shrink-0"><Icone size={18} weight="duotone" /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{item.rotulo}</span>
-                      <span className="block text-[11px] text-text-faint">Abrir {item.rotulo.toLocaleLowerCase('pt-BR')}</span>
+                      <span className="block text-[11px] text-text-faint">
+                        {item.descricao ?? `Abrir ${item.rotulo.toLocaleLowerCase('pt-BR')}`}
+                      </span>
                     </span>
-                    <span className="flex items-center gap-2 text-text-faint">
-                      <kbd className="cadencia-command-key">⌥{item.atalho}</kbd>
-                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                    </span>
+                    <ArrowRight size={14} className="shrink-0 text-text-faint transition-transform group-hover:translate-x-0.5" />
                   </button>
-                );
-              })}
+              ))}
               {itens.length === 0 && (
                 <div className="px-3 py-10 text-center text-sm text-text-muted">Nenhum comando encontrado.</div>
               )}
@@ -200,7 +201,85 @@ function MenuMais({ itens, caminho, aoAbrirComandos }: {
   );
 }
 
+function MenuUsuario({ colapsado }: { readonly colapsado: boolean }) {
+  const { usuario, vinculoAtivo, trocarUnidade, sair } = useSessao();
+  const outrosVinculos = usuario.vinculos.filter((v) => v.clinicId !== vinculoAtivo.clinicId);
+
+  return (
+    <RadixPopover.Root>
+      <RadixPopover.Trigger asChild>
+        <button
+          type="button"
+          aria-label={`Menu do usuario ${usuario.nome}`}
+          className={cn(
+            'flex min-h-[64px] w-full items-center rounded-2xl border border-white/8 bg-white/[.045] shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.04)] transition-colors hover:bg-white/[.065]',
+            colapsado ? 'justify-center px-1' : 'gap-3 px-3',
+          )}
+        >
+          <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-white/15 to-white/[.06] text-white/82 ring-1 ring-white/8">
+            <User size={17} weight="bold" />
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[oklch(17%_0.05_280)] bg-[oklch(76%_0.15_155)]" aria-hidden />
+          </div>
+          <AnimatePresence initial={false}>
+            {!colapsado && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0 flex-1 text-left">
+                <div className="truncate text-xs font-semibold text-white/88">{usuario.nome}</div>
+                <div className="mt-0.5 truncate text-[9px] font-medium text-white/34">
+                  {vinculoAtivo.clinicNome} · {rotuloRole(vinculoAtivo.role)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </button>
+      </RadixPopover.Trigger>
+      <RadixPopover.Portal>
+        <RadixPopover.Content
+          side="right" sideOffset={12} align="end"
+          className="z-50 min-w-[240px] rounded-[18px] border border-line cadencia-glass p-1.5 shadow-elev-3 animate-[scaleIn_150ms_var(--ease-out)]"
+        >
+          {outrosVinculos.length > 0 && (
+            <>
+              <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[.13em] text-text-faint">Trocar de unidade</p>
+              {outrosVinculos.map((v) => (
+                <button
+                  key={v.clinicId}
+                  type="button"
+                  onClick={() => void trocarUnidade(v.clinicId)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-text transition-colors hover:bg-surface-hover"
+                >
+                  {v.clinicNome}
+                </button>
+              ))}
+              <div className="mx-2 my-1 h-px bg-line" />
+            </>
+          )}
+          <Link
+            href="/configuracoes/perfil"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:bg-surface-hover"
+          >
+            <User size={16} /> Meu perfil
+          </Link>
+          <button
+            type="button"
+            onClick={() => void sair()}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-danger transition-colors hover:bg-surface-hover"
+          >
+            <SignOut size={16} /> Sair
+          </button>
+          <RadixPopover.Arrow className="fill-surface" />
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
+  );
+}
+
 export function BarraDeNavegacao() {
+  const caminho = usePathname();
+  if (ehRotaPublica(caminho)) return null;
+  return <BarraDeNavegacaoInterna />;
+}
+
+function BarraDeNavegacaoInterna() {
   const caminho = usePathname();
   const router = useRouter();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -208,14 +287,8 @@ export function BarraDeNavegacao() {
   const [comandosAbertos, setComandosAbertos] = useState(false);
 
   const itensVisiveis = ITENS_NAV.filter((item) => item.disponivelNaFase <= FASE_ATUAL);
-
-  // A tela de entrada nao tem navegacao: oferecer atalho para Agenda a quem
-  // ainda nao provou quem e so produz uma sequencia de 401.
-  // Mesma regra do provider de sessao, num lugar so. A barra e a estrutura
-  // INTERNA da clinica: "Financeiro", "Pacientes", "Desempenho". Mostra-la a
-  // quem esta marcando consulta expoe a organizacao da clinica e oferece links
-  // que so vao expulsar a pessoa de volta.
-  const naEntrada = ehRotaPublica(caminho);
+  const workspace = itensVisiveis.filter((i) => i.grupo === 'workspace');
+  const gestao = itensVisiveis.filter((i) => i.grupo === 'gestao');
 
   useEffect(() => {
     if (isMobile) {
@@ -246,7 +319,35 @@ export function BarraDeNavegacao() {
     return () => window.removeEventListener('keydown', handler);
   }, [itensVisiveis, router]);
 
-  if (naEntrada) return null;
+  const renderNavItem = (item: (typeof itensVisiveis)[number]) => {
+    const ativo = caminho?.startsWith(item.href) === true;
+    const Icone = item.icone;
+    return (
+      <li key={item.id}>
+        <TooltipItem conteudo={item.atalho ? `${item.rotulo} (Alt+${item.atalho})` : item.rotulo} ativo={colapsado}>
+          <Link
+            href={item.href} aria-current={ativo ? 'page' : undefined}
+            className={cn(
+              'group relative flex h-11 items-center rounded-xl transition-all duration-[var(--dur-2)]',
+              colapsado ? 'justify-center px-0' : 'gap-3 px-3',
+              ativo
+                ? 'bg-white/[.105] text-white shadow-[inset_0_0_0_1px_oklch(100%_0_0_/_0.08),0_10px_26px_oklch(0%_0_0_/_0.14)]'
+                : 'text-white/55 hover:bg-white/[.06] hover:text-white',
+            )}
+          >
+            {ativo && <motion.span layoutId="desktop-nav-active" className="absolute left-0 top-2.5 h-6 w-[3px] rounded-r-full bg-[oklch(80%_0.15_188)] shadow-[0_0_16px_oklch(80%_0.15_188_/_0.72)]" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+            <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors', ativo ? 'bg-white/[.10]' : 'group-hover:bg-white/[.05]')}>
+              <Icone size={19} weight={ativo ? 'fill' : 'regular'} />
+            </span>
+            <AnimatePresence initial={false}>
+              {!colapsado && <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.12 }} className="flex-1 overflow-hidden whitespace-nowrap text-[13px] font-semibold">{item.rotulo}</motion.span>}
+            </AnimatePresence>
+            {!colapsado && item.atalho && <span className="rounded-md border border-white/8 bg-white/[.04] px-1.5 py-0.5 font-mono text-[9px] text-white/28">⌥{item.atalho}</span>}
+          </Link>
+        </TooltipItem>
+      </li>
+    );
+  };
 
   if (isMobile) {
     const itensMobile = itensVisiveis.slice(0, ITENS_MOBILE_VISIVEIS);
@@ -287,6 +388,8 @@ export function BarraDeNavegacao() {
       </>
     );
   }
+
+  const ativoConfig = caminho?.startsWith(CONFIG_NAV.href) === true;
 
   return (
     <RadixTooltip.Provider delayDuration={180}>
@@ -345,53 +448,51 @@ export function BarraDeNavegacao() {
             {!colapsado && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-2 px-3 text-[9px] font-bold uppercase tracking-[.17em] text-white/32">Workspace</motion.p>}
           </AnimatePresence>
           <ul className="m-0 list-none space-y-1 p-0">
-            {itensVisiveis.map((item) => {
-              const ativo = caminho?.startsWith(item.href) === true;
-              const Icone = item.icone;
-              return (
-                <li key={item.id}>
-                  <TooltipItem conteudo={`${item.rotulo} (Alt+${item.atalho})`} ativo={colapsado}>
-                    <Link
-                      href={item.href} aria-current={ativo ? 'page' : undefined}
-                      className={cn(
-                        'group relative flex h-11 items-center rounded-xl transition-all duration-[var(--dur-2)]',
-                        colapsado ? 'justify-center px-0' : 'gap-3 px-3',
-                        ativo
-                          ? 'bg-white/[.105] text-white shadow-[inset_0_0_0_1px_oklch(100%_0_0_/_0.08),0_10px_26px_oklch(0%_0_0_/_0.14)]'
-                          : 'text-white/55 hover:bg-white/[.06] hover:text-white',
-                      )}
-                    >
-                      {ativo && <motion.span layoutId="desktop-nav-active" className="absolute left-0 top-2.5 h-6 w-[3px] rounded-r-full bg-[oklch(80%_0.15_188)] shadow-[0_0_16px_oklch(80%_0.15_188_/_0.72)]" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
-                      <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors', ativo ? 'bg-white/[.10]' : 'group-hover:bg-white/[.05]')}>
-                        <Icone size={19} weight={ativo ? 'fill' : 'regular'} />
-                      </span>
-                      <AnimatePresence initial={false}>
-                        {!colapsado && <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.12 }} className="flex-1 overflow-hidden whitespace-nowrap text-[13px] font-semibold">{item.rotulo}</motion.span>}
-                      </AnimatePresence>
-                      {!colapsado && <span className="rounded-md border border-white/8 bg-white/[.04] px-1.5 py-0.5 font-mono text-[9px] text-white/28">⌥{item.atalho}</span>}
-                    </Link>
-                  </TooltipItem>
-                </li>
-              );
-            })}
+            {workspace.map(renderNavItem)}
+          </ul>
+
+          <AnimatePresence initial={false}>
+            {!colapsado && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-2 mt-5 px-3 text-[9px] font-bold uppercase tracking-[.17em] text-white/32">Gestao</motion.p>}
+          </AnimatePresence>
+          <ul className="m-0 list-none space-y-1 p-0">
+            {gestao.map(renderNavItem)}
           </ul>
         </div>
 
-        <div className="relative px-2.5 pb-2">
-          <div className={cn('flex min-h-[64px] items-center rounded-2xl border border-white/8 bg-white/[.045] shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.04)]', colapsado ? 'justify-center px-1' : 'gap-3 px-3')}>
-            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-white/15 to-white/[.06] text-white/82 ring-1 ring-white/8">
-              <User size={17} weight="bold" />
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[oklch(17%_0.05_280)] bg-[oklch(76%_0.15_155)]" aria-hidden />
-            </div>
-            <AnimatePresence initial={false}>
-              {!colapsado && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-semibold text-white/88">Usuario</div>
-                  <div className="mt-0.5 flex items-center gap-1 truncate text-[9px] font-medium text-white/34"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300/80" /> Clinica Cadencia · online</div>
-                </motion.div>
+        <div className="relative mx-3 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+
+        <div className="relative px-2.5 py-1.5">
+          <TooltipItem conteudo={CONFIG_NAV.rotulo} ativo={colapsado}>
+            <Link
+              href={CONFIG_NAV.href} aria-current={ativoConfig ? 'page' : undefined}
+              className={cn(
+                'group relative flex h-11 items-center rounded-xl transition-all duration-[var(--dur-2)]',
+                colapsado ? 'justify-center px-0' : 'gap-3 px-3',
+                ativoConfig
+                  ? 'bg-white/[.105] text-white shadow-[inset_0_0_0_1px_oklch(100%_0_0_/_0.08),0_10px_26px_oklch(0%_0_0_/_0.14)]'
+                  : 'text-white/55 hover:bg-white/[.06] hover:text-white',
               )}
-            </AnimatePresence>
-          </div>
+            >
+              <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors', ativoConfig ? 'bg-white/[.10]' : 'group-hover:bg-white/[.05]')}>
+                <GearSix size={19} weight={ativoConfig ? 'fill' : 'regular'} />
+              </span>
+              <AnimatePresence initial={false}>
+                {!colapsado && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }}
+                    transition={{ duration: 0.12 }}
+                    className="flex-1 overflow-hidden whitespace-nowrap text-[13px] font-semibold"
+                  >
+                    {CONFIG_NAV.rotulo}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          </TooltipItem>
+        </div>
+
+        <div className="relative px-2.5 pb-2">
+          <MenuUsuario colapsado={colapsado} />
         </div>
 
         <div className="relative px-2.5 pb-3">
