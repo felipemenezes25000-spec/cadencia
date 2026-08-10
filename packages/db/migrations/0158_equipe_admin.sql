@@ -29,7 +29,7 @@ GRANT SELECT, INSERT ON id."user"          TO id_equipe;
 GRANT SELECT, INSERT ON id.user_credential TO id_equipe;
 GRANT SELECT, INSERT, UPDATE ON app.membership   TO id_equipe;
 GRANT SELECT, INSERT, UPDATE ON app.professional  TO id_equipe;
-GRANT DELETE ON id.user_totp TO id_equipe;
+GRANT SELECT, DELETE ON id.user_totp TO id_equipe;
 GRANT SELECT ON app.clinic   TO id_equipe;
 GRANT EXECUTE ON FUNCTION app.current_tenant_id() TO id_equipe;
 GRANT EXECUTE ON FUNCTION app.current_user_id()   TO id_equipe;
@@ -80,8 +80,8 @@ DECLARE
   v_mem_id     uuid;
 BEGIN
   -- Criar ou reutilizar usuario
-  INSERT INTO id."user" (email, full_name, cpf, status)
-  VALUES (p_email, p_nome, p_cpf, 'ativo')
+  INSERT INTO id."user" (id, email, full_name, cpf, status)
+  VALUES (gen_random_uuid(), p_email, p_nome, p_cpf, 'ativo')
   ON CONFLICT (email) DO NOTHING;
 
   SELECT u.id INTO v_user_id FROM id."user" u WHERE u.email = p_email;
