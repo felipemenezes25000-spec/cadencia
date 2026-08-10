@@ -260,4 +260,51 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
 
     return { ok: true as const };
   }));
+
+  // ── Desativacao de MFA por admin ─────────────────────────────────────────
+
+  r.delete('/v1/configuracoes/equipe/:userId/mfa', {
+    schema: {
+      params: z.object({
+        userId: z.string().uuid(),
+      }),
+      body: z.object({}),
+      response: {
+        200: z.object({ ok: z.literal(true) }),
+        404: z.object({ erro: z.literal('mfa_nao_cadastrado') }),
+        422: z.object({ erro: z.literal('auto_desativacao') }),
+      },
+    },
+  }, rota('mfa.admin_disable', async (tx, ctx, req, reply) => {
+    const p = req.params as { userId: string };
+
+    if (p.userId === ctx.actor.userId) {
+      return reply.code(422).send({ erro: 'auto_desativacao' as const });
+    }
+
+    const { rows: equipe } = await tx.query<{ user_id: string }>(
+      `SELECT user_id FROM app.equipe_da_unidade($1)`,
+      [ctx.actor.clinicId],
+    );
+    if (!equipe.some((m) => m.user_id === p.userId)) {
+      return reply.code(404).send({ erro: 'mfa_nao_cadastrado' as const });
+    }
+
+    const { rows } = await tx.query<{ desativar_totp_admin: number }>(
+      `SELECT id.desativar_totp_admin($1)`,
+      [p.userId],
+    );
+
+    const count = rows[0]?.desativar_totp_admin ?? 0;
+    if (count === 0) {
+      return reply.code(404).send({ erro: 'mfa_nao_cadastrado' as const });
+    }
+
+    await tx.query(
+      `SELECT audit.log('MFA_ADMIN_DISABLE', 'id', 'user_totp', NULL, 'sucesso',
+              jsonb_build_object('target_user_id', $1::text), $2)`,
+      [p.userId, ctx.actor.clinicId]);
+
+    return { ok: true as const };
+  }));
 }

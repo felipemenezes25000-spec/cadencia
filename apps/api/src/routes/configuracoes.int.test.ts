@@ -291,3 +291,92 @@ describe('revogacao de vinculo', () => {
     await app.close();
   });
 });
+
+describe('desativar MFA por admin', () => {
+  it('desativar MFA de usuario com TOTP: 200', async () => {
+    const app = await buildApp();
+
+    const email = `mfa-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Com MFA', role: 'recepcao',
+        senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+    const userId = (invite.json() as { userId: string }).userId;
+
+    const { Pool } = await import('pg');
+    const admin = new Pool({
+      connectionString: process.env['DATABASE_URL_ADMIN'], max: 1,
+    });
+    await admin.query(
+      `INSERT INTO id.user_totp (user_id, secret_ciphertext, confirmed_at)
+       VALUES ($1, '\\xDEAD'::bytea, clock_timestamp())`,
+      [userId],
+    );
+    await admin.end();
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${userId}/mfa`,
+      ...auth(s),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ ok: true });
+
+    await app.close();
+  });
+
+  it('desativar MFA de usuario sem TOTP: 404', async () => {
+    const app = await buildApp();
+
+    const email = `nomfa-${Date.now()}@test.local`;
+    const invite = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Sem MFA', role: 'recepcao',
+        senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+    const userId = (invite.json() as { userId: string }).userId;
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${userId}/mfa`,
+      ...auth(s),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(404);
+    expect(r.json()).toMatchObject({ erro: 'mfa_nao_cadastrado' });
+
+    await app.close();
+  });
+
+  it('auto-desativacao: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${s.userId}/mfa`,
+      ...auth(s),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'auto_desativacao' });
+    await app.close();
+  });
+
+  it('recepcao nao pode desativar MFA: 403', async () => {
+    const app = await buildApp();
+    const recepcao = await semearSessao({ role: 'recepcao' });
+    const r = await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${s.userId}/mfa`,
+      ...auth(recepcao),
+      payload: {},
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+});
