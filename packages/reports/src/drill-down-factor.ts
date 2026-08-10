@@ -53,18 +53,24 @@ async function drillDownFaltas(
   const byProfResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(
-    `SELECT coalesce(pr.user_id::text, a.professional_id::text) AS label,
+    // `label` e impresso na tela: precisa ser o NOME. Antes daqui saia
+    // `pr.user_id`, um UUID — trocar um identificador por outro nao resolvia
+    // nada, e a tela de Desempenho passou a exibi-lo assim que ganhou rota.
+    // O fallback continua sendo o id porque agendamento sem profissional
+    // vinculado existe, e some-lo num balde "sem nome" esconderia faltas.
+    `SELECT coalesce(u.full_name, a.professional_id::text) AS label,
             count(*)::text AS count,
             coalesce(sum(p.valor_centavos), 0)::text AS amount_cents
        FROM sched.appointment a
        LEFT JOIN sched.procedure p ON p.tenant_id = a.tenant_id AND p.id = a.procedure_id
        LEFT JOIN app.professional pr ON pr.tenant_id = a.tenant_id AND pr.id = a.professional_id
+       LEFT JOIN id."user" u ON u.id = pr.user_id
       WHERE a.tenant_id = $1
         AND a.clinic_id = $2
         AND a.status IN ('faltou', 'cancelado')
         AND a.appointment_date >= $3::date
         AND a.appointment_date <= $4::date
-      GROUP BY coalesce(pr.user_id::text, a.professional_id::text)
+      GROUP BY coalesce(u.full_name, a.professional_id::text)
       ORDER BY sum(p.valor_centavos) DESC NULLS LAST`,
     [tenantId, clinicId, period.start, period.end],
   );
@@ -138,17 +144,20 @@ async function drillDownReceita(
   const byProfResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(
-    `SELECT e.professional_id::text AS label,
+    // Mesmo motivo do drill-down de faltas: o rotulo vai para a tela.
+    `SELECT coalesce(u.full_name, e.professional_id::text) AS label,
             count(*)::text AS count,
             coalesce(sum(e.amount_cents), 0)::text AS amount_cents
        FROM fin.entry e
+       LEFT JOIN app.professional pr ON pr.tenant_id = e.tenant_id AND pr.id = e.professional_id
+       LEFT JOIN id."user" u ON u.id = pr.user_id
       WHERE e.tenant_id = $1
         AND e.clinic_id = $2
         AND e.kind = 'receita'
         AND e.status = 'pago'
         AND e.paid_at >= ($3::date)::timestamptz
         AND e.paid_at <  ($4::date + 1)::timestamptz
-      GROUP BY e.professional_id
+      GROUP BY coalesce(u.full_name, e.professional_id::text)
       ORDER BY sum(e.amount_cents) DESC`,
     [tenantId, clinicId, period.start, period.end],
   );

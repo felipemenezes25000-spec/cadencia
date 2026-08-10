@@ -78,6 +78,17 @@ describe('drillDownFactor', () => {
     const manha = result.byTimeSlot.find((g) => g.label === 'manha');
     expect(manha).toBeDefined();
     expect(manha!.count).toBe(3);
+
+    // `label` e o que a tela IMPRIME. `byTimeSlot` ja entendia isso ('manha'),
+    // mas `byProfessional` devolvia o UUID do profissional — e a tela de
+    // Desempenho passou a exibi-lo assim que a rota de drill-down foi ligada.
+    // Um identificador opaco nao e rotulo: quem le precisa saber de QUEM sao as
+    // faltas para agir.
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const g of result.byProfessional) {
+      expect(g.label).not.toMatch(UUID);
+      expect(g.label.trim().length).toBeGreaterThan(0);
+    }
   });
 
   it('drill-down de volume retorna lancamentos pagos agrupados', async () => {
