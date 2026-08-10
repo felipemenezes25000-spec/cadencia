@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ListaDeEspera, type ItemDeEspera } from '../../../src/telas/ListaDeEspera';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -38,13 +37,7 @@ export default function PaginaListaDeEspera() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Lista de espera"
-        subtitulo={carregando ? 'Carregando…'
-          : `${itens.length} ${itens.length === 1 ? 'pessoa' : 'pessoas'} aguardando vaga`}
-      />
-
+    <div className="grid gap-6">
       {itens.length === 0 && !carregando ? (
         <p className="text-sm text-text-muted">
           Ninguem na lista. Quando uma vaga abrir, quem esta aqui e chamado por

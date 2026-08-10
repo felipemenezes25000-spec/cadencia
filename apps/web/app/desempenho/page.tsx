@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { useQueryState } from 'nuqs';
 import { Desempenho } from '../../src/telas/desempenho/Desempenho';
 import type {
@@ -61,7 +60,7 @@ function DesempenhoInner() {
 
   if (!podeVer) {
     return (
-      <div className="cadencia-page grid min-h-[60vh] place-items-center">
+      <div className="grid min-h-[60vh] place-items-center">
         <div className="max-w-md text-center">
           <h1 className="text-lg font-semibold">Desempenho e da gestao</h1>
           <p className="mt-2 text-sm text-text-muted">
@@ -87,17 +86,6 @@ function DesempenhoInner() {
   };
 
   return (
-    <>
-    {/* A satisfacao mora ao lado da receita de proposito: queda de NPS costuma
-        aparecer no faturamento um ou dois meses depois, e ver os dois separados
-        esconde a relacao. O alinhamento acompanha o container da tela. */}
-    <div style={{ maxWidth: 960, margin: '0 auto',
-                  padding: 'var(--s-8) var(--s-8) 0' }}>
-      <Link href="/desempenho/nps"
-        className="text-sm text-accent underline-offset-4 hover:underline">
-        Ver satisfacao dos pacientes (NPS) →
-      </Link>
-    </div>
     <Desempenho
       period={periodo}
       aoMudarPeriodo={(p) => { void setMes(p.current); }}
@@ -144,7 +132,6 @@ function DesempenhoInner() {
         return { result, actions };
       }}
     />
-    </>
   );
 }
 

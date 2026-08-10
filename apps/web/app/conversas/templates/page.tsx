@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { TemplatesDeMensagem, type Template } from '../../../src/telas/TemplatesDeMensagem';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -38,13 +37,7 @@ export default function PaginaTemplates() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Templates de mensagem"
-        subtitulo={carregando ? 'Carregando…'
-          : `${templates.length} ${templates.length === 1 ? 'template' : 'templates'} aprovados`}
-      />
-
+    <div className="grid gap-6">
       {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
 
       <TemplatesDeMensagem
