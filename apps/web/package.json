@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@cadencia/authz": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "@cadencia/reports": "workspace:*",
     "@cadencia/scheduling": "workspace:*",
