@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../src/ui/Tabs';
 
 const ABAS = [
   { value: 'clinica', rotulo: 'Clinica', href: '/configuracoes' },
+  { value: 'equipe', rotulo: 'Equipe', href: '/configuracoes/equipe' },
   { value: 'permissoes', rotulo: 'Permissoes', href: '/configuracoes/permissoes' },
   { value: 'procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos' },
   { value: 'prontuario', rotulo: 'Prontuario', href: '/configuracoes/prontuario' },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../src/api';
-import { rotulo, useSessao } from '../../src/sessao';
+import { useSessao } from '../../src/sessao';
 
 interface Clinica {
   clinicId: string;
@@ -11,16 +11,6 @@ interface Clinica {
   cnes: string | null;
   timezone: string;
   tenantNome: string;
-}
-
-interface MembroDaEquipe {
-  userId: string;
-  nome: string;
-  email: string;
-  role: 'admin_clinico' | 'diretor_tecnico' | 'profissional' | 'recepcao' | 'financeiro';
-  ehProfissional: boolean;
-  conselho: string | null;
-  desde: string;
 }
 
 /**
@@ -46,7 +36,6 @@ export default function PaginaConfiguracoes() {
     || vinculoAtivo.role === 'diretor_tecnico';
 
   const [clinica, setClinica] = useState<Clinica | null>(null);
-  const [equipe, setEquipe] = useState<readonly MembroDaEquipe[]>([]);
   const [nome, setNome] = useState('');
   const [timezone, setTimezone] = useState('America/Sao_Paulo');
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
@@ -59,11 +48,6 @@ export default function PaginaConfiguracoes() {
         '/v1/configuracoes/clinica', { clinicId, csrfToken });
       if (!vivo) return;
       setClinica(c); setNome(c.nome); setTimezone(c.timezone);
-
-      const e = await apiFetch<{ itens: MembroDaEquipe[] }>(
-        '/v1/configuracoes/equipe', { clinicId, csrfToken })
-        .catch(() => ({ itens: [] as MembroDaEquipe[] }));
-      if (vivo) setEquipe(e.itens);
     })();
     return () => { vivo = false; };
   }, [clinicId, csrfToken]);
@@ -158,53 +142,6 @@ export default function PaginaConfiguracoes() {
             </p>
           )}
         </form>
-      </section>
-
-      <section className="grid gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Equipe
-        </h2>
-
-        <div className="overflow-x-auto rounded-[var(--r-md)] border border-line">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-surface-2 text-left text-xs uppercase text-text-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Pessoa</th>
-                <th className="px-4 py-2.5 font-medium">Papel</th>
-                <th className="px-4 py-2.5 font-medium">Registro</th>
-                <th className="px-4 py-2.5 font-medium">Desde</th>
-              </tr>
-            </thead>
-            <tbody>
-              {equipe.map((m) => (
-                <tr key={m.userId} className="border-t border-line">
-                  <td className="px-4 py-3">
-                    <span className="block font-medium">{m.nome}</span>
-                    <span className="block text-xs text-text-muted">{m.email}</span>
-                  </td>
-                  <td className="px-4 py-3">{rotulo(m.role)}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{m.conselho ?? '—'}</td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {m.desde.slice(0, 10).split('-').reverse().join('/')}
-                  </td>
-                </tr>
-              ))}
-              {equipe.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-text-muted">
-                    Nenhum vinculo nesta unidade.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="text-xs text-text-muted">
-          Conceder e revogar acesso ainda e feito por quem administra o tenant.
-          Vinculo revogado nao apaga o historico — a trilha continua mostrando o
-          que a pessoa fez enquanto tinha acesso.
-        </p>
       </section>
     </div>
   );
