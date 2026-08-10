@@ -18,17 +18,19 @@ export default function PaginaCatalogos() {
         {CATALOGOS.map((cat) => {
           const Icone = cat.icone;
           const desabilitado = cat.href === '#';
-          const Wrapper = desabilitado ? 'div' : Link;
-          return (
-            <Wrapper key={cat.titulo} {...(desabilitado ? {} : { href: cat.href })}
-              className={`rounded-xl border border-line bg-surface p-5 transition ${desabilitado ? 'opacity-50' : 'hover:border-accent hover:shadow-elev-1'}`}>
+          const conteudo = (
+            <>
               <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-accent-soft text-accent">
                 <Icone size={22} weight="duotone" />
               </div>
               <h2 className="font-semibold text-text">{cat.titulo}</h2>
               <p className="mt-1 text-sm text-text-muted">{cat.descricao}</p>
-            </Wrapper>
+            </>
           );
+          const cls = `rounded-xl border border-line bg-surface p-5 transition ${desabilitado ? 'opacity-50' : 'hover:border-accent hover:shadow-elev-1'}`;
+          return desabilitado
+            ? <div key={cat.titulo} className={cls}>{conteudo}</div>
+            : <Link key={cat.titulo} href={cat.href} className={cls}>{conteudo}</Link>;
         })}
       </div>
     </div>

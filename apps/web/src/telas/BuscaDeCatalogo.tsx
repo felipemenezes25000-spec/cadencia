@@ -8,14 +8,14 @@ export interface ColunaCatalogo<T> {
   readonly rotulo: string;
 }
 
-export interface BuscaDeCatalogoProps<T extends Record<string, unknown>> {
+export interface BuscaDeCatalogoProps<T extends object> {
   readonly titulo: string;
   readonly placeholder: string;
   readonly colunas: readonly ColunaCatalogo<T>[];
   readonly buscar: (termo: string) => Promise<T[]>;
 }
 
-export function BuscaDeCatalogo<T extends Record<string, unknown>>({
+export function BuscaDeCatalogo<T extends object>({
   titulo, placeholder, colunas, buscar,
 }: BuscaDeCatalogoProps<T>) {
   const [termo, setTermo] = useState('');

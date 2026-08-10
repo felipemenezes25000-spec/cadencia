@@ -18,7 +18,6 @@ export default function PaginaTemplates() {
   const { clinicId, csrfToken } = useSessao();
   const [templates, setTemplates] = useState<readonly Template[]>([]);
   const [erro, setErro] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
 
   const carregar = useCallback(async () => {
     try {
@@ -29,8 +28,6 @@ export default function PaginaTemplates() {
       })));
     } catch {
       setErro('Nao foi possivel carregar os templates.');
-    } finally {
-      setCarregando(false);
     }
   }, [clinicId, csrfToken]);
 
