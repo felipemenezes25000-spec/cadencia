@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryState, parseAsInteger } from 'nuqs';
 import { Suspense } from 'react';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -37,12 +36,7 @@ function NpsInner() {
   }, [dias, clinicId, csrfToken]);
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Satisfacao (NPS)"
-        subtitulo="Promotores menos detratores. Media de nota esconde polarizacao."
-      />
-
+    <div className="grid gap-6">
       <div className="flex gap-2">
         {[30, 90, 180, 365].map((n) => (
           <button

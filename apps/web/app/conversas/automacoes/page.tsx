@@ -2,7 +2,6 @@
 
 import { useCallback } from 'react';
 import { AutomacoesDeConversa, type Automacao } from '../../../src/telas/AutomacoesDeConversa';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -91,11 +90,7 @@ export default function PaginaAutomacoes() {
   }, [clinicId, csrfToken]);
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Automacoes"
-        subtitulo="Mensagens que saem sozinhas: confirmacao, lembrete e pos-consulta."
-      />
+    <div className="grid gap-6">
       <AutomacoesDeConversa
         carregar={carregar}
         aoAlternarAtiva={async (automationId, novoEstado) => {
