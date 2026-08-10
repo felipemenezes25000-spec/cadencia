@@ -136,7 +136,32 @@ Nenhuma etapa é dada como concluída sem a evidência ao lado.
 | Cookie não grava | Login falha sem erro visível | Confirmar que o navegador só fala com a Vercel em HTTPS |
 | Hobby não permite `gru1` | Erro ao definir região | Registrar limitação; a latência extra não impede a demo |
 
-## 9. Custo
+## 9. O que a execução revelou
+
+Três defeitos apareceram na publicação. Nenhum era de infraestrutura — todos
+estavam no repositório, invisíveis para a suíte.
+
+**1. Versão do gerenciador de pacotes não fixada.** O `corepack enable` do
+Dockerfile trouxe pnpm 11.21.0, uma major à frente do 10 que a máquina local e o
+CI usam; o pnpm 11 promoveu `ERR_PNPM_IGNORED_BUILDS` a erro fatal. Contornado
+cravando a versão no Dockerfile. A correção de raiz — declarar `packageManager`
+no `package.json` — fica para tarefa própria, porque exige ajustar o
+`pnpm/action-setup` do CI junto.
+
+**2. O worker nunca havia iniciado.** Dois defeitos independentes, ambos no boot:
+o `pg-boss` 10 exige `createQueue` antes de `work`/`schedule` e o worker não
+chama nenhuma; e `Contractor.start()` emite `CREATE SCHEMA IF NOT EXISTS` no
+primeiro boot, privilégio que `jobs` não tem. Verificado empiricamente que o
+PostgreSQL checa o privilégio **antes** de avaliar o `IF NOT EXISTS` — pré-criar
+o schema não resolve. Desbloqueado nesta instância com concessão transitória
+seguida de revogação (o padrão da 0002/0134) e criação das filas por script
+avulso. **Nada disso está versionado**: recriar o banco quebra o worker de novo.
+
+**3. Nenhum teste inicia `startWorker()`.** É a causa de fundo do item 2. Há
+teste para cada job, mas nada exercita o processo — por isso os defeitos
+atravessaram 1.149 testes de integração e 231 de isolamento sem sinal nenhum.
+
+## 10. Custo
 
 | Item | US$/mês |
 |---|---|

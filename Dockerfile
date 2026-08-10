@@ -9,7 +9,15 @@
 # anterior. Isso e escolha do repositorio, nao omissao deste arquivo.
 FROM node:24-slim
 
-RUN corepack enable
+# Versao CRAVADA, e nao `corepack enable` sozinho.
+#
+# O repositorio nao declara `packageManager` no package.json, entao o corepack
+# baixa o pnpm mais recente do dia — que hoje e o 11.21.0. O pnpm 11 promoveu
+# ERR_PNPM_IGNORED_BUILDS a erro fatal, e o build morria em `pnpm install` com
+# uma lista de scripts ignorados (esbuild, sharp, ssh2...) que a versao 10 apenas
+# ignora em silencio. Local e CI rodam pnpm 10; sem esta linha, so a imagem ficava
+# uma major inteira a frente do que o projeto testou.
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 # O Chromium do Playwright (dependencia de @cadencia/documents, usado para gerar
 # PDF) fica FORA desta imagem de proposito. Sao ~400 MB e um conjunto de libs de
