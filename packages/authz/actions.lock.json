@@ -1,5 +1,5 @@
 {
-  "checksum": "85ee087d0c8094bc0a4421f1fa67b81f5c91329d3917be615469146a8c3b5382",
+  "checksum": "9b2f3159378103687cfa0b8c92c0910daa54ccf739559811eb6b1d68a02963e8",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -319,6 +319,14 @@
         "admin_clinico"
       ],
       "requiresMfa": false
+    },
+    {
+      "key": "mfa.admin_disable",
+      "description": "Desativar MFA de outro usuario",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
     },
     {
       "key": "patient.read",
