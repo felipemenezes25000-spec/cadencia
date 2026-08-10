@@ -380,3 +380,109 @@ describe('desativar MFA por admin', () => {
     await app.close();
   });
 });
+
+describe('lista de clinicas do tenant', () => {
+  it('GET /v1/configuracoes/clinicas retorna a clinica da sessao', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/clinicas', ...auth(s) });
+
+    expect(r.statusCode).toBe(200);
+    const body = r.json();
+    expect(body.itens).toEqual(expect.arrayContaining([
+      expect.objectContaining({ clinicId: s.clinicId }),
+    ]));
+
+    await app.close();
+  });
+});
+
+describe('criacao de clinica', () => {
+  it('POST /v1/configuracoes/clinicas cria clinica com auto-membership', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/clinicas',
+      payload: { nome: 'Filial Norte', timezone: 'America/Manaus' },
+      ...auth(s),
+    });
+
+    expect(r.statusCode).toBe(201);
+    const { clinicId } = r.json();
+    expect(clinicId).toBeDefined();
+
+    const list = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/clinicas', ...auth(s) });
+    expect(list.json().itens).toEqual(expect.arrayContaining([
+      expect.objectContaining({ clinicId, nome: 'Filial Norte', timezone: 'America/Manaus' }),
+    ]));
+
+    await app.close();
+  });
+
+  it('rejeita timezone invalido com 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/clinicas',
+      payload: { nome: 'Filial Sul', timezone: 'Nao/Existe' },
+      ...auth(s),
+    });
+
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toEqual({ erro: 'fuso_invalido' });
+    await app.close();
+  });
+
+  it('rejeita role sem permissao com 403', async () => {
+    const sRec = await semearSessao({ role: 'recepcao' });
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/clinicas',
+      payload: { nome: 'Filial Leste', timezone: 'America/Sao_Paulo' },
+      ...auth(sRec),
+    });
+
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('cria clinica com CNPJ e CNES', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/clinicas',
+      payload: {
+        nome: 'Filial Oeste', timezone: 'America/Cuiaba',
+        cnpj: '12345678000190', cnes: '1234567',
+      },
+      ...auth(s),
+    });
+
+    expect(r.statusCode).toBe(201);
+    const { clinicId } = r.json();
+
+    const list = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/clinicas', ...auth(s) });
+    expect(list.json().itens).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        clinicId, nome: 'Filial Oeste', cnpj: '12345678000190', cnes: '1234567',
+      }),
+    ]));
+
+    await app.close();
+  });
+});
+
+describe('edicao de CNES e CNPJ', () => {
+  it('PUT /v1/configuracoes/clinica atualiza CNES e CNPJ', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'PUT', url: '/v1/configuracoes/clinica',
+      payload: { nome: 'Unidade Sessao', timezone: 'America/Sao_Paulo',
+                 cnes: '9999999', cnpj: 'AABB00CC000099' },
+      ...auth(s),
+    });
+
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ cnes: '9999999', cnpj: 'AABB00CC000099' });
+    await app.close();
+  });
+});

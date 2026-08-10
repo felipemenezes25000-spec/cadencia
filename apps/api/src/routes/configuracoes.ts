@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { hashPassword } from '@cadencia/authn';
+import { uuidv7 } from '@cadencia/kernel';
 import { rota } from '../guard';
 
 /**
@@ -22,6 +23,14 @@ const ClinicaSchema = z.object({
   cnes: z.string().nullable(),
   timezone: z.string(),
   tenantNome: z.string(),
+});
+
+const ClinicaResumoSchema = z.object({
+  clinicId: z.string().uuid(),
+  nome: z.string(),
+  cnpj: z.string().nullable(),
+  cnes: z.string().nullable(),
+  timezone: z.string(),
 });
 
 export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
@@ -97,6 +106,74 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       clinicId: c.id, nome: c.nome, cnpj: c.cnpj, cnes: c.cnes,
       timezone: c.timezone, tenantNome: t[0]?.razao_social ?? '',
     };
+  }));
+
+  // ── Clinicas do tenant ──────────────────────────────────────────────────
+
+  r.get('/v1/configuracoes/clinicas', {
+    schema: {
+      response: {
+        200: z.object({ itens: z.array(ClinicaResumoSchema) }),
+      },
+    },
+  }, rota('clinic.read', async (tx) => {
+    const { rows } = await tx.query<{
+      id: string; nome: string; cnpj: string | null;
+      cnes: string | null; timezone: string;
+    }>(`SELECT id, nome, cnpj, cnes, timezone FROM app.clinic ORDER BY nome`);
+
+    return {
+      itens: rows.map((c) => ({
+        clinicId: c.id, nome: c.nome, cnpj: c.cnpj,
+        cnes: c.cnes, timezone: c.timezone,
+      })),
+    };
+  }));
+
+  r.post('/v1/configuracoes/clinicas', {
+    schema: {
+      body: z.object({
+        nome: z.string().min(2).max(120),
+        timezone: z.string().min(3).max(60),
+        cnpj: z.string().regex(/^[A-Z0-9]{12}[0-9]{2}$/).optional(),
+        cnes: z.string().regex(/^\d{7}$/).optional(),
+      }),
+      response: {
+        201: z.object({ clinicId: z.string().uuid() }),
+        422: z.object({ erro: z.literal('fuso_invalido') }),
+      },
+    },
+  }, rota('clinic.create', async (tx, ctx, req, reply) => {
+    const b = req.body as {
+      nome: string; timezone: string; cnpj?: string; cnes?: string;
+    };
+
+    const { rows: fuso } = await tx.query<{ existe: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = $1) AS existe`,
+      [b.timezone]);
+    if (fuso[0]?.existe !== true) {
+      return reply.code(422).send({ erro: 'fuso_invalido' as const });
+    }
+
+    const clinicId = uuidv7();
+
+    await tx.query(
+      `INSERT INTO app.clinic (tenant_id, id, nome, cnpj, cnes, timezone)
+       VALUES (app.require_tenant_id(), $1, $2, $3, $4, $5)`,
+      [clinicId, b.nome, b.cnpj ?? null, b.cnes ?? null, b.timezone]);
+
+    await tx.query(
+      `INSERT INTO app.membership (tenant_id, id, user_id, clinic_id, role, granted_by)
+       VALUES (app.current_tenant_id(), gen_random_uuid(), $1, $2, 'admin_clinico', $1)`,
+      [ctx.actor.userId, clinicId]);
+
+    await tx.query(
+      `SELECT audit.log('CLINIC_CREATE', 'app', 'clinic', $1, 'sucesso',
+              jsonb_build_object('clinic_id', $2::text), $3)`,
+      [clinicId, clinicId, ctx.actor.clinicId]);
+
+    void reply.code(201);
+    return { clinicId };
   }));
 
   r.get('/v1/configuracoes/equipe', {
