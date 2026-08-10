@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ITENS_NAV, CONFIG_NAV, FASE_ATUAL, indiceDeNavegacao,
-  type ItemNav, type SubItemNav,
+  type ItemNav,
 } from './nav';
 
 describe('nav', () => {
