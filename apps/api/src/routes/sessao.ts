@@ -228,6 +228,7 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
           email: z.string(),
           nome: z.string(),
           mfaOk: z.boolean(),
+          mfaCadastrado: z.boolean(),
           unidadeAtiva: z.object({
             tenantId: z.string().uuid(), clinicId: z.string().uuid(),
           }).nullable(),
@@ -241,8 +242,12 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     if (sessao === null) return reply.code(401).send({ erro: 'sem_sessao' });
 
     const { rows } = await appPool().query(
-      `SELECT email, full_name FROM id."user" WHERE id = $1`, [sessao.userId]);
-    const u = rows[0] as { email: string; full_name: string } | undefined;
+      `SELECT u.email, u.full_name,
+              t.confirmed_at IS NOT NULL AS tem_totp
+         FROM id."user" u
+         LEFT JOIN id.user_totp t ON t.user_id = u.id
+        WHERE u.id = $1`, [sessao.userId]);
+    const u = rows[0] as { email: string; full_name: string; tem_totp: boolean } | undefined;
     if (u === undefined) return reply.code(401).send({ erro: 'sem_sessao' });
 
     return reply.code(200).send({
@@ -250,6 +255,7 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
       email: u.email,
       nome: u.full_name,
       mfaOk: sessao.mfaAt !== null,
+      mfaCadastrado: u.tem_totp,
       unidadeAtiva: sessao.activeTenantId === null || sessao.activeClinicId === null
         ? null
         : { tenantId: sessao.activeTenantId, clinicId: sessao.activeClinicId },

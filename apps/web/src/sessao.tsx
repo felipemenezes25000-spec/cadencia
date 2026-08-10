@@ -40,6 +40,7 @@ export interface QuemSou {
   readonly email: string;
   readonly nome: string;
   readonly mfaOk: boolean;
+  readonly mfaCadastrado: boolean;
   readonly unidadeAtiva: { readonly tenantId: string; readonly clinicId: string } | null;
   readonly vinculos: readonly Vinculo[];
 }

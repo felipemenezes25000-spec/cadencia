@@ -131,6 +131,7 @@ describe('rotas de sessao', () => {
     expect(r.statusCode).toBe(200);
     const body = r.json() as {
       userId: string; email: string; nome: string;
+      mfaCadastrado: boolean;
       unidadeAtiva: { clinicId: string } | null;
       vinculos: { clinicId: string }[];
     };
@@ -139,6 +140,7 @@ describe('rotas de sessao', () => {
     // Ainda nao escolheu unidade: o login nao decide por ela.
     expect(body.unidadeAtiva).toBeNull();
     expect(body.vinculos).toHaveLength(1);
+    expect(body).toHaveProperty('mfaCadastrado', false);
 
     await app.close();
   });
