@@ -93,3 +93,142 @@ describe('configuracoes da clinica', () => {
     await app.close();
   });
 });
+
+describe('convite de equipe', () => {
+  it('convida novo usuario com dados validos: 201', async () => {
+    const app = await buildApp();
+    const email = `convite-${Date.now()}@test.local`;
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Novo Recepcao', role: 'recepcao',
+        senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+
+    expect(r.statusCode).toBe(201);
+    const body = r.json() as { userId: string; membershipId: string };
+    expect(body.userId).toBeDefined();
+    expect(body.membershipId).toBeDefined();
+
+    const lista = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/equipe', ...auth(s),
+    });
+    const itens = (lista.json() as { itens: { userId: string }[] }).itens;
+    expect(itens.some((x) => x.userId === body.userId)).toBe(true);
+
+    await app.close();
+  });
+
+  it('profissional sem dados de conselho: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email: `prof-${Date.now()}@test.local`, nome: 'Dr Sem Conselho',
+        role: 'profissional', senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'dados_profissionais_obrigatorios' });
+    await app.close();
+  });
+
+  it('convite duplicado (mesmo email + role + clinica): 409', async () => {
+    const app = await buildApp();
+    const email = `dup-${Date.now()}@test.local`;
+    const payload = {
+      email, nome: 'Dup User', role: 'recepcao',
+      senhaTemporaria: 'Temp@2026xx',
+    };
+
+    const r1 = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload,
+    });
+    expect(r1.statusCode).toBe(201);
+
+    const r2 = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload,
+    });
+    expect(r2.statusCode).toBe(409);
+    expect(r2.json()).toMatchObject({ erro: 'vinculo_duplicado' });
+
+    await app.close();
+  });
+
+  it('email existente reutiliza user_id', async () => {
+    const app = await buildApp();
+    const email = `reuso-${Date.now()}@test.local`;
+
+    const r1 = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Reuso User', role: 'recepcao',
+        senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+    expect(r1.statusCode).toBe(201);
+    const userId1 = (r1.json() as { userId: string }).userId;
+
+    await app.inject({
+      method: 'DELETE',
+      url: `/v1/configuracoes/equipe/${userId1}/role/recepcao`,
+      ...auth(s),
+    });
+
+    const r2 = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email, nome: 'Reuso User', role: 'financeiro',
+        senhaTemporaria: 'OutraSenha@2026',
+      },
+    });
+    expect(r2.statusCode).toBe(201);
+    const userId2 = (r2.json() as { userId: string }).userId;
+    expect(userId2).toBe(userId1);
+
+    await app.close();
+  });
+
+  it('recepcao nao pode convidar: 403', async () => {
+    const app = await buildApp();
+    const recepcao = await semearSessao({ role: 'recepcao' });
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(recepcao),
+      payload: {
+        email: `nope-${Date.now()}@test.local`, nome: 'Nope',
+        role: 'recepcao', senhaTemporaria: 'Temp@2026xx',
+      },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('convida profissional com dados de conselho: 201', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/equipe', ...auth(s),
+      payload: {
+        email: `drprof-${Date.now()}@test.local`, nome: 'Dr Profissional',
+        role: 'profissional', senhaTemporaria: 'Temp@2026xx',
+        conselho: '06', numeroConselho: '54321', ufConselho: 'RJ',
+      },
+    });
+    expect(r.statusCode).toBe(201);
+
+    const body = r.json() as { userId: string };
+    const lista = await app.inject({
+      method: 'GET', url: '/v1/configuracoes/equipe', ...auth(s),
+    });
+    const itens = (lista.json() as {
+      itens: { userId: string; conselho: string | null }[]
+    }).itens;
+    const prof = itens.find((x) => x.userId === body.userId);
+    expect(prof?.conselho).toContain('54321');
+
+    await app.close();
+  });
+});

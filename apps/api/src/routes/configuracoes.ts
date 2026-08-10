@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { hashPassword } from '@cadencia/authn';
 import { rota } from '../guard';
 
 /**
@@ -135,5 +136,81 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
         temTotp: x.tem_totp,
       })),
     };
+  }));
+
+  // ── Convite ──────────────────────────────────────────────────────────────
+
+  const ROLES_PROFISSIONAIS = ['profissional', 'diretor_tecnico'] as const;
+
+  r.post('/v1/configuracoes/equipe', {
+    schema: {
+      body: z.object({
+        email: z.string().email(),
+        nome: z.string().min(2),
+        role: z.enum(['admin_clinico', 'diretor_tecnico', 'profissional',
+                      'recepcao', 'financeiro']),
+        senhaTemporaria: z.string().min(8),
+        cpf: z.string().regex(/^\d{11}$/).optional(),
+        conselho: z.string().min(1).optional(),
+        numeroConselho: z.string().min(1).optional(),
+        ufConselho: z.string().regex(/^[A-Z]{2}$/).optional(),
+        cbos: z.string().min(1).optional(),
+      }),
+      response: {
+        201: z.object({
+          userId: z.string().uuid(),
+          membershipId: z.string().uuid(),
+        }),
+        409: z.object({ erro: z.literal('vinculo_duplicado') }),
+        422: z.object({ erro: z.literal('dados_profissionais_obrigatorios') }),
+      },
+    },
+  }, rota('membership.grant', async (tx, ctx, req, reply) => {
+    const b = req.body as {
+      email: string; nome: string; role: string; senhaTemporaria: string;
+      cpf?: string; conselho?: string; numeroConselho?: string;
+      ufConselho?: string; cbos?: string;
+    };
+
+    if ((ROLES_PROFISSIONAIS as readonly string[]).includes(b.role)) {
+      if (!b.conselho || !b.numeroConselho || !b.ufConselho) {
+        return reply.code(422).send({
+          erro: 'dados_profissionais_obrigatorios' as const,
+        });
+      }
+    }
+
+    const senhaHash = await hashPassword(b.senhaTemporaria);
+
+    try {
+      const { rows } = await tx.query<{
+        r_user_id: string; r_membership_id: string;
+      }>(
+        `SELECT * FROM app.conceder_vinculo($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          ctx.actor.clinicId, b.email, b.nome, b.role, senhaHash,
+          b.cpf ?? null, b.conselho ?? null, b.numeroConselho ?? null,
+          b.ufConselho ?? null, b.cbos ?? null,
+        ],
+      );
+
+      const row = rows[0]!;
+
+      await tx.query(
+        `SELECT audit.log('MEMBERSHIP_GRANT', 'app', 'membership', $1, 'sucesso',
+                jsonb_build_object('role', $2::text, 'target_user_id', $3::text,
+                                   'membership_id', $4::text), $5)`,
+        [row.r_membership_id, b.role, row.r_user_id, row.r_membership_id,
+         ctx.actor.clinicId]);
+
+      void reply.code(201);
+      return { userId: row.r_user_id, membershipId: row.r_membership_id };
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'code' in e
+          && (e as { code: string }).code === '23505') {
+        return reply.code(409).send({ erro: 'vinculo_duplicado' as const });
+      }
+      throw e;
+    }
   }));
 }
