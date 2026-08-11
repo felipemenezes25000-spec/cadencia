@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { rota } from '../guard';
+import type { TxClient } from '@cadencia/db';
 
 /**
  * §3.9 e decisao irreversivel 11 — terminologia versionada POR DATA DO EVENTO.
@@ -18,6 +19,34 @@ const LIMITE_PADRAO = 20;
 const LIMITE_MAXIMO = 100;
 
 const DataDoEvento = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'data no formato AAAA-MM-DD');
+const CatalogoIndisponivel = z.object({
+  erro: z.literal('catalogo_nao_carregado'),
+  catalogo: z.enum(['CID10', 'CID11', 'TUSS']),
+});
+
+const TABELAS = {
+  CID10: 'ref.cid10_term',
+  CID11: 'ref.cid11_term',
+  TUSS: 'ref.tuss_term',
+} as const;
+
+/**
+ * Tabela vazia não é uma busca sem resultado: é uma dependência operacional
+ * ausente. Responder 503 permite que o frontend explique o bloqueio em vez de
+ * afirmar, incorretamente, que nenhum diagnóstico existe.
+ */
+async function exigirCatalogo(
+  tx: TxClient,
+  catalogo: keyof typeof TABELAS,
+  reply: { code(status: number): { send(body: unknown): unknown } },
+): Promise<boolean> {
+  const tabela = TABELAS[catalogo];
+  const { rows } = await tx.query<{ carregado: boolean }>(
+    `SELECT EXISTS (SELECT 1 FROM ${tabela} LIMIT 1) AS carregado`);
+  if (rows[0]?.carregado) return true;
+  void reply.code(503).send({ erro: 'catalogo_nao_carregado', catalogo });
+  return false;
+}
 
 export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -43,9 +72,11 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
             competencia: z.string(),
           })),
         }),
+        503: CatalogoIndisponivel,
       },
     },
-  }, rota('catalog.read', async (tx, _ctx, req) => {
+  }, rota('catalog.read', async (tx, _ctx, req, reply) => {
+    if (!await exigirCatalogo(tx, 'CID10', reply)) return;
     const q = req.query as { termo: string; data: string; limit?: number };
     const { rows } = await tx.query<{
       codigo: string; descricao: string; capitulo: number | null; competencia: string;
@@ -93,9 +124,11 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
             competencia: z.string(),
           })),
         }),
+        503: CatalogoIndisponivel,
       },
     },
-  }, rota('catalog.read', async (tx, _ctx, req) => {
+  }, rota('catalog.read', async (tx, _ctx, req, reply) => {
+    if (!await exigirCatalogo(tx, 'CID11', reply)) return;
     const q = req.query as { termo: string; data: string; limit?: number };
     const { rows } = await tx.query<{
       codigo: string; descricao: string; capitulo: string | null;
@@ -127,9 +160,11 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
             termo: z.string(),
           })),
         }),
+        503: CatalogoIndisponivel,
       },
     },
-  }, rota('catalog.read', async (tx, _ctx, req) => {
+  }, rota('catalog.read', async (tx, _ctx, req, reply) => {
+    if (!await exigirCatalogo(tx, 'TUSS', reply)) return;
     const q = req.query as { tabela: number; termo: string; data: string; limit?: number };
     const { rows } = await tx.query<{ tabela: number; codigo: string; termo: string }>(
       `SELECT tabela, codigo, termo

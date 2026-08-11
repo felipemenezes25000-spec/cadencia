@@ -18,7 +18,8 @@
  * servidor da OMS no meio de um atendimento.
  *
  * Uso:
- *   npx tsx --env-file=.env scripts/carregar-cid11.ts [--release 2025-01] [--dry-run]
+ *   npx tsx --env-file=.env scripts/carregar-cid11.ts [--release 2025-01]
+ *     [--vigencia-de 2027-01-01] [--dry-run]
  */
 import { Pool } from 'pg';
 import {
@@ -30,13 +31,22 @@ const TOKEN_URL = 'https://icdaccessmanagement.who.int/connect/token';
 
 interface Opcoes {
   readonly release: string;
+  readonly vigenciaDe: string;
   readonly dryRun: boolean;
 }
 
 function lerOpcoes(argv: readonly string[]): Opcoes {
   const i = argv.indexOf('--release');
+  const indiceVigencia = argv.indexOf('--vigencia-de');
+  const vigenciaDe = indiceVigencia >= 0
+    ? (argv[indiceVigencia + 1] ?? '')
+    : '2027-01-01';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(vigenciaDe)) {
+    throw new Error('--vigencia-de deve usar AAAA-MM-DD');
+  }
   return {
     release: i >= 0 ? (argv[i + 1] ?? '2025-01') : '2025-01',
+    vigenciaDe,
     dryRun: argv.includes('--dry-run'),
   };
 }
@@ -192,13 +202,17 @@ async function main(): Promise<void> {
   if (url === undefined || url === '') throw new Error('DATABASE_URL_JOBS ausente');
   const pool = new Pool({ connectionString: url, max: 1 });
   try {
+    // No Brasil, a referência começa em 2027 mesmo quando o release da OMS foi
+    // publicado antes. Competência identifica a PUBLICAÇÃO; vigência identifica
+    // quando ela pode ser usada no evento clínico. Misturar as duas fez a tela
+    // aceitar CID-11 antes da implantação nacional.
     // Vigencia aberta a direita: o proximo release fecha esta com um UPDATE
     // explicito. Fechar aqui, adivinhando quando a OMS publica de novo, deixaria
     // o catalogo sem termo valido no intervalo entre a data chutada e o release
     // seguinte — e a busca voltaria vazia sem nada explicar.
     const n = await loadCid11Release(pool, {
       competencia,
-      vigenciaFrom: `${competencia.slice(0, 4)}-${competencia.slice(4, 6)}-01`,
+      vigenciaFrom: opts.vigenciaDe,
       vigenciaTo: null,
       rows: linhas,
     });

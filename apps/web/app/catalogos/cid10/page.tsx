@@ -1,10 +1,11 @@
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { PageHeader } from '../../../src/ui/PageHeader';
 import { BuscaDeCatalogo, type ColunaCatalogo } from '../../../src/telas/BuscaDeCatalogo';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 import { diaNaClinica } from '../../../src/lib/fuso';
+import { CatalogReferenceDate } from '../../../src/components/catalogs/CatalogReferenceDate';
 
 interface ItemCid10 {
   codigo: string;
@@ -22,15 +23,16 @@ const COLUNAS: readonly ColunaCatalogo<ItemCid10>[] = [
 
 export default function PaginaCid10() {
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
+  const [dataReferencia, setDataReferencia] = useState(() =>
+    diaNaClinica(new Date().toISOString(), vinculoAtivo.timezone));
 
   const buscar = useCallback(async (termo: string) => {
-    const hoje = diaNaClinica(new Date().toISOString(), vinculoAtivo.timezone);
     const res = await apiFetch<{ itens: ItemCid10[] }>(
-      `/v1/catalogos/cid?termo=${encodeURIComponent(termo)}&data=${hoje}`,
+      `/v1/catalogos/cid?termo=${encodeURIComponent(termo)}&data=${dataReferencia}`,
       { clinicId, csrfToken },
     );
     return res.itens;
-  }, [clinicId, csrfToken, vinculoAtivo.timezone]);
+  }, [clinicId, csrfToken, dataReferencia]);
 
   return (
     <div className="cadencia-page grid gap-8">
@@ -41,6 +43,11 @@ export default function PaginaCid10() {
           { rotulo: 'Catalogos', href: '/catalogos' },
           { rotulo: 'CID-10' },
         ]}
+      />
+      <CatalogReferenceDate
+        value={dataReferencia}
+        onChange={setDataReferencia}
+        ajuda="A busca mostra a descrição da CID-10 vigente na data informada."
       />
       <BuscaDeCatalogo<ItemCid10>
         titulo="CID-10"

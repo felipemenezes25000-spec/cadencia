@@ -35,6 +35,7 @@
     "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
     "icd:up": "docker compose --profile icd up -d --wait icd-api",
     "icd:down": "docker compose --profile icd down icd-api",
+    "cid10:load": "tsx --env-file=.env scripts/carregar-cid10.ts",
     "cid11:load": "tsx --env-file=.env scripts/carregar-cid11.ts"
   },
   "devDependencies": {
