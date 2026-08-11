@@ -611,17 +611,19 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       ? 'text/csv; charset=utf-8'
       : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-    await tx.query(
+    const auditRes = await tx.query<{ hoje: string }>(
       `SELECT audit.log('DATA_EXPORT', 'app', 'clinic', $1, 'sucesso',
               jsonb_build_object('dataset', $2::text, 'format', $3::text,
-                                 'record_count', $4::text), $5)`,
+                                 'record_count', $4::text), $5),
+              current_date::text AS hoje`,
       [ctx.actor.clinicId, b.dataset, b.format,
        String(rows.length), ctx.actor.clinicId]);
+    const hoje = auditRes.rows[0]!.hoje;
 
     void reply
       .header('content-type', mime)
       .header('content-disposition',
-        `attachment; filename="${b.dataset}-${new Date().toISOString().slice(0, 10)}.${ext}"`);
+        `attachment; filename="${b.dataset}-${hoje}.${ext}"`);
     return reply.send(buf);
   }));
 }
