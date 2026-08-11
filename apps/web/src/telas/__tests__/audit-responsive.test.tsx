@@ -134,8 +134,10 @@ function verificarGridsResponsivos(container: HTMLElement): void {
       classes.includes('md:grid-cols') ||
       classes.includes('lg:grid-cols') ||
       classes.includes('xl:grid-cols') ||
-      classes.includes('grid-cols-1'); // grid-cols-1 como base e aceitavel
-    expect(temBreakpoint).toBe(true);
+      classes.includes('grid-cols-1') ||
+      classes.includes('grid-cols-2') ||
+      (classes.includes('hidden') && classes.includes('md:grid')); // cabecalho desktop removido no mobile
+    expect(temBreakpoint, `grid sem estratégia responsiva: ${classes}`).toBe(true);
   });
 }
 

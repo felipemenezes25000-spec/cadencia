@@ -75,6 +75,24 @@ describe('FinanceiroAReceber', () => {
     expect(screen.getAllByRole('status').length).toBeGreaterThan(0);
   });
 
+  it('explica falha de carregamento e oferece nova tentativa', async () => {
+    const carregarDados = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(DADOS);
+    render(
+      <FinanceiroAReceber
+        carregarDados={carregarDados}
+        aoCobrar={async () => {}}
+        aoMarcarPago={async () => {}}
+        aoEnviarLink={async () => {}}
+        hoje={HOJE}
+      />,
+    );
+    expect(await screen.findByText('Não foi possível carregar as contas a receber')).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(await screen.findByRole('table')).toBeVisible();
+  });
+
   it('renderiza tabela com dados', async () => {
     montar();
     await waitFor(() =>
@@ -179,7 +197,7 @@ describe('FinanceiroAReceber', () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByText(/Nenhum lancamento encontrado/),
+        screen.getByText(/Nenhum lançamento encontrado/),
       ).toBeVisible(),
     );
   });

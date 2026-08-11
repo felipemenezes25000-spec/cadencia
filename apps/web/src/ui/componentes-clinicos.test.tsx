@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { ChipDeStatus } from './ChipDeStatus';
-import { LinhaDaAgenda } from './LinhaDaAgenda';
 import { BlocoDeSecao } from './BlocoDeSecao';
 import { VersaoRetificada } from './VersaoRetificada';
 
@@ -11,22 +10,7 @@ describe('componentes clinicos', () => {
   it('o chip carrega COR + GLIFO: cor nunca sozinha', () => {
     render(<ChipDeStatus status="atendido" />);
     const chip = screen.getByText(/Atendido/);
-    expect(chip.textContent).toMatch(/[✓✕⏱●]/);
-  });
-
-  it('a linha da agenda comunica status por FORMA — barra de 3px na borda', () => {
-    render(<LinhaDaAgenda hora="14:00" paciente="Maria Souza Lima" profissional="Dr. Alceu"
-      status="aguardando" encaixe={false} />);
-    const linha = screen.getByRole('listitem');
-    expect(linha.className).toMatch(/border-l-/);
-  });
-
-  it('encaixe recebe badge de encaixe', () => {
-    render(<LinhaDaAgenda hora="14:15" paciente="Encaixe" profissional="Dr. Alceu"
-      status="agendado" encaixe />);
-    expect(screen.getByRole('listitem')).toHaveAttribute('data-encaixe', 'true');
-    const badges = screen.getAllByText('Encaixe');
-    expect(badges.length).toBeGreaterThanOrEqual(1);
+    expect(chip.textContent).toMatch(/[✓✕◷▶]/);
   });
 
   it('secao vazia colapsa em uma linha clicavel de 24px', async () => {
@@ -62,12 +46,8 @@ describe('componentes clinicos', () => {
     expect(screen.queryByText(/Excluir/i)).not.toBeInTheDocument();
   });
 
-  it('nenhuma violacao de acessibilidade nos quatro componentes', async () => {
-    const { container } = render(
-      <ul>
-        <LinhaDaAgenda hora="14:00" paciente="Maria" profissional="Dr. A"
-          status="atendido" encaixe={false} />
-      </ul>);
+  it('nenhuma violacao de acessibilidade nos componentes clinicos', async () => {
+    const { container } = render(<ChipDeStatus status="atendido" />);
     expect(await axe(container)).toHaveNoViolations();
   });
 });

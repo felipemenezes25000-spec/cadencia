@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CaretLeft, CaretRight, Plus } from '@phosphor-icons/react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { VISOES, faixasDoDia, type Visao } from './grade';
@@ -13,6 +13,11 @@ import { Skeleton } from '../ui/Skeleton';
 import { AgendaDragContext } from './AgendaDragContext';
 import { cn } from '../lib/cn';
 import { diaNaClinica } from '../lib/fuso';
+import { DialogoDeConfirmacao } from '../ui/DialogoDeConfirmacao';
+import {
+  PatientQuickView,
+  type PatientQuickSummary,
+} from '../components/patients/PatientQuickView';
 
 export interface AgendaProps {
   readonly dia: string;
@@ -32,7 +37,10 @@ export interface AgendaProps {
   readonly aoMover: (
     appointmentId: string, dia: string, minutoDoDia: number) => Promise<void>;
   readonly aoConfirmar: (appointmentId: string) => Promise<void>;
-  readonly aoCobrar: (appointmentId: string) => void;
+  readonly aoCobrar: (item: LinhaDaFila) => void;
+  readonly carregarResumoPaciente?: (patientId: string) => Promise<PatientQuickSummary>;
+  readonly aoAbrirPaciente?: (patientId: string) => void;
+  readonly aoAbrirAtendimento?: (item: LinhaDaFila) => void;
   /** Acoes extras no cabecalho (ex.: bloqueios), decididas pela pagina. */
   readonly acoesExtras?: ReactNode;
 }
@@ -183,13 +191,14 @@ function AgendaSkeleton() {
 /* ── BlocoDeAgendamento ─────────────────────────────────── */
 
 function BlocoDeAgendamento({
-  item, timezone, confirmando, aoConfirmar, aoCobrar,
+  item, timezone, confirmando, aoConfirmar, aoCobrar, aoAbrir,
 }: {
   readonly item: LinhaDaFila;
   readonly timezone: string;
   readonly confirmando: string | null;
   readonly aoConfirmar: (id: string) => void;
-  readonly aoCobrar: (id: string) => void;
+  readonly aoCobrar: (item: LinhaDaFila) => void;
+  readonly aoAbrir: (item: LinhaDaFila) => void;
 }) {
   const { top, height } = calcularPosicao(item.startsAt, item.endsAt, timezone);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -229,6 +238,10 @@ function BlocoDeAgendamento({
         <span
           {...listeners}
           {...dragAttrs}
+          onClick={() => aoAbrir(item)}
+          onKeyUp={(event) => { if (event.key === 'Enter') aoAbrir(item); }}
+          role="button"
+          aria-label={`Abrir detalhes de ${item.displayName}`}
           className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1 cursor-grab active:cursor-grabbing px-2 py-1"
         >
           {item.displayName}
@@ -256,7 +269,7 @@ function BlocoDeAgendamento({
             <Botao
               variante="fantasma" tamanho="sm"
               aria-label={`Cobrar ${item.displayName}`}
-              onClick={(e) => { e.stopPropagation(); aoCobrar(item.appointmentId); }}
+              onClick={(e) => { e.stopPropagation(); aoCobrar(item); }}
             >
               Cobrar
             </Botao>
@@ -307,16 +320,20 @@ function SlotDeHorario({
 
 function GradeDeHorarios({
   itensPorColuna, cabecalhos, timezone, confirmando,
-  aoConfirmar, aoCobrar, aoAbrirCompositor, ariaLabel,
+  aoConfirmar, aoCobrar, aoAbrir, aoAbrirCompositor, ariaLabel,
+  agoraIso, diasDasColunas,
 }: {
   readonly itensPorColuna: LinhaDaFila[][];
   readonly cabecalhos?: string[];
   readonly timezone: string;
   readonly confirmando: string | null;
   readonly aoConfirmar: (id: string) => void;
-  readonly aoCobrar: (id: string) => void;
+  readonly aoCobrar: (item: LinhaDaFila) => void;
+  readonly aoAbrir: (item: LinhaDaFila) => void;
   readonly aoAbrirCompositor: (inicioMin: number) => void;
   readonly ariaLabel?: string;
+  readonly agoraIso: string;
+  readonly diasDasColunas: readonly string[];
 }) {
   const colunas = itensPorColuna.length;
   const alturaTotal = (FIM_HORA - INICIO_HORA) * PX_POR_HORA;
@@ -393,9 +410,21 @@ function GradeDeHorarios({
               <BlocoDeAgendamento
                 key={it.appointmentId}
                 item={it} timezone={timezone} confirmando={confirmando}
-                aoConfirmar={aoConfirmar} aoCobrar={aoCobrar}
+                aoConfirmar={aoConfirmar} aoCobrar={aoCobrar} aoAbrir={aoAbrir}
               />
             ))}
+
+            {diasDasColunas[colIdx] === diaNaClinica(agoraIso, timezone)
+              && minutosLocais(agoraIso, timezone) >= INICIO_MIN
+              && minutosLocais(agoraIso, timezone) <= FIM_MIN ? (
+              <div
+                aria-label={`Horário atual: ${formatarHorario(agoraIso, timezone)}`}
+                className="pointer-events-none absolute inset-x-0 z-[6] border-t border-danger/70"
+                style={{ top: `${((minutosLocais(agoraIso, timezone) - INICIO_MIN) / 60) * PX_POR_HORA}px` }}
+              >
+                <span className="absolute -left-1 -top-1 size-2 rounded-full bg-danger" aria-hidden />
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -406,13 +435,14 @@ function GradeDeHorarios({
 /* ── ListaDeAgendamentos (visualizacao mobile) ────────────── */
 
 function ListaDeAgendamentos({
-  itens, timezone, confirmando, aoConfirmar, aoCobrar,
+  itens, timezone, confirmando, aoConfirmar, aoCobrar, aoAbrir,
 }: {
   readonly itens: LinhaDaFila[];
   readonly timezone: string;
   readonly confirmando: string | null;
   readonly aoConfirmar: (id: string) => void;
-  readonly aoCobrar: (id: string) => void;
+  readonly aoCobrar: (item: LinhaDaFila) => void;
+  readonly aoAbrir: (item: LinhaDaFila) => void;
 }) {
   const ordenados = useMemo(
     () => [...itens].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
@@ -442,8 +472,8 @@ function ListaDeAgendamentos({
           <span className="text-xs font-mono text-text-muted w-12 shrink-0">
             {formatarHorario(it.startsAt, timezone)}
           </span>
-          <span className="flex-1 min-w-0">
-            <span className="text-sm font-medium truncate block">
+          <button type="button" onClick={() => aoAbrir(it)} className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]">
+            <span className="block truncate text-sm font-medium">
               {it.displayName}
               {it.status === 'confirmado' && (
                 <span aria-label="Confirmado" className="ml-1 text-st-confirmado text-[11px]">
@@ -454,7 +484,7 @@ function ListaDeAgendamentos({
             {it.procedureNome && (
               <span className="text-xs text-text-muted truncate block">{it.procedureNome}</span>
             )}
-          </span>
+          </button>
           <span className="flex gap-1 shrink-0">
             {it.status === 'agendado' && (
               <Botao variante="fantasma" tamanho="sm"
@@ -467,7 +497,7 @@ function ListaDeAgendamentos({
             {it.pagamentoPendente && (
               <Botao variante="fantasma" tamanho="sm"
                 aria-label={`Cobrar ${it.displayName}`}
-                onClick={() => aoCobrar(it.appointmentId)}>
+                onClick={() => aoCobrar(it)}>
                 Cobrar
               </Botao>
             )}
@@ -564,6 +594,42 @@ export function Agenda(p: AgendaProps) {
   const [itens, setItens] = useState<LinhaDaFila[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [confirmando, setConfirmando] = useState<string | null>(null);
+  const [quickTarget, setQuickTarget] = useState<LinhaDaFila | null>(null);
+  const [quickSummary, setQuickSummary] = useState<PatientQuickSummary | null>(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+  const quickGeneration = useRef(0);
+  const [movimentoPendente, setMovimentoPendente] = useState<{
+    appointmentId: string;
+    paciente: string;
+    dia: string;
+    minuto: number;
+    origem: string;
+    destino: string;
+  } | null>(null);
+  const [movendo, setMovendo] = useState(false);
+  const [erroAoMover, setErroAoMover] = useState<string | null>(null);
+  const [agoraIso, setAgoraIso] = useState(() => new Date().toISOString());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setAgoraIso(new Date().toISOString()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function abrirQuickView(item: LinhaDaFila): void {
+    const generation = quickGeneration.current + 1;
+    quickGeneration.current = generation;
+    setQuickTarget(item);
+    setQuickSummary(null);
+    if (!p.carregarResumoPaciente) return;
+    setQuickLoading(true);
+    void p.carregarResumoPaciente(item.patientId)
+      .then((summary) => {
+        if (quickGeneration.current === generation) setQuickSummary(summary);
+      })
+      .finally(() => {
+        if (quickGeneration.current === generation) setQuickLoading(false);
+      });
+  }
 
   /* Carregar dados */
   useEffect(() => {
@@ -576,7 +642,7 @@ export function Agenda(p: AgendaProps) {
       }
     });
     return () => { cancelado = true; };
-  }, [p, p.dia]);
+  }, [p.carregar, p.dia]);
 
   /* Atalhos de teclado (1-5 para trocar visao) */
   useEffect(() => {
@@ -590,7 +656,7 @@ export function Agenda(p: AgendaProps) {
     }
     window.addEventListener('keydown', aoTeclar);
     return () => window.removeEventListener('keydown', aoTeclar);
-  }, [p]);
+  }, [p.aoMudarVisao]);
 
   /* Confirmar agendamento */
   async function confirmar(appointmentId: string): Promise<void> {
@@ -632,7 +698,38 @@ export function Agenda(p: AgendaProps) {
     const minuto = Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
     if (!Number.isFinite(minuto)) return;
 
-    void p.aoMover(agendamentoId, dia, minuto);
+    const item = itens.find((agendamento) => agendamento.appointmentId === agendamentoId);
+    if (!item) return;
+    const destino = `${String(Math.floor(minuto / 60)).padStart(2, '0')}:${String(minuto % 60).padStart(2, '0')}`;
+    const origem = formatarHorario(item.startsAt, p.timezone);
+    if (diaNaClinica(item.startsAt, p.timezone) === dia && origem === destino) return;
+    setErroAoMover(null);
+    setMovimentoPendente({
+      appointmentId: agendamentoId,
+      paciente: item.displayName,
+      dia,
+      minuto,
+      origem,
+      destino,
+    });
+  }
+
+  async function confirmarMovimento(): Promise<void> {
+    if (!movimentoPendente || movendo) return;
+    setMovendo(true);
+    setErroAoMover(null);
+    try {
+      await p.aoMover(
+        movimentoPendente.appointmentId,
+        movimentoPendente.dia,
+        movimentoPendente.minuto,
+      );
+      setMovimentoPendente(null);
+    } catch {
+      setErroAoMover('O reagendamento não foi registrado. Verifique a disponibilidade e tente novamente.');
+    } finally {
+      setMovendo(false);
+    }
   }
 
   /* Navegacao de data */
@@ -649,15 +746,18 @@ export function Agenda(p: AgendaProps) {
   }
 
   /* Itens agrupados para semana */
+  const semanaDias = useMemo(() => {
+    const seg = inicioSemana(p.dia);
+    return Array.from({ length: 7 }, (_, i) => adicionarDias(seg, i));
+  }, [p.dia]);
+
   const semanaItens = useMemo(() => {
     if (p.visao !== 'semana') return [[]];
-    const seg = inicioSemana(p.dia);
-    const dias = Array.from({ length: 7 }, (_, i) => adicionarDias(seg, i));
     // `startsAt` chega em UTC. Fatiar a string dava a data UTC, e no Brasil
     // (UTC-3) tudo a partir das 21h caia na coluna do dia seguinte.
-    return dias.map((d) => itens.filter(
+    return semanaDias.map((d) => itens.filter(
       (it) => diaNaClinica(it.startsAt, p.timezone) === d));
-  }, [p.visao, p.dia, p.timezone, itens]);
+  }, [p.visao, p.timezone, itens, semanaDias]);
 
   const semanaCabecalhos = useMemo(() => {
     if (p.visao !== 'semana') return [];
@@ -711,7 +811,9 @@ export function Agenda(p: AgendaProps) {
     confirmando,
     aoConfirmar: confirmar,
     aoCobrar: p.aoCobrar,
+    aoAbrir: abrirQuickView,
     aoAbrirCompositor: p.aoAbrirCompositor,
+    agoraIso,
   };
 
   return (
@@ -739,6 +841,7 @@ export function Agenda(p: AgendaProps) {
                 >
                   <GradeDeHorarios
                     itensPorColuna={[itens]}
+                    diasDasColunas={[p.dia]}
                     ariaLabel={`Agenda de ${p.dia}`}
                     {...gradeProps}
                   />
@@ -748,7 +851,7 @@ export function Agenda(p: AgendaProps) {
               <div className="md:hidden" data-view="mobile-list">
                 <ListaDeAgendamentos
                   itens={itens} timezone={p.timezone} confirmando={confirmando}
-                  aoConfirmar={confirmar} aoCobrar={p.aoCobrar}
+                  aoConfirmar={confirmar} aoCobrar={p.aoCobrar} aoAbrir={abrirQuickView}
                 />
               </div>
             </TabsContent>
@@ -762,6 +865,7 @@ export function Agenda(p: AgendaProps) {
                 >
                   <GradeDeHorarios
                     itensPorColuna={semanaItens}
+                    diasDasColunas={semanaDias}
                     cabecalhos={semanaCabecalhos}
                     ariaLabel={`Agenda da semana de ${p.dia}`}
                     {...gradeProps}
@@ -785,6 +889,7 @@ export function Agenda(p: AgendaProps) {
               >
                 <GradeDeHorarios
                   itensPorColuna={profItens}
+                  diasDasColunas={profItens.map(() => p.dia)}
                   cabecalhos={profCabecalhos}
                   ariaLabel="Agenda por profissional"
                   {...gradeProps}
@@ -800,6 +905,7 @@ export function Agenda(p: AgendaProps) {
               >
                 <GradeDeHorarios
                   itensPorColuna={salaItens}
+                  diasDasColunas={salaItens.map(() => p.dia)}
                   cabecalhos={['Sala']}
                   ariaLabel="Agenda por sala"
                   {...gradeProps}
@@ -809,6 +915,43 @@ export function Agenda(p: AgendaProps) {
           </>
         )}
       </Tabs>
+
+      <PatientQuickView
+        appointment={quickTarget}
+        summary={quickSummary}
+        loading={quickLoading}
+        open={quickTarget !== null}
+        contextDescription="Contexto do agendamento sem sair da agenda"
+        onClose={() => {
+          quickGeneration.current += 1;
+          setQuickTarget(null);
+          setQuickSummary(null);
+          setQuickLoading(false);
+        }}
+        onOpenPatient={() => { if (quickTarget) p.aoAbrirPaciente?.(quickTarget.patientId); }}
+        {...(quickTarget?.encounterId && p.aoAbrirAtendimento
+          ? {
+              onOpenAppointment: () => p.aoAbrirAtendimento?.(quickTarget),
+              appointmentActionLabel: 'Abrir atendimento',
+            }
+          : {})}
+      />
+
+      <DialogoDeConfirmacao
+        aberto={movimentoPendente !== null}
+        titulo={movimentoPendente ? `Reagendar ${movimentoPendente.paciente}?` : 'Confirmar reagendamento'}
+        descricao={movimentoPendente
+          ? `Mover de ${movimentoPendente.origem} para ${movimentoPendente.destino}, em ${formatarData(movimentoPendente.dia)}?`
+          : 'Confirme o novo horário.'}
+        confirmarRotulo="Confirmar reagendamento"
+        carregando={movendo}
+        erro={erroAoMover}
+        aoConfirmar={() => { void confirmarMovimento(); }}
+        aoFechar={() => {
+          setMovimentoPendente(null);
+          setErroAoMover(null);
+        }}
+      />
     </div>
   );
 }

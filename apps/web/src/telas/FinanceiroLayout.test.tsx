@@ -63,7 +63,7 @@ describe("FinanceiroLayout", () => {
     const abaCaixa = screen.getByRole("tab", { name: /Caixa/i });
     expect(abaCaixa).toHaveAttribute("data-state", "active");
 
-    const abaVisao = screen.getByRole("tab", { name: /Visao geral/i });
+    const abaVisao = screen.getByRole("tab", { name: /Resumo/i });
     expect(abaVisao).toHaveAttribute("data-state", "inactive");
   });
 

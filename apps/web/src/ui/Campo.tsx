@@ -37,12 +37,12 @@ export interface CampoProps
 }
 
 const wrapperBase = [
-  'flex items-center gap-2 rounded-lg border bg-surface px-3 shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.45)]',
-  'transition-all-fast hover:border-line-strong',
+  'flex items-center gap-2 rounded-lg border bg-surface px-3',
+  'transition-colors-fast hover:border-line-strong',
 ].join(' ');
 
 const wrapperFocus =
-  'focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent/10 focus-within:shadow-elev-1';
+  'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/10';
 
 const wrapperError =
   'border-danger focus-within:border-danger focus-within:ring-danger';

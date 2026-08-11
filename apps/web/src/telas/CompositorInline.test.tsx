@@ -93,6 +93,25 @@ describe('CompositorInline', () => {
     expect(campoHorario.value).toBe('13:00');
   });
 
+  it('mantém o paciente ao abrir o compositor a partir da ficha', async () => {
+    const aoAgendar = vi.fn(async () => {});
+    render(<CompositorInline {...propsBase({
+      pacienteInicial: {
+        patientId: 'pac-1', displayName: 'Maria Souza', legalName: 'Maria Souza',
+        hasSocialName: false, birthDate: '1990-01-01', cadastroStatus: 'completo',
+        phonePrimary: '11999999999',
+      },
+      aoAgendar,
+    })} />);
+
+    expect(screen.getByText('Maria Souza')).toBeVisible();
+    vi.useRealTimers();
+    await userEvent.click(screen.getByRole('button', { name: /Salvar/ }));
+    await waitFor(() => expect(aoAgendar).toHaveBeenCalledWith(
+      expect.objectContaining({ patientId: 'pac-1' }),
+    ));
+  });
+
   it('valida campos obrigatorios', async () => {
     render(<CompositorInline {...propsBase()} />);
     vi.useRealTimers();

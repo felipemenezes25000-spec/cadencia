@@ -191,8 +191,8 @@ export function ComboboxDePaciente({
         <Popover.Anchor asChild>
           <div
             className={cn(
-              'flex items-center gap-2 rounded-lg border bg-surface px-3 shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.45)]',
-              'transition-all duration-[var(--dur-2)]',
+              'flex items-center gap-2 rounded-lg border bg-surface px-3',
+              'transition-colors-fast',
               erro
                 ? 'border-danger'
                 : 'border-line hover:border-line-strong focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent/10',

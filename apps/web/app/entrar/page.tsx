@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, Pulse, ShieldCheck } from '@phosphor-icons/react';
 import { apiFetch, ApiError } from '../../src/api';
 import { lerCsrf, rotulo, type Vinculo } from '../../src/sessao';
+import { Botao } from '../../src/ui/Botao';
+import { Campo } from '../../src/ui/Campo';
 
 interface RespostaLogin {
   userId: string;
@@ -126,25 +128,25 @@ export default function PaginaEntrar() {
           {passo.nome === 'credenciais' && (
           <form onSubmit={(e) => { void entrar(e); }} className="flex flex-col gap-4">
             <Campo
-              id="email" rotulo="E-mail" tipo="email" valor={email}
-              aoMudar={setEmail} autoComplete="username" autoFocus
+              rotulo="E-mail" type="email" value={email}
+              onChange={(evento) => setEmail(evento.target.value)} autoComplete="username" autoFocus required
             />
             <Campo
-              id="senha" rotulo="Senha" tipo="password" valor={senha}
-              aoMudar={setSenha} autoComplete="current-password"
+              rotulo="Senha" type="password" value={senha}
+              onChange={(evento) => setSenha(evento.target.value)} autoComplete="current-password" required
             />
-            <Botao enviando={enviando}>Entrar</Botao>
+            <Botao type="submit" carregando={enviando} fullWidth>Entrar</Botao>
           </form>
           )}
 
           {passo.nome === 'mfa' && (
           <form onSubmit={(e) => { void confirmarMfa(e); }} className="flex flex-col gap-4">
             <Campo
-              id="codigo" rotulo="Codigo de 6 digitos" tipo="text" valor={codigo}
-              aoMudar={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
-              autoComplete="one-time-code" inputMode="numeric" autoFocus
+              rotulo="Código de 6 dígitos" type="text" value={codigo}
+              onChange={(evento) => setCodigo(evento.target.value.replace(/\D/g, '').slice(0, 6))}
+              autoComplete="one-time-code" inputMode="numeric" autoFocus required
             />
-            <Botao enviando={enviando} desabilitado={codigo.length !== 6}>Confirmar</Botao>
+            <Botao type="submit" carregando={enviando} disabled={codigo.length !== 6} fullWidth>Confirmar</Botao>
           </form>
           )}
 
@@ -181,38 +183,5 @@ export default function PaginaEntrar() {
         </div>
       </div>
     </main>
-  );
-}
-
-function Campo({ id, rotulo: texto, tipo, valor, aoMudar, ...resto }: {
-  id: string; rotulo: string; tipo: string; valor: string;
-  aoMudar: (v: string) => void;
-  autoComplete?: string; autoFocus?: boolean; inputMode?: 'numeric';
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-text-primary">{texto}</label>
-      <input
-        id={id} type={tipo} value={valor}
-        onChange={(e) => aoMudar(e.target.value)}
-        required
-        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none transition-colors-fast hover:border-border-strong focus:border-brand focus:ring-2 focus:ring-brand/10"
-        {...resto}
-      />
-    </div>
-  );
-}
-
-function Botao({ children, enviando, desabilitado }: {
-  children: React.ReactNode; enviando: boolean; desabilitado?: boolean;
-}) {
-  return (
-    <button
-      type="submit"
-      disabled={enviando || desabilitado === true}
-      className="mt-1 h-10 rounded-lg bg-brand text-sm font-semibold text-white transition-colors-fast hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {enviando ? 'Aguarde…' : children}
-    </button>
   );
 }

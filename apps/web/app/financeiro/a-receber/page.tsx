@@ -3,9 +3,11 @@
 import { FinanceiroAReceber, type AReceberDados } from '../../../src/telas/FinanceiroAReceber';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
+import { useQueryState } from 'nuqs';
 
 export default function PaginaAReceber() {
   const { clinicId, csrfToken } = useSessao();
+  const [patientId] = useQueryState('patientId');
   // A data de "hoje" vem do fuso do navegador so para DESTACAR linhas na tela.
   // O atraso em si e calculado no banco, contra o fuso da clinica: os dois
   // numeros nao podem divergir, e quem manda e o servidor.
@@ -15,7 +17,10 @@ export default function PaginaAReceber() {
     <FinanceiroAReceber
       hoje={hoje}
       carregarDados={() => apiFetch<AReceberDados>(
-        '/v1/financeiro/a-receber', { clinicId, csrfToken })}
+        patientId
+          ? `/v1/financeiro/a-receber?patientId=${encodeURIComponent(patientId)}`
+          : '/v1/financeiro/a-receber',
+        { clinicId, csrfToken })}
       aoMarcarPago={async (entryId) => {
         await apiFetch(`/v1/payments/${entryId}/confirmar`, {
           method: 'POST', clinicId, csrfToken });

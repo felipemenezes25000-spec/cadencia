@@ -17,7 +17,7 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <RadixTabs.List
       className={cn(
-        "flex w-fit max-w-full items-center gap-1 rounded-xl border border-line bg-surface-sunken/70 p-1 relative overflow-x-auto scrollbar-thin",
+        "relative flex w-full max-w-full items-center gap-1 overflow-x-auto border-b border-line scrollbar-thin",
         className,
       )}
     >
@@ -45,15 +45,15 @@ export function TabsTrigger({
     <RadixTabs.Trigger
       value={value}
       className={cn(
-        "relative inline-flex min-h-9 items-center rounded-lg px-3 py-1.5",
+        "relative inline-flex min-h-10 items-center px-3 py-1.5",
         "whitespace-nowrap text-sm font-medium text-text-muted",
         "transition-colors-fast",
-        "hover:text-text",
-        "data-[state=active]:bg-surface data-[state=active]:text-text data-[state=active]:shadow-elev-1",
-        "outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        "hover:bg-surface-subtle hover:text-text",
+        "data-[state=active]:font-semibold data-[state=active]:text-accent",
+        "after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:scale-x-0 after:rounded-full after:bg-accent after:transition-transform",
+        "data-[state=active]:after:scale-x-100",
+        "rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
         "cursor-pointer select-none",
-        /* Indicador underline via pseudo-elemento */
-        "data-[state=active]:ring-1 data-[state=active]:ring-line/70",
         className,
       )}
     >

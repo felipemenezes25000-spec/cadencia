@@ -89,7 +89,24 @@ O `AppShell` é compartilhado por todas as rotas privadas.
 - Navegação vira dock inferior: Hoje, Agenda, Pacientes, Mensagens e Mais.
 - Tabelas operacionais viram cards ou mantêm overflow explicitamente controlado.
 
-## 6. Status e ações
+## 6. Primitives canônicas
+
+Existe uma única família de primitives em `src/ui/`. `src/components/` contém
+composição de domínio (shell, operação, pacientes), nunca uma segunda cópia de
+Button, Drawer, Tabs ou PageHeader.
+
+Primitives centrais:
+
+- `Botao` e `BotaoIcone`;
+- `Campo`, `Select` e `ComboboxDePaciente`;
+- `Avatar`, `ChipDeStatus` e `PageHeader`;
+- `Tabs`, `Tooltip` e `PainelLateral`;
+- `Skeleton`, `EstadoVazio` e `Toast`.
+
+Antes de adicionar um arquivo em `src/components`, confirme que ele combina
+primitives e contexto de produto, em vez de duplicar geometria básica.
+
+## 7. Status e ações
 
 O domínio central está em:
 
@@ -97,18 +114,20 @@ O domínio central está em:
 - `src/domain/appointments/states.ts`
 - `src/domain/appointments/actions.ts`
 
-`AppointmentStatus` é a única fonte de verdade para rótulo, tom e ação primária. Componentes não criam regras próprias.
+`AppointmentStatus` representa exatamente os estados persistidos pela API. A UI
+não inventa etapas como “chamado” ou “finalização” quando elas não existem no
+backend. Componentes não criam regras próprias.
 
 Exemplos:
 
-- `confirmed` → ícone + “Confirmado” → **Check-in**
-- `waiting` → ícone + “Aguardando” → **Chamar**
-- `in_progress` → ícone + “Em atendimento” → **Continuar**
-- `blocked` → ícone + “Pendência” → **Resolver pendência**
+- `confirmado` → ícone + “Confirmado” → **Fazer check-in**
+- `aguardando` → ícone + “Aguardando” → **Iniciar**
+- `atendendo` → ícone + “Em atendimento” → **Continuar**
+- `faltou` → ícone + “Falta” → **Reagendar**
 
 Ações secundárias vivem no menu `⋯`.
 
-## 7. Arquétipos das rotas principais
+## 8. Arquétipos das rotas principais
 
 ### `/hoje`
 
@@ -130,7 +149,7 @@ Visão 360°. Alertas críticos aparecem junto da identidade. Resumo, histórico
 
 Gestão de recebíveis. Métricas são compactas e a tabela é a superfície principal. O drawer preserva contexto; cancelamento exige confirmação.
 
-## 8. Progressive disclosure
+## 9. Progressive disclosure
 
 - Clique no paciente: quick view em drawer.
 - “Abrir paciente”: página 360°.
@@ -140,7 +159,7 @@ Gestão de recebíveis. Métricas são compactas e a tabela é a superfície pri
 
 O usuário não perde a posição na fila ou na agenda para consultar informação curta.
 
-## 9. Estados de interface
+## 10. Estados de interface
 
 - **Loading:** skeleton com geometria próxima do conteúdo final.
 - **Empty:** explica o estado e indica a próxima informação relevante.
@@ -149,7 +168,7 @@ O usuário não perde a posição na fila ou na agenda para consultar informaç�
 - **Success:** transição contextual e toast discreto; operações reversíveis oferecem “Desfazer”.
 - **Restricted:** explica por que o conteúdo não está disponível.
 
-## 10. Acessibilidade
+## 11. Acessibilidade
 
 Meta: WCAG AA.
 
@@ -164,7 +183,7 @@ Meta: WCAG AA.
 - `prefers-reduced-motion` reduz animações e transições;
 - conteúdo mobile não depende de hover.
 
-## 11. Regra de evolução
+## 12. Regra de evolução
 
 Antes de criar um componente, confirme:
 

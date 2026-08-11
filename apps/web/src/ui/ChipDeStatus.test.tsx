@@ -16,7 +16,11 @@ const NOVOS: StatusAgenda[] = [
 describe('ChipDeStatus', () => {
   it.each(TODOS_ORIGINAIS)('renderiza rotulo correto para status "%s"', (status) => {
     render(<ChipDeStatus status={status} />);
-    const el = screen.getByText(new RegExp(status.replace(/_/g, ' '), 'i'));
+    const rotulos: Partial<Record<StatusAgenda, string>> = {
+      agendado: 'Agendado', confirmado: 'Confirmado', aguardando: 'Aguardando',
+      atendendo: 'Em atendimento', atendido: 'Atendido', faltou: 'Falta', cancelado: 'Cancelado',
+    };
+    const el = screen.getByText(new RegExp(rotulos[status] ?? status, 'i'));
     expect(el).toBeVisible();
   });
 
@@ -30,7 +34,7 @@ describe('ChipDeStatus', () => {
   it('glifo e rotulo aparecem juntos no chip', () => {
     render(<ChipDeStatus status="atendido" />);
     const chip = screen.getByText(/Atendido/);
-    expect(chip.textContent).toMatch(/[✓✕⏱●]/);
+    expect(chip.textContent).toMatch(/[✓✕◷▶]/);
   });
 
   it('confirmado usa classe ok', () => {
@@ -47,7 +51,7 @@ describe('ChipDeStatus', () => {
 
   it('faltou usa classe danger', () => {
     render(<ChipDeStatus status="faltou" />);
-    const el = screen.getByText(/Faltou/i);
+    const el = screen.getByText(/Falta/i);
     expect(el.className).toContain('text-danger');
   });
 

@@ -13,6 +13,7 @@ import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Icone } from '../ui/Icone';
 import { Skeleton } from '../ui/Skeleton';
+import { FinanceiroAReceber, type AReceberDados } from './FinanceiroAReceber';
 
 // -- Tipos ------------------------------------------------------------------
 
@@ -64,6 +65,11 @@ export interface VisaoDados {
 export interface FinanceiroVisaoProps {
   readonly dados?: never;
   readonly carregarDados: () => Promise<VisaoDados>;
+  readonly carregarAReceber?: () => Promise<AReceberDados>;
+  readonly aoCobrar?: (entryId: string) => Promise<void>;
+  readonly aoMarcarPago?: (entryId: string) => Promise<void>;
+  readonly aoEnviarLink?: (entryId: string) => Promise<void>;
+  readonly hoje?: string;
 }
 
 // -- Helpers ----------------------------------------------------------------
@@ -126,7 +132,7 @@ function CardResumo({
   readonly variacao?: number;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-all-fast hover:-translate-y-px hover:border-line-strong hover:shadow-elev-2">
+    <div className="group relative overflow-hidden rounded-xl border border-line bg-surface p-4 transition-colors-fast hover:border-line-strong">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-medium text-text-muted">{rotulo}</span>
         <div className={cn('rounded-md p-1.5', corBgClasses[cor])}>
@@ -346,7 +352,7 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
 
   useEffect(() => {
     void p.carregarDados().then(setDados);
-  }, [p]);
+  }, [p.carregarDados]);
 
   if (dados === null) return <FinanceiroVisaoSkeleton />;
 
@@ -393,17 +399,29 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
       {/* Alertas */}
       <SecaoAlertas alertas={dados.alertas} />
 
-      {/* Seletor de periodo */}
-      <SeletorPeriodo
-        periodo={periodo as Periodo}
-        onChange={(p) => void setPeriodo(p)}
-      />
+      {p.carregarAReceber && p.aoCobrar && p.aoMarcarPago && p.aoEnviarLink ? (
+        <section aria-label="Contas a receber" className="rounded-2xl border border-line bg-surface p-5">
+          <FinanceiroAReceber
+            carregarDados={p.carregarAReceber}
+            aoCobrar={p.aoCobrar}
+            aoMarcarPago={p.aoMarcarPago}
+            aoEnviarLink={p.aoEnviarLink}
+            hoje={p.hoje ?? new Date().toISOString().slice(0, 10)}
+          />
+        </section>
+      ) : null}
 
-      {/* Grafico de receita (visx) */}
-      <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
-
-      {/* Top categorias */}
-      <SecaoCategorias categorias={dados.topCategorias} />
+      <details className="rounded-2xl border border-line bg-surface">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-text marker:text-text-faint">
+          Análise do período
+          <span className="ml-2 font-normal text-text-muted">Receita e categorias</span>
+        </summary>
+        <div className="grid gap-5 border-t border-line p-5">
+          <SeletorPeriodo periodo={periodo as Periodo} onChange={(next) => void setPeriodo(next)} />
+          <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
+          <SecaoCategorias categorias={dados.topCategorias} />
+        </div>
+      </details>
     </div>
   );
 }

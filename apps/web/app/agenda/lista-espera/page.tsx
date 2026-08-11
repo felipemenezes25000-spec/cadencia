@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ListaDeEspera, type ItemDeEspera } from '../../../src/telas/ListaDeEspera';
+import { PageHeader } from '../../../src/ui/PageHeader';
+import { Botao } from '../../../src/ui/Botao';
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from '@phosphor-icons/react';
 
 interface ItemDaApi {
   waitlistId: string;
@@ -16,6 +20,7 @@ interface ItemDaApi {
 }
 
 export default function PaginaListaDeEspera() {
+  const router = useRouter();
   const { clinicId, csrfToken } = useSessao();
   const [itens, setItens] = useState<readonly ItemDeEspera[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -37,7 +42,13 @@ export default function PaginaListaDeEspera() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   return (
-    <div className="grid gap-6">
+    <div className="cadencia-page grid gap-6">
+      <PageHeader
+        titulo="Lista de espera"
+        subtitulo="Pacientes disponíveis para antecipação ou encaixe"
+        semBreadcrumb
+        acoes={<Botao variante="secundario" iconeEsquerda={ArrowLeft} onClick={() => router.push('/agenda')}>Voltar à agenda</Botao>}
+      />
       {itens.length === 0 && !carregando ? (
         <p className="text-sm text-text-muted">
           Ninguem na lista. Quando uma vaga abrir, quem esta aqui e chamado por

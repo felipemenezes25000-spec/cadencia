@@ -2,7 +2,6 @@
 
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 import { type Icon as PhosphorIcon, SpinnerGap } from '@phosphor-icons/react';
-import { motion } from 'motion/react';
 import { cn } from '../lib/cn';
 
 export type VarianteBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo';
@@ -42,15 +41,15 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'bg-accent text-accent-on hover:bg-accent-hover',
-  secundario: 'bg-surface border border-line text-text shadow-elev-1 hover:border-line-strong hover:bg-surface-raised',
-  fantasma: 'bg-transparent text-text hover:bg-surface-hover',
-  perigo: 'bg-danger text-white hover:brightness-95',
+  primario: 'border border-accent bg-accent text-accent-on hover:border-accent-hover hover:bg-accent-hover',
+  secundario: 'border border-line bg-surface text-text hover:border-line-strong hover:bg-surface-subtle',
+  fantasma: 'border border-transparent bg-transparent text-text-muted hover:bg-surface-subtle hover:text-text',
+  perigo: 'border border-danger bg-danger text-white hover:brightness-95',
 };
 
 const classesTamanho: Record<TamanhoBotao, string> = {
-  sm: 'h-7 px-2.5 text-xs gap-1.5',
-  md: 'h-8 px-3 text-sm gap-2',
+  sm: 'h-8 px-3 text-xs gap-1.5',
+  md: 'h-9 px-3.5 text-sm gap-2',
   lg: 'h-10 px-4 text-sm gap-2',
 };
 
@@ -72,20 +71,15 @@ export function Botao({
   const tamanhoIcone = TAMANHO_ICONE[tamanhoResolvido];
   const desabilitado = disabled === true || carregando;
 
-  const tapAnimation = desabilitado ? {} : { whileTap: { scale: 0.97 } };
-
   return (
-    // @ts-expect-error -- exactOptionalPropertyTypes conflict between ButtonHTMLAttributes spread and motion's HTMLMotionProps
-    <motion.button
+    <button
       type="button"
       {...resto}
       disabled={desabilitado}
       aria-busy={carregando}
-      {...tapAnimation}
-      transition={{ duration: 0.1 }}
       className={cn(
-        'inline-flex items-center justify-center font-semibold rounded-lg select-none',
-        'transition-all-fast hover:-translate-y-px active:translate-y-0',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-lg font-semibold',
+        'transition-colors-fast',
         classesVariante[variante],
         classesTamanho[tamanhoResolvido],
         fullWidth && 'w-full',
@@ -125,6 +119,6 @@ export function Botao({
           Carregando
         </span>
       )}
-    </motion.button>
+    </button>
   );
 }

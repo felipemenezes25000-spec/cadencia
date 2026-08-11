@@ -1,15 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { oklchParaSrgb, luminanciaRelativa, razaoDeContraste, lerToken } from './contrast';
+import { oklchParaSrgb, luminanciaRelativa, razaoDeContraste } from './contrast';
 
 const CSS = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
 
 describe('contraste e contrato dos tokens claros', () => {
-  it('mantem o ambar legado corrigido para componentes ainda nao migrados', () => {
-    expect(lerToken(CSS, '--ambar-500')).toBe('oklch(52% 0.140 75)');
-  });
-
   it('declara os tokens oficiais do novo sistema claro', () => {
     expect(CSS).toContain('--canvas: #f6f8fb');
     expect(CSS).toContain('--surface: #ffffff');

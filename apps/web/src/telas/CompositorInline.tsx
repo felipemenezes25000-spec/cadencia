@@ -23,6 +23,8 @@ export interface ConvenioOpcao {
 
 export interface CompositorInlineProps {
   readonly inicioIso: string;
+  /** Paciente conhecido ao abrir a partir da ficha ou da busca global. */
+  readonly pacienteInicial?: PacienteHit;
   readonly procedimentos: readonly ProcedimentoOpcao[];
   readonly convenios: readonly ConvenioOpcao[];
   readonly buscarPacientes: (termo: string) => Promise<PacienteHit[]>;
@@ -149,7 +151,7 @@ export function CompositorInline(p: CompositorInlineProps) {
     formState: { errors, isSubmitting },
   } = useForm<DadosFormulario>({
     defaultValues: {
-      patientId: '',
+      patientId: p.pacienteInicial?.patientId ?? '',
       data: dataInicial,
       horario: horarioInicial,
       procedureId: defaultProcedureId,
@@ -161,7 +163,9 @@ export function CompositorInline(p: CompositorInlineProps) {
   const [paciente, setPaciente] = useState<{
     patientId: string;
     displayName: string;
-  } | null>(null);
+  } | null>(p.pacienteInicial
+    ? { patientId: p.pacienteInicial.patientId, displayName: p.pacienteInicial.displayName }
+    : null);
   const [precisaTelefone, setPrecisaTelefone] = useState(false);
   const [conflito, setConflito] = useState(false);
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false);
@@ -174,6 +178,16 @@ export function CompositorInline(p: CompositorInlineProps) {
   useEffect(() => {
     if (precisaTelefone) telefoneRef.current?.focus();
   }, [precisaTelefone]);
+
+  useEffect(() => {
+    if (p.pacienteInicial && paciente === null) {
+      setPaciente({
+        patientId: p.pacienteInicial.patientId,
+        displayName: p.pacienteInicial.displayName,
+      });
+      setValue('patientId', p.pacienteInicial.patientId, { shouldValidate: true });
+    }
+  }, [p.pacienteInicial, paciente, setValue]);
 
   async function submitInterno(
     dados: DadosFormulario,

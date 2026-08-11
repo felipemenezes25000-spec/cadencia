@@ -20,7 +20,15 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    setCollapsed(window.localStorage.getItem('cadencia:sidebar-collapsed') === 'true');
+    const notebook = window.matchMedia('(max-width: 1023px)');
+    const aplicar = () => {
+      setCollapsed(notebook.matches
+        ? true
+        : window.localStorage.getItem('cadencia:sidebar-collapsed') === 'true');
+    };
+    aplicar();
+    notebook.addEventListener('change', aplicar);
+    return () => notebook.removeEventListener('change', aplicar);
   }, []);
 
   function toggle() {
@@ -36,9 +44,7 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
       <Sidebar
         collapsed={collapsed}
         onToggle={toggle}
-        userName={session.usuario.nome}
-        clinicName={session.vinculoAtivo.clinicNome}
-        onSignOut={() => { void session.sair(); }}
+        sessao={session}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
@@ -54,12 +60,12 @@ function MobileNavigation() {
   const items = [
     { label: 'Hoje', href: '/hoje', icon: House },
     { label: 'Agenda', href: '/agenda', icon: CalendarBlank },
-    { label: 'Pacientes', href: '/pacientes/PAC-001', icon: Users, activePrefix: '/pacientes' },
+    { label: 'Pacientes', href: '/pacientes', icon: Users, activePrefix: '/pacientes' },
     { label: 'Mensagens', href: '/conversas', icon: ChatCircle },
     { label: 'Mais', href: '/configuracoes', icon: DotsThree },
   ] as const;
   return (
-    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-start justify-around border-t border-border bg-surface/95 px-1 pt-2 backdrop-blur md:hidden">
+    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-start justify-around border-t border-border bg-surface px-1 pt-2 md:hidden">
       {items.map((item) => {
         const active = pathname === item.href
           || ('activePrefix' in item && pathname.startsWith(item.activePrefix))

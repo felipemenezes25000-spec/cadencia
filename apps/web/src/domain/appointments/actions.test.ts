@@ -4,16 +4,13 @@ import type { AppointmentStatus } from './types';
 
 describe('getPrimaryAction', () => {
   const cases: readonly [AppointmentStatus, string][] = [
-    ['scheduled', 'Confirmar'],
-    ['confirmation_pending', 'Enviar lembrete'],
-    ['confirmed', 'Check-in'],
-    ['waiting', 'Chamar'],
-    ['called', 'Iniciar atendimento'],
-    ['in_progress', 'Continuar'],
-    ['closing', 'Finalizar'],
-    ['completed', 'Ver atendimento'],
-    ['no_show', 'Reagendar'],
-    ['blocked', 'Resolver pendência'],
+    ['agendado', 'Confirmar'],
+    ['confirmado', 'Fazer check-in'],
+    ['aguardando', 'Iniciar'],
+    ['atendendo', 'Continuar'],
+    ['atendido', 'Ver atendimento'],
+    ['faltou', 'Reagendar'],
+    ['cancelado', 'Ver detalhes'],
   ];
 
   it.each(cases)('%s possui uma unica acao primaria: %s', (status, label) => {

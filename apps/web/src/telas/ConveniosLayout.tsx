@@ -115,7 +115,7 @@ export function ConveniosLayout({
               className={cn(
                 "min-h-[88px] cursor-pointer rounded-xl border border-line bg-surface",
                 "grid gap-1 justify-items-start content-center px-4 py-3",
-                "text-text shadow-elev-1 transition-all-fast hover:-translate-y-px hover:shadow-elev-2",
+                "text-text transition-colors-fast hover:border-line-strong hover:bg-surface-subtle",
                 filtroAtivo === k
                   ? "border-accent/35 bg-accent-soft ring-1 ring-accent/10"
                   : "hover:border-line-strong hover:bg-surface-raised",

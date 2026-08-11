@@ -74,7 +74,7 @@ function montar(over = {}) {
     paciente: PACIENTE,
     papel: 'profissional' as const,
     pendentes: [] as string[],
-    carregarProntuario: vi.fn(async () => [] as unknown[]),
+    carregarProntuario: vi.fn(async () => []),
     prontuarioAcessivel: true,
     existeMasSemAcesso: false,
     aoSolicitarAcesso: vi.fn(),
@@ -83,6 +83,8 @@ function montar(over = {}) {
     carregarFinanceiro: vi.fn(async () => LANCAMENTOS),
     podeVerFinanceiro: false,
     atendimentos: ATENDIMENTOS,
+    aoMensagem: vi.fn(),
+    aoNovoAtendimento: vi.fn(),
     ...over,
   };
   render(<FichaDoPaciente {...props} />);
@@ -126,10 +128,11 @@ describe('FichaDoPaciente', () => {
   it('renderiza tabs', () => {
     montar();
     expect(screen.getByRole('tab', { name: 'Resumo' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Historico' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Prontuário' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Documentos' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Convenios' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Financeiro' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Comunicações' })).toBeVisible();
   });
 
   it('muda conteudo ao clicar em tab', async () => {
@@ -138,7 +141,7 @@ describe('FichaDoPaciente', () => {
     expect(screen.getByText('Contato')).toBeVisible();
 
     // Clicar em Historico mostra timeline
-    await userEvent.click(screen.getByRole('tab', { name: 'Historico' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
     });
@@ -147,14 +150,14 @@ describe('FichaDoPaciente', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Documentos' }));
     await waitFor(() => {
       expect(
-        screen.getByText('Nenhum documento cadastrado.'),
+        screen.getByText('Nenhum documento cadastrado'),
       ).toBeVisible();
     });
   });
 
   it('mostra timeline de atendimentos no tab Historico', async () => {
     montar();
-    await userEvent.click(screen.getByRole('tab', { name: 'Historico' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
       expect(

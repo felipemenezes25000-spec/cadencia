@@ -134,6 +134,7 @@ describe('FinanceiroVisao', () => {
   it('renderiza seletor de periodo', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+    await userEvent.click(screen.getByText('Análise do período'));
     expect(screen.getByRole('group', { name: /Seletor de periodo/i })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Diario' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Semanal' })).toBeVisible();
@@ -144,6 +145,7 @@ describe('FinanceiroVisao', () => {
     const user = userEvent.setup();
     const { onUrlUpdate } = montar();
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
+    await user.click(screen.getByText('Análise do período'));
 
     await user.click(screen.getByRole('button', { name: 'Diario' }));
 

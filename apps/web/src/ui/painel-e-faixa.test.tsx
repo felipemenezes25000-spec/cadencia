@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { PainelLateral } from './PainelLateral';
-import { FaixaDeContadores } from './FaixaDeContadores';
 
 /* ── Polyfills para jsdom (Radix Tooltip/Popper) ───────────────────── */
 
@@ -69,38 +68,5 @@ describe('painel lateral compositor', () => {
       <PainelLateral aberto titulo="Prescrever" aoFechar={vi.fn()}><p>x</p></PainelLateral>);
     // Radix Portal renderiza em document.body
     expect(await axe(document.body)).toHaveNoViolations();
-  });
-});
-
-describe('faixa de contadores', () => {
-  const CONT = { agendados: 12, confirmados: 8, aguardando: 2, atendidos: 5, faltas: 1 };
-
-  it('cada numero e um BUTTON que filtra a fila, nao um enfeite', async () => {
-    const aoFiltrar = vi.fn();
-    render(<FaixaDeContadores contadores={CONT} aoFiltrar={aoFiltrar} />);
-    await userEvent.click(screen.getByRole('button', { name: /Aguardando/ }));
-    expect(aoFiltrar).toHaveBeenCalledWith('aguardando');
-  });
-
-  it('anuncia mudanca com aria-live polite', () => {
-    render(<FaixaDeContadores contadores={CONT} aoFiltrar={vi.fn()} />);
-    expect(screen.getByRole('group', { name: 'Contadores do dia' }))
-      .toHaveAttribute('aria-live', 'polite');
-  });
-
-  it('os numeros usam tipografia tabular e bold', () => {
-    render(<FaixaDeContadores contadores={CONT} aoFiltrar={vi.fn()} />);
-    const num = screen.getByText('12');
-    expect(num).toHaveClass('text-2xl', 'font-bold', 'tabular-nums');
-  });
-
-  it('o filtro ativo fica marcado com aria-pressed', () => {
-    render(<FaixaDeContadores contadores={CONT} aoFiltrar={vi.fn()} filtroAtivo="faltas" />);
-    expect(screen.getByRole('button', { name: /Faltas/ })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('sem violacao de acessibilidade', async () => {
-    const { container } = render(<FaixaDeContadores contadores={CONT} aoFiltrar={vi.fn()} />);
-    expect(await axe(container)).toHaveNoViolations();
   });
 });

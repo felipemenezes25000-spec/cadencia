@@ -9,7 +9,8 @@ import {
   MagnifyingGlass,
   Plus,
 } from '@phosphor-icons/react';
-import { Button, IconButton } from '../ui/Button';
+import { Botao } from '../../ui/Botao';
+import { BotaoIcone } from '../../ui/BotaoIcone';
 import { CommandPalette } from './CommandPalette';
 
 export function TopBar() {
@@ -29,7 +30,7 @@ export function TopBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-[68px] shrink-0 items-center gap-4 border-b border-border bg-surface/95 px-4 backdrop-blur md:px-6">
+      <header className="sticky top-0 z-20 flex h-[68px] shrink-0 items-center gap-4 border-b border-border bg-surface px-4 md:px-6">
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
@@ -44,16 +45,13 @@ export function TopBar() {
         </button>
 
         <div className="ml-auto flex items-center gap-2">
-          <IconButton icon={CalendarBlank} label="Abrir calendário" className="max-sm:hidden" onClick={() => router.push('/agenda')} />
-          <span className="relative max-sm:hidden">
-            <IconButton icon={ChatCircle} label="Abrir mensagens" onClick={() => router.push('/conversas')} />
-            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-white" aria-label="2 mensagens não lidas">2</span>
-          </span>
-          <IconButton icon={Bell} label="Abrir notificações" />
-          <Button variant="primary" iconLeft={Plus} onClick={() => router.push('/agenda?novo=1')} className="max-sm:px-2.5">
+          <BotaoIcone icone={CalendarBlank} rotulo="Abrir calendário" className="max-sm:hidden" onClick={() => router.push('/agenda')} />
+          <BotaoIcone icone={ChatCircle} rotulo="Abrir mensagens" className="max-sm:hidden" onClick={() => router.push('/conversas')} />
+          <BotaoIcone icone={Bell} rotulo="Abrir notificações" onClick={() => router.push('/hoje#painel-unidade')} />
+          <Botao variante="primario" iconeEsquerda={Plus} onClick={() => router.push('/agenda?novo=1')} className="max-sm:px-2.5">
             <span className="max-sm:hidden">Novo atendimento</span>
             <span className="sm:hidden">Novo</span>
-          </Button>
+          </Botao>
         </div>
       </header>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
