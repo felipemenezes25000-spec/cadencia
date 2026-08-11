@@ -7,6 +7,7 @@ import { Botao } from '../ui/Botao';
 import { PageHeader } from '../ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import type { PacienteHit } from '../ui/ComboboxDePaciente';
+import { SecaoContato } from './SecaoContato';
 
 /* ── Tipos exportados ────────────────────────────────────────────────── */
 
@@ -42,8 +43,17 @@ export interface AtendimentoResumo {
   readonly profissional: string;
 }
 
+export interface ContatoDoPaciente {
+  readonly email: string | null;
+  readonly phoneSecondary: string | null;
+  readonly emergencyContactName: string | null;
+  readonly emergencyContactPhone: string | null;
+}
+
 export interface FichaDoPacienteProps {
   readonly paciente: PacienteHit;
+  readonly contato?: ContatoDoPaciente;
+  readonly aoSalvarContato?: (dados: import('./SecaoContato').ContatoPayload) => Promise<void>;
   readonly papel: PapelNaTela;
   readonly pendentes: readonly string[];
   readonly prontuarioAcessivel: boolean;
@@ -185,9 +195,15 @@ function FichaSkeleton() {
 function ResumoTab({
   paciente,
   pendentes,
+  contato,
+  aoSalvarContato,
+  editavel,
 }: {
   readonly paciente: PacienteHit;
   readonly pendentes: readonly string[];
+  readonly contato?: ContatoDoPaciente;
+  readonly aoSalvarContato?: (dados: import('./SecaoContato').ContatoPayload) => Promise<void>;
+  readonly editavel: boolean;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -201,21 +217,15 @@ function ResumoTab({
         </div>
       )}
 
-      {/* Contato */}
-      <section
-        aria-label="Informacoes de contato"
-        className="rounded-xl border border-line bg-surface shadow-elev-1 p-4"
-      >
-        <h2 className="mb-3 text-sm font-semibold text-text">Contato</h2>
-        <dl className="grid gap-3 text-sm">
-          <div>
-            <dt className="text-text-muted">Telefone</dt>
-            <dd className="m-0 font-medium text-text">
-              {formatarTelefone(paciente.phonePrimary)}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      <SecaoContato
+        phonePrimary={paciente.phonePrimary}
+        phoneSecondary={contato?.phoneSecondary ?? null}
+        email={contato?.email ?? null}
+        emergencyContactName={contato?.emergencyContactName ?? null}
+        emergencyContactPhone={contato?.emergencyContactPhone ?? null}
+        aoSalvar={aoSalvarContato ?? (async () => {})}
+        editavel={editavel && aoSalvarContato !== undefined}
+      />
 
       {/* Dados pessoais */}
       <section
@@ -441,7 +451,13 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
         </TabsList>
 
         <TabsContent value="resumo">
-          <ResumoTab paciente={p.paciente} pendentes={p.pendentes} />
+          <ResumoTab
+            paciente={p.paciente}
+            pendentes={p.pendentes}
+            {...(p.contato !== undefined ? { contato: p.contato } : {})}
+            {...(p.aoSalvarContato !== undefined ? { aoSalvarContato: p.aoSalvarContato } : {})}
+            editavel={p.papel !== 'financeiro'}
+          />
         </TabsContent>
 
         <TabsContent value="historico">

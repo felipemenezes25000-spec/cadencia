@@ -5,6 +5,7 @@ import {
   FichaDoPaciente, type AtendimentoResumo, type LancamentoResumo,
   type MensagemResumo, type PapelNaTela,
 } from '../../../src/telas/FichaDoPaciente';
+import type { ContatoPayload } from '../../../src/telas/SecaoContato';
 import type { PacienteHit } from '../../../src/ui/ComboboxDePaciente';
 import {
   PainelDeCompartilhamento, type Compartilhamento,
@@ -20,6 +21,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 interface PacienteDaApi extends PacienteHit {
   email: string | null;
+  phoneSecondary: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
   inativoEm: string | null;
   obitoEm: string | null;
 }
@@ -201,6 +205,19 @@ export default function PaginaFichaDoPaciente(
     <>
     <FichaDoPaciente
       paciente={paciente}
+      contato={{
+        email: paciente.email,
+        phoneSecondary: paciente.phoneSecondary,
+        emergencyContactName: paciente.emergencyContactName,
+        emergencyContactPhone: paciente.emergencyContactPhone,
+      }}
+      aoSalvarContato={async (dados: ContatoPayload) => {
+        await apiFetch(`/v1/pacientes/${id}/contato`, {
+          method: 'PATCH', body: dados, clinicId, csrfToken });
+        const p = await apiFetch<PacienteDaApi>(
+          `/v1/pacientes/${id}`, { clinicId, csrfToken });
+        setPaciente(p);
+      }}
       papel={vinculoAtivo.role as PapelNaTela}
       acoesExtras={(
         <>
