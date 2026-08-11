@@ -581,6 +581,112 @@ describe('edicao de papel', () => {
   });
 });
 
+describe('exportar dados', () => {
+  it('exporta pacientes como CSV: 200 com Content-Disposition', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: { dataset: 'pacientes', format: 'csv' },
+    });
+
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('text/csv');
+    expect(r.headers['content-disposition']).toContain('attachment');
+    expect(r.headers['content-disposition']).toContain('pacientes');
+    expect(r.body.length).toBeGreaterThan(0);
+
+    await app.close();
+  });
+
+  it('exporta equipe como XLSX: 200', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: { dataset: 'equipe', format: 'xlsx' },
+    });
+
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('spreadsheetml');
+    expect(r.headers['content-disposition']).toContain('equipe');
+
+    await app.close();
+  });
+
+  it('exige periodo para agendamentos: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: { dataset: 'agendamentos', format: 'csv' },
+    });
+
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'periodo_obrigatorio' });
+
+    await app.close();
+  });
+
+  it('rejeita periodo maior que 365 dias: 422', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: {
+        dataset: 'financeiro', format: 'csv',
+        dateFrom: '2025-01-01', dateTo: '2026-06-01',
+      },
+    });
+
+    expect(r.statusCode).toBe(422);
+    expect(r.json()).toMatchObject({ erro: 'periodo_excedido' });
+
+    await app.close();
+  });
+
+  it('recepcao nao pode exportar: 403', async () => {
+    const app = await buildApp();
+    const recepcao = await semearSessao({ role: 'recepcao' });
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(recepcao),
+      payload: { dataset: 'pacientes', format: 'csv' },
+    });
+
+    expect(r.statusCode).toBe(403);
+
+    await app.close();
+  });
+
+  it('exporta agendamentos com periodo valido: 200', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: {
+        dataset: 'agendamentos', format: 'csv',
+        dateFrom: '2026-01-01', dateTo: '2026-12-31',
+      },
+    });
+
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('text/csv');
+
+    await app.close();
+  });
+
+  it('exporta financeiro com periodo valido: 200', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/configuracoes/exportar', ...auth(s),
+      payload: {
+        dataset: 'financeiro', format: 'xlsx',
+        dateFrom: '2026-06-01', dateTo: '2026-08-31',
+      },
+    });
+
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('spreadsheetml');
+
+    await app.close();
+  });
+});
+
 describe('edicao de CNES e CNPJ', () => {
   it('PUT /v1/configuracoes/clinica atualiza CNES e CNPJ', async () => {
     const app = await buildApp();

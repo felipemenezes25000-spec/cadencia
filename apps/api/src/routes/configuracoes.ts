@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { hashPassword } from '@cadencia/authn';
 import { uuidv7 } from '@cadencia/kernel';
+import { exportReport, type ExportFormat } from '@cadencia/reports';
 import { rota } from '../guard';
 
 /**
@@ -471,5 +472,156 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
        r.r_membership_id, ctx.actor.clinicId]);
 
     return { ok: true as const };
+  }));
+
+  // ── Exportar dados ──────────────────────────────────────────────────────
+
+  const DATASETS_COM_PERIODO = ['agendamentos', 'financeiro'] as const;
+  const MAX_EXPORT_ROWS = 50_000;
+
+  const ExportarSchema = z.object({
+    dataset: z.enum(['pacientes', 'equipe', 'agendamentos', 'financeiro']),
+    format: z.enum(['csv', 'xlsx']),
+    dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  });
+
+  r.post('/v1/configuracoes/exportar', {
+    schema: {
+      body: ExportarSchema,
+      response: {
+        422: z.object({
+          erro: z.enum(['periodo_obrigatorio', 'periodo_excedido']),
+        }),
+      },
+    },
+  }, rota('data.export', async (tx, ctx, req, reply) => {
+    const b = req.body as z.infer<typeof ExportarSchema>;
+
+    if ((DATASETS_COM_PERIODO as readonly string[]).includes(b.dataset)) {
+      if (!b.dateFrom || !b.dateTo) {
+        return reply.code(422).send({ erro: 'periodo_obrigatorio' as const });
+      }
+      const from = new Date(b.dateFrom);
+      const to = new Date(b.dateTo);
+      const diffDays = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 365 || diffDays < 0) {
+        return reply.code(422).send({ erro: 'periodo_excedido' as const });
+      }
+    }
+
+    let rows: Record<string, unknown>[];
+    let columns: string[];
+    let headers: Record<string, string>;
+
+    switch (b.dataset) {
+      case 'pacientes': {
+        const result = await tx.query<Record<string, unknown>>(
+          `SELECT p.full_name, p.nome_social,
+                  (SELECT pi.value FROM clin.patient_identifier pi
+                   WHERE pi.patient_id = p.id AND pi.kind = 'CPF' LIMIT 1) AS cpf,
+                  p.birth_date::text AS birth_date,
+                  p.sex_at_birth, p.phone_primary, p.email,
+                  p.cadastro_status
+             FROM clin.patient p
+            WHERE p.inactivated_at IS NULL AND p.merged_into_id IS NULL
+            ORDER BY p.full_name
+            LIMIT $1`,
+          [MAX_EXPORT_ROWS]);
+        rows = result.rows;
+        columns = ['full_name', 'nome_social', 'cpf', 'birth_date',
+                    'sex_at_birth', 'phone_primary', 'email', 'cadastro_status'];
+        headers = {
+          full_name: 'Nome', nome_social: 'Nome Social', cpf: 'CPF',
+          birth_date: 'Nascimento', sex_at_birth: 'Sexo',
+          phone_primary: 'Telefone', email: 'E-mail',
+          cadastro_status: 'Status',
+        };
+        break;
+      }
+      case 'equipe': {
+        const result = await tx.query<Record<string, unknown>>(
+          `SELECT nome, email, role, conselho, granted_at::text AS granted_at
+             FROM app.equipe_da_unidade($1)`,
+          [ctx.actor.clinicId]);
+        rows = result.rows;
+        columns = ['nome', 'email', 'role', 'conselho', 'granted_at'];
+        headers = {
+          nome: 'Nome', email: 'E-mail', role: 'Papel',
+          conselho: 'Conselho', granted_at: 'Desde',
+        };
+        break;
+      }
+      case 'agendamentos': {
+        const result = await tx.query<Record<string, unknown>>(
+          `SELECT a.starts_at::text AS starts_at, a.ends_at::text AS ends_at,
+                  pat.full_name AS paciente,
+                  prof_u.full_name AS profissional,
+                  proc.nome AS procedimento,
+                  a.status
+             FROM sched.appointment a
+             JOIN clin.patient pat ON pat.id = a.patient_id
+             JOIN app.professional prof_p ON prof_p.id = a.professional_id
+             JOIN id."user" prof_u ON prof_u.id = prof_p.user_id
+             LEFT JOIN sched.procedure proc ON proc.id = a.procedure_id
+            WHERE a.appointment_date >= $1::date
+              AND a.appointment_date <= $2::date
+            ORDER BY a.starts_at
+            LIMIT $3`,
+          [b.dateFrom, b.dateTo, MAX_EXPORT_ROWS]);
+        rows = result.rows;
+        columns = ['starts_at', 'ends_at', 'paciente', 'profissional',
+                    'procedimento', 'status'];
+        headers = {
+          starts_at: 'Inicio', ends_at: 'Fim', paciente: 'Paciente',
+          profissional: 'Profissional', procedimento: 'Procedimento',
+          status: 'Status',
+        };
+        break;
+      }
+      case 'financeiro': {
+        const result = await tx.query<Record<string, unknown>>(
+          `SELECT e.due_date::text AS due_date, e.description,
+                  e.amount_cents, e.kind,
+                  pm.name AS metodo, c.name AS categoria,
+                  e.status
+             FROM fin.entry e
+             LEFT JOIN fin.payment_method pm ON pm.id = e.payment_method_id
+             LEFT JOIN fin.category c ON c.id = e.category_id
+            WHERE e.due_date >= $1::date AND e.due_date <= $2::date
+            ORDER BY e.due_date
+            LIMIT $3`,
+          [b.dateFrom, b.dateTo, MAX_EXPORT_ROWS]);
+        rows = result.rows;
+        columns = ['due_date', 'description', 'amount_cents', 'kind',
+                    'metodo', 'categoria', 'status'];
+        headers = {
+          due_date: 'Vencimento', description: 'Descricao',
+          amount_cents: 'Valor (centavos)', kind: 'Tipo',
+          metodo: 'Metodo', categoria: 'Categoria', status: 'Status',
+        };
+        break;
+      }
+    }
+
+    const buf = exportReport(rows, columns, headers, b.format as ExportFormat);
+
+    const ext = b.format === 'csv' ? 'csv' : 'xlsx';
+    const mime = b.format === 'csv'
+      ? 'text/csv; charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    await tx.query(
+      `SELECT audit.log('DATA_EXPORT', 'app', 'clinic', $1, 'sucesso',
+              jsonb_build_object('dataset', $2::text, 'format', $3::text,
+                                 'record_count', $4::text), $5)`,
+      [ctx.actor.clinicId, b.dataset, b.format,
+       String(rows.length), ctx.actor.clinicId]);
+
+    void reply
+      .header('content-type', mime)
+      .header('content-disposition',
+        `attachment; filename="${b.dataset}-${new Date().toISOString().slice(0, 10)}.${ext}"`);
+    return reply.send(buf);
   }));
 }
