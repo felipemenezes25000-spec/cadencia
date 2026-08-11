@@ -1,16 +1,5 @@
-'use client';
+import { FinanceWorkspace } from '../../src/components/finance/FinanceWorkspace';
 
-import { FinanceiroVisao, type VisaoDados } from '../../src/telas/FinanceiroVisao';
-import { apiFetch } from '../../src/api';
-import { useSessao } from '../../src/sessao';
-
-export default function PaginaFinanceiroVisao() {
-  const { clinicId, csrfToken } = useSessao();
-
-  return (
-    <FinanceiroVisao
-      carregarDados={() => apiFetch<VisaoDados>(
-        '/v1/financeiro/visao', { clinicId, csrfToken })}
-    />
-  );
+export default function FinancePage() {
+  return <FinanceWorkspace />;
 }

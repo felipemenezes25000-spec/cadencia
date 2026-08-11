@@ -42,10 +42,10 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'bg-accent text-accent-on shadow-[0_7px_20px_oklch(53%_0.215_264_/_0.22)] hover:bg-accent-hover hover:shadow-[0_10px_28px_oklch(53%_0.215_264_/_0.28)]',
+  primario: 'bg-accent text-accent-on hover:bg-accent-hover',
   secundario: 'bg-surface border border-line text-text shadow-elev-1 hover:border-line-strong hover:bg-surface-raised',
   fantasma: 'bg-transparent text-text hover:bg-surface-hover',
-  perigo: 'bg-danger text-white shadow-[0_7px_20px_oklch(56%_0.205_25_/_0.18)] hover:brightness-105',
+  perigo: 'bg-danger text-white hover:brightness-95',
 };
 
 const classesTamanho: Record<TamanhoBotao, string> = {

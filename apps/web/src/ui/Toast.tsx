@@ -19,6 +19,10 @@ export interface ToastData {
   readonly tipo: TipoToast;
   readonly mensagem: string;
   readonly duracao?: number;
+  readonly acao?: {
+    readonly rotulo: string;
+    readonly aoClicar: () => void;
+  };
 }
 
 interface ToastItemProps {
@@ -79,6 +83,18 @@ export function ToastItem({ data, onClose }: ToastItemProps) {
         <RadixToast.Description className="flex-1 text-[length:var(--fs-14)] leading-[var(--lh-ui)] text-text">
           {data.mensagem}
         </RadixToast.Description>
+
+        {data.acao ? (
+          <RadixToast.Action asChild altText={data.acao.rotulo}>
+            <button
+              type="button"
+              onClick={data.acao.aoClicar}
+              className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft"
+            >
+              {data.acao.rotulo}
+            </button>
+          </RadixToast.Action>
+        ) : null}
 
         <RadixToast.Close
           aria-label="Fechar notificacao"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { CheckCircle, Pulse, ShieldCheck } from '@phosphor-icons/react';
 import { apiFetch, ApiError } from '../../src/api';
 import { lerCsrf, rotulo, type Vinculo } from '../../src/sessao';
 
@@ -94,18 +95,35 @@ export default function PaginaEntrar() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center p-6">
-      <div className="w-full max-w-sm">
-        <header className="mb-8">
-          <p className="font-doc text-2xl font-semibold tracking-tight">Cadencia</p>
-          <p className="mt-1 text-sm text-text-muted">
-            {passo.nome === 'credenciais' ? 'Entre para comecar o dia.'
-              : passo.nome === 'mfa' ? 'Confirme com o codigo do seu aplicativo.'
-              : 'Escolha a unidade.'}
-          </p>
-        </header>
+    <main id="conteudo-principal" className="grid min-h-screen bg-canvas lg:grid-cols-[minmax(360px,.85fr)_minmax(520px,1.15fr)]">
+      <aside className="hidden border-r border-border bg-surface-subtle p-12 lg:flex lg:flex-col">
+        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-[10px] bg-brand text-white"><Pulse size={22} weight="bold" /></span><div><p className="text-base font-bold tracking-tight">Cadencia</p><p className="text-[10px] font-bold uppercase tracking-[.12em] text-text-tertiary">Clinical Intelligence</p></div></div>
+        <div className="my-auto max-w-md">
+          <p className="text-xs font-bold uppercase tracking-[.1em] text-brand">Operação clínica conectada</p>
+          <h1 className="mt-3 text-3xl font-bold leading-tight tracking-[-0.035em] text-text-primary">Clareza para cuidar. Precisão para operar.</h1>
+          <p className="mt-4 text-base leading-relaxed text-text-secondary">Agenda, atendimento e prontuário no mesmo fluxo — do paciente que chegou à próxima ação da equipe.</p>
+          <ul className="mt-8 space-y-4 text-sm text-text-secondary"><li className="flex items-center gap-3"><CheckCircle size={19} weight="fill" className="text-success" />Operação da unidade em tempo real</li><li className="flex items-center gap-3"><CheckCircle size={19} weight="fill" className="text-success" />Prontuário clínico estruturado</li><li className="flex items-center gap-3"><ShieldCheck size={19} weight="fill" className="text-brand" />Acesso seguro e auditável</li></ul>
+        </div>
+        <p className="text-xs text-text-tertiary">Ambiente clínico protegido · Cadencia 2026</p>
+      </aside>
 
-        {passo.nome === 'credenciais' && (
+      <div className="grid place-items-center p-6 sm:p-10">
+        <div className="w-full max-w-[420px] rounded-2xl border border-border bg-surface p-6 shadow-elev-1 sm:p-8">
+          <header className="mb-7">
+            <div className="mb-6 flex items-center gap-3 lg:hidden"><span className="grid size-9 place-items-center rounded-lg bg-brand text-white"><Pulse size={20} weight="bold" /></span><p className="font-bold">Cadencia</p></div>
+            <h1 className="text-2xl font-bold tracking-[-0.03em] text-text-primary">
+              {passo.nome === 'credenciais' ? 'Acesse sua unidade'
+                : passo.nome === 'mfa' ? 'Confirme sua identidade'
+                : 'Escolha a unidade'}
+            </h1>
+            <p className="mt-2 text-sm text-text-secondary">
+              {passo.nome === 'credenciais' ? 'Entre para começar a operação do dia.'
+                : passo.nome === 'mfa' ? 'Digite o código do seu aplicativo autenticador.'
+                : 'Selecione onde você vai trabalhar agora.'}
+            </p>
+          </header>
+
+          {passo.nome === 'credenciais' && (
           <form onSubmit={(e) => { void entrar(e); }} className="flex flex-col gap-4">
             <Campo
               id="email" rotulo="E-mail" tipo="email" valor={email}
@@ -117,9 +135,9 @@ export default function PaginaEntrar() {
             />
             <Botao enviando={enviando}>Entrar</Botao>
           </form>
-        )}
+          )}
 
-        {passo.nome === 'mfa' && (
+          {passo.nome === 'mfa' && (
           <form onSubmit={(e) => { void confirmarMfa(e); }} className="flex flex-col gap-4">
             <Campo
               id="codigo" rotulo="Codigo de 6 digitos" tipo="text" valor={codigo}
@@ -128,9 +146,9 @@ export default function PaginaEntrar() {
             />
             <Botao enviando={enviando} desabilitado={codigo.length !== 6}>Confirmar</Botao>
           </form>
-        )}
+          )}
 
-        {passo.nome === 'unidade' && (
+          {passo.nome === 'unidade' && (
           <ul className="flex flex-col gap-2">
             {passo.vinculos.map((v) => (
               <li key={v.clinicId}>
@@ -154,13 +172,15 @@ export default function PaginaEntrar() {
               </li>
             ))}
           </ul>
-        )}
+          )}
 
-        {erro !== null && (
-          <p role="alert" className="mt-4 text-sm text-danger">{erro}</p>
-        )}
+          {erro !== null && (
+            <p role="alert" className="mt-4 rounded-lg bg-danger-soft px-3 py-2.5 text-sm font-medium text-danger">{erro}</p>
+          )}
+          <p className="mt-6 text-center text-xs text-text-tertiary">Precisa de ajuda? Fale com a administração da sua clínica.</p>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -171,12 +191,12 @@ function Campo({ id, rotulo: texto, tipo, valor, aoMudar, ...resto }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">{texto}</label>
+      <label htmlFor={id} className="text-sm font-semibold text-text-primary">{texto}</label>
       <input
         id={id} type={tipo} value={valor}
         onChange={(e) => aoMudar(e.target.value)}
         required
-        className="h-10 rounded-[var(--r-md)] border border-border bg-surface px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
+        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none transition-colors-fast hover:border-border-strong focus:border-brand focus:ring-2 focus:ring-brand/10"
         {...resto}
       />
     </div>
@@ -190,7 +210,7 @@ function Botao({ children, enviando, desabilitado }: {
     <button
       type="submit"
       disabled={enviando || desabilitado === true}
-      className="mt-1 h-10 rounded-[var(--r-md)] bg-accent text-sm font-medium text-accent-on transition hover:opacity-90 disabled:opacity-50"
+      className="mt-1 h-10 rounded-lg bg-brand text-sm font-semibold text-white transition-colors-fast hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
     >
       {enviando ? 'Aguarde…' : children}
     </button>

@@ -34,7 +34,7 @@ export function Tooltip({
           className={cn(
             "z-50 rounded-lg border border-white/10 px-2.5 py-1.5",
             "text-[length:var(--fs-12)] leading-[var(--lh-ui)]",
-            "bg-[oklch(20%_0.035_264)] text-white",
+            "border border-border bg-surface text-text-primary shadow-elev-2",
             "shadow-elev-2",
             "animate-[scaleIn_150ms_ease]",
             "select-none",
