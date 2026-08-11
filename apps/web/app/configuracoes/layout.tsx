@@ -13,6 +13,7 @@ const ABAS = [
   { value: 'procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos' },
   { value: 'prontuario', rotulo: 'Prontuario', href: '/configuracoes/prontuario' },
   { value: 'auditoria', rotulo: 'Auditoria', href: '/configuracoes/auditoria' },
+  { value: 'exportar', rotulo: 'Exportar', href: '/configuracoes/exportar' },
   { value: 'catalogos', rotulo: 'Catalogos', href: '/catalogos' },
   { value: 'perfil', rotulo: 'Meu perfil', href: '/configuracoes/perfil' },
 ] as const;
