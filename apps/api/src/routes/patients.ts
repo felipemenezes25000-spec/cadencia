@@ -156,6 +156,102 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
     return resultado.value;
   }));
 
+  r.patch('/v1/pacientes/:id/contato', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      body: z.object({
+        phonePrimary: z.string().nullable().optional(),
+        phoneSecondary: z.string().nullable().optional(),
+        email: z.string().nullable().optional(),
+        emergencyContactName: z.string().max(200).nullable().optional(),
+        emergencyContactPhone: z.string().nullable().optional(),
+      }),
+      response: {
+        200: z.object({ patientId: z.string().uuid() }),
+        404: z.object({ erro: z.literal('nao_encontrado') }),
+        422: z.object({ erro: z.string() }),
+      },
+    },
+  }, rota('patient.write', async (tx, ctx, req, reply) => {
+    const p = req.params as { id: string };
+    const b = req.body as {
+      phonePrimary?: string | null; phoneSecondary?: string | null;
+      email?: string | null;
+      emergencyContactName?: string | null; emergencyContactPhone?: string | null;
+    };
+
+    const { rows: current } = await tx.query<{
+      phone_primary: string | null; phone_secondary: string | null;
+      email: string | null;
+      emergency_contact_name: string | null; emergency_contact_phone: string | null;
+    }>(
+      `SELECT phone_primary, phone_secondary, email,
+              emergency_contact_name, emergency_contact_phone
+         FROM clin.patient WHERE id = $1`, [p.id]);
+    const old = current[0];
+    if (old === undefined) return reply.code(404).send({ erro: 'nao_encontrado' as const });
+
+    const normalize = (v: string | null | undefined): string | null => {
+      if (v === undefined) return undefined as unknown as null;
+      if (v === null) return null;
+      const digits = v.replace(/\D+/g, '');
+      return digits.length === 0 ? null : digits;
+    };
+
+    const phonePri = b.phonePrimary !== undefined ? normalize(b.phonePrimary) : old.phone_primary;
+    const phoneSec = b.phoneSecondary !== undefined ? normalize(b.phoneSecondary) : old.phone_secondary;
+    const email = b.email !== undefined ? (b.email === null ? null : b.email.trim() || null) : old.email;
+    const emName = b.emergencyContactName !== undefined
+      ? (b.emergencyContactName === null ? null : b.emergencyContactName.trim() || null)
+      : old.emergency_contact_name;
+    const emPhone = b.emergencyContactPhone !== undefined
+      ? normalize(b.emergencyContactPhone)
+      : old.emergency_contact_phone;
+
+    if (phonePri !== null && phonePri.length < 10) {
+      return reply.code(422).send({ erro: 'telefone_invalido' });
+    }
+    if (phoneSec !== null && phoneSec.length < 10) {
+      return reply.code(422).send({ erro: 'telefone_secundario_invalido' });
+    }
+    if (emPhone !== null && emPhone.length < 10) {
+      return reply.code(422).send({ erro: 'telefone_emergencia_invalido' });
+    }
+    if (phonePri === null && (email === null || email === '')) {
+      return reply.code(422).send({ erro: 'canal_obrigatorio' });
+    }
+
+    const cpfDigits = await tx.query<{ search_digits: string | null }>(
+      `SELECT search_digits FROM clin.patient WHERE id = $1`, [p.id]);
+    const oldSearch = cpfDigits.rows[0]?.search_digits ?? '';
+    const cpfPart = oldSearch.replace(old.phone_primary ?? '', '').trim();
+    const newSearch = [cpfPart, phonePri].filter(Boolean).join(' ') || null;
+
+    await tx.query(
+      `UPDATE clin.patient
+          SET phone_primary = $2, phone_secondary = $3, email = $4,
+              emergency_contact_name = $5, emergency_contact_phone = $6,
+              search_digits = $7
+        WHERE id = $1`,
+      [p.id, phonePri, phoneSec, email, emName, emPhone, newSearch]);
+
+    const changes: Array<{ field: string; old_value: string | null }> = [];
+    if (phonePri !== old.phone_primary) changes.push({ field: 'phone_primary', old_value: old.phone_primary });
+    if (phoneSec !== old.phone_secondary) changes.push({ field: 'phone_secondary', old_value: old.phone_secondary });
+    if (email !== old.email) changes.push({ field: 'email', old_value: old.email });
+    if (emName !== old.emergency_contact_name) changes.push({ field: 'emergency_contact_name', old_value: old.emergency_contact_name });
+    if (emPhone !== old.emergency_contact_phone) changes.push({ field: 'emergency_contact_phone', old_value: old.emergency_contact_phone });
+
+    for (const c of changes) {
+      await tx.query(
+        `SELECT audit.log('PATIENT_CONTACT_UPDATE', 'clin', 'patient', $1, 'sucesso',
+                jsonb_build_object('field', $2::text, 'old_value', $3::text), $4)`,
+        [p.id, c.field, c.old_value ?? '', ctx.actor.clinicId]);
+    }
+
+    return { patientId: p.id };
+  }));
+
   /**
    * O cadastro de UM paciente, para o cabecalho da ficha.
    *
@@ -170,7 +266,10 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
       response: {
         200: HitSchema.extend({
           email: z.string().nullable(),
+          phoneSecondary: z.string().nullable(),
           nomeSocial: z.string().nullable(),
+          emergencyContactName: z.string().nullable(),
+          emergencyContactPhone: z.string().nullable(),
           inativoEm: z.string().nullable(),
           obitoEm: z.string().nullable(),
         }),
@@ -183,11 +282,15 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
       id: string; display_name: string; full_name: string;
       nome_social: string | null; birth_date: string | null;
       cadastro_status: 'preliminar' | 'completo';
-      phone_primary: string | null; email: string | null;
+      phone_primary: string | null; phone_secondary: string | null;
+      email: string | null;
+      emergency_contact_name: string | null; emergency_contact_phone: string | null;
       inactivated_at: Date | null; deceased_at: Date | null;
     }>(
       `SELECT id, display_name, full_name, nome_social, birth_date::text AS birth_date,
-              cadastro_status, phone_primary, email, inactivated_at, deceased_at
+              cadastro_status, phone_primary, phone_secondary, email,
+              emergency_contact_name, emergency_contact_phone,
+              inactivated_at, deceased_at
          FROM clin.patient
         WHERE id = $1 AND merged_into_id IS NULL`, [p.id]);
 
@@ -203,7 +306,10 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
       birthDate: x.birth_date,
       cadastroStatus: x.cadastro_status,
       phonePrimary: x.phone_primary,
+      phoneSecondary: x.phone_secondary,
       email: x.email,
+      emergencyContactName: x.emergency_contact_name,
+      emergencyContactPhone: x.emergency_contact_phone,
       inativoEm: x.inactivated_at === null ? null : x.inactivated_at.toISOString(),
       obitoEm: x.deceased_at === null ? null : x.deceased_at.toISOString(),
     };
