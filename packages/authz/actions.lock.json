@@ -1,5 +1,5 @@
 {
-  "checksum": "084c7ab3d399d7615be3b9a5ff4f8f85962411e74954c4daf8ba12b6afb1a049",
+  "checksum": "811a5b7840aa51036a4079bbadb9d947e3f788d327be08bcc439ff8724418744",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -125,6 +125,14 @@
     {
       "key": "clinic.write",
       "description": "Editar dados da unidade",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": true
+    },
+    {
+      "key": "data.export",
+      "description": "Exportar dados da clinica",
       "roles": [
         "admin_clinico"
       ],

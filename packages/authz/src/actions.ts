@@ -37,6 +37,8 @@ export const ACTIONS = [
     roles: ['admin_clinico'], requiresMfa: true },
   { key: 'membership.edit', description: 'Alterar papel de membro',
     roles: ['admin_clinico'], requiresMfa: true },
+  { key: 'data.export', description: 'Exportar dados da clinica',
+    roles: ['admin_clinico'], requiresMfa: true },
   { key: 'mfa.admin_disable', description: 'Desativar MFA de outro usuario',
     roles: ['admin_clinico'], requiresMfa: true },
   { key: 'catalog.read', description: 'Consultar terminologia (CID-10, TUSS)',
