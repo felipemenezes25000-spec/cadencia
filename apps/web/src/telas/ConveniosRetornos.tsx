@@ -144,7 +144,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
     <div className="space-y-6">
       {/* Cabecalho */}
       <div className="flex items-center justify-between">
-        <h3 className="text-[length:var(--fs-15)] font-semibold">Retornos</h3>
+        <h2 className="text-[length:var(--fs-15)] font-semibold">Retornos</h2>
         <div>
           <input
             ref={fileRef}

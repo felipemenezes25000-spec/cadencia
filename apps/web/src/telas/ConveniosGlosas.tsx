@@ -127,7 +127,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
       {/* Cabecalho com badge de pendente */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-[length:var(--fs-15)] font-semibold">Glosas</h3>
+          <h2 className="text-[length:var(--fs-15)] font-semibold">Glosas</h2>
           {dados.totalGlosadoPendenteCentavos > 0 && (
             <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-danger bg-danger-soft">
               {centavosParaReais(dados.totalGlosadoPendenteCentavos)} pendente
