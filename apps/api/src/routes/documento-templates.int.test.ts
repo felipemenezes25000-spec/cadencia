@@ -106,13 +106,12 @@ describe('document templates', () => {
 
   it('PUT em id inexistente retorna 404', async () => {
     const app = await buildApp();
-    // Usa UUID v7 que não existe no banco
-    const fakeId = '00000000-0000-0000-0000-000000000001';
+    // UUID gerado que não existe no banco
+    const fakeId = 'a0000000-0000-0000-0000-000000000001';
     const r = await app.inject({
       method: 'PUT', url: `/v1/documentos/templates/${fakeId}`,
       payload: { titulo: 'X' },
       ...auth(s) });
-    // O UUID existe mas não pertence a esta clínica → 404
     expect(r.statusCode).toBe(404);
     await app.close();
   });

@@ -23,7 +23,7 @@ const RAIZ_DO_WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), '..',
  * assim deixaria o cookie fora do alcance em produção. O rewrite resolve na
  * raiz: para o navegador, /v1/* e a mesma origem do app.
  */
-const ALVO_API = process.env['API_ORIGIN'] ?? 'http://127.0.0.1:3001';
+const ALVO_API = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://127.0.0.1:3001';
 // Em produção, a API está no mesmo domínio via rewrite do Vercel
 // Para desenvolvimento local, usa localhost:3001
 // A variável de ambiente NEXT_PUBLIC_API_URL é configurada no Vercel
