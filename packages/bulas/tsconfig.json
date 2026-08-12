@@ -1,7 +1,4 @@
 {
-  "extends": ["@cadencia/tsconfig/base.json"],
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
+  "extends": ["../../tsconfig.base.json", "../../tsconfig.paths.json"],
   "include": ["src/**/*.ts"]
 }
