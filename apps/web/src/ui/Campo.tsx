@@ -29,20 +29,14 @@ export interface CampoProps
 }
 
 const wrapperBase = [
-  'flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 shadow-elev-1',
-  'transition-[border-color,box-shadow,background-color] duration-150 hover:border-line-strong',
+  'flex items-center gap-2.5 rounded-lg border bg-surface px-3',
+  'transition-[border-color,background-color] duration-150 hover:border-line-strong',
 ].join(' ');
 
-const wrapperFocus =
-  'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/12 focus-within:shadow-none';
-
-const wrapperError =
-  'border-danger focus-within:border-danger focus-within:ring-danger/12';
-
+const wrapperFocus = 'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/10';
+const wrapperError = 'border-danger focus-within:border-danger focus-within:ring-danger/12';
 const wrapperNormal = 'border-line';
-
-const inputBase =
-  'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
+const inputBase = 'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
   function Campo(props, ref) {
@@ -78,9 +72,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
       return initial.length;
     });
 
-    function handleChange(
-      e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
-    ) {
+    function handleChange(e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) {
       if (maxLength != null) setCharCount(e.target.value.length);
       if (onChange) onChange(e as ChangeEvent<HTMLInputElement>);
     }
@@ -90,7 +82,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
       wrapperBase,
       wrapperFocus,
       temErro ? wrapperError : wrapperNormal,
-      denso && 'h-8 shadow-none',
+      denso && 'h-8',
     );
 
     const sharedInputProps = {
@@ -108,16 +100,10 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
 
     return (
       <div className={cn('flex flex-col gap-1.5', className)}>
-        {rotulo && (
-          <label htmlFor={id} className="text-[13px] font-semibold text-text-secondary">
-            {rotulo}
-          </label>
-        )}
+        {rotulo && <label htmlFor={id} className="text-[13px] font-semibold text-text-secondary">{rotulo}</label>}
 
         <div className={wrapperClasses}>
-          {prefixo && (
-            <span className="shrink-0 text-text-tertiary" data-testid="campo-prefixo">{prefixo}</span>
-          )}
+          {prefixo && <span className="shrink-0 text-text-tertiary" data-testid="campo-prefixo">{prefixo}</span>}
 
           {variante === 'textarea' ? (
             <textarea
@@ -136,9 +122,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
             />
           )}
 
-          {sufixo && (
-            <span className="shrink-0 text-text-tertiary" data-testid="campo-sufixo">{sufixo}</span>
-          )}
+          {sufixo && <span className="shrink-0 text-text-tertiary" data-testid="campo-sufixo">{sufixo}</span>}
         </div>
 
         <div className="flex min-h-[18px] items-center gap-2">
@@ -158,18 +142,13 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
                   {erro}
                 </motion.p>
               ) : textoAjuda != null ? (
-                <p key="ajuda" id={idAjuda} className="text-xs leading-relaxed text-text-tertiary">
-                  {textoAjuda}
-                </p>
+                <p key="ajuda" id={idAjuda} className="text-xs leading-relaxed text-text-tertiary">{textoAjuda}</p>
               ) : null}
             </AnimatePresence>
           </div>
 
           {showCounter && (
-            <span
-              className={cn('ml-auto text-xs tabular-nums', nearMax ? 'text-danger' : 'text-text-tertiary')}
-              data-testid="campo-contador"
-            >
+            <span className={cn('ml-auto text-xs tabular-nums', nearMax ? 'text-danger' : 'text-text-tertiary')} data-testid="campo-contador">
               {charCount}/{maxLength}
             </span>
           )}

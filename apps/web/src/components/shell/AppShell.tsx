@@ -62,7 +62,7 @@ function MobileNavigation() {
   ] as const;
 
   return (
-    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-start justify-around border-t border-white/[.08] bg-nav px-1 pt-2 shadow-elev-2 md:hidden">
+    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-start justify-around border-t border-line bg-surface px-1 pt-1.5 md:hidden">
       {items.map((item) => {
         const active = pathname === item.href
           || ('activePrefix' in item && pathname.startsWith(item.activePrefix))
@@ -74,12 +74,12 @@ function MobileNavigation() {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex min-w-[58px] flex-col items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors-fast',
-              active ? 'text-white' : 'text-nav-muted',
+              'flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors-fast',
+              active ? 'text-accent' : 'text-text-faint',
             )}
           >
-            <span className={cn('grid size-8 place-items-center rounded-lg', active && 'bg-white/[.10] text-nav-accent')}>
-              <Icon size={20} weight={active ? 'fill' : 'regular'} aria-hidden />
+            <span className={cn('grid size-8 place-items-center rounded-lg', active ? 'bg-accent-soft text-accent' : 'text-text-muted')}>
+              <Icon size={19} weight={active ? 'fill' : 'regular'} aria-hidden />
             </span>
             {item.label}
           </Link>

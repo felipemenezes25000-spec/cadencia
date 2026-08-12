@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
 /*
- * CADENCIA CLINICAL OS — Design System v5
- * Tema claro unico, com shell clinico de alto contraste e superficies de trabalho
- * silenciosas. Cores semanticas sempre acompanham texto/icone — nunca carregam
- * significado sozinhas.
+ * CADENCIA CLINICAL UI — Design System v6
+ * Uma linguagem visual só: clara, precisa, clínica e silenciosa.
+ * Hierarquia vem de tipografia, alinhamento, espaço e estado — não de decoração.
  */
 @theme {
   --color-canvas: var(--canvas);
@@ -74,48 +73,49 @@
   --shadow-elev-3: var(--shadow-dialog);
 
   --radius-sm: 6px;
-  --radius-md: 9px;
-  --radius-lg: 11px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
   --radius-full: 999px;
 }
 
 :root {
   color-scheme: light;
 
-  --canvas: #f3f6f9;
+  --canvas: #f5f7f8;
   --surface: #ffffff;
-  --surface-subtle: #f7f9fb;
-  --surface-sunken: #eef3f6;
-  --surface-hover: #f1f6f8;
+  --surface-subtle: #f8fafb;
+  --surface-sunken: #f0f3f4;
+  --surface-hover: #f3f7f7;
   --surface-raised: #ffffff;
-  --border: #dce5e9;
-  --border-strong: #c3d1d8;
+  --border: #e0e6e8;
+  --border-strong: #c7d1d5;
 
-  --text-primary: #102734;
-  --text-secondary: #526875;
-  --text-tertiary: #7a8d97;
+  --text-primary: #17313b;
+  --text-secondary: #5b707a;
+  --text-tertiary: #84939a;
 
-  --brand: #0d6878;
-  --brand-hover: #095968;
-  --brand-strong: #073b4c;
-  --brand-soft: #ddf1f3;
+  --brand: #0b6b76;
+  --brand-hover: #075b65;
+  --brand-strong: #06444c;
+  --brand-soft: #e2f1f2;
 
-  --nav: #102735;
-  --nav-active: #193847;
-  --nav-text: #edf5f7;
-  --nav-muted: #9fb2bc;
-  --nav-accent: #70cad6;
+  /* nav usa a mesma família clara do produto; não existe mais um segundo tema */
+  --nav: #ffffff;
+  --nav-active: #e2f1f2;
+  --nav-text: #17313b;
+  --nav-muted: #687c85;
+  --nav-accent: #0b6b76;
 
-  --success: #24724c;
-  --success-soft: #e4f5eb;
-  --warning: #9a5b13;
-  --warning-soft: #fff1d8;
-  --danger: #a13b43;
-  --danger-soft: #fdebed;
-  --info: #315f9a;
-  --info-soft: #e8f0fb;
+  --success: #28734e;
+  --success-soft: #e8f4ed;
+  --warning: #96601c;
+  --warning-soft: #fff3df;
+  --danger: #a04249;
+  --danger-soft: #fbecee;
+  --info: #3d6697;
+  --info-soft: #ebf1f8;
 
   --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --fs-11: 11px;
@@ -141,15 +141,15 @@
   --s-8: 24px;
 
   --r-sm: 6px;
-  --r-md: 9px;
-  --r-lg: 11px;
-  --r-xl: 14px;
-  --r-2xl: 18px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+  --r-2xl: 14px;
   --r-full: 999px;
 
-  --shadow-card: 0 1px 2px rgb(16 39 52 / 0.045), 0 1px 8px rgb(16 39 52 / 0.025);
-  --shadow-menu: 0 14px 38px rgb(16 39 52 / 0.14), 0 2px 8px rgb(16 39 52 / 0.06);
-  --shadow-dialog: 0 30px 80px rgb(16 39 52 / 0.22), 0 8px 24px rgb(16 39 52 / 0.08);
+  --shadow-card: 0 1px 2px rgb(23 49 59 / .035);
+  --shadow-menu: 0 16px 42px rgb(23 49 59 / .13), 0 2px 8px rgb(23 49 59 / .05);
+  --shadow-dialog: 0 30px 80px rgb(23 49 59 / .20), 0 8px 24px rgb(23 49 59 / .07);
   --elev-1: var(--shadow-card);
   --elev-2: var(--shadow-menu);
   --elev-3: var(--shadow-dialog);
@@ -157,7 +157,7 @@
   --aurora: var(--brand);
 
   --dur-1: 100ms;
-  --dur-2: 160ms;
+  --dur-2: 150ms;
   --dur-3: 220ms;
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-in-out: cubic-bezier(.4, 0, .2, 1);
@@ -167,10 +167,10 @@
   --z-popover: 60;
   --z-modal: 80;
   --z-toast: 100;
-  --nav-width: 240px;
+  --nav-width: 232px;
   --nav-height: 0px;
-  --page-gutter: clamp(18px, 2.1vw, 34px);
-  --page-max: 1760px;
+  --page-gutter: clamp(18px, 2vw, 32px);
+  --page-max: 1680px;
 }
 
 * { box-sizing: border-box; }
@@ -181,7 +181,7 @@ body {
   background: var(--canvas);
   color: var(--text-primary);
   font: 400 14px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: -.008em;
+  letter-spacing: -.006em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -204,37 +204,40 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 .clinical-page {
   width: min(100%, var(--page-max));
   margin-inline: auto;
-  padding: 28px var(--page-gutter) 56px;
+  padding: 26px var(--page-gutter) 52px;
 }
 
 .cadencia-card,
-.clinical-panel {
+.clinical-panel,
+.cadencia-surface,
+.cadencia-panel,
+.cadencia-table-shell {
   border: 1px solid var(--border);
-  border-radius: var(--r-xl);
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
 
-.cadencia-surface {
-  border: 1px solid var(--border);
-  border-radius: var(--r-2xl);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
+.cadencia-card,
+.clinical-panel,
+.cadencia-table-shell { border-radius: var(--r-xl); }
+.cadencia-surface,
+.cadencia-panel { border-radius: var(--r-xl); }
+.cadencia-panel,
+.cadencia-table-shell { overflow: hidden; }
 
 .cadencia-section-heading {
   color: var(--text-primary);
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: -.02em;
+  letter-spacing: -.018em;
 }
 
 .cadencia-eyebrow,
 .cadencia-kicker {
   color: var(--brand);
   font-size: 11px;
-  font-weight: 750;
-  letter-spacing: .09em;
+  font-weight: 700;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
@@ -245,24 +248,18 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 }
 .cadencia-card-interactive:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 4px 18px rgb(16 39 52 / .06);
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgb(23 49 59 / .05);
 }
 .transition-colors-fast { transition: color var(--dur-2), background-color var(--dur-2), border-color var(--dur-2), box-shadow var(--dur-2); }
 .transition-transform-fast { transition: transform var(--dur-2) var(--ease-out); }
 
 .cadencia-glass { background: var(--surface); }
 .cadencia-gradient-text { color: var(--brand); }
-.cadencia-panel {
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--r-2xl);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
 .cadencia-icon-orb {
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--brand-soft);
   color: var(--brand);
 }
@@ -272,12 +269,10 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
   height: 21px;
   place-items: center;
   border: 1px solid var(--border);
-  border-bottom-color: var(--border-strong);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--surface);
   color: var(--text-tertiary);
   font: 650 10px/1 var(--font-mono);
-  box-shadow: 0 1px 1px rgb(16 39 52 / .05);
 }
 
 .cadencia-live-dot {
@@ -288,23 +283,29 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
   box-shadow: 0 0 0 3px var(--success-soft);
 }
 
-.cadencia-table-shell {
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
-
 table { border-collapse: separate; border-spacing: 0; }
 thead th {
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: .055em;
+  letter-spacing: .045em;
   text-transform: uppercase;
 }
 tbody tr { transition: background-color var(--dur-1) ease; }
+
+/*
+ * Tailwind 4 interpreta text-[var(--fs-*)] como cor ambígua. O legado usa
+ * essas classes como tamanho. Corrigimos no sistema para eliminar variação
+ * tipográfica silenciosa entre telas sem depender da ordem de geração.
+ */
+.text-\[var\(--fs-11\)\] { color: inherit; font-size: var(--fs-11); }
+.text-\[var\(--fs-12\)\] { color: inherit; font-size: var(--fs-12); }
+.text-\[var\(--fs-13\)\] { color: inherit; font-size: var(--fs-13); }
+.text-\[var\(--fs-14\)\] { color: inherit; font-size: var(--fs-14); }
+.text-\[var\(--fs-15\)\] { color: inherit; font-size: var(--fs-15); }
+.text-\[var\(--fs-18\)\] { color: inherit; font-size: var(--fs-18); }
+.text-\[var\(--fs-22\)\] { color: inherit; font-size: var(--fs-22); }
+.text-\[var\(--fs-28\)\] { color: inherit; font-size: var(--fs-28); }
 
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .scrollbar-thin::-webkit-scrollbar { width: 7px; height: 7px; }
@@ -338,8 +339,8 @@ tbody tr { transition: background-color var(--dur-1) ease; }
 @keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 @media (max-width: 767px) {
-  :root { --nav-width: 0px; --nav-height: 72px; --page-gutter: 16px; }
-  .cadencia-page, .clinical-page { padding-top: 20px; padding-bottom: 96px; }
+  :root { --nav-width: 0px; --nav-height: 68px; --page-gutter: 16px; }
+  .cadencia-page, .clinical-page { padding-top: 20px; padding-bottom: 92px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

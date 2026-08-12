@@ -12,7 +12,6 @@ export type AlturaBotao = 28 | 32 | 40;
 export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   readonly variante?: VarianteBotao;
   readonly tamanho?: TamanhoBotao;
-  /** @deprecated Use `tamanho` instead. Mantido para compatibilidade. */
   readonly altura?: AlturaBotao;
   readonly iconeEsquerda?: PhosphorIcon;
   readonly iconeDireita?: PhosphorIcon;
@@ -34,10 +33,10 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'border border-accent bg-accent text-accent-on shadow-elev-1 hover:border-accent-hover hover:bg-accent-hover',
-  secundario: 'border border-line bg-surface text-text shadow-elev-1 hover:border-line-strong hover:bg-surface-subtle',
+  primario: 'border border-accent bg-accent text-accent-on hover:border-accent-hover hover:bg-accent-hover',
+  secundario: 'border border-line bg-surface text-text hover:border-line-strong hover:bg-surface-subtle',
   fantasma: 'border border-transparent bg-transparent text-text-muted hover:bg-surface-subtle hover:text-text',
-  perigo: 'border border-danger bg-danger text-white shadow-elev-1 hover:brightness-95',
+  perigo: 'border border-danger bg-danger text-white hover:brightness-95',
 };
 
 const classesTamanho: Record<TamanhoBotao, string> = {
@@ -59,8 +58,7 @@ export function Botao({
   className,
   ...resto
 }: BotaoProps) {
-  const tamanhoResolvido: TamanhoBotao =
-    tamanho ?? (altura ? ALTURA_PARA_TAMANHO[altura] : 'md');
+  const tamanhoResolvido: TamanhoBotao = tamanho ?? (altura ? ALTURA_PARA_TAMANHO[altura] : 'md');
   const tamanhoIcone = TAMANHO_ICONE[tamanhoResolvido];
   const desabilitado = disabled === true || carregando;
 
@@ -71,8 +69,8 @@ export function Botao({
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.01em]',
-        'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:translate-y-px',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-lg font-semibold tracking-[-0.008em]',
+        'transition-[background-color,border-color,color,transform] duration-150 ease-out active:translate-y-px',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         classesVariante[variante],
         classesTamanho[tamanhoResolvido],
@@ -83,34 +81,13 @@ export function Botao({
       )}
     >
       {carregando ? (
-        <SpinnerGap
-          size={tamanhoIcone}
-          className="shrink-0 animate-spin"
-          aria-hidden
-          data-testid="spinner-carregando"
-        />
+        <SpinnerGap size={tamanhoIcone} className="shrink-0 animate-spin" aria-hidden data-testid="spinner-carregando" />
       ) : (
-        IconeEsq && (
-          <IconeEsq
-            size={tamanhoIcone}
-            className="shrink-0"
-            aria-hidden
-            data-testid="icone-esquerda"
-          />
-        )
+        IconeEsq && <IconeEsq size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-esquerda" />
       )}
       {children}
-      {IconeDir && (
-        <IconeDir
-          size={tamanhoIcone}
-          className="shrink-0"
-          aria-hidden
-          data-testid="icone-direita"
-        />
-      )}
-      {carregando && (
-        <span role="status" className="sr-only">Carregando</span>
-      )}
+      {IconeDir && <IconeDir size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-direita" />}
+      {carregando && <span role="status" className="sr-only">Carregando</span>}
     </button>
   );
 }
