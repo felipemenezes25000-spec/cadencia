@@ -80,8 +80,8 @@ export async function documentTemplateRoutes(app: FastifyInstance): Promise<void
     const b = req.body as { professionalId?: string; kind: string; titulo: string; corpo: string };
     try {
       const { rows } = await tx.query(
-        `INSERT INTO clin.document_template (clinic_id, professional_id, kind, titulo, corpo)
-         VALUES (current_setting('app.clinic_id')::uuid, $1, $2, $3, $4)
+        `INSERT INTO clin.document_template (tenant_id, clinic_id, professional_id, kind, titulo, corpo)
+         VALUES (current_setting('app.tenant_id')::uuid, current_setting('app.clinic_id')::uuid, $1, $2, $3, $4)
          RETURNING id, clinic_id, professional_id, kind, titulo, corpo,
                    created_at::text AS created_at, updated_at::text AS updated_at`,
         [b.professionalId ?? null, b.kind, b.titulo, b.corpo],
