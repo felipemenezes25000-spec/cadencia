@@ -7,6 +7,8 @@ import { cn } from "../lib/cn";
 import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
 import { PageHeader } from "../ui/PageHeader";
 
+/* ── Tipos exportados ────────────────────────────────────────────── */
+
 export type SubAbaConvenios =
   | "a-faturar"
   | "lotes"
