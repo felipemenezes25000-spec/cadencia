@@ -443,7 +443,6 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           <div
             className="hidden items-center gap-2 text-sm text-text-muted md:flex"
             aria-label="Duração do atendimento"
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
             role="timer"
           >
             <Icone icon={Timer} size="sm" />
@@ -559,7 +558,6 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           <nav
             className="flex min-w-0 items-center gap-2 overflow-x-auto max-sm:w-full"
             aria-label="Acoes do atendimento"
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
           >
             <Botao variante="secundario" iconeEsquerda={Pill} onClick={prescrever}>
               Prescrever

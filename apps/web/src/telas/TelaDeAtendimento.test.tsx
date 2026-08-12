@@ -253,7 +253,6 @@ describe('TelaDeAtendimento', () => {
     renderTela({ aoFinalizar });
 
     // A finalizacao e a unica CTA primaria e vive no cabecalho do workspace.
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {
@@ -381,7 +380,6 @@ describe('TelaDeAtendimento', () => {
     renderTela({ aoFinalizar });
 
     // Seleciona a CTA de finalizacao do cabecalho (nao o mock do editor)
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {

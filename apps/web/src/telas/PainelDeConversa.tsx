@@ -223,7 +223,6 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
       {/* Cabecalho */}
       <header className="col-span-full flex min-h-[64px] items-center gap-3 border-b border-line bg-surface px-4 py-3">
         {/* Botao voltar (mobile) */}
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
         {p.aoVoltar != null && (
           <button
             type="button"

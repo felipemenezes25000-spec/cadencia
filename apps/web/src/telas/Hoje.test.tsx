@@ -102,7 +102,7 @@ describe('cockpit Hoje', () => {
   });
 
   it('estado vazio explica o que aconteceu', async () => {
-    montar({ carregarDia: vi.fn(async () => ({ contadores: { agendados: 0, confirmados: 0, aguardando: 0, atendimentos: 0, faltas: 0 }, fila: [] })) });
+    montar({ carregarDia: vi.fn(async () => ({ contadores: { agendados: 0, confirmados: 0, aguardando: 0, atendidos: 0, faltas: 0 }, fila: [] })) });
     expect(await screen.findByText('Nenhum atendimento hoje')).toBeVisible();
     expect(screen.getByText(/sem atendimentos agendados/i)).toBeVisible();
   });

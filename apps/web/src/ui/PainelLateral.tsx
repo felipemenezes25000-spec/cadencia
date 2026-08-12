@@ -92,7 +92,6 @@ export function PainelLateral({
                       {descricao ?? `Painel lateral: ${titulo ?? 'detalhes'}`}
                     </Dialog.Description>
                   </div>
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
                   <Dialog.Close asChild>
                     <button
                       type="button"
@@ -110,7 +109,6 @@ export function PainelLateral({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-5 scrollbar-thin">
->>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
                   {children}
                 </div>
                 {rodape ? <footer className="shrink-0 border-t border-line bg-surface px-5 py-4">{rodape}</footer> : null}
