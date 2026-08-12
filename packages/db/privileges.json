@@ -1361,5 +1361,35 @@
         "UPDATE"
       ]
     }
+  },
+  "app.clinic_print_config": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.professional_config": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "clin.document_template": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
   }
 }

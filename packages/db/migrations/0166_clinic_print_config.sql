@@ -1,8 +1,9 @@
 -- 0166_clinic_print_config.sql
--- Configuracao de impressao por clinica: cabeçalho, rodape e opcoes de exibicao.
+-- Configuracao de impressao por clinica: cabecalho, rodape e opcoes de exibicao.
 
 CREATE TABLE app.clinic_print_config (
-  clinic_id          uuid PRIMARY KEY REFERENCES app.clinic(id),
+  tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
+  clinic_id       uuid NOT NULL REFERENCES app.clinic(id),
   -- Cabecalho
   logo_url           text,
   header_line1       text,
@@ -16,14 +17,24 @@ CREATE TABLE app.clinic_print_config (
   show_cnes         boolean DEFAULT true,
   show_professional boolean DEFAULT true,
   paper_size        text DEFAULT 'A4' CHECK (paper_size IN ('A4', 'CARD')),
-  updated_at        timestamptz DEFAULT now()
+  updated_at        timestamptz DEFAULT now(),
+  PRIMARY KEY (tenant_id, clinic_id)
 );
 ALTER TABLE app.clinic_print_config OWNER TO app_owner;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON app.clinic_print_config TO app_rw;
 
--- RLS: mesma politica de app.clinic — acesso pela clinic_id do contexto
+-- RLS: mesma politica de app.clinic — acesso pela tenant_id do contexto
 ALTER TABLE app.clinic_print_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.clinic_print_config FORCE  ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  CREATE POLICY clinic_print_config_tenant ON app.clinic_print_config
+    FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 DO $$
 BEGIN

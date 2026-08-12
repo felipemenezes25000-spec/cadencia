@@ -4,7 +4,7 @@
 
 CREATE TABLE clin.document_template (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       uuid NOT NULL REFERENCES app.tenant(id),
+  tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
   clinic_id       uuid NOT NULL REFERENCES app.clinic(id),
   professional_id uuid REFERENCES app.professional(id),
   kind            text NOT NULL CHECK (kind IN (
@@ -24,6 +24,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON clin.document_template TO app_rw;
 
 -- RLS
 ALTER TABLE clin.document_template ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clin.document_template FORCE  ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
