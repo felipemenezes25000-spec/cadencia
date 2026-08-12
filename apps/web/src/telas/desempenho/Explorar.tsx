@@ -42,7 +42,7 @@ function formatCents(cents: number): string {
 function SimpleBarChart({ rows }: { readonly rows: readonly ExploreRow[] }) {
   const maxVal = Math.max(...rows.map((r) => r.valueCents), 1);
   return (
-    <div role="img" aria-label="Grafico de barras">
+    <div role="img" aria-label="Gráfico de barras">
       {rows.map((r) => {
         const width = Math.max((r.valueCents / maxVal) * 100, 2);
         return (
@@ -114,23 +114,23 @@ export function Explorar(p: ExplorarProps) {
         <Botao
           variante="secundario"
           altura={28}
-          onClick={() => { void p.aoSalvarVisao('Nova visao', p.filters, p.chartKind); }}
+          onClick={() => { void p.aoSalvarVisao('Nova visão', p.filters, p.chartKind); }}
         >
-          Salvar visao
+          Salvar visão
         </Botao>
       </div>
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
         <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
-          dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
+          dados até {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
 
-      {/* Tabs de visoes salvas */}
+      {/* Tabs de visões salvas */}
       <div
         role="tablist"
-        aria-label="Visoes salvas"
+        aria-label="Visões salvas"
         className="flex gap-0.5 overflow-x-auto border-b border-line scrollbar-thin"
       >
         {p.savedViews.map((v) => (
@@ -152,8 +152,8 @@ export function Explorar(p: ExplorarProps) {
         ))}
       </div>
 
-      {/* Seletor de tipo de grafico */}
-      <div role="radiogroup" aria-label="Tipo de grafico" className="flex gap-1">
+      {/* Seletor de tipo de gráfico */}
+      <div role="radiogroup" aria-label="Tipo de gráfico" className="flex gap-1">
         {(['bar', 'line', 'pie'] as const).map((kind) => (
           <button
             key={kind}
@@ -175,7 +175,7 @@ export function Explorar(p: ExplorarProps) {
         ))}
       </div>
 
-      {/* Grafico */}
+      {/* Gráfico */}
       <section
         aria-label="Resultado"
         className="rounded-xl border border-line bg-surface p-4 shadow-elev-1"

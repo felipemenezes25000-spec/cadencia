@@ -31,8 +31,8 @@ function montar(over = {}) {
 }
 
 /**
- * Aguarda o conteudo carregar. Em jsdom, as visualizacoes desktop e mobile
- * sao renderizadas simultaneamente (CSS nao aplica), entao usamos queryAll.
+ * Aguarda o conteúdo carregar. Em jsdom, as visualizações desktop e mobile
+ * são renderizadas simultaneamente (CSS não aplica), então usamos queryAll.
  */
 async function esperarCarregar() {
   await waitFor(() => {
@@ -68,7 +68,7 @@ describe('tela Agenda', () => {
     });
   });
 
-  it('renderiza tabs de visualizacao', async () => {
+  it('renderiza tabs de visualização', async () => {
     montar();
     const abas = await screen.findAllByRole('tab');
     expect(abas.map((a) => a.textContent)).toEqual([
@@ -76,11 +76,11 @@ describe('tela Agenda', () => {
     ]);
   });
 
-  it('mostra grade de horarios na visualizacao Dia', async () => {
+  it('mostra grade de horários na visualização Dia', async () => {
     montar();
     await esperarCarregar();
     const grid = await escopoDesktop();
-    // Verifica que etiquetas de hora estao na grade
+    // Verifica que etiquetas de hora estão na grade
     expect(grid.getByText('07:00')).toBeInTheDocument();
     expect(grid.getByText('12:00')).toBeInTheDocument();
     expect(grid.getByText('19:00')).toBeInTheDocument();
@@ -108,18 +108,18 @@ describe('tela Agenda', () => {
     expect(bloco).toHaveAttribute('data-status', 'agendado');
   });
 
-  it('navega entre datas com botoes anterior/proximo', async () => {
+  it('navega entre datas com botões anterior/próximo', async () => {
     const props = montar();
     await esperarCarregar();
 
     await userEvent.click(screen.getByLabelText('Dia anterior'));
     expect(props.aoMudarDia).toHaveBeenCalledWith('2026-08-02');
 
-    await userEvent.click(screen.getByLabelText('Proximo dia'));
+    await userEvent.click(screen.getByLabelText('Próximo dia'));
     expect(props.aoMudarDia).toHaveBeenCalledWith('2026-08-04');
   });
 
-  it('muda de visualizacao ao clicar nas tabs', async () => {
+  it('muda de visualização ao clicar nas tabs', async () => {
     const props = montar();
     await esperarCarregar();
 
@@ -130,24 +130,24 @@ describe('tela Agenda', () => {
   it('renderiza como lista no mobile', async () => {
     montar();
     await esperarCarregar();
-    // Ambas as visualizacoes estao no DOM (CSS controla visibilidade)
+    // Ambas as visualizações estão no DOM (CSS controla visibilidade)
     expect(document.querySelector('[data-view="desktop-grid"]')).toBeInTheDocument();
     expect(document.querySelector('[data-view="mobile-list"]')).toBeInTheDocument();
-    // A lista mobile contem o agendamento
+    // A lista mobile contém o agendamento
     const mobileList = document.querySelector('[data-view="mobile-list"]') as HTMLElement;
     expect(within(mobileList).getByText('Maria Souza Lima')).toBeInTheDocument();
   });
 
-  /* ── Testes de logica de negocio preservados ────────────── */
+  /* ── Testes de lógica de negócio preservados ────────────── */
 
-  it('as teclas 1..5 trocam a visao — atalho fora de campo de texto', async () => {
+  it('as teclas 1..5 trocam a visão — atalho fora de campo de texto', async () => {
     const { aoMudarVisao } = montar();
     await esperarCarregar();
     await userEvent.keyboard('4');
     expect(aoMudarVisao).toHaveBeenCalledWith('profissional');
   });
 
-  it('a visao vai para a query string, nao para estado local', async () => {
+  it('a visão vai para a query string, não para estado local', async () => {
     const { aoMudarVisao } = montar();
     await userEvent.click(await screen.findByRole('tab', { name: 'Semana' }));
     expect(aoMudarVisao).toHaveBeenCalledWith('semana');
@@ -162,10 +162,10 @@ describe('tela Agenda', () => {
     expect(bloco).toBeTruthy();
   });
 
-  it('o botao Confirmar aparece para status agendado e envia confirmacao', async () => {
+  it('o botão Confirmar aparece para status agendado e envia confirmação', async () => {
     const { aoConfirmar } = montar();
     await esperarCarregar();
-    // Botao aparece em ambas as visualizacoes; usamos a do desktop
+    // Botão aparece em ambas as visualizações; usamos a do desktop
     const grid = await escopoDesktop();
     const botao = grid.getByRole('button', { name: /Confirmar Maria Souza Lima/ });
     expect(botao).toBeVisible();
@@ -173,7 +173,7 @@ describe('tela Agenda', () => {
     expect(aoConfirmar).toHaveBeenCalledWith('a1');
   });
 
-  it('apos confirmar, o status muda para confirmado e o glifo aparece', async () => {
+  it('após confirmar, o status muda para confirmado e o glifo aparece', async () => {
     montar();
     await esperarCarregar();
     const grid = await escopoDesktop();
@@ -182,11 +182,11 @@ describe('tela Agenda', () => {
       const glifos = screen.getAllByLabelText('Confirmado');
       expect(glifos.length).toBeGreaterThan(0);
     });
-    // O botao de confirmar desaparece de ambas as views
+    // O botão de confirmar desaparece de ambas as views
     expect(screen.queryAllByRole('button', { name: /Confirmar Maria Souza Lima/ })).toHaveLength(0);
   });
 
-  it('o botao Cobrar aparece para quem tem pagamento pendente', async () => {
+  it('o botão Cobrar aparece para quem tem pagamento pendente', async () => {
     const { aoCobrar } = montar();
     await esperarCarregar();
     const grid = await escopoDesktop();
@@ -196,14 +196,14 @@ describe('tela Agenda', () => {
     expect(aoCobrar).toHaveBeenCalledWith('a1');
   });
 
-  it('Cobrar NAO aparece quando pagamentoPendente e false', async () => {
+  it('Cobrar NÃO aparece quando pagamentoPendente é false', async () => {
     montar({ carregar: vi.fn(async () =>
       FILA.map((f) => ({ ...f, pagamentoPendente: false }))) });
     await esperarCarregar();
     expect(screen.queryAllByRole('button', { name: /Cobrar/ })).toHaveLength(0);
   });
 
-  it('clicar num vao vazio abre o compositor INLINE, nao um modal', async () => {
+  it('clicar num vão vazio abre o compositor INLINE, não um modal', async () => {
     const { aoAbrirCompositor } = montar();
     const slots = await waitFor(() => {
       const s = document.querySelectorAll('[data-slot="vazio"]');
@@ -215,7 +215,7 @@ describe('tela Agenda', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(<Agenda {...montarProps()} />);
     await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(5));
     await esperarCarregar();
@@ -225,7 +225,7 @@ describe('tela Agenda', () => {
   /* ── Testes de drag-and-drop (task-21) ──────────────────── */
 
   describe('Agenda drag-and-drop', () => {
-    it('agendamentos sao arrostaveis (atributos de drag presentes)', async () => {
+    it('agendamentos são arrastáveis (atributos de drag presentes)', async () => {
       montar();
       await esperarCarregar();
       const grid = await escopoDesktop();
@@ -237,14 +237,14 @@ describe('tela Agenda', () => {
       expect(handle.tagName).toBe('SPAN');
     });
 
-    it('mostra ghost na posicao original (classe de arraste disponivel)', async () => {
+    it('mostra ghost na posição original (classe de arraste disponível)', async () => {
       montar();
       await esperarCarregar();
       const grid = await escopoDesktop();
       const item = grid.getByText('Maria Souza Lima');
       const bloco = item.closest('[data-status]') as HTMLElement;
 
-      // Antes de arrastar, o bloco nao tem opacidade reduzida
+      // Antes de arrastar, o bloco não tem opacidade reduzida
       expect(bloco.className).not.toContain('opacity-30');
     });
 
@@ -255,11 +255,11 @@ describe('tela Agenda', () => {
       const item = grid.getByText('Maria Souza Lima');
       const bloco = item.closest('[data-status]') as HTMLElement;
 
-      expect(bloco).toHaveAttribute('aria-roledescription', 'item arrastavel');
+      expect(bloco).toHaveAttribute('aria-roledescription', 'item arrastável');
       expect(bloco).toHaveAttribute('aria-describedby', 'dnd-instrucoes');
     });
 
-    it('renderiza instrucoes de acessibilidade para DnD', async () => {
+    it('renderiza instruções de acessibilidade para DnD', async () => {
       montar();
       await esperarCarregar();
 
@@ -270,7 +270,7 @@ describe('tela Agenda', () => {
       expect(instrucoes?.textContent).toContain('Pressione escape para cancelar');
     });
 
-    it('time slots sao droppable (possuem data-horario)', async () => {
+    it('time slots são droppable (possuem data-horario)', async () => {
       montar();
       await esperarCarregar();
 
@@ -286,7 +286,7 @@ describe('tela Agenda', () => {
       expect(horario).toMatch(/^\d{2}:\d{2}$/);
     });
 
-    it('clicar em slot vazio continua abrindo compositor (click nao e bloqueado pelo DnD)', async () => {
+    it('clicar em slot vazio continua abrindo compositor (click não é bloqueado pelo DnD)', async () => {
       const { aoAbrirCompositor } = montar();
       const slots = await waitFor(() => {
         const s = document.querySelectorAll('[data-slot="vazio"]');
@@ -297,20 +297,20 @@ describe('tela Agenda', () => {
       expect(aoAbrirCompositor).toHaveBeenCalled();
     });
 
-    it('DragOverlay nao esta visivel quando nao arrasta', async () => {
+    it('DragOverlay não está visível quando não arrasta', async () => {
       montar();
       await esperarCarregar();
 
-      // O overlay so aparece quando activeAgendamento esta setado
+      // O overlay só aparece quando activeAgendamento está setado
       expect(screen.queryByTestId('drag-overlay')).not.toBeInTheDocument();
     });
 
-    it('cursor e grab no handle de arraste', async () => {
+    it('cursor é grab no handle de arraste', async () => {
       montar();
       await esperarCarregar();
       const grid = await escopoDesktop();
       const item = grid.getByText('Maria Souza Lima');
-      // O cursor-grab esta no handle de arraste (span com tabindex)
+      // O cursor-grab está no handle de arraste (span com tabindex)
       const handle = item.closest('[tabindex="0"]') as HTMLElement;
 
       expect(handle.className).toContain('cursor-grab');

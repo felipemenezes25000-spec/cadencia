@@ -5,9 +5,9 @@ import { axe } from 'vitest-axe';
 import { WaterfallChart, type WaterfallSegment } from './WaterfallChart';
 
 /* ── Mocks para JSDOM ──────────────────────────────────────────────────── */
-/* ResizeObserver e SVG mocks estao em vitest.setup.ts */
+/* ResizeObserver e SVG mocks estão em vitest.setup.ts */
 
-// ParentSize depende de ResizeObserver — mockar para dimensoes fixas
+// ParentSize depende de ResizeObserver — mockar para dimensões fixas
 vi.mock('@visx/responsive', () => ({
   ParentSize: ({
     children,
@@ -71,7 +71,7 @@ describe('WaterfallChart', () => {
     expect(text).toContain('R$ 500');
   });
 
-  it('e responsivo via ParentSize', () => {
+  it('é responsivo via ParentSize', () => {
     const { container } = render(<WaterfallChart dados={dados} />);
     const svg = container.querySelector('svg');
     expect(svg).toBeTruthy();
@@ -79,12 +79,12 @@ describe('WaterfallChart', () => {
     expect(svg?.getAttribute('width')).toBe('500');
   });
 
-  it('renderiza titulo quando fornecido', () => {
+  it('renderiza título quando fornecido', () => {
     render(<WaterfallChart dados={dados} titulo="Resultado Financeiro" />);
     expect(screen.getByText('Resultado Financeiro')).toBeTruthy();
   });
 
-  it('nao renderiza titulo quando nao fornecido', () => {
+  it('não renderiza título quando não fornecido', () => {
     const { container } = render(<WaterfallChart dados={dados} />);
     const headings = container.querySelectorAll('h3');
     expect(headings.length).toBe(0);
@@ -93,7 +93,7 @@ describe('WaterfallChart', () => {
   it('renderiza linhas conectoras entre barras', () => {
     const { container } = render(<WaterfallChart dados={dados} />);
     const lines = container.querySelectorAll('[data-testid="connector-line"]');
-    // 4 segmentos geram 3 conectores (ultimo nao tem)
+    // 4 segmentos geram 3 conectores (último não tem)
     expect(lines.length).toBe(3);
   });
 
@@ -110,7 +110,7 @@ describe('WaterfallChart', () => {
     expect(svg).toBeTruthy();
   });
 
-  it('renderiza sem violacoes de acessibilidade', async () => {
+  it('renderiza sem violações de acessibilidade', async () => {
     const { container } = render(
       <WaterfallChart dados={dados} titulo="Teste acessibilidade" />,
     );

@@ -80,9 +80,9 @@ describe("ConveniosLayout", () => {
 
   it("renderiza a faixa de contadores com os 6 valores", () => {
     montar();
-    const grupo = screen.getByRole("group", { name: /Contadores de convenios/i });
+    const grupo = screen.getByRole("group", { name: /Contadores de convênios/i });
     expect(grupo).toBeVisible();
-    // Verifica que os valores dos contadores estao no grupo
+    // Verifica que os valores dos contadores estão no grupo
     const dentro = within(grupo);
     expect(dentro.getByText("14")).toBeVisible();
     expect(dentro.getByText("2")).toBeVisible();
@@ -92,12 +92,12 @@ describe("ConveniosLayout", () => {
     expect(dentro.getByText("1")).toBeVisible();
   });
 
-  it("rotulos dos contadores incluem glosas pendentes e recursos rascunho", () => {
+  it("rótulos dos contadores incluem glosas pendentes e recursos rascunho", () => {
     montar();
     expect(screen.getByText(/Guias a faturar/i)).toBeVisible();
     expect(screen.getByText(/Lotes rascunho/i)).toBeVisible();
     expect(screen.getByText(/Lotes enviados/i)).toBeVisible();
-    expect(screen.getByText(/Pendencias/i)).toBeVisible();
+    expect(screen.getByText(/Pendências/i)).toBeVisible();
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
     expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
   });
@@ -108,12 +108,12 @@ describe("ConveniosLayout", () => {
     expect(aoFiltrar).toHaveBeenCalledWith("glosasPendentes");
   });
 
-  it("renderiza o conteudo filho dentro do container", () => {
+  it("renderiza o conteúdo filho dentro do container", () => {
     montar();
     expect(screen.getByTestId("conteudo-filho")).toBeVisible();
   });
 
-  it("sem violacao de acessibilidade", async () => {
+  it("sem violação de acessibilidade", async () => {
     const { container } = render(
       <ConveniosLayout
         contadores={CONTADORES}
@@ -124,8 +124,8 @@ describe("ConveniosLayout", () => {
     );
     /**
      * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que nao existe neste layout
-     * (o conteudo vem das rotas filhas, nao de TabsContent).
+     * aria-controls apontando para TabsContent que não existe neste layout
+     * (o conteúdo vem das rotas filhas, não de TabsContent).
      */
     expect(
       await axe(container, {

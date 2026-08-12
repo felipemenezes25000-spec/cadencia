@@ -152,7 +152,7 @@ export interface PainelDeConversaProps {
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
   readonly aoVincularPaciente: () => void;
   readonly aoSelecionarTemplate: () => void;
-  /** Callback para voltar a lista no mobile */
+  /** Callback para voltar à lista no mobile */
   readonly aoVoltar?: () => void;
 }
 
@@ -168,12 +168,12 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
    * Sem isto duas coisas davam errado, e as duas mostram mensagem de um
    * paciente sob o nome de outro:
    *
-   * 1. O estado nao era zerado, entao a thread da conversa anterior continuava
-   *    na tela enquanto a nova carregava — ja com o cabecalho do novo contato.
+   * 1. O estado não era zerado, então a thread da conversa anterior continuava
+   *    na tela enquanto a nova carregava — já com o cabeçalho do novo contato.
    * 2. As duas buscas correm soltas. Clicar em A e logo em B, com A mais lento,
    *    fazia a resposta de A chegar DEPOIS e sobrescrever a de B.
    *
-   * `ativo` e fechado sobre esta execucao do efeito: quando o cleanup roda, a
+   * `ativo` é fechado sobre esta execução do efeito: quando o cleanup roda, a
    * resposta em voo deixa de poder escrever no estado.
    */
   useEffect(() => {
@@ -187,7 +187,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
     return () => { ativo = false; };
   }, [p, p.conversationId]);
 
-  /* Auto-scroll para ultima mensagem */
+  /* Auto-scroll para última mensagem */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [mensagens]);
@@ -220,9 +220,9 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
 
   return (
     <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden bg-surface md:grid-cols-[1fr_320px]">
-      {/* Cabecalho */}
+      {/* Cabeçalho */}
       <header className="col-span-full flex min-h-[64px] items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur">
-        {/* Botao voltar (mobile) */}
+        {/* Botão voltar (mobile) */}
         {p.aoVoltar != null && (
           <button
             type="button"
@@ -297,10 +297,10 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
             {contexto.proximoAgendamento !== null && (
               <div>
                 <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-                  Proximo agendamento
+                  Próximo agendamento
                 </h3>
                 <p className="m-0">
-                  {`${contexto.proximoAgendamento.dia} as ${contexto.proximoAgendamento.hora}`}
+                  {`${contexto.proximoAgendamento.dia} às ${contexto.proximoAgendamento.hora}`}
                 </p>
                 <p className="m-0 text-text-muted">
                   {contexto.proximoAgendamento.procedimento}
@@ -311,7 +311,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
             {contexto.pendencias.length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-                  Pendencias
+                  Pendências
                 </h3>
                 <ul className="m-0 grid list-none gap-1 p-0">
                   {contexto.pendencias.map((pend) => (
@@ -326,7 +326,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
             {contexto.historicoAgendamentos.length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-                  Historico
+                  Histórico
                 </h3>
                 <ul className="m-0 grid list-none gap-1 p-0">
                   {contexto.historicoAgendamentos.map((h) => (

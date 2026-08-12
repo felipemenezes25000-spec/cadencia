@@ -43,7 +43,7 @@ function montar(aberto = true) {
 }
 
 describe('DetalheGuia', () => {
-  it('renderiza no PainelLateral com titulo da guia', () => {
+  it('renderiza no PainelLateral com título da guia', () => {
     montar();
     expect(screen.getByRole('dialog', { name: /Guia 000001/i })).toBeVisible();
   });
@@ -52,7 +52,7 @@ describe('DetalheGuia', () => {
     montar();
     expect(screen.getByText('Maria Souza')).toBeVisible();
     expect(screen.getByText('Unimed')).toBeVisible();
-    // codigoProcedimento aparece tanto na info da guia quanto no historico de ajustes
+    // codigoProcedimento aparece tanto na info da guia quanto no histórico de ajustes
     const codigos = screen.getAllByText('10102019');
     expect(codigos.length).toBeGreaterThanOrEqual(1);
     expect(codigos[0]).toBeVisible();
@@ -72,9 +72,9 @@ describe('DetalheGuia', () => {
     expect(screen.getByText('SP')).toBeVisible();
   });
 
-  it('mostra historico de ajustes com campo, valores e motivo', () => {
+  it('mostra histórico de ajustes com campo, valores e motivo', () => {
     montar();
-    const secao = screen.getByRole('region', { name: /Historico de ajustes/i });
+    const secao = screen.getByRole('region', { name: /Histórico de ajustes/i });
     expect(secao).toBeVisible();
     expect(within(secao).getByText('codigo_procedimento')).toBeVisible();
     expect(within(secao).getByText('10101012')).toBeVisible();
@@ -83,7 +83,7 @@ describe('DetalheGuia', () => {
     expect(within(secao).getByText('Ana Financeiro')).toBeVisible();
   });
 
-  it('tem botao Ajustar que abre formulario', async () => {
+  it('tem botão Ajustar que abre formulário', async () => {
     montar();
     const botao = screen.getByRole('button', { name: /Ajustar/i });
     expect(botao).toBeVisible();
@@ -111,12 +111,12 @@ describe('DetalheGuia', () => {
     });
   });
 
-  it('nao renderiza quando fechado', () => {
+  it('não renderiza quando fechado', () => {
     montar(false);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <DetalheGuia
         aberto

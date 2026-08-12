@@ -63,7 +63,7 @@ describe("FinanceiroLayout", () => {
     const abaCaixa = screen.getByRole("tab", { name: /Caixa/i });
     expect(abaCaixa).toHaveAttribute("data-state", "active");
 
-    const abaVisao = screen.getByRole("tab", { name: /Visao geral/i });
+    const abaVisao = screen.getByRole("tab", { name: /Visão geral/i });
     expect(abaVisao).toHaveAttribute("data-state", "inactive");
   });
 
@@ -93,13 +93,13 @@ describe("FinanceiroLayout", () => {
     expect(within(aba).getByText("7")).toBeVisible();
   });
 
-  it("renderiza conteudo filho", () => {
+  it("renderiza conteúdo filho", () => {
     montar();
     expect(screen.getByTestId("conteudo-filho")).toBeVisible();
     expect(screen.getByText("Conteudo da aba")).toBeVisible();
   });
 
-  it("abas sao scrollaveis horizontalmente no mobile", () => {
+  it("abas são scrolláveis horizontalmente no mobile", () => {
     montar();
     const tablist = screen.getByRole("tablist");
     /* O container pai direto do tablist deve ter overflow-x-auto */
@@ -108,12 +108,12 @@ describe("FinanceiroLayout", () => {
     expect(scrollContainer?.className).toMatch(/overflow-x-auto/);
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = montar();
     /*
      * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que nao existe neste layout
-     * (o conteudo vem das rotas filhas, nao de TabsContent).
+     * aria-controls apontando para TabsContent que não existe neste layout
+     * (o conteúdo vem das rotas filhas, não de TabsContent).
      */
     expect(
       await axe(container, {

@@ -22,7 +22,7 @@ export interface ConversaResumo {
 
 const FILTROS: ReadonlyArray<{ chave: FiltroConversas; rotulo: string }> = [
   { chave: 'todas', rotulo: 'Todas' },
-  { chave: 'nao_lidas', rotulo: 'Nao lidas' },
+  { chave: 'nao_lidas', rotulo: 'Não lidas' },
   { chave: 'whatsapp', rotulo: 'WhatsApp' },
 ];
 
@@ -143,7 +143,7 @@ export function CaixaDeConversas(p: CaixaDeConversasProps) {
                 )}
               </div>
 
-              {/* Conteudo: nome + preview */}
+              {/* Conteúdo: nome + preview */}
               <div className="grid gap-0.5 overflow-hidden">
                 <span
                   className={cn(
@@ -163,7 +163,7 @@ export function CaixaDeConversas(p: CaixaDeConversasProps) {
                 </span>
               </div>
 
-              {/* Hora + badge de nao lidas */}
+              {/* Hora + badge de não lidas */}
               <div className="grid gap-0.5 justify-items-end self-start">
                 <span className="num text-[11px] text-text-muted">
                   {horaOuData(c.lastMessageAt)}

@@ -17,7 +17,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.DOMRect = class DOMRect {
       x = 0;
       y = 0;
@@ -46,9 +46,9 @@ beforeAll(() => {
     HTMLElement.prototype.releasePointerCapture = () => {};
   }
 
-  // ClipboardEvent nao existe no jsdom
+  // ClipboardEvent não existe no jsdom
   if (typeof globalThis.ClipboardEvent === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.ClipboardEvent = class ClipboardEvent extends Event {
       clipboardData: DataTransfer | null = null;
       constructor(type: string, init?: EventInit) {
@@ -57,9 +57,9 @@ beforeAll(() => {
     };
   }
 
-  // DragEvent nao existe no jsdom
+  // DragEvent não existe no jsdom
   if (typeof globalThis.DragEvent === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.DragEvent = class DragEvent extends Event {
       dataTransfer: DataTransfer | null = null;
       constructor(type: string, init?: EventInit) {
@@ -111,7 +111,7 @@ describe("EditorClinico", () => {
     });
   });
 
-  it("mostra toolbar de formatacao", async () => {
+  it("mostra toolbar de formatação", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
@@ -119,17 +119,17 @@ describe("EditorClinico", () => {
       expect(screen.getByRole("toolbar")).toBeInTheDocument();
     });
 
-    // Botoes de formatacao
+    // Botões de formatação
     expect(screen.getByLabelText("Negrito")).toBeInTheDocument();
-    expect(screen.getByLabelText("Italico")).toBeInTheDocument();
-    expect(screen.getByLabelText("Titulo")).toBeInTheDocument();
-    expect(screen.getByLabelText("Subtitulo")).toBeInTheDocument();
+    expect(screen.getByLabelText("Itálico")).toBeInTheDocument();
+    expect(screen.getByLabelText("Título")).toBeInTheDocument();
+    expect(screen.getByLabelText("Subtítulo")).toBeInTheDocument();
     expect(screen.getByLabelText("Lista com marcadores")).toBeInTheDocument();
     expect(screen.getByLabelText("Lista numerada")).toBeInTheDocument();
-    expect(screen.getByLabelText("Citacao")).toBeInTheDocument();
+    expect(screen.getByLabelText("Citação")).toBeInTheDocument();
   });
 
-  it("aplica negrito ao clicar no botao", async () => {
+  it("aplica negrito ao clicar no botão", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
@@ -142,20 +142,20 @@ describe("EditorClinico", () => {
       fireEvent.click(btnNegrito);
     });
 
-    // O botao deve ter aria-pressed apos clique
+    // O botão deve ter aria-pressed após clique
     // (pode estar true ou false dependendo do estado do TipTap)
     expect(btnNegrito).toHaveAttribute("aria-pressed");
   });
 
-  it("aplica italico ao clicar no botao", async () => {
+  it("aplica itálico ao clicar no botão", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Italico")).toBeInTheDocument();
+      expect(screen.getByLabelText("Itálico")).toBeInTheDocument();
     });
 
-    const btnItalico = screen.getByLabelText("Italico");
+    const btnItalico = screen.getByLabelText("Itálico");
     await act(async () => {
       fireEvent.click(btnItalico);
     });
@@ -163,15 +163,15 @@ describe("EditorClinico", () => {
     expect(btnItalico).toHaveAttribute("aria-pressed");
   });
 
-  it("insere heading ao clicar no botao", async () => {
+  it("insere heading ao clicar no botão", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Titulo")).toBeInTheDocument();
+      expect(screen.getByLabelText("Título")).toBeInTheDocument();
     });
 
-    const btnTitulo = screen.getByLabelText("Titulo");
+    const btnTitulo = screen.getByLabelText("Título");
     await act(async () => {
       fireEvent.click(btnTitulo);
     });
@@ -190,7 +190,7 @@ describe("EditorClinico", () => {
 
     // O Placeholder extension adiciona um data-placeholder ou classe is-empty
     const editorEl = document.querySelector(".tiptap, .ProseMirror");
-    // O placeholder e visivel via CSS :before — verificamos que o nodo existe
+    // O placeholder é visível via CSS :before — verificamos que o nodo existe
     expect(editorEl).toBeTruthy();
   });
 
@@ -203,7 +203,7 @@ describe("EditorClinico", () => {
     });
   });
 
-  it("mostra indicador de autosave quando onSalvar e fornecido", async () => {
+  it("mostra indicador de autosave quando onSalvar é fornecido", async () => {
     const props = propsBase({ onSalvar: vi.fn(async () => {}) });
     renderComProvider(<EditorClinico {...props} />);
 
@@ -212,7 +212,7 @@ describe("EditorClinico", () => {
     });
   });
 
-  it("carrega conteudo inicial", async () => {
+  it("carrega conteúdo inicial", async () => {
     const props = propsBase({ conteudoInicial: "<p>Texto de teste inicial</p>" });
     renderComProvider(<EditorClinico {...props} />);
 
@@ -221,7 +221,7 @@ describe("EditorClinico", () => {
     });
   });
 
-  it("e somente leitura quando readOnly=true", async () => {
+  it("é somente leitura quando readOnly=true", async () => {
     const props = propsBase({ readOnly: true });
     renderComProvider(<EditorClinico {...props} />);
 
@@ -230,19 +230,19 @@ describe("EditorClinico", () => {
       expect(editorEl).toBeTruthy();
     });
 
-    // Toolbar nao aparece em modo readOnly
+    // Toolbar não aparece em modo readOnly
     expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
 
-    // Editor nao e editavel
+    // Editor não é editável
     const editorEl = document.querySelector(".tiptap, .ProseMirror, [contenteditable]");
     expect(editorEl?.getAttribute("contenteditable")).toBe("false");
   });
 
-  it("o cronometro do atendimento aparece visivel", async () => {
+  it("o cronômetro do atendimento aparece visível", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
-    expect(screen.getByText(/Duracao/)).toBeVisible();
+    expect(screen.getByText(/Duração/)).toBeVisible();
   });
 
   it("Ctrl+R chama aoPrescrever", async () => {
@@ -292,15 +292,15 @@ describe("EditorClinico", () => {
     fireEvent.keyDown(container, { key: "Enter", ctrlKey: true });
 
     // O autosave tem debounce de 2s. Quem digita e aperta Ctrl+Enter em seguida
-    // nao pode perder a ultima frase — e a frase final costuma ser a conduta.
-    // Finalizar tem que descarregar o que esta na tela ANTES de selar a versao,
-    // porque depois de selada a versao e imutavel: o texto perdido nao volta.
+    // não pode perder a última frase — e a frase final costuma ser a conduta.
+    // Finalizar tem que descarregar o que está na tela ANTES de selar a versão,
+    // porque depois de selada a versão é imutável: o texto perdido não volta.
     await waitFor(() => expect(onSalvar).toHaveBeenCalled());
     await waitFor(() => expect(aoFinalizar).toHaveBeenCalled());
     expect(ordem).toEqual(["salvou", "finalizou"]);
   });
 
-  it("nao esconde toolbar quando nao e readOnly", async () => {
+  it("não esconde toolbar quando não é readOnly", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
@@ -309,7 +309,7 @@ describe("EditorClinico", () => {
     });
   });
 
-  it("sem violacao de acessibilidade", async () => {
+  it("sem violação de acessibilidade", async () => {
     vi.useRealTimers();
     const { container } = renderComProvider(
       <EditorClinico

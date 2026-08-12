@@ -35,7 +35,7 @@ export interface Automacao {
 export interface AutomacoesDeConversaProps {
   readonly carregar: () => Promise<Automacao[]>;
   readonly aoAlternarAtiva: (automationId: string, novoEstado: boolean) => Promise<void>;
-  /** @deprecated Mantido para compatibilidade. Use o formulario integrado. */
+  /** @deprecated Mantido para compatibilidade. Use o formulário integrado. */
   readonly aoEditar?: (automationId: string) => void;
   readonly aoExcluir?: (automationId: string) => void;
   readonly aoSalvar?: (dados: FormularioDados) => void;
@@ -67,7 +67,7 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        {/* Conteudo do card */}
+        {/* Conteúdo do card */}
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
             <Icone
@@ -79,13 +79,13 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
           </div>
           <p className="text-xs text-text-muted">{automacao.descricao}</p>
 
-          {/* Badges de gatilho e acao */}
+          {/* Badges de gatilho e ação */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
               Gatilho: {automacao.timing}
             </span>
             <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
-              Acao: {automacao.canal} - {automacao.templateNome}
+              Ação: {automacao.canal} - {automacao.templateNome}
             </span>
           </div>
         </div>
@@ -114,7 +114,7 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
               <button
                 type="button"
                 className="rounded-md p-1 text-text-muted hover:bg-surface-raised transition-colors-fast"
-                aria-label={`Acoes de ${automacao.nome}`}
+                aria-label={`Ações de ${automacao.nome}`}
               >
                 <Icone icon={DotsThree} size="md" />
               </button>
@@ -183,11 +183,11 @@ function FormularioAutomacao({ automacao, onSalvar, onCancelar }: FormularioAuto
     <form onSubmit={handleSubmit(onSalvar)} className="space-y-4">
       <Campo
         rotulo="Nome"
-        {...register('nome', { required: 'Nome obrigatorio' })}
+        {...register('nome', { required: 'Nome obrigatório' })}
         {...(errors.nome?.message ? { erro: errors.nome.message } : {})}
       />
       <Campo
-        rotulo="Descricao"
+        rotulo="Descrição"
         variante="textarea"
         {...register('descricao')}
       />
@@ -228,7 +228,7 @@ function AutomacoesSkeleton() {
       className="cadencia-page space-y-6"
       role="status"
       aria-busy="true"
-      aria-label="Carregando automacoes"
+      aria-label="Carregando automações"
       data-testid="automacoes-skeleton"
     >
       <div className="flex items-center justify-between">
@@ -307,19 +307,19 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
   return (
     <div className="cadencia-page space-y-6">
       <PageHeader
-        titulo="Automacoes"
-        subtitulo="Configure respostas e acoes automaticas para conversas"
+        titulo="Automações"
+        subtitulo="Configure respostas e ações automáticas para conversas"
         semBreadcrumb
         acoes={
           <Botao variante="primario" iconeEsquerda={Plus} onClick={abrirFormulario}>
-            Nova automacao
+            Nova automação
           </Botao>
         }
       />
 
-      {/* Lista de automacoes */}
+      {/* Lista de automações */}
       {automacoes.length > 0 && (
-        <div className="space-y-3" role="list" aria-label="Lista de automacoes">
+        <div className="space-y-3" role="list" aria-label="Lista de automações">
           {automacoes.map((auto) => (
             <div key={auto.automationId} role="listitem">
               <CardAutomacao
@@ -339,9 +339,9 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
       {automacoes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Icone icon={Robot} size="xl" className="mb-3 text-text-muted" />
-          <p className="text-base font-medium text-text">Nenhuma automacao configurada</p>
+          <p className="text-base font-medium text-text">Nenhuma automação configurada</p>
           <p className="mt-1 text-sm text-text-muted">
-            Crie automacoes para agilizar o atendimento por mensagens
+            Crie automações para agilizar o atendimento por mensagens
           </p>
           <Botao
             variante="primario"
@@ -349,19 +349,19 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
             iconeEsquerda={Plus}
             onClick={abrirFormulario}
           >
-            Nova automacao
+            Nova automação
           </Botao>
         </div>
       )}
 
-      {/* Formulario lateral de criacao/edicao */}
+      {/* Formulário lateral de criação/edição */}
       <PainelLateral
         aberto={formularioAberto}
         onFechar={() => {
           setFormularioAberto(false);
           setEditandoId(null);
         }}
-        titulo={editandoId ? 'Editar automacao' : 'Nova automacao'}
+        titulo={editandoId ? 'Editar automação' : 'Nova automação'}
       >
         <FormularioAutomacao
           automacao={editandoId ? automacoes.find((a) => a.automationId === editandoId) : undefined}

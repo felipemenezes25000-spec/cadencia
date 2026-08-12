@@ -54,17 +54,17 @@ describe('ConveniosLotes', () => {
   it('renderiza grid de lotes', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
-    // Verifica que todos os lotes estao presentes
+    // Verifica que todos os lotes estão presentes
     expect(screen.getByText('L-2026-002')).toBeVisible();
     expect(screen.getByText('L-2026-003')).toBeVisible();
-    // Verifica que ha um container de grid (section com aria-label)
+    // Verifica que há um container de grid (section com aria-label)
     expect(screen.getByLabelText('Lista de lotes')).toBeVisible();
   });
 
-  it('mostra numero, operadora, valor total', async () => {
+  it('mostra número, operadora, valor total', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
-    // Numero do lote
+    // Número do lote
     expect(screen.getByText('L-2026-001')).toBeVisible();
     // Nome da operadora (Unimed aparece em 2 lotes)
     expect(screen.getAllByText('Unimed')).toHaveLength(2);
@@ -87,7 +87,7 @@ describe('ConveniosLotes', () => {
   it('mostra barra de progresso quando processando', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('L-2026-003')).toBeVisible());
-    // Barra de progresso visivel
+    // Barra de progresso visível
     expect(screen.getByTestId('barra-progresso')).toBeVisible();
     // Texto de porcentagem
     expect(screen.getByText('65%')).toBeVisible();
@@ -100,13 +100,13 @@ describe('ConveniosLotes', () => {
     await waitFor(() => expect(screen.getByText('L-2026-001')).toBeVisible());
     const campoBusca = screen.getByLabelText('Buscar lote');
     await userEvent.type(campoBusca, 'Bradesco');
-    // Apenas o lote Bradesco deve estar visivel
+    // Apenas o lote Bradesco deve estar visível
     expect(screen.getByText('L-2026-002')).toBeVisible();
     expect(screen.queryByText('L-2026-001')).not.toBeInTheDocument();
     expect(screen.queryByText('L-2026-003')).not.toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <ConveniosLotes
         carregarDados={async () => DADOS}

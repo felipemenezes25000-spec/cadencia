@@ -23,7 +23,7 @@ import {
   type Mensagem,
 } from './PainelDeConversa';
 
-/* ── Props publicas ───────────────────────────────────────────────────── */
+/* ── Props públicas ───────────────────────────────────────────────────── */
 
 export interface ConversasProps {
   readonly filtro: FiltroConversas;
@@ -36,7 +36,7 @@ export interface ConversasProps {
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
   readonly aoVincularPaciente: () => void;
   readonly aoSelecionarTemplate: () => void;
-  /** Callback para voltar a lista no mobile (limpar conversa ativa) */
+  /** Callback para voltar à lista no mobile (limpar conversa ativa) */
   readonly aoVoltar?: () => void;
   /** Callback para iniciar nova conversa */
   readonly aoNova?: () => void;
@@ -46,11 +46,11 @@ export interface ConversasProps {
 
 const FILTROS: ReadonlyArray<{ chave: FiltroConversas; rotulo: string }> = [
   { chave: 'todas', rotulo: 'Todas' },
-  { chave: 'nao_lidas', rotulo: 'Nao lidas' },
+  { chave: 'nao_lidas', rotulo: 'Não lidas' },
   { chave: 'whatsapp', rotulo: 'WhatsApp' },
 ];
 
-/* ── Utilidades (replicadas de CaixaDeConversas — funcoes privadas la) ── */
+/* ── Utilidades (replicadas de CaixaDeConversas — funções privadas lá) ── */
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
@@ -86,7 +86,7 @@ function nomeExibido(c: ConversaResumo): string {
 
 /* ── Sub-componentes ───────────────────────────────────────────────────── */
 
-/** Estado vazio quando nenhuma conversa esta selecionada */
+/** Estado vazio quando nenhuma conversa está selecionada */
 function ConversaVazia() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
@@ -95,7 +95,7 @@ function ConversaVazia() {
         Nenhuma conversa selecionada
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Selecione uma conversa a esquerda ou inicie uma nova
+        Selecione uma conversa à esquerda ou inicie uma nova
       </p>
     </div>
   );
@@ -113,7 +113,7 @@ function ConversasSkeleton() {
       {/* Painel esquerdo skeleton */}
       <div className="w-80 shrink-0 border-r border-line max-md:w-full">
         <div className="border-b border-line p-4">
-          <Skeleton variant="text" width="120px" ariaLabel="Carregando titulo" />
+          <Skeleton variant="text" width="120px" ariaLabel="Carregando título" />
         </div>
         <div className="border-b border-line p-3">
           <Skeleton variant="text" height="36px" ariaLabel="Carregando busca" />
@@ -188,7 +188,7 @@ export function Conversas(p: ConversasProps) {
           conversaAtiva != null && 'max-md:hidden',
         )}
       >
-        {/* Cabecalho */}
+        {/* Cabeçalho */}
         <div className="flex min-h-[64px] items-center justify-between border-b border-line px-4 py-3">
           <h1 className="text-base font-semibold text-text">Conversas</h1>
           <Botao
@@ -261,7 +261,7 @@ export function Conversas(p: ConversasProps) {
                 {c.patientName != null ? iniciais(c.patientName) : '#'}
               </span>
 
-              {/* Nome + ultima mensagem */}
+              {/* Nome + última mensagem */}
               <div className="grid gap-0.5 overflow-hidden">
                 <span
                   className={cn(
@@ -276,7 +276,7 @@ export function Conversas(p: ConversasProps) {
                 </span>
               </div>
 
-              {/* Hora + badge de nao lidas */}
+              {/* Hora + badge de não lidas */}
               <div className="grid gap-0.5 justify-items-end self-start">
                 <span className="text-[11px] tabular-nums text-text-muted">
                   {horaOuData(c.lastMessageAt)}
@@ -307,7 +307,7 @@ export function Conversas(p: ConversasProps) {
       >
         {conversaAtiva != null && dadosConversa != null ? (
           <div className="flex min-h-0 flex-1 flex-col">
-            {/* Botao voltar — apenas no mobile */}
+            {/* Botão voltar — apenas no mobile */}
             <div className="flex items-center gap-2 border-b border-line bg-surface px-3 py-2 md:hidden">
               <button
                 type="button"

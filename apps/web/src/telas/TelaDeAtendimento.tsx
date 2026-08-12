@@ -54,9 +54,9 @@ export interface TelaDeAtendimentoProps {
   readonly procedimentoNome?: string;
   readonly valorSugeridoCentavos?: number;
   /**
-   * Abre a sessao do prescritor. Chamada ao MONTAR a tela, nao ao clicar em
-   * Prescrever: buscar o token so no clique poe o paciente esperando a ida ate
-   * a Memed. `mode` diferente de 'embedded' significa parceiro indisponivel.
+   * Abre a sessão do prescritor. Chamada ao MONTAR a tela, não ao clicar em
+   * Prescrever: buscar o token só no clique põe o paciente esperando a ida até
+   * a Memed. `mode` diferente de 'embedded' significa parceiro indisponível.
    */
   readonly abrirSessaoDoPrescritor: () => Promise<{
     mode: string;
@@ -68,9 +68,9 @@ export interface TelaDeAtendimentoProps {
   readonly buscarModelo: (termo: string) => Promise<ModeloHit[]>;
   readonly buscarValorAnterior: (campo: string) => Promise<ValorAnterior | null>;
   /**
-   * Registra no prontuario a receita que a Memed acabou de emitir. Recebe o id
-   * DELES: a confirmacao nasce do evento `prescricaoImpressa`, e nao de um botao
-   * nosso — botao nosso registraria receita que talvez nao exista la.
+   * Registra no prontuário a receita que a Memed acabou de emitir. Recebe o id
+   * DELES: a confirmação nasce do evento `prescricaoImpressa`, e não de um botão
+   * nosso — botão nosso registraria receita que talvez não exista lá.
    */
   readonly aoConfirmarPrescricao: (dados: { providerPrescriptionId: string })
     => Promise<{ prescriptionId: string }>;
@@ -85,55 +85,55 @@ export interface TelaDeAtendimentoProps {
 
   /** Dados completos do paciente para o sidebar */
   readonly paciente?: DadosDoPaciente;
-  /** Data/hora de inicio do atendimento (para timer de duracao) */
+  /** Data/hora de início do atendimento (para timer de duração) */
   readonly inicio?: Date;
-  /** Callback para voltar a tela anterior */
+  /** Callback para voltar à tela anterior */
   readonly aoVoltar?: () => void;
-  /** Conteudo inicial do editor */
+  /** Conteúdo inicial do editor */
   readonly conteudoInicial?: string;
   /** Callback de salvamento do editor */
   readonly onSalvar?: (conteudo: Record<string, unknown>) => Promise<void>;
   /**
-   * Emite atestado, declaracao, pedido de exame ou relatorio. Ausente = a tela
-   * NAO mostra o botao. Botao que abre painel que nao emite nada e pior que
-   * botao ausente: o medico conta com ele na frente do paciente.
+   * Emite atestado, declaração, pedido de exame ou relatório. Ausente = a tela
+   * NÃO mostra o botão. Botão que abre painel que não emite nada é pior que
+   * botão ausente: o médico conta com ele na frente do paciente.
    */
   /**
-   * Secoes e campos estruturados que a CLINICA configurou. Vazio = a clinica
-   * usa so a evolucao narrativa, e a ficha nao aparece.
+   * Seções e campos estruturados que a CLÍNICA configurou. Vazio = a clínica
+   * usa só a evolução narrativa, e a ficha não aparece.
    */
   readonly secoesDaFicha?: readonly SecaoDaFicha[];
   readonly valoresDaFicha?: Readonly<Record<string, string>>;
   readonly aoMudarFicha?: (chave: string, valor: string) => void;
-  /** Anexos do paciente. Ausente = a tela nao mostra o botao. */
+  /** Anexos do paciente. Ausente = a tela não mostra o botão. */
   readonly anexos?: readonly Anexo[];
   readonly aoEnviarAnexo?: (dados: { arquivo: File; kind: string }) => Promise<void>;
   readonly aoAbrirAnexo?: (attachmentId: string) => Promise<void>;
   /**
-   * Guia SP/SADT — a guia de exame. Ausente = sem botao.
+   * Guia SP/SADT — a guia de exame. Ausente = sem botão.
    *
-   * `convenio` nulo significa PARTICULAR: o painel abre e explica por que nao
-   * ha guia, em vez de o botao sumir. Botao ausente parece defeito; a frase
-   * ensina quem nunca faturou convenio.
+   * `convenio` nulo significa PARTICULAR: o painel abre e explica por que não
+   * há guia, em vez de o botão sumir. Botão ausente parece defeito; a frase
+   * ensina quem nunca faturou convênio.
    */
   readonly convenioDoAtendimento?: string | null;
   readonly guiasSadt?: readonly GuiaSadtEmitida[];
-  /** Rascunho: o painel compoe e a guia sai no finalizar. */
+  /** Rascunho: o painel compõe e a guia sai no finalizar. */
   readonly emitirAoFinalizar?: boolean;
   readonly buscarProcedimentoTuss?: (termo: string) => Promise<readonly ProcedimentoTuss[]>;
   readonly aoEmitirGuiaSadt?: (g: NovaGuiaSadt) => Promise<void>;
-  /** Transcricao por IA. Ausente = sem botao de gravar. */
+  /** Transcrição por IA. Ausente = sem botão de gravar. */
   readonly aoTranscrever?: (audio: Blob) => Promise<SugestaoDaIA>;
   readonly aoAceitarSugestao?: (s: SugestaoDaIA, campos: ReadonlySet<string>) => void;
   readonly aoEmitirDocumento?: (dados: { kind: TipoDeDocumento; corpo: string })
     => Promise<{
       documentId: string; urlPdf: string;
-      /** Falso quando nao ha PSC ICP-Brasil: o documento sai PENDENTE. */
+      /** Falso quando não há PSC ICP-Brasil: o documento sai PENDENTE. */
       assinado: boolean; motivo?: string;
     }>;
 }
 
-/* ── hook de duracao ────────────────────────────────────────────────── */
+/* ── hook de duração ────────────────────────────────────────────────── */
 
 function useDuracaoAtendimento(inicio: Date) {
   const [duracao, setDuracao] = useState(0);
@@ -255,7 +255,7 @@ function SidebarPaciente({ paciente }: { readonly paciente: DadosDoPaciente }) {
               <dd className="text-text">{paciente.sexo}</dd>
             </>
           )}
-          <dt className="text-text-muted">Convenio</dt>
+          <dt className="text-text-muted">Convênio</dt>
           <dd className="text-text">{paciente.convenio ?? 'Particular'}</dd>
         </dl>
       </SecaoDoSidebar>
@@ -292,8 +292,8 @@ function SidebarPaciente({ paciente }: { readonly paciente: DadosDoPaciente }) {
         )}
       </SecaoDoSidebar>
 
-      {/* Ultimos atendimentos */}
-      <SecaoDoSidebar titulo="Ultimos atendimentos">
+      {/* Últimos atendimentos */}
+      <SecaoDoSidebar titulo="Últimos atendimentos">
         {paciente.ultimosAtendimentos?.length ? (
           <ul className="space-y-2" role="list">
             {paciente.ultimosAtendimentos.map((at) => (
@@ -331,26 +331,26 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
     let vivo = true;
     void p.abrirSessaoDoPrescritor().then((r) => {
       if (!vivo) return;
-      // So vira sessao utilizavel se vier COMPLETA. Guardar meia sessao faria o
-      // painel injetar script sem token e falhar em silencio.
+      // Só vira sessão utilizável se vier COMPLETA. Guardar meia sessão faria o
+      // painel injetar script sem token e falhar em silêncio.
       if (r.mode === 'embedded' && typeof r.scriptUrl === 'string'
           && typeof r.token === 'string' && r.patientPayload !== undefined) {
         setSessaoPrescritor({
           scriptUrl: r.scriptUrl, token: r.token, patientPayload: r.patientPayload,
         });
       }
-    }).catch(() => { /* parceiro fora do ar nao derruba a consulta */ });
+    }).catch(() => { /* parceiro fora do ar não derruba a consulta */ });
     return () => { vivo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
-   * Finaliza uma vez so, e sempre depois de gravar o que esta na tela.
+   * Finaliza uma vez só, e sempre depois de gravar o que está na tela.
    *
-   * A trava nao e paranoia com clique duplo: Ctrl+Enter e ouvido pelo editor E
-   * por esta tela, entao um unico atalho chega aqui duas vezes. A segunda
+   * A trava não é paranoia com clique duplo: Ctrl+Enter é ouvido pelo editor E
+   * por esta tela, então um único atalho chega aqui duas vezes. A segunda
    * chamada encontra o atendimento fora de rascunho e devolve erro a quem fez
-   * tudo certo. Ref e nao state porque a decisao acontece antes do proximo
+   * tudo certo. Ref e não state porque a decisão acontece antes do próximo
    * render — dois cliques no mesmo tick veriam o mesmo state.
    */
   const finalizando = useRef(false);
@@ -367,16 +367,16 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
       setFinalizado(true);
     } catch {
       /**
-       * Finalizar e a acao mais critica da tela e era a unica sem tratamento de
+       * Finalizar é a ação mais crítica da tela e era a única sem tratamento de
        * erro: qualquer recusa da API — cadastro preliminar incompleto,
-       * atendimento fora de rascunho, rede caida — virava unhandled rejection.
-       * O medico clicava, nada mudava na tela, e ele nao tinha como saber se o
-       * prontuario foi selado. Alguns clicavam de novo; outros fechavam a aba
+       * atendimento fora de rascunho, rede caída — virava unhandled rejection.
+       * O médico clicava, nada mudava na tela, e ele não tinha como saber se o
+       * prontuário foi selado. Alguns clicavam de novo; outros fechavam a aba
        * com o atendimento em rascunho.
        */
       setErroAoFinalizar(
-        'Nao foi possivel finalizar o atendimento. Nada foi selado — '
-        + 'o conteudo continua salvo como rascunho. Tente de novo.');
+        'Não foi possível finalizar o atendimento. Nada foi selado — '
+        + 'o conteúdo continua salvo como rascunho. Tente de novo.');
     } finally {
       finalizando.current = false;
     }
@@ -429,10 +429,10 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Timer de duracao */}
+          {/* Timer de duração */}
           <div
             className="flex items-center gap-2 text-sm text-text-muted"
-            aria-label="Duracao do atendimento"
+            aria-label="Duração do atendimento"
             role="timer"
           >
             <Icone icon={Timer} size="sm" />
@@ -441,7 +441,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             </span>
           </div>
 
-          {/* Botao Cobrar (backward compat) */}
+          {/* Botão Cobrar (backward compat) */}
           {p.aoRegistrarPagamento !== undefined && (
             <Botao
               variante="secundario"
@@ -474,10 +474,10 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             aoCobrar={() => setCobrancaAberta(true)}
           />
 
-          {/* A ficha estruturada mora ABAIXO do editor, na mesma coluna: e
-              entrada de dado, como o editor. Na barra lateral, que e coluna de
-              consulta, o medico leria os campos como informacao ja registrada e
-              nao perceberia que precisa preencher. */}
+          {/* A ficha estruturada mora ABAIXO do editor, na mesma coluna: é
+              entrada de dado, como o editor. Na barra lateral, que é coluna de
+              consulta, o médico leria os campos como informação já registrada e
+              não perceberia que precisa preencher. */}
           {p.secoesDaFicha !== undefined && p.secoesDaFicha.length > 0
             && p.aoMudarFicha !== undefined && (
             <section
@@ -503,8 +503,8 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         </aside>
       </div>
 
-      {/* Falha ao finalizar precisa ser VISTA: sem isto o clique nao produzia
-          nem selo nem aviso, e o medico ficava sem saber o que aconteceu. */}
+      {/* Falha ao finalizar precisa ser VISTA: sem isto o clique não produzia
+          nem selo nem aviso, e o médico ficava sem saber o que aconteceu. */}
       {erroAoFinalizar !== null && (
         <div role="alert" className="bg-danger/10 px-6 py-3 text-sm text-danger">
           {erroAoFinalizar}
@@ -537,7 +537,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           {/* Action buttons */}
           <nav
             className="flex items-center gap-2 max-sm:w-full max-sm:flex-col"
-            aria-label="Acoes do atendimento"
+            aria-label="Ações do atendimento"
           >
             <Botao variante="secundario" iconeEsquerda={Pill} onClick={prescrever}>
               Prescrever
@@ -579,7 +579,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         </div>
       )}
 
-      {/* ── Paineis laterais ───────────────────────────────────────── */}
+      {/* ── Painéis laterais ───────────────────────────────────────── */}
       {p.aoEmitirGuiaSadt !== undefined && p.buscarProcedimentoTuss !== undefined && (
         <PainelDeSadt
           aberto={sadtAberto}

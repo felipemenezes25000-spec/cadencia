@@ -79,7 +79,7 @@ describe('TemplatesDeMensagem', () => {
     expect(screen.getByText('Pos-consulta')).toBeInTheDocument();
   });
 
-  it('mostra titulo e preview do conteudo', () => {
+  it('mostra título e preview do conteúdo', () => {
     montar();
     expect(screen.getByText('Confirmacao de consulta')).toBeVisible();
     expect(
@@ -87,23 +87,23 @@ describe('TemplatesDeMensagem', () => {
     ).toBeVisible();
   });
 
-  it('mostra botoes editar e excluir', () => {
+  it('mostra botões editar e excluir', () => {
     montar();
-    // Cada template tem um botao editar e um excluir
+    // Cada template tem um botão editar e um excluir
     const botoesEditar = screen.getAllByRole('button', { name: /Editar/ });
     const botoesExcluir = screen.getAllByRole('button', { name: /Excluir/ });
     expect(botoesEditar).toHaveLength(TEMPLATES.length);
     expect(botoesExcluir).toHaveLength(TEMPLATES.length);
   });
 
-  it('mostra botao Novo template', () => {
+  it('mostra botão Novo template', () => {
     montar();
     expect(
       screen.getByRole('button', { name: /Novo template/ }),
     ).toBeInTheDocument();
   });
 
-  it('botao Novo template chama aoCriar', async () => {
+  it('botão Novo template chama aoCriar', async () => {
     const user = userEvent.setup();
     const { props } = montar();
 
@@ -111,7 +111,7 @@ describe('TemplatesDeMensagem', () => {
     expect(props.aoCriar).toHaveBeenCalled();
   });
 
-  it('botao editar chama aoEditar com id correto', async () => {
+  it('botão editar chama aoEditar com id correto', async () => {
     const user = userEvent.setup();
     const { props } = montar();
 
@@ -121,7 +121,7 @@ describe('TemplatesDeMensagem', () => {
     expect(props.aoEditar).toHaveBeenCalledWith('t2');
   });
 
-  it('botao excluir chama aoExcluir com id correto', async () => {
+  it('botão excluir chama aoExcluir com id correto', async () => {
     const user = userEvent.setup();
     const { props } = montar();
 
@@ -136,7 +136,7 @@ describe('TemplatesDeMensagem', () => {
     expect(screen.getByText('Nenhum template cadastrado')).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <RadixTooltip.Provider delayDuration={0}>
         <TemplatesDeMensagem

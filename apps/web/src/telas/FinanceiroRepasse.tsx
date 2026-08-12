@@ -52,7 +52,7 @@ function centavosParaReais(centavos: number): string {
 }
 
 const MESES = [
-  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ] as const;
 
@@ -79,7 +79,7 @@ function periodoParaMesAno(inicio: string): { mes: number; ano: number } {
 function RepasseSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando repasse...">
-      {/* Seletor de periodo skeleton */}
+      {/* Seletor de período skeleton */}
       <div className="flex items-center justify-center gap-2">
         <Skeleton variant="text" width="28px" height="28px" />
         <Skeleton variant="text" width="140px" height="20px" />
@@ -116,7 +116,7 @@ function EstadoVazio() {
         Nenhum repasse encontrado
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Nao ha dados de repasse para o periodo selecionado
+        Não há dados de repasse para o período selecionado
       </p>
     </div>
   );
@@ -134,7 +134,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
     setCarregando(true);
     void p.carregarDados({}).then((d) => {
       setDados(d);
-      // Sincronizar periodo com os dados retornados
+      // Sincronizar período com os dados retornados
       if (d.periodo?.inicio) {
         const periodoInfo = periodoParaMesAno(d.periodo.inicio);
         setMes(periodoInfo.mes);
@@ -199,15 +199,15 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
   if (!dados || dados.profissionais.length === 0) {
     return (
       <div className="space-y-6">
-        {/* Seletor de periodo */}
-        <div className="flex items-center justify-center gap-2" aria-label="Seletor de periodo">
-          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mes anterior">
+        {/* Seletor de período */}
+        <div className="flex items-center justify-center gap-2" aria-label="Seletor de período">
+          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mês anterior">
             {'​'}
           </Botao>
           <span className="min-w-[140px] text-center text-sm font-medium text-text">
             {formatarMesAno(mes, ano)}
           </span>
-          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretRight} onClick={mesProximo} aria-label="Proximo mes">
+          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretRight} onClick={mesProximo} aria-label="Próximo mês">
             {'​'}
           </Botao>
         </div>
@@ -218,15 +218,15 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
 
   return (
     <div className="space-y-6">
-      {/* Seletor de periodo */}
-      <div className="flex items-center justify-center gap-2" aria-label="Seletor de periodo">
-        <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mes anterior">
+      {/* Seletor de período */}
+      <div className="flex items-center justify-center gap-2" aria-label="Seletor de período">
+        <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretLeft} onClick={mesPrevio} aria-label="Mês anterior">
           {'​'}
         </Botao>
         <span className="min-w-[140px] text-center text-sm font-medium text-text">
           {formatarMesAno(mes, ano)}
         </span>
-        <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretRight} onClick={mesProximo} aria-label="Proximo mes">
+        <Botao variante="fantasma" tamanho="sm" iconeEsquerda={CaretRight} onClick={mesProximo} aria-label="Próximo mês">
           {'​'}
         </Botao>
       </div>
@@ -264,7 +264,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-text-muted">Producao</span>
+                  <span className="text-text-muted">Produção</span>
                   <p className="font-semibold tabular-nums text-text">
                     {centavosParaReais(pr.totalBruto)}
                   </p>
@@ -294,7 +294,7 @@ export function FinanceiroRepasse(p: FinanceiroRepasseProps) {
                   Atendimentos
                 </th>
                 <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                  Producao
+                  Produção
                 </th>
                 <th className="px-4 py-2.5 text-right font-medium text-text-muted">
                   %

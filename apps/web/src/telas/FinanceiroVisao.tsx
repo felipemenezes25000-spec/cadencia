@@ -142,7 +142,7 @@ function CardResumo({
           )}
         >
           <Icone icon={variacao >= 0 ? TrendUp : TrendDown} size="sm" />
-          {Math.abs(variacao).toFixed(1)}% vs. periodo anterior
+          {Math.abs(variacao).toFixed(1)}% vs. período anterior
         </p>
       )}
     </div>
@@ -154,7 +154,7 @@ function CardResumo({
 type Periodo = 'dia' | 'semana' | 'mes';
 
 const ROTULOS_PERIODO: Record<Periodo, string> = {
-  dia: 'Diario',
+  dia: 'Diário',
   semana: 'Semanal',
   mes: 'Mensal',
 };
@@ -167,7 +167,7 @@ function SeletorPeriodo({
   readonly onChange: (p: Periodo) => void;
 }) {
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Seletor de periodo">
+    <div className="flex items-center gap-2" role="group" aria-label="Seletor de período">
       {(['dia', 'semana', 'mes'] as const).map((p) => (
         <button
           key={p}
@@ -226,7 +226,7 @@ function GraficoReceita({
             });
 
             return (
-              <svg width={width} height={height} role="img" aria-label="Grafico de receita">
+              <svg width={width} height={height} role="img" aria-label="Gráfico de receita">
                 <Group left={margin.left} top={margin.top}>
                   {dados.map((d) => (
                     <Bar
@@ -352,7 +352,7 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
 
   const resumo = dados.resumoMes;
 
-  // Derivar dados do grafico de receita a partir do receitaVsDespesa
+  // Derivar dados do gráfico de receita a partir do receitaVsDespesa
   const dadosGrafico: DadosReceita[] = dados.receitaVsDespesa.map((item) => ({
     label: item.mes.slice(5), // e.g. "06", "07", "08"
     valor: item.receita,
@@ -393,13 +393,13 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
       {/* Alertas */}
       <SecaoAlertas alertas={dados.alertas} />
 
-      {/* Seletor de periodo */}
+      {/* Seletor de período */}
       <SeletorPeriodo
         periodo={periodo as Periodo}
         onChange={(p) => void setPeriodo(p)}
       />
 
-      {/* Grafico de receita (visx) */}
+      {/* Gráfico de receita (visx) */}
       <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
 
       {/* Top categorias */}

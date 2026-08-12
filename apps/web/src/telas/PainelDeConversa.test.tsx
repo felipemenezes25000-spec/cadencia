@@ -69,20 +69,20 @@ afterEach(() => {
 });
 
 describe('painel de conversa', () => {
-  it('mostra o nome do contato no cabecalho', async () => {
+  it('mostra o nome do contato no cabeçalho', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 2, name: /Maria Souza Lima/ })).toBeVisible());
   });
 
-  it('mensagens inbound ficam a esquerda e outbound a direita', async () => {
+  it('mensagens inbound ficam à esquerda e outbound à direita', async () => {
     montar();
     const msgs = await screen.findAllByTestId(/^msg-/);
     expect(msgs[0]).toHaveAttribute('data-direction', 'inbound');
     expect(msgs[1]).toHaveAttribute('data-direction', 'outbound');
   });
 
-  it('mostra status de entrega com icones discretos nas mensagens outbound', async () => {
+  it('mostra status de entrega com ícones discretos nas mensagens outbound', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByTitle('Entregue')).toBeVisible();
@@ -100,7 +100,7 @@ describe('painel de conversa', () => {
     expect(aoEnviar).toHaveBeenCalledWith('Ola!');
   });
 
-  it('Shift+Enter nao envia, insere quebra de linha', async () => {
+  it('Shift+Enter não envia, insere quebra de linha', async () => {
     const { aoEnviar } = montar();
     await screen.findAllByTestId(/^msg-/);
     const input = screen.getByRole('textbox', { name: /Mensagem/ });
@@ -109,7 +109,7 @@ describe('painel de conversa', () => {
     expect(aoEnviar).not.toHaveBeenCalled();
   });
 
-  it('painel de contexto mostra proximo agendamento e pendencias, NUNCA conteudo clinico', async () => {
+  it('painel de contexto mostra próximo agendamento e pendências, NUNCA conteúdo clínico', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
@@ -121,13 +121,13 @@ describe('painel de conversa', () => {
     expect(screen.queryByText(/prescricao/i)).not.toBeInTheDocument();
   });
 
-  it('conversa com numero desconhecido mostra opcao de vincular a paciente', async () => {
+  it('conversa com número desconhecido mostra opção de vincular a paciente', async () => {
     montar({ patientId: null, nomeExibido: '+5511888880002' });
     await waitFor(() => expect(
       screen.getByRole('button', { name: /Vincular a paciente/ })).toBeVisible());
   });
 
-  it('botao de template abre seletor', async () => {
+  it('botão de template abre seletor', async () => {
     const { aoSelecionarTemplate } = montar();
     await screen.findAllByTestId(/^msg-/);
     await userEvent.click(screen.getByRole('button', { name: /Template/ }));
@@ -141,7 +141,7 @@ describe('painel de conversa', () => {
     expect(separadores).toHaveLength(2);
   });
 
-  it('faz scroll para ultima mensagem ao carregar', async () => {
+  it('faz scroll para última mensagem ao carregar', async () => {
     const scrollMock = vi.fn();
     HTMLElement.prototype.scrollIntoView = scrollMock;
     montar();
@@ -149,7 +149,7 @@ describe('painel de conversa', () => {
     expect(scrollMock).toHaveBeenCalled();
   });
 
-  it('mostra botao voltar quando aoVoltar e fornecido', async () => {
+  it('mostra botão voltar quando aoVoltar é fornecido', async () => {
     const aoVoltar = vi.fn();
     montar({ aoVoltar });
     await screen.findAllByTestId(/^msg-/);
@@ -159,7 +159,7 @@ describe('painel de conversa', () => {
     expect(aoVoltar).toHaveBeenCalled();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <PainelDeConversa conversationId="c1" nomeExibido="Maria Souza Lima"
         phoneNumber="+5511999990001" patientId="p1"

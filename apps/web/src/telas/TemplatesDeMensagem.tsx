@@ -21,9 +21,9 @@ export interface TemplatesDeMensagemProps {
   readonly templates: readonly Template[];
   /** Callback ao clicar em "Novo template" */
   readonly aoCriar: () => void;
-  /** Callback ao clicar no botao editar de um template */
+  /** Callback ao clicar no botão editar de um template */
   readonly aoEditar: (id: string) => void;
-  /** Callback ao clicar no botao excluir de um template */
+  /** Callback ao clicar no botão excluir de um template */
   readonly aoExcluir: (id: string) => void;
 }
 

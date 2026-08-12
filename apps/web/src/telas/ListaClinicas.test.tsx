@@ -22,44 +22,44 @@ function montar(over: Partial<Parameters<typeof ListaClinicas>[0]> = {}) {
 }
 
 describe('ListaClinicas', () => {
-  it('renderiza todas as clinicas com colunas', () => {
+  it('renderiza todas as clínicas com colunas', () => {
     montar();
     expect(screen.getByText('Unidade Centro')).toBeDefined();
     expect(screen.getByText('Filial Norte')).toBeDefined();
     expect(screen.getByText('2077501')).toBeDefined();
-    expect(screen.getByText('Brasilia')).toBeDefined();
+    expect(screen.getByText('Brasília')).toBeDefined();
     expect(screen.getByText('Manaus')).toBeDefined();
   });
 
-  it('destaca a clinica ativa com badge', () => {
+  it('destaca a clínica ativa com badge', () => {
     montar();
     expect(screen.getByText('ativa')).toBeDefined();
   });
 
-  it('mostra traco quando CNES e null', () => {
+  it('mostra traço quando CNES é null', () => {
     montar();
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('botao Criar unidade visivel para admin', () => {
+  it('botão Criar unidade visível para admin', () => {
     montar({ podeCriar: true });
     expect(screen.getByRole('button', { name: /criar unidade/i })).toBeDefined();
   });
 
-  it('botao Criar unidade oculto para nao-admin', () => {
+  it('botão Criar unidade oculto para não-admin', () => {
     montar({ podeCriar: false });
     expect(screen.queryByRole('button', { name: /criar unidade/i })).toBeNull();
   });
 
-  it('chama aoCriar ao clicar no botao', async () => {
+  it('chama aoCriar ao clicar no botão', async () => {
     const props = montar();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /criar unidade/i }));
     expect(props.aoCriar).toHaveBeenCalledOnce();
   });
 
-  it('mostra mensagem vazia quando nao ha clinicas', () => {
+  it('mostra mensagem vazia quando não há clínicas', () => {
     montar({ clinicas: [] });
     expect(screen.getByText(/nenhuma unidade/i)).toBeDefined();
   });

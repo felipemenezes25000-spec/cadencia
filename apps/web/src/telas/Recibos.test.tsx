@@ -33,7 +33,7 @@ function montar(overrides?: Partial<RecibosProps>) {
 }
 
 describe('tela Recibos', () => {
-  it('exibe o titulo "Recibos"', async () => {
+  it('exibe o título "Recibos"', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Recibos/ })).toBeVisible());
@@ -44,21 +44,21 @@ describe('tela Recibos', () => {
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     const tabela = screen.getByRole('table');
     expect(tabela).toBeVisible();
-    expect(screen.getByText('Numero')).toBeVisible();
-    // "Paciente" aparece tanto no filtro quanto no cabecalho da tabela
+    expect(screen.getByText('Número')).toBeVisible();
+    // "Paciente" aparece tanto no filtro quanto no cabeçalho da tabela
     const cabecalhos = screen.getAllByRole('columnheader');
     expect(cabecalhos.some((th) => th.textContent === 'Paciente')).toBe(true);
     expect(screen.getByText('Valor')).toBeVisible();
   });
 
-  it('lista os recibos com numero sequencial, paciente e valor', async () => {
+  it('lista os recibos com número sequencial, paciente e valor', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     expect(screen.getByText('Maria Souza Lima')).toBeVisible();
     expect(screen.getByText('R$ 250,00')).toBeVisible();
   });
 
-  it('cada recibo tem botao "Imprimir"', async () => {
+  it('cada recibo tem botão "Imprimir"', async () => {
     const props = montar();
     await waitFor(() => expect(
       screen.getAllByRole('button', { name: /Imprimir/ }).length).toBe(2));
@@ -66,7 +66,7 @@ describe('tela Recibos', () => {
     expect(props.aoImprimirRecibo).toHaveBeenCalledWith('r1');
   });
 
-  it('mostra botoes imprimir e email', async () => {
+  it('mostra botões imprimir e email', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     expect(screen.getAllByRole('button', { name: /Imprimir/ })).toHaveLength(2);
@@ -135,7 +135,7 @@ describe('tela Recibos', () => {
     );
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Wrapper>
         <Recibos

@@ -21,17 +21,17 @@ describe('SecaoContato', () => {
     expect(screen.getByText('paciente@teste.com')).toBeTruthy();
   });
 
-  it('mostra botao Editar quando editavel=true', () => {
+  it('mostra botão Editar quando editavel=true', () => {
     render(<SecaoContato {...base} />);
     expect(screen.getByRole('button', { name: 'Editar' })).toBeTruthy();
   });
 
-  it('nao mostra botao Editar quando editavel=false', () => {
+  it('não mostra botão Editar quando editavel=false', () => {
     render(<SecaoContato {...base} editavel={false} />);
     expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
   });
 
-  it('alterna para modo edicao ao clicar Editar', async () => {
+  it('alterna para modo edição ao clicar Editar', async () => {
     const user = userEvent.setup();
     render(<SecaoContato {...base} />);
     await user.click(screen.getByRole('button', { name: 'Editar' }));
@@ -75,11 +75,11 @@ describe('SecaoContato', () => {
     expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled();
   });
 
-  it('exibe contato de emergencia quando preenchido', () => {
+  it('exibe contato de emergência quando preenchido', () => {
     render(<SecaoContato {...base}
       emergencyContactName="Maria da Silva"
       emergencyContactPhone="11912345678" />);
-    expect(screen.getByText('Contato de emergencia')).toBeTruthy();
+    expect(screen.getByText('Contato de emergência')).toBeTruthy();
     expect(screen.getByText('Maria da Silva')).toBeTruthy();
     expect(screen.getByText('(11) 91234-5678')).toBeTruthy();
   });

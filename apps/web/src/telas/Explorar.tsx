@@ -52,15 +52,15 @@ const HEADER_MAP: Record<string, string> = {
   template_name: 'Template',
   sent_at: 'Enviado em',
   birth_date: 'Data de nascimento',
-  birth_month_day: 'Mes/Dia',
+  birth_month_day: 'Mês/Dia',
   phone: 'Telefone',
   age: 'Idade',
   cid_code: 'CID',
-  cid_description: 'Descricao CID',
-  referral_source: 'Indicacao',
+  cid_description: 'Descrição CID',
+  referral_source: 'Indicação',
   day_of_week: 'Dia da semana',
-  time_slot: 'Faixa horario',
-  last_visit_date: 'Ultima visita',
+  time_slot: 'Faixa horário',
+  last_visit_date: 'Última visita',
   return_due_date: 'Retorno previsto',
 };
 
@@ -132,8 +132,8 @@ export function Explorar(p: ExplorarProps) {
         Explorar
       </h1>
 
-      {/* Visoes salvas */}
-      <section aria-label="Visoes salvas" style={{ display: 'flex', flexWrap: 'wrap',
+      {/* Visões salvas */}
+      <section aria-label="Visões salvas" style={{ display: 'flex', flexWrap: 'wrap',
                                                     gap: 'var(--s-3)' }}>
         {p.visoesSalvas.map((v) => (
           <Botao key={v.id} variante="secundario" altura={32}
@@ -143,14 +143,14 @@ export function Explorar(p: ExplorarProps) {
         ))}
       </section>
 
-      {/* Filtros de periodo */}
+      {/* Filtros de período */}
       <section aria-label="Filtros" style={{ display: 'flex', gap: 'var(--s-4)',
                                               alignItems: 'end', flexWrap: 'wrap' }}>
         <div>
           <label htmlFor="data-inicio"
             style={{ display: 'block', fontSize: 'var(--fs-12)',
                      color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
-            Data inicio
+            Data início
           </label>
           <input id="data-inicio" type="date" value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
@@ -186,9 +186,9 @@ export function Explorar(p: ExplorarProps) {
         </div>
       </section>
 
-      {/* Grafico */}
+      {/* Gráfico */}
       {resultado !== null && visaoAtual !== null && visaoAtual.chartKind !== 'table' ? (
-        <section aria-label="Grafico" style={{ overflowX: 'auto' }}>
+        <section aria-label="Gráfico" style={{ overflowX: 'auto' }}>
           <GraficoExplorar
             tipo={visaoAtual.chartKind}
             dados={
@@ -261,9 +261,9 @@ export function Explorar(p: ExplorarProps) {
         </div>
       ) : null}
 
-      {/* Salvar visao */}
+      {/* Salvar visão */}
       {visaoAtual !== null ? (
-        <section aria-label="Salvar visao" style={{ display: 'flex', gap: 'var(--s-3)',
+        <section aria-label="Salvar visão" style={{ display: 'flex', gap: 'var(--s-3)',
                                                      alignItems: 'end' }}>
           {salvando ? (
             <>
@@ -271,7 +271,7 @@ export function Explorar(p: ExplorarProps) {
                 <label htmlFor="nome-visao"
                   style={{ display: 'block', fontSize: 'var(--fs-12)',
                            color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
-                  Nome da visao
+                  Nome da visão
                 </label>
                 <input id="nome-visao" type="text" value={nomeVisao}
                   onChange={(e) => setNomeVisao(e.target.value)}
@@ -292,7 +292,7 @@ export function Explorar(p: ExplorarProps) {
           ) : (
             <Botao variante="secundario" altura={32}
               onClick={() => setSalvando(true)}>
-              Salvar visao
+              Salvar visão
             </Botao>
           )}
         </section>

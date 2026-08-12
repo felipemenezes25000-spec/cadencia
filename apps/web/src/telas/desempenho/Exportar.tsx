@@ -46,19 +46,19 @@ export function Exportar(p: ExportarProps) {
 
       {p.freshness.source === 'matview' && p.freshness.refreshedAt !== null ? (
         <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
-          dados ate {new Date(p.freshness.refreshedAt).toLocaleTimeString('pt-BR',
+          dados até {new Date(p.freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
 
-      {/* Selecao de visao */}
+      {/* Seleção de visão */}
       <fieldset className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
         <legend className="px-1 text-[var(--fs-15)] font-semibold">
-          Visao
+          Visão
         </legend>
         <div
           role="radiogroup"
-          aria-label="Selecionar visao"
+          aria-label="Selecionar visão"
           className="mt-2 grid gap-2"
         >
           {p.savedViews.map((v) => (
@@ -85,7 +85,7 @@ export function Exportar(p: ExportarProps) {
         </div>
       </fieldset>
 
-      {/* Selecao de formato */}
+      {/* Seleção de formato */}
       <fieldset className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
         <legend className="px-1 text-[var(--fs-15)] font-semibold">
           Formato
@@ -118,10 +118,10 @@ export function Exportar(p: ExportarProps) {
         </div>
       </fieldset>
 
-      {/* Periodo */}
+      {/* Período */}
       <fieldset className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
         <legend className="px-1 text-[var(--fs-15)] font-semibold">
-          Periodo
+          Período
         </legend>
         <div className="mt-2 flex gap-4">
           <div>
@@ -149,7 +149,7 @@ export function Exportar(p: ExportarProps) {
               htmlFor="export-date-to"
               className="mb-0.5 block text-[var(--fs-12)] text-text-muted"
             >
-              Ate
+              Até
             </label>
             <input
               id="export-date-to"

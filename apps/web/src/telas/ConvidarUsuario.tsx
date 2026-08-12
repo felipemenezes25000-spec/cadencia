@@ -21,7 +21,7 @@ const CONSELHOS = [
   { valor: '09', rotulo: 'CRO' },
   { valor: '10', rotulo: 'CRP' },
   { valor: '11', rotulo: 'CRESS' },
-  { valor: '12', rotulo: 'CRF (Fisica)' },
+  { valor: '12', rotulo: 'CRF (Física)' },
   { valor: '13', rotulo: 'COREN' },
 ] as const;
 
@@ -92,8 +92,8 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
       const msg = e instanceof Error ? e.message : 'Erro ao convidar';
       setErro(
         msg === 'vinculo_duplicado'
-          ? 'Este usuario ja tem esse papel nesta unidade.'
-          : 'Nao foi possivel convidar.',
+          ? 'Este usuário já tem esse papel nesta unidade.'
+          : 'Não foi possível convidar.',
       );
     } finally {
       setEnviando(false);
@@ -104,10 +104,10 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      role="dialog" aria-modal="true" aria-label="Convidar usuario">
+      role="dialog" aria-modal="true" aria-label="Convidar usuário">
       <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-lg">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Convidar usuario</h2>
+          <h2 className="text-lg font-semibold">Convidar usuário</h2>
           <button type="button" onClick={() => { resetar(); aoFechar(); }}
             aria-label="Fechar" className="text-text-muted hover:text-text">
             <X size={20} />
@@ -133,21 +133,21 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
             <span className="text-xs text-text-muted">Papel</span>
             <select value={role} onChange={(e) => setRole(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm">
-              <option value="admin_clinico">Administracao</option>
-              <option value="diretor_tecnico">Direcao tecnica</option>
-              <option value="profissional">Profissional de saude</option>
-              <option value="recepcao">Recepcao</option>
+              <option value="admin_clinico">Administração</option>
+              <option value="diretor_tecnico">Direção técnica</option>
+              <option value="profissional">Profissional de saúde</option>
+              <option value="recepcao">Recepção</option>
               <option value="financeiro">Financeiro</option>
             </select>
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs text-text-muted">Senha temporaria</span>
+            <span className="text-xs text-text-muted">Senha temporária</span>
             <input type="text" required minLength={8}
               value={senhaTemporaria} onChange={(e) => setSenhaTemporaria(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
             {senhaTemporaria.length > 0 && senhaTemporaria.length < 8 && (
-              <span className="text-xs text-danger">Minimo 8 caracteres</span>
+              <span className="text-xs text-danger">Mínimo 8 caracteres</span>
             )}
           </label>
 
@@ -164,7 +164,7 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs text-text-muted">Numero do conselho</span>
+                <span className="text-xs text-text-muted">Número do conselho</span>
                 <input type="text" required
                   value={numeroConselho} onChange={(e) => setNumeroConselho(e.target.value)}
                   className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />

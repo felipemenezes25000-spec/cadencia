@@ -27,7 +27,7 @@ interface SegmentoCalculado {
   factorId?: string;
 }
 
-/** API nova: segmentos tipados com titulo e altura opcionais. */
+/** API nova: segmentos tipados com título e altura opcionais. */
 interface WaterfallChartPropsNovo {
   readonly dados: WaterfallSegment[];
   readonly titulo?: string;
@@ -153,7 +153,7 @@ function WaterfallInner({
         width={width}
         height={height}
         role="img"
-        aria-label="Grafico waterfall"
+        aria-label="Gráfico waterfall"
       >
         <Group left={margin.left} top={margin.top}>
           {/* Linhas conectoras */}
@@ -224,7 +224,7 @@ function WaterfallInner({
                   }}
                   onMouseLeave={hideTooltip}
                 />
-                {/* Rotulo de valor acima/abaixo da barra */}
+                {/* Rótulo de valor acima/abaixo da barra */}
                 <text
                   x={barX + xScale.bandwidth() / 2}
                   y={barTop - 6}
@@ -303,7 +303,7 @@ function WaterfallInner({
   );
 }
 
-/* ── Componente publico ────────────────────────────────────────────────── */
+/* ── Componente público ────────────────────────────────────────────────── */
 
 export function WaterfallChart(props: WaterfallChartProps) {
   if (isLegacyProps(props)) {

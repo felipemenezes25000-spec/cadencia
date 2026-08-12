@@ -30,7 +30,7 @@ export interface CompositorDeMensagemProps {
   readonly disabled?: boolean;
   /** Placeholder do textarea */
   readonly placeholder?: string;
-  /** Templates opcionais para o seletor rapido */
+  /** Templates opcionais para o seletor rápido */
   readonly templates?: readonly TemplateMensagem[];
 }
 
@@ -203,7 +203,7 @@ export function CompositorDeMensagem({
           )}
         />
 
-        {/* Botao enviar */}
+        {/* Botão enviar */}
         <Botao
           variante="primario"
           tamanho="md"

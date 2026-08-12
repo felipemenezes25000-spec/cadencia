@@ -87,7 +87,7 @@ describe('revalidacao do caixa do dia apos pagamento', () => {
 
     // 2. Abrir painel de cobranca
     await userEvent.click(screen.getByRole('button', { name: /Abrir cobranca/ }));
-    expect(screen.getByRole('dialog', { name: /Cobranca/ })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: /Cobrança/ })).toBeVisible();
 
     // 3. Registrar pagamento
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));

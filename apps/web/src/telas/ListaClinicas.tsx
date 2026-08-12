@@ -18,10 +18,10 @@ export interface ListaClinicasProps {
 }
 
 const FUSOS_LABEL: Record<string, string> = {
-  'America/Sao_Paulo': 'Brasilia',
+  'America/Sao_Paulo': 'Brasília',
   'America/Manaus': 'Manaus',
-  'America/Cuiaba': 'Cuiaba',
-  'America/Belem': 'Belem',
+  'America/Cuiaba': 'Cuiabá',
+  'America/Belem': 'Belém',
   'America/Fortaleza': 'Fortaleza',
   'America/Recife': 'Recife',
   'America/Rio_Branco': 'Rio Branco',

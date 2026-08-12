@@ -37,8 +37,8 @@ export function TrocaDeSenha({ aoTrocar }: TrocaDeSenhaProps) {
       const msg = e instanceof Error ? e.message : 'Erro ao trocar senha';
       setErro(
         msg === 'senha_incorreta' ? 'Senha atual incorreta.'
-        : msg === 'senha_fraca' ? 'A nova senha e muito fraca.'
-        : 'Nao foi possivel trocar a senha.',
+        : msg === 'senha_fraca' ? 'A nova senha é muito fraca.'
+        : 'Não foi possível trocar a senha.',
       );
     } finally {
       setEnviando(false);
@@ -65,7 +65,7 @@ export function TrocaDeSenha({ aoTrocar }: TrocaDeSenhaProps) {
           value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)}
           className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
         {senhaNova.length > 0 && senhaNova.length < 8 && (
-          <span className="text-xs text-danger">Minimo 8 caracteres</span>
+          <span className="text-xs text-danger">Mínimo 8 caracteres</span>
         )}
       </label>
 
@@ -75,7 +75,7 @@ export function TrocaDeSenha({ aoTrocar }: TrocaDeSenhaProps) {
           value={confirmar} onChange={(e) => setConfirmar(e.target.value)}
           className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
         {confirmar.length > 0 && confirmar !== senhaNova && (
-          <span className="text-xs text-danger">As senhas nao coincidem</span>
+          <span className="text-xs text-danger">As senhas não coincidem</span>
         )}
       </label>
 

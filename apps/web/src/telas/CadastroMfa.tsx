@@ -30,7 +30,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
       setQrcodeUri(r.qrcodeUri);
       setFase('inscricao');
     } catch {
-      setErro('Nao foi possivel iniciar o cadastro.');
+      setErro('Não foi possível iniciar o cadastro.');
     } finally {
       setCarregando(false);
     }
@@ -47,9 +47,9 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       setErro(
-        msg === 'codigo_invalido' ? 'Codigo invalido. Tente novamente.'
-        : msg === 'codigo_reutilizado' ? 'Codigo ja utilizado. Aguarde o proximo.'
-        : 'Nao foi possivel confirmar o codigo.',
+        msg === 'codigo_invalido' ? 'Código inválido. Tente novamente.'
+        : msg === 'codigo_reutilizado' ? 'Código já utilizado. Aguarde o próximo.'
+        : 'Não foi possível confirmar o código.',
       );
     } finally {
       setCarregando(false);
@@ -70,7 +70,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
     <div className="grid gap-4">
       <div className="flex items-center gap-2">
         <ShieldCheck size={20} className="text-accent" />
-        <h3 className="text-sm font-semibold">Autenticacao em dois fatores</h3>
+        <h3 className="text-sm font-semibold">Autenticação em dois fatores</h3>
       </div>
 
       {fase === 'confirmado' && (
@@ -87,7 +87,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
       {fase === 'inicial' && (
         <div>
           <p className="mb-3 text-sm text-text-muted">
-            O segundo fator protege sua conta mesmo se alguem descobrir sua senha.
+            O segundo fator protege sua conta mesmo se alguém descobrir sua senha.
             Use um app autenticador como Google Authenticator, Authy ou 1Password.
           </p>
           <Botao variante="secundario" tamanho="md" carregando={carregando}
@@ -121,7 +121,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
           </details>
 
           <label className="grid gap-1">
-            <span className="text-xs text-text-muted">Codigo de 6 digitos</span>
+            <span className="text-xs text-text-muted">Código de 6 dígitos</span>
             <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
               autoComplete="one-time-code"
               value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}

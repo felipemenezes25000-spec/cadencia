@@ -158,7 +158,7 @@ describe('Composicao completa: Retornos + Glosas + Recursos + Detalhe + Form', (
     expect(screen.getByText(/Passo 1/i)).toBeVisible();
     const campo = screen.getByLabelText(/Justificativa/i);
     await userEvent.type(campo, 'Procedimento devidamente autorizado.');
-    await userEvent.click(screen.getByRole('button', { name: /Proximo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Próximo/i }));
     expect(screen.getByText(/Passo 2/i)).toBeVisible();
     const geral = screen.getByLabelText(/Justificativa geral/i);
     await userEvent.type(geral, 'Recurso conforme protocolo.');

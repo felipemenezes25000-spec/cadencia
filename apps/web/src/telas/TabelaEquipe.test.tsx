@@ -36,25 +36,25 @@ function montar(over: Partial<Parameters<typeof TabelaEquipe>[0]> = {}) {
 }
 
 describe('TabelaEquipe', () => {
-  it('renderiza todas as colunas incluindo acoes para admin', () => {
+  it('renderiza todas as colunas incluindo ações para admin', () => {
     montar();
     expect(screen.getByText('Pessoa')).toBeDefined();
     expect(screen.getByText('Papel')).toBeDefined();
     expect(screen.getByText('Registro')).toBeDefined();
     expect(screen.getByText('Desde')).toBeDefined();
-    expect(screen.getByText('Acoes')).toBeDefined();
+    expect(screen.getByText('Ações')).toBeDefined();
     expect(screen.getByText('Admin Silva')).toBeDefined();
     expect(screen.getByText('Dr Pereira')).toBeDefined();
     expect(screen.getByText('Recepcao Ana')).toBeDefined();
   });
 
-  it('esconde coluna acoes para nao-admin', () => {
+  it('esconde coluna ações para não-admin', () => {
     montar({ ehAdmin: false });
-    expect(screen.queryByText('Acoes')).toBeNull();
+    expect(screen.queryByText('Ações')).toBeNull();
     expect(screen.queryByRole('button', { name: /revogar/i })).toBeNull();
   });
 
-  it('botao revogar oculto para a propria linha do admin', () => {
+  it('botão revogar oculto para a própria linha do admin', () => {
     montar();
     const rows = screen.getAllByRole('row');
     const adminRow = rows[1]!;
@@ -63,7 +63,7 @@ describe('TabelaEquipe', () => {
     expect(within(drRow).getByRole('button', { name: /revogar/i })).toBeDefined();
   });
 
-  it('botao desativar MFA visivel apenas se temTotp', () => {
+  it('botão desativar MFA visível apenas se temTotp', () => {
     montar();
     const rows = screen.getAllByRole('row');
     const drRow = rows[2]!;
@@ -72,7 +72,7 @@ describe('TabelaEquipe', () => {
     expect(within(anaRow).getByRole('button', { name: /desativar mfa/i })).toBeDefined();
   });
 
-  it('chama aoRevogar com confirmacao', async () => {
+  it('chama aoRevogar com confirmação', async () => {
     const props = montar();
     const user = userEvent.setup();
     const rows = screen.getAllByRole('row');
@@ -88,7 +88,7 @@ describe('TabelaEquipe', () => {
     expect(props.aoRevogar).toHaveBeenCalledWith('u2', 'profissional', 'Saiu da clinica');
   });
 
-  it('chama aoDesativarMfa com confirmacao', async () => {
+  it('chama aoDesativarMfa com confirmação', async () => {
     const props = montar();
     const user = userEvent.setup();
     const rows = screen.getAllByRole('row');
@@ -101,7 +101,7 @@ describe('TabelaEquipe', () => {
     expect(props.aoDesativarMfa).toHaveBeenCalledWith('u3');
   });
 
-  it('cancelar fecha a confirmacao', async () => {
+  it('cancelar fecha a confirmação', async () => {
     montar();
     const user = userEvent.setup();
     const rows = screen.getAllByRole('row');
@@ -114,21 +114,21 @@ describe('TabelaEquipe', () => {
     expect(screen.queryByRole('button', { name: /confirmar/i })).toBeNull();
   });
 
-  it('mostra botao alterar papel para admin com callback', () => {
+  it('mostra botão alterar papel para admin com callback', () => {
     montar({ aoAlterarPapel: vi.fn(async () => {}) });
     const rows = screen.getAllByRole('row');
     const drRow = rows[2]!;
     expect(within(drRow).getByRole('button', { name: /alterar papel/i })).toBeDefined();
   });
 
-  it('oculta botao alterar papel para si mesmo', () => {
+  it('oculta botão alterar papel para si mesmo', () => {
     montar({ aoAlterarPapel: vi.fn(async () => {}) });
     const rows = screen.getAllByRole('row');
     const adminRow = rows[1]!;
     expect(within(adminRow).queryByRole('button', { name: /alterar papel/i })).toBeNull();
   });
 
-  it('nao mostra botao alterar papel sem callback', () => {
+  it('não mostra botão alterar papel sem callback', () => {
     montar();
     expect(screen.queryByRole('button', { name: /alterar papel/i })).toBeNull();
   });

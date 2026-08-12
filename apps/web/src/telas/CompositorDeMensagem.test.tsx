@@ -24,7 +24,7 @@ function montar(
 }
 
 describe('CompositorDeMensagem', () => {
-  it('renderiza textarea e botao enviar', () => {
+  it('renderiza textarea e botão enviar', () => {
     montar();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     expect(
@@ -67,7 +67,7 @@ describe('CompositorDeMensagem', () => {
     expect(screen.getByRole('textbox')).toHaveValue('Linha 1\nLinha 2');
   });
 
-  it('nao envia mensagem vazia', async () => {
+  it('não envia mensagem vazia', async () => {
     const user = userEvent.setup();
     const { props } = montar();
 
@@ -76,7 +76,7 @@ describe('CompositorDeMensagem', () => {
     expect(props.onEnviar).not.toHaveBeenCalled();
   });
 
-  it('limpa texto apos enviar', async () => {
+  it('limpa texto após enviar', async () => {
     const user = userEvent.setup();
     montar();
 
@@ -131,7 +131,7 @@ describe('CompositorDeMensagem', () => {
     expect(textarea.style.height).toBe('80px');
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <RadixTooltip.Provider delayDuration={0}>
         <CompositorDeMensagem onEnviar={vi.fn()} />

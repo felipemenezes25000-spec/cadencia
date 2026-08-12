@@ -34,7 +34,7 @@ describe('tela Pacientes', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
-  it('as abas do lider viram FACETAS, que sao filtros salvos', () => {
+  it('as abas do líder viram FACETAS, que são filtros salvos', () => {
     expect(FACETAS.map((f) => f.chave)).toEqual([
       'ativos',
       'inativos',
@@ -47,7 +47,7 @@ describe('tela Pacientes', () => {
   it('renderiza skeleton enquanto carrega', () => {
     const { container } = render(<PacientesSkeleton />);
     expect(container.querySelector('[data-testid="pacientes-skeleton"]')).toBeTruthy();
-    // Verifica que ha elementos de skeleton
+    // Verifica que há elementos de skeleton
     const skeletons = container.querySelectorAll('[role="status"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
@@ -91,7 +91,7 @@ describe('tela Pacientes', () => {
     const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
     await user.type(input, 'ana');
 
-    // Avanca o debounce
+    // Avança o debounce
     await act(async () => {
       vi.advanceTimersByTime(350);
     });
@@ -115,20 +115,20 @@ describe('tela Pacientes', () => {
       />,
     );
 
-    // Aguarda a primeira chamada (renderizacao inicial)
+    // Aguarda a primeira chamada (renderização inicial)
     await waitFor(() => expect(buscar).toHaveBeenCalledTimes(1));
 
     const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
     await user.type(input, 'test');
 
-    // Antes do debounce expirar, nao deve ter chamado de novo com o termo
+    // Antes do debounce expirar, não deve ter chamado de novo com o termo
     const chamadasAntes = buscar.mock.calls.length;
 
     await act(async () => {
       vi.advanceTimersByTime(350);
     });
 
-    // Apos o debounce, deve chamar com o termo debounced
+    // Após o debounce, deve chamar com o termo debounced
     await waitFor(() => {
       expect(buscar.mock.calls.length).toBeGreaterThan(chamadasAntes);
     });
@@ -226,14 +226,14 @@ describe('tela Pacientes', () => {
     );
 
     await waitFor(() => {
-      // Alvaro Neto → ÁN (preserva acentuacao)
+      // Álvaro Neto → ÁN (preserva acentuação)
       expect(screen.getByText('ÁN')).toBeVisible();
       // Ana Lima → AL
       expect(screen.getByText('AL')).toBeVisible();
     });
   });
 
-  it('marca o cadastro preliminar com texto, nunca so com cor', async () => {
+  it('marca o cadastro preliminar com texto, nunca só com cor', async () => {
     render(
       <Pacientes
         buscar={async () => HITS}
@@ -245,7 +245,7 @@ describe('tela Pacientes', () => {
     await waitFor(() => expect(screen.getByText('preliminar')).toBeVisible());
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <Pacientes
         buscar={async () => HITS}

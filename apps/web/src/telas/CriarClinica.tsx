@@ -5,10 +5,10 @@ import { X } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
 
 const FUSOS = [
-  ['America/Sao_Paulo', 'Brasilia (UTC-3)'],
+  ['America/Sao_Paulo', 'Brasília (UTC-3)'],
   ['America/Manaus', 'Manaus (UTC-4)'],
-  ['America/Cuiaba', 'Cuiaba (UTC-4)'],
-  ['America/Belem', 'Belem (UTC-3)'],
+  ['America/Cuiaba', 'Cuiabá (UTC-4)'],
+  ['America/Belem', 'Belém (UTC-3)'],
   ['America/Fortaleza', 'Fortaleza (UTC-3)'],
   ['America/Recife', 'Recife (UTC-3)'],
   ['America/Rio_Branco', 'Rio Branco (UTC-5)'],
@@ -61,8 +61,8 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
       const msg = e instanceof Error ? e.message : 'Erro ao criar';
       setErro(
         msg === 'fuso_invalido'
-          ? 'Fuso horario invalido.'
-          : 'Nao foi possivel criar a unidade.',
+          ? 'Fuso horário inválido.'
+          : 'Não foi possível criar a unidade.',
       );
     } finally {
       setEnviando(false);
@@ -92,7 +92,7 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs text-text-muted">Fuso horario</span>
+            <span className="text-xs text-text-muted">Fuso horário</span>
             <select value={timezone} onChange={(e) => setTimezone(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm">
               {FUSOS.map(([valor, texto]) => (

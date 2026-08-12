@@ -77,7 +77,7 @@ export function SecaoContato(props: SecaoContatoProps) {
 
   if (!editando) {
     return (
-      <section aria-label="Informacoes de contato" className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
+      <section aria-label="Informações de contato" className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text">Contato</h2>
           {props.editavel && (
@@ -92,7 +92,7 @@ export function SecaoContato(props: SecaoContatoProps) {
             <dd className="m-0 font-medium text-text">{formatarTelefone(props.phonePrimary)}</dd>
           </div>
           <div>
-            <dt className="text-text-muted">Telefone secundario</dt>
+            <dt className="text-text-muted">Telefone secundário</dt>
             <dd className="m-0 font-medium text-text">{formatarTelefone(props.phoneSecondary)}</dd>
           </div>
           <div>
@@ -103,7 +103,7 @@ export function SecaoContato(props: SecaoContatoProps) {
 
         {(props.emergencyContactName || props.emergencyContactPhone) && (
           <div className="mt-4 border-t border-line pt-3">
-            <h3 className="mb-2 text-sm font-semibold text-text">Contato de emergencia</h3>
+            <h3 className="mb-2 text-sm font-semibold text-text">Contato de emergência</h3>
             <dl className="grid gap-3 text-sm">
               <div>
                 <dt className="text-text-muted">Nome</dt>
@@ -129,14 +129,14 @@ export function SecaoContato(props: SecaoContatoProps) {
           value={fone}
           onChange={(e) => setFone(e.target.value)}
           placeholder="(XX) XXXXX-XXXX"
-          {...(!foneValido ? { erro: 'Minimo 10 digitos' } : {})}
+          {...(!foneValido ? { erro: 'Mínimo 10 dígitos' } : {})}
         />
         <Campo
-          rotulo="Telefone secundario"
+          rotulo="Telefone secundário"
           value={foneSec}
           onChange={(e) => setFoneSec(e.target.value)}
           placeholder="(XX) XXXXX-XXXX"
-          {...(!foneSecValido ? { erro: 'Minimo 10 digitos' } : {})}
+          {...(!foneSecValido ? { erro: 'Mínimo 10 dígitos' } : {})}
         />
         <Campo
           rotulo="Email"
@@ -146,7 +146,7 @@ export function SecaoContato(props: SecaoContatoProps) {
           placeholder="email@exemplo.com"
         />
         <div className="border-t border-line pt-3 mt-1">
-          <h3 className="mb-2 text-sm font-semibold text-text">Contato de emergencia</h3>
+          <h3 className="mb-2 text-sm font-semibold text-text">Contato de emergência</h3>
           <div className="grid gap-3">
             <Campo
               rotulo="Nome"
@@ -159,7 +159,7 @@ export function SecaoContato(props: SecaoContatoProps) {
               value={emFone}
               onChange={(e) => setEmFone(e.target.value)}
               placeholder="(XX) XXXXX-XXXX"
-              {...(!emFoneValido ? { erro: 'Minimo 10 digitos' } : {})}
+              {...(!emFoneValido ? { erro: 'Mínimo 10 dígitos' } : {})}
             />
           </div>
         </div>

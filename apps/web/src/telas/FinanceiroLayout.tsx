@@ -25,7 +25,7 @@ export interface AbaConfig {
 }
 
 export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
-  { value: "visao", rotulo: "Visao geral", href: "/financeiro" },
+  { value: "visao", rotulo: "Visão geral", href: "/financeiro" },
   { value: "caixa", rotulo: "Caixa", href: "/financeiro/caixa" },
   { value: "a-receber", rotulo: "A receber", href: "/financeiro/a-receber" },
   { value: "a-pagar", rotulo: "A pagar", href: "/financeiro/a-pagar" },
@@ -104,7 +104,7 @@ export function FinanceiroLayout({
         </div>
       </Tabs>
 
-      {/* Conteudo da rota filha */}
+      {/* Conteúdo da rota filha */}
       {children}
     </div>
   );

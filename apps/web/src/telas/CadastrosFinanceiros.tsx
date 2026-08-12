@@ -60,7 +60,7 @@ export interface CadastrosFinanceirosProps {
 }
 
 const FREQUENCIA: Record<string, string> = {
-  monthly: 'todo mes', weekly: 'toda semana', biweekly: 'a cada 15 dias',
+  monthly: 'todo mês', weekly: 'toda semana', biweekly: 'a cada 15 dias',
 };
 
 function reais(centavos: number): string {
@@ -69,7 +69,7 @@ function reais(centavos: number): string {
   }).format(centavos / 100);
 }
 
-/** '1.250,50' -> 125050. Aceita ponto e virgula: teclado de celular manda ponto. */
+/** '1.250,50' -> 125050. Aceita ponto e vírgula: teclado de celular manda ponto. */
 function paraCentavos(texto: string): number {
   const limpo = texto.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
   const n = Number.parseFloat(limpo);
@@ -78,7 +78,7 @@ function paraCentavos(texto: string): number {
 
 function Selo({ ativo }: { ativo: boolean }) {
   if (ativo) return null;
-  // Inativo aparece MARCADO, nao sumido: ele continua ligado a lancamentos
+  // Inativo aparece MARCADO, não sumido: ele continua ligado a lançamentos
   // antigos, e some-lo faria a despesa parecer apontar para o nada.
   return (
     <span className="rounded-full bg-surface-hover px-2 py-0.5 text-xs text-text-muted">
@@ -90,9 +90,9 @@ function Selo({ ativo }: { ativo: boolean }) {
 /**
  * Cadastros de apoio do financeiro.
  *
- * As quatro rotas existiam no backend e NENHUMA tinha tela: a clinica lancava
- * uma despesa e nao conseguia cadastrar o fornecedor dela, nem a conta de onde
- * o dinheiro sai. O financeiro operava pela metade — e a metade que faltava e
+ * As quatro rotas existiam no backend e NENHUMA tinha tela: a clínica lançava
+ * uma despesa e não conseguia cadastrar o fornecedor dela, nem a conta de onde
+ * o dinheiro sai. O financeiro operava pela metade — e a metade que faltava é
  * justamente a que se preenche uma vez e se usa todo dia.
  */
 export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
@@ -121,18 +121,18 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
     <div className="cadencia-page grid gap-5">
       <PageHeader
         titulo="Cadastros do financeiro"
-        subtitulo="Fornecedor, conta, centro de custo e lancamentos que se repetem. Preenchidos uma vez, usados todo dia."
+        subtitulo="Fornecedor, conta, centro de custo e lançamentos que se repetem. Preenchidos uma vez, usados todo dia."
         semBreadcrumb
       />
 
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
-          {/* Fornecedores primeiro: e o cadastro em que o contas a pagar
+          {/* Fornecedores primeiro: é o cadastro em que o contas a pagar
               esbarra antes de qualquer outro. */}
           <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
-          <TabsTrigger value="contas">Contas bancarias</TabsTrigger>
+          <TabsTrigger value="contas">Contas bancárias</TabsTrigger>
           <TabsTrigger value="centros">Centros de custo</TabsTrigger>
-          <TabsTrigger value="recorrencias">Recorrencias</TabsTrigger>
+          <TabsTrigger value="recorrencias">Recorrências</TabsTrigger>
         </TabsList>
 
         <TabsContent value="fornecedores">
@@ -153,8 +153,8 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
               <Botao iconeEsquerda={Plus} disabled={fNome.trim() === ''}
                 carregando={salvando}
                 onClick={() => { void comSalvando(async () => {
-                  // So o nome e obrigatorio: exigir CNPJ com a nota na mao faz
-                  // quem esta com pressa inventar numero.
+                  // Só o nome é obrigatório: exigir CNPJ com a nota na mão faz
+                  // quem está com pressa inventar número.
                   await p.aoCriarFornecedor(fCnpj === ''
                     ? { name: fNome.trim() }
                     : { name: fNome.trim(), cnpj: fCnpj });
@@ -195,13 +195,13 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                   className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-text">Agencia</span>
+                <span className="font-medium text-text">Agência</span>
                 <input type="text" value={cAgencia} maxLength={20}
                   onChange={(e) => setCAgencia(e.target.value)}
                   className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-text">Numero da conta</span>
+                <span className="font-medium text-text">Número da conta</span>
                 <input type="text" value={cNumero} maxLength={30}
                   onChange={(e) => setCNumero(e.target.value)}
                   className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
@@ -214,8 +214,8 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
               </label>
               <div className="flex items-end">
                 <Botao iconeEsquerda={Plus} carregando={salvando}
-                  // Conta sem agencia nao serve para conciliar extrato — que e a
-                  // unica razao de ela existir aqui.
+                  // Conta sem agência não serve para conciliar extrato — que é a
+                  // única razão de ela existir aqui.
                   disabled={cNome.trim() === '' || cBanco.trim() === ''
                     || cAgencia.trim() === '' || cNumero.trim() === ''}
                   onClick={() => { void comSalvando(async () => {
@@ -258,11 +258,11 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                   className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-text">Codigo</span>
+                <span className="font-medium text-text">Código</span>
                 <input type="text" value={ccCodigo} maxLength={20}
-                  // Maiuscula na entrada: o codigo aparece no relatorio
-                  // contabil, e 'mkt' ao lado de 'MKT' viraria dois centros que
-                  // a contabilidade le como o mesmo.
+                  // Maiúscula na entrada: o código aparece no relatório
+                  // contábil, e 'mkt' ao lado de 'MKT' viraria dois centros que
+                  // a contabilidade lê como o mesmo.
                   onChange={(e) => setCcCodigo(e.target.value.toUpperCase())}
                   className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
               </label>
@@ -293,8 +293,8 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
         <TabsContent value="recorrencias">
           <div className="grid gap-4 pt-4">
             <p className="text-sm text-text-muted">
-              Lancamentos que se repetem sozinhos — aluguel, salario, assinatura.
-              Criados pelo lancamento no contas a pagar ou a receber.
+              Lançamentos que se repetem sozinhos — aluguel, salário, assinatura.
+              Criados pelo lançamento no contas a pagar ou a receber.
             </p>
             <ul className="grid gap-1.5">
               {p.dados.recorrencias.map((r) => (
@@ -326,9 +326,9 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                   ) : (
                     <Botao className="mt-2" variante="secundario" tamanho="sm"
                       iconeEsquerda={Trash}
-                      // Apagar a recorrencia do aluguel sem querer faria a
-                      // despesa sumir do fluxo de caixa, e ninguem notaria ate
-                      // o mes fechar errado.
+                      // Apagar a recorrência do aluguel sem querer faria a
+                      // despesa sumir do fluxo de caixa, e ninguém notaria até
+                      // o mês fechar errado.
                       onClick={() => setConfirmando(r.recurringId)}>
                       Remover
                     </Botao>

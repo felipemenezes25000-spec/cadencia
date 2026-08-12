@@ -47,16 +47,16 @@ function montar(over: Partial<Parameters<typeof AutomacoesDeConversa>[0]> = {}) 
   return props;
 }
 
-describe('tela Automacoes de Conversa', () => {
-  it('renderiza lista de automacoes', async () => {
+describe('tela Automações de Conversa', () => {
+  it('renderiza lista de automações', async () => {
     montar();
     await waitFor(() => {
-      expect(screen.getByRole('list', { name: /lista de automacoes/i })).toBeVisible();
+      expect(screen.getByRole('list', { name: /lista de automações/i })).toBeVisible();
       expect(screen.getAllByRole('listitem')).toHaveLength(3);
     });
   });
 
-  it('mostra nome e descricao de cada automacao', async () => {
+  it('mostra nome e descrição de cada automação', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('Confirmacao D-2')).toBeVisible();
@@ -66,7 +66,7 @@ describe('tela Automacoes de Conversa', () => {
     });
   });
 
-  it('toggle switch ativa/desativa automacao', async () => {
+  it('toggle switch ativa/desativa automação', async () => {
     const { aoAlternarAtiva } = montar();
     await waitFor(() => expect(screen.getByText('Confirmacao D-2')).toBeVisible());
 
@@ -82,8 +82,8 @@ describe('tela Automacoes de Conversa', () => {
     montar();
     await waitFor(() => expect(screen.getByText('Confirmacao D-2')).toBeVisible());
 
-    // Abrir menu de acoes do primeiro card
-    const menuTriggers = screen.getAllByRole('button', { name: /acoes de/i });
+    // Abrir menu de ações do primeiro card
+    const menuTriggers = screen.getAllByRole('button', { name: /ações de/i });
     await userEvent.click(menuTriggers[0]!);
 
     await waitFor(() => {
@@ -92,55 +92,55 @@ describe('tela Automacoes de Conversa', () => {
     });
   });
 
-  it('abre formulario ao clicar Nova automacao', async () => {
+  it('abre formulário ao clicar Nova automação', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Confirmacao D-2')).toBeVisible());
 
-    // Usar getAllByRole pois pode haver botao no header e no estado vazio
-    const botoesNova = screen.getAllByRole('button', { name: /nova automacao/i });
+    // Usar getAllByRole pois pode haver botão no header e no estado vazio
+    const botoesNova = screen.getAllByRole('button', { name: /nova automação/i });
     await userEvent.click(botoesNova[0]!);
 
-    // O PainelLateral deve abrir com titulo "Nova automacao"
+    // O PainelLateral deve abrir com título "Nova automação"
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /salvar/i })).toBeVisible();
     });
   });
 
-  it('abre formulario preenchido ao clicar Editar', async () => {
+  it('abre formulário preenchido ao clicar Editar', async () => {
     const { aoEditar } = montar();
     await waitFor(() => expect(screen.getByText('Confirmacao D-2')).toBeVisible());
 
     // Abrir menu do primeiro card
-    const menuTriggers = screen.getAllByRole('button', { name: /acoes de/i });
+    const menuTriggers = screen.getAllByRole('button', { name: /ações de/i });
     await userEvent.click(menuTriggers[0]!);
 
     await waitFor(() => expect(screen.getByText('Editar')).toBeVisible());
     await userEvent.click(screen.getByText('Editar'));
 
-    // O formulario deve abrir com titulo "Editar automacao"
+    // O formulário deve abrir com título "Editar automação"
     await waitFor(() => {
-      expect(screen.getByText('Editar automacao')).toBeVisible();
+      expect(screen.getByText('Editar automação')).toBeVisible();
     });
 
     expect(aoEditar).toHaveBeenCalledWith('a1');
   });
 
-  it('mostra estado vazio quando sem automacoes', async () => {
+  it('mostra estado vazio quando sem automações', async () => {
     montar({ carregar: vi.fn(async () => []) });
     await waitFor(() => {
-      expect(screen.getByText('Nenhuma automacao configurada')).toBeVisible();
+      expect(screen.getByText('Nenhuma automação configurada')).toBeVisible();
       expect(
-        screen.getByText('Crie automacoes para agilizar o atendimento por mensagens'),
+        screen.getByText('Crie automações para agilizar o atendimento por mensagens'),
       ).toBeVisible();
     });
   });
 
-  it('valida nome obrigatorio no formulario', async () => {
+  it('valida nome obrigatório no formulário', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Confirmacao D-2')).toBeVisible());
 
-    // Abrir formulario vazio
-    await userEvent.click(screen.getByRole('button', { name: /nova automacao/i }));
+    // Abrir formulário vazio
+    await userEvent.click(screen.getByRole('button', { name: /nova automação/i }));
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /salvar/i })).toBeVisible();
@@ -150,11 +150,11 @@ describe('tela Automacoes de Conversa', () => {
     await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Nome obrigatorio')).toBeVisible();
+      expect(screen.getByText('Nome obrigatório')).toBeVisible();
     });
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <AutomacoesDeConversa
         carregar={async () => AUTOMACOES}

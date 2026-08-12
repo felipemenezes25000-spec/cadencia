@@ -97,20 +97,20 @@ describe('FichaDoPaciente', () => {
     expect(
       screen.getByRole('status', { name: 'Carregando ficha do paciente' }),
     ).toBeVisible();
-    // Nao deve renderizar o conteudo real
+    // Não deve renderizar o conteúdo real
     expect(
       screen.queryByRole('heading', { level: 1, name: 'Maria Souza Lima' }),
     ).not.toBeInTheDocument();
   });
 
-  it('renderiza nome do paciente no titulo', () => {
+  it('renderiza nome do paciente no título', () => {
     montar();
     expect(
       screen.getByRole('heading', { level: 1, name: 'Maria Souza Lima' }),
     ).toBeVisible();
   });
 
-  it('renderiza barra de resumo com dados demograficos', () => {
+  it('renderiza barra de resumo com dados demográficos', () => {
     montar();
     // Iniciais do avatar
     expect(screen.getByText('ML')).toBeVisible();
@@ -118,7 +118,7 @@ describe('FichaDoPaciente', () => {
     expect(screen.getByText(/\d+ anos/)).toBeVisible();
     // Telefone formatado aparece na barra de resumo (e no Resumo tab)
     expect(screen.getAllByText('(11) 98765-4321').length).toBeGreaterThanOrEqual(1);
-    // Labels demograficos (Telefone aparece na barra e no tab Resumo)
+    // Labels demográficos (Telefone aparece na barra e no tab Resumo)
     expect(screen.getAllByText('Telefone').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Idade')).toBeVisible();
   });
@@ -126,19 +126,19 @@ describe('FichaDoPaciente', () => {
   it('renderiza tabs', () => {
     montar();
     expect(screen.getByRole('tab', { name: 'Resumo' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Historico' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Documentos' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Convenios' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Convênios' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Financeiro' })).toBeVisible();
   });
 
-  it('muda conteudo ao clicar em tab', async () => {
+  it('muda conteúdo ao clicar em tab', async () => {
     montar();
-    // Tab Resumo ativo por padrao - mostra secao de contato
+    // Tab Resumo ativo por padrão - mostra seção de contato
     expect(screen.getByText('Contato')).toBeVisible();
 
-    // Clicar em Historico mostra timeline
-    await userEvent.click(screen.getByRole('tab', { name: 'Historico' }));
+    // Clicar em Histórico mostra timeline
+    await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
     });
@@ -152,9 +152,9 @@ describe('FichaDoPaciente', () => {
     });
   });
 
-  it('mostra timeline de atendimentos no tab Historico', async () => {
+  it('mostra timeline de atendimentos no tab Histórico', async () => {
     montar();
-    await userEvent.click(screen.getByRole('tab', { name: 'Historico' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
       expect(
@@ -169,7 +169,7 @@ describe('FichaDoPaciente', () => {
     });
   });
 
-  it('mostra botoes de acao: Mensagem e Novo atendimento', () => {
+  it('mostra botões de ação: Mensagem e Novo atendimento', () => {
     montar();
     expect(
       screen.getByRole('button', { name: /Mensagem/ }),
@@ -186,7 +186,7 @@ describe('FichaDoPaciente', () => {
     expect(link).toHaveAttribute('href', '/pacientes');
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FichaDoPaciente
         paciente={PACIENTE}

@@ -92,7 +92,7 @@ function SatisfacaoSkeleton() {
     <div
       className="cadencia-page grid gap-6 max-w-[960px]"
       role="status"
-      aria-label="Carregando satisfacao"
+      aria-label="Carregando satisfação"
     >
       <Skeleton variant="text" width="140px" height="28px" />
       <Skeleton variant="text" width="140px" height="12px" />
@@ -134,12 +134,12 @@ export function Satisfacao(p: SatisfacaoProps) {
   return (
     <div className="cadencia-page grid gap-6 max-w-[960px]">
       <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
-        Satisfacao
+        Satisfação
       </h1>
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
         <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
-          dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
+          dados até {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
@@ -147,7 +147,7 @@ export function Satisfacao(p: SatisfacaoProps) {
       {/* NPS em destaque */}
       {summary !== null ? (
         <section
-          aria-label="NPS do periodo"
+          aria-label="NPS do período"
           className="grid gap-3 rounded-xl border border-line bg-surface p-4 shadow-elev-1"
         >
           <div className="flex items-baseline gap-3">
@@ -191,10 +191,10 @@ export function Satisfacao(p: SatisfacaoProps) {
         </section>
       ) : null}
 
-      {/* Grafico evolutivo */}
+      {/* Gráfico evolutivo */}
       {evolution.length > 0 ? (
         <section
-          aria-label="Evolucao do NPS"
+          aria-label="Evolução do NPS"
           className="rounded-xl border border-line bg-surface p-4 shadow-elev-1"
         >
           <h2 className="m-0 mb-3 text-[var(--fs-15)] font-semibold">

@@ -52,7 +52,7 @@ const CONTEXTO: ContextoConversa = {
   historicoAgendamentos: [],
 };
 
-/* ── Funcao auxiliar de montagem ───────────────────────────────────────── */
+/* ── Função auxiliar de montagem ───────────────────────────────────────── */
 
 function montar(over: Partial<Parameters<typeof Conversas>[0]> = {}) {
   const props = {
@@ -126,7 +126,7 @@ describe('Conversas (split view)', () => {
     expect(screen.queryByText('+5511888880002')).not.toBeInTheDocument();
   });
 
-  it('botao Nova chama aoNova', async () => {
+  it('botão Nova chama aoNova', async () => {
     const user = userEvent.setup();
     const { aoNova } = montar();
 
@@ -147,7 +147,7 @@ describe('Conversas (split view)', () => {
     expect(aoAbrirConversa).toHaveBeenCalledWith('c1');
   });
 
-  it('conversa com numero desconhecido mostra botao de vincular no painel', async () => {
+  it('conversa com número desconhecido mostra botão de vincular no painel', async () => {
     montar({ conversaAbertaId: 'c2' });
     await waitFor(() =>
       expect(
@@ -159,7 +159,7 @@ describe('Conversas (split view)', () => {
     );
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = montar({ conversaAbertaId: 'c1' });
     await waitFor(() =>
       expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0),

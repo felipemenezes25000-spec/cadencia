@@ -23,17 +23,17 @@ export interface AgendaProps {
   readonly aoMudarDia: (dia: string) => void;
   readonly aoAbrirCompositor: (inicioMin: number) => void;
   /**
-   * Entrega DIA e MINUTO DE PAREDE, nao um instante.
+   * Entrega DIA e MINUTO DE PAREDE, não um instante.
    *
-   * O slot da grade sabe a hora do relogio da clinica e, na visao semana, o dia
-   * pela coluna. Quem converte para instante e a pagina, que tem o fuso da
+   * O slot da grade sabe a hora do relógio da clínica e, na visão semana, o dia
+   * pela coluna. Quem converte para instante é a página, que tem o fuso da
    * unidade — a mesma regra do compositor e dos bloqueios.
    */
   readonly aoMover: (
     appointmentId: string, dia: string, minutoDoDia: number) => Promise<void>;
   readonly aoConfirmar: (appointmentId: string) => Promise<void>;
   readonly aoCobrar: (appointmentId: string) => void;
-  /** Acoes extras no cabecalho (ex.: bloqueios), decididas pela pagina. */
+  /** Ações extras no cabeçalho (ex.: bloqueios), decididas pela página. */
   readonly acoesExtras?: ReactNode;
 }
 
@@ -53,14 +53,14 @@ const HORAS = Array.from(
 
 const FAIXAS = faixasDoDia({ inicioMin: INICIO_MIN, fimMin: FIM_MIN, passoMin: PASSO_MIN });
 
-const NOMES_DIAS_CURTO = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+const NOMES_DIAS_CURTO = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 const ROTULOS_NAV: Record<Visao['chave'], { anterior: string; proximo: string }> = {
-  dia:           { anterior: 'Dia anterior',     proximo: 'Proximo dia' },
-  semana:        { anterior: 'Semana anterior',  proximo: 'Proxima semana' },
-  mes:           { anterior: 'Mes anterior',     proximo: 'Proximo mes' },
-  profissional:  { anterior: 'Dia anterior',     proximo: 'Proximo dia' },
-  sala:          { anterior: 'Dia anterior',     proximo: 'Proximo dia' },
+  dia:           { anterior: 'Dia anterior',     proximo: 'Próximo dia' },
+  semana:        { anterior: 'Semana anterior',  proximo: 'Próxima semana' },
+  mes:           { anterior: 'Mês anterior',     proximo: 'Próximo mês' },
+  profissional:  { anterior: 'Dia anterior',     proximo: 'Próximo dia' },
+  sala:          { anterior: 'Dia anterior',     proximo: 'Próximo dia' },
 };
 
 /* ── Cores de status ──────────────────────────────────────── */
@@ -79,7 +79,7 @@ const coresDeStatus: Record<StatusAgenda, string> = {
   vencido:        'bg-danger/10 border-l-st-faltou text-st-faltou',
 };
 
-/* ── Utilitarios de data ──────────────────────────────────── */
+/* ── Utilitários de data ──────────────────────────────────── */
 
 function adicionarDias(iso: string, dias: number): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -138,7 +138,7 @@ function diasDoMes(iso: string): { dia: string; doMes: boolean }[] {
   return resultado;
 }
 
-/* ── Calculo de posicao na grade temporal ──────────────────── */
+/* ── Cálculo de posição na grade temporal ──────────────────── */
 
 function minutosLocais(iso: string, timezone: string): number {
   const fmt = new Intl.DateTimeFormat('pt-BR', {
@@ -198,14 +198,14 @@ function BlocoDeAgendamento({
   });
 
   // Desestruturar attributes para evitar role="button" que causa nested-interactive
-  // quando o bloco contem botoes internos (Confirmar, Cobrar).
+  // quando o bloco contém botões internos (Confirmar, Cobrar).
   const { role: _role, ...dragAttrs } = attributes;
 
   return (
     <div
       ref={setNodeRef}
       data-status={item.status}
-      aria-roledescription="item arrastavel"
+      aria-roledescription="item arrastável"
       aria-describedby="dnd-instrucoes"
       className={cn(
         'absolute left-1 right-1 rounded-[var(--r-sm)] text-xs',
@@ -225,7 +225,7 @@ function BlocoDeAgendamento({
       }}
     >
       <div className="flex items-center justify-between h-full min-w-0">
-        {/* Area arrastavel: recebe listeners e atributos do dnd-kit */}
+        {/* Área arrastável: recebe listeners e atributos do dnd-kit */}
         <span
           {...listeners}
           {...dragAttrs}
@@ -303,7 +303,7 @@ function SlotDeHorario({
   );
 }
 
-/* ── GradeDeHorarios (grade temporal reutilizavel) ────────── */
+/* ── GradeDeHorarios (grade temporal reutilizável) ────────── */
 
 function GradeDeHorarios({
   itensPorColuna, cabecalhos, timezone, confirmando,
@@ -348,7 +348,7 @@ function GradeDeHorarios({
         className="grid"
         style={{ gridTemplateColumns: `60px repeat(${colunas}, minmax(120px, 1fr))` }}
       >
-        {/* Coluna de horarios */}
+        {/* Coluna de horários */}
         <div className="relative" style={{ height: `${alturaTotal}px` }}>
           {HORAS.map((h, i) => (
             <div
@@ -377,7 +377,7 @@ function GradeDeHorarios({
               />
             ))}
 
-            {/* Slots clicaveis de 15 minutos (droppable) */}
+            {/* Slots clicáveis de 15 minutos (droppable) */}
             {FAIXAS.map((f, i) => (
               <SlotDeHorario
                 key={`c-${f}`}
@@ -403,7 +403,7 @@ function GradeDeHorarios({
   );
 }
 
-/* ── ListaDeAgendamentos (visualizacao mobile) ────────────── */
+/* ── ListaDeAgendamentos (visualização mobile) ────────────── */
 
 function ListaDeAgendamentos({
   itens, timezone, confirmando, aoConfirmar, aoCobrar,
@@ -478,7 +478,7 @@ function ListaDeAgendamentos({
   );
 }
 
-/* ── GradeMes (visualizacao de calendario mensal) ─────────── */
+/* ── GradeMes (visualização de calendário mensal) ─────────── */
 
 function GradeMes({
   dia, itens, aoMudarDia, aoMudarVisao,
@@ -504,7 +504,7 @@ function GradeMes({
     <div
       className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
       role="grid"
-      aria-label="Calendario mensal"
+      aria-label="Calendário mensal"
     >
       <div className="grid grid-cols-7 border-b border-line" role="row">
         {NOMES_DIAS_CURTO.map((d) => (
@@ -578,7 +578,7 @@ export function Agenda(p: AgendaProps) {
     return () => { cancelado = true; };
   }, [p, p.dia]);
 
-  /* Atalhos de teclado (1-5 para trocar visao) */
+  /* Atalhos de teclado (1-5 para trocar visão) */
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent): void {
       const alvo = e.target as HTMLElement | null;
@@ -611,15 +611,15 @@ export function Agenda(p: AgendaProps) {
     /**
      * "slot-{colIdx}-{HH:MM}" — a coluna diz o DIA, o HH:MM diz a hora.
      *
-     * O codigo antigo pegava so o "HH:MM" e mandava essa string como
+     * O código antigo pegava só o "HH:MM" e mandava essa string como
      * `startsAt`, num campo que a rota valida com `z.string().datetime()`. A API
      * respondia 400 sempre, e como a chamada era `void p.aoMover(...)` sem
-     * catch, a rejeicao virava unhandled rejection: nenhum aviso na tela, o
-     * bloco voltava para o lugar de origem no proximo recarregamento e arrastar
-     * simplesmente nunca movia nada, em nenhuma das visoes com grade.
+     * catch, a rejeição virava unhandled rejection: nenhum aviso na tela, o
+     * bloco voltava para o lugar de origem no próximo recarregamento e arrastar
+     * simplesmente nunca movia nada, em nenhuma das visões com grade.
      *
-     * O `colIdx` tambem era jogado fora, entao mesmo com o formato certo um
-     * arrasto de terca para quinta na visao semana teria mudado so o horario.
+     * O `colIdx` também era jogado fora, então mesmo com o formato certo um
+     * arrasto de terça para quinta na visão semana teria mudado só o horário.
      */
     const [, col, hhmm] = novoSlotId.split('-');
     if (col === undefined || hhmm === undefined) return;
@@ -635,7 +635,7 @@ export function Agenda(p: AgendaProps) {
     void p.aoMover(agendamentoId, dia, minuto);
   }
 
-  /* Navegacao de data */
+  /* Navegação de data */
   function navAnterior(): void {
     if (p.visao === 'mes') p.aoMudarDia(adicionarMeses(p.dia, -1));
     else if (p.visao === 'semana') p.aoMudarDia(adicionarDias(p.dia, -7));
@@ -654,7 +654,7 @@ export function Agenda(p: AgendaProps) {
     const seg = inicioSemana(p.dia);
     const dias = Array.from({ length: 7 }, (_, i) => adicionarDias(seg, i));
     // `startsAt` chega em UTC. Fatiar a string dava a data UTC, e no Brasil
-    // (UTC-3) tudo a partir das 21h caia na coluna do dia seguinte.
+    // (UTC-3) tudo a partir das 21h caía na coluna do dia seguinte.
     return dias.map((d) => itens.filter(
       (it) => diaNaClinica(it.startsAt, p.timezone) === d));
   }, [p.visao, p.dia, p.timezone, itens]);
@@ -680,7 +680,7 @@ export function Agenda(p: AgendaProps) {
     };
   }, [p.visao, itens]);
 
-  /* Itens para sala (sem dados de sala, coluna unica) */
+  /* Itens para sala (sem dados de sala, coluna única) */
   const salaItens = useMemo(() => [itens], [itens]);
 
   const rotulos = ROTULOS_NAV[p.visao];
@@ -730,7 +730,7 @@ export function Agenda(p: AgendaProps) {
         ) : (
           <>
             <TabsContent value="dia">
-              {/* Desktop: grade de horarios com DnD */}
+              {/* Desktop: grade de horários com DnD */}
               <div className="hidden md:block" data-view="desktop-grid">
                 <AgendaDragContext
                   onMover={moverAgendamento}
@@ -744,7 +744,7 @@ export function Agenda(p: AgendaProps) {
                   />
                 </AgendaDragContext>
               </div>
-              {/* Mobile: lista cronologica */}
+              {/* Mobile: lista cronológica */}
               <div className="md:hidden" data-view="mobile-list">
                 <ListaDeAgendamentos
                   itens={itens} timezone={p.timezone} confirmando={confirmando}

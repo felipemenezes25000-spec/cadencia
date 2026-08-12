@@ -61,7 +61,7 @@ function formatarDesde(iso: string): string {
   }).format(new Date(iso))}`;
 }
 
-/* ── item arrastavel ──────────────────────────────────────────────── */
+/* ── item arrastável ──────────────────────────────────────────────── */
 
 function ItemEspera({
   item,
@@ -96,7 +96,7 @@ function ItemEspera({
         isDragging && 'shadow-elev-2 opacity-75 z-10 relative',
       )}
     >
-      {/* Alca de arraste */}
+      {/* Alça de arraste */}
       <button
         {...attributes}
         {...listeners}
@@ -109,18 +109,18 @@ function ItemEspera({
         <Icone icon={DotsSixVertical} size="md" />
       </button>
 
-      {/* Numero da posicao */}
+      {/* Número da posição */}
       <span
         className={cn(
           'flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
           'bg-accent-soft text-xs font-bold text-accent',
         )}
-        aria-label={`Posicao ${posicao}`}
+        aria-label={`Posição ${posicao}`}
       >
         {posicao}
       </span>
 
-      {/* Informacoes do paciente */}
+      {/* Informações do paciente */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-text truncate">
           {item.displayName}
@@ -131,7 +131,7 @@ function ItemEspera({
         </p>
       </div>
 
-      {/* Acao */}
+      {/* Ação */}
       <Botao
         variante="fantasma"
         tamanho="sm"

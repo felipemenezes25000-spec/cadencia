@@ -46,7 +46,7 @@ export interface FinanceiroEstoqueProps {
 function EstoqueSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando estoque...">
-      {/* Cabecalho skeleton */}
+      {/* Cabeçalho skeleton */}
       <div className="flex items-center justify-between">
         <Skeleton variant="text" width="80px" height="24px" />
         <Skeleton variant="text" width="140px" height="32px" />
@@ -105,7 +105,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
     });
   }, [p]);
 
-  // Categorias unicas para o filtro
+  // Categorias únicas para o filtro
   const categorias = useMemo(() => {
     if (!dados) return [];
     const cats = new Set(
@@ -141,7 +141,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
 
   return (
     <div className="space-y-6">
-      {/* Cabecalho com acao */}
+      {/* Cabeçalho com ação */}
       <div className="flex items-center justify-between">
         <h2 className="text-[length:var(--fs-15)] font-semibold text-text">
           Estoque
@@ -151,7 +151,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
           tamanho="md"
           onClick={() => { void p.aoRegistrarMovimentacao(); }}
         >
-          Nova movimentacao
+          Nova movimentação
         </Botao>
       </div>
 
@@ -212,7 +212,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
                     Quantidade
                   </th>
                   <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                    Minimo
+                    Mínimo
                   </th>
                   <th className="px-4 py-2.5 text-left font-medium text-text-muted">
                     Status
@@ -257,11 +257,11 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
         </section>
       )}
 
-      {/* Movimentacoes recentes */}
+      {/* Movimentações recentes */}
       {dados && dados.movimentacoes.length > 0 && (
-        <section aria-label="Movimentacoes recentes">
+        <section aria-label="Movimentações recentes">
           <h3 className="mb-3 text-[length:var(--fs-15)] font-semibold text-text">
-            Movimentacoes recentes
+            Movimentações recentes
           </h3>
           <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
@@ -274,7 +274,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
                     Data
                   </th>
                   <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    Responsavel
+                    Responsável
                   </th>
                   <th className="px-4 py-2.5 text-right font-medium text-text-muted">
                     Quantidade
@@ -308,7 +308,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
                           ? 'bg-ok-soft text-ok'
                           : 'bg-danger-soft text-danger',
                       )}>
-                        {m.tipo === 'entrada' ? 'Entrada' : 'Saida'}
+                        {m.tipo === 'entrada' ? 'Entrada' : 'Saída'}
                       </span>
                     </td>
                   </tr>

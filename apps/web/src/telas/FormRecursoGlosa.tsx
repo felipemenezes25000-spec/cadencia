@@ -133,7 +133,7 @@ export function FormRecursoGlosa(p: FormRecursoGlosaProps) {
             disabled={!todasPreenchidas}
             onClick={() => setPasso(2)}
           >
-            Proximo
+            Próximo
           </Botao>
         </div>
       </div>

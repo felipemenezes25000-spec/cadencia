@@ -19,24 +19,24 @@ describe('CriarClinica', () => {
   it('renderiza campos quando aberto=true', () => {
     montar();
     expect(screen.getByLabelText(/nome da unidade/i)).toBeDefined();
-    expect(screen.getByLabelText(/fuso horario/i)).toBeDefined();
+    expect(screen.getByLabelText(/fuso horário/i)).toBeDefined();
     expect(screen.getByLabelText(/cnpj/i)).toBeDefined();
     expect(screen.getByLabelText(/cnes/i)).toBeDefined();
     expect(screen.getByRole('button', { name: /criar$/i })).toBeDefined();
   });
 
-  it('nao renderiza nada quando aberto=false', () => {
+  it('não renderiza nada quando aberto=false', () => {
     montar({ aberto: false });
     expect(screen.queryByLabelText(/nome da unidade/i)).toBeNull();
   });
 
-  it('botao desabilitado com nome vazio', () => {
+  it('botão desabilitado com nome vazio', () => {
     montar();
     const btn = screen.getByRole('button', { name: /criar$/i });
     expect(btn.getAttribute('disabled')).not.toBeNull();
   });
 
-  it('chama aoCriar com dados minimos (nome + timezone)', async () => {
+  it('chama aoCriar com dados mínimos (nome + timezone)', async () => {
     const props = montar();
     const user = userEvent.setup();
 
@@ -56,7 +56,7 @@ describe('CriarClinica', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText(/nome da unidade/i), 'Filial Norte');
-    await user.selectOptions(screen.getByLabelText(/fuso horario/i), 'America/Manaus');
+    await user.selectOptions(screen.getByLabelText(/fuso horário/i), 'America/Manaus');
     await user.type(screen.getByLabelText(/cnpj/i), '12345678000190');
     await user.type(screen.getByLabelText(/cnes/i), '1234567');
     await user.click(screen.getByRole('button', { name: /criar$/i }));
@@ -81,7 +81,7 @@ describe('CriarClinica', () => {
     await user.click(screen.getByRole('button', { name: /criar$/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('Fuso horario invalido');
+      expect(screen.getByRole('alert').textContent).toContain('Fuso horário inválido');
     });
   });
 

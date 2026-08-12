@@ -49,25 +49,25 @@ describe('tela Financeiro', () => {
     await waitFor(() => expect(screen.getByText('R$ 1.250,00')).toBeVisible());
   });
 
-  it('exibe o total por metodo de pagamento', async () => {
+  it('exibe o total por método de pagamento', async () => {
     montar();
     await waitFor(() => expect(screen.getByText(/Dinheiro/)).toBeVisible());
     expect(screen.getByText(/R\$ 500,00/)).toBeVisible();
   });
 
-  it('exibe a secao de receitas do mes com total e media', async () => {
+  it('exibe a seção de receitas do mês com total e média', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('region', { name: /Receitas do mês/ })).toBeVisible());
     expect(screen.getByText('R$ 1.250,00')).toBeVisible();
   });
 
-  it('renderiza o grafico de barras como SVG acessivel', async () => {
+  it('renderiza o gráfico de barras como SVG acessível', async () => {
     montar();
     await waitFor(() => expect(screen.getByRole('img', { name: /Receitas/ })).toBeVisible());
   });
 
-  it('exibe a secao A receber com lista de pendencias ordenada por data', async () => {
+  it('exibe a seção A receber com lista de pendências ordenada por data', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('region', { name: /A receber/ })).toBeVisible());
@@ -80,13 +80,13 @@ describe('tela Financeiro', () => {
     await waitFor(() => expect(screen.getByText('R$ 750,00')).toBeVisible());
   });
 
-  it('cada entrada pendente tem botao "Enviar link"', async () => {
+  it('cada entrada pendente tem botão "Enviar link"', async () => {
     montar();
     await waitFor(() => expect(
       screen.getAllByRole('button', { name: /Enviar link/ }).length).toBe(2));
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Financeiro
         carregarCaixaDoDia={async () => CAIXA_DO_DIA}

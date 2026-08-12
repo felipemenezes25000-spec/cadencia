@@ -68,13 +68,13 @@ describe('FinanceiroCaixa', () => {
     expect(screen.getByText(/Joao Silva/)).toBeVisible();
   });
 
-  it('ordena ao clicar no cabecalho de coluna', async () => {
+  it('ordena ao clicar no cabeçalho de coluna', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByRole('table')).toBeInTheDocument(),
     );
 
-    // Clica no cabecalho Valor para ordenar ascendente
+    // Clica no cabeçalho Valor para ordenar ascendente
     const thValor = screen.getByText('Valor').closest('th')!;
     await userEvent.click(thValor);
     expect(thValor.getAttribute('aria-sort')).toBe('ascending');
@@ -103,7 +103,7 @@ describe('FinanceiroCaixa', () => {
     const selectCategoria = screen.getByLabelText('Categoria');
     await userEvent.selectOptions(selectCategoria, 'Consulta');
 
-    // Apenas lancamentos da categoria Consulta devem ser visiveis
+    // Apenas lançamentos da categoria Consulta devem ser visíveis
     expect(screen.getByText(/Maria Souza/)).toBeVisible();
     expect(
       screen.queryByText(/Material de escritorio/),
@@ -118,7 +118,7 @@ describe('FinanceiroCaixa', () => {
     const selectTipo = screen.getByLabelText('Tipo');
     await userEvent.selectOptions(selectTipo, 'receita');
 
-    // Apenas receitas devem ser visiveis
+    // Apenas receitas devem ser visíveis
     expect(screen.getByText(/Maria Souza/)).toBeVisible();
     expect(
       screen.queryByText(/Material de escritorio/),
@@ -150,12 +150,12 @@ describe('FinanceiroCaixa', () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByText(/Nenhum lancamento encontrado/),
+        screen.getByText(/Nenhum lançamento encontrado/),
       ).toBeVisible(),
     );
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroCaixa carregarDados={async () => DADOS} />,
     );

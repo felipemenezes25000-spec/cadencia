@@ -17,7 +17,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === 'undefined') {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.DOMRect = class DOMRect {
       x = 0; y = 0; width = 0; height = 0;
       top = 0; right = 0; bottom = 0; left = 0;
@@ -161,25 +161,25 @@ describe('TelaDeAtendimento', () => {
     vi.useRealTimers();
   });
 
-  it('renderiza nome do paciente no cabecalho', () => {
+  it('renderiza nome do paciente no cabeçalho', () => {
     renderTela();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Maria Silva');
   });
 
-  it('renderiza procedimento no cabecalho', () => {
+  it('renderiza procedimento no cabeçalho', () => {
     renderTela({ procedimentoNome: 'Retorno cardiologia' });
     expect(screen.getByText('Retorno cardiologia')).toBeInTheDocument();
   });
 
-  it('renderiza timer de duracao', () => {
+  it('renderiza timer de duração', () => {
     renderTela({ inicio: new Date(Date.now() - 125_000) });
     const timer = screen.getByTestId('duracao-timer');
     expect(timer).toBeInTheDocument();
-    // O timer deve mostrar um formato de duracao (m:ss ou h:mm:ss)
+    // O timer deve mostrar um formato de duração (m:ss ou h:mm:ss)
     expect(timer.textContent).toMatch(/\d+:\d{2}/);
   });
 
-  it('renderiza editor clinico', () => {
+  it('renderiza editor clínico', () => {
     renderTela();
     expect(screen.getByTestId('editor-clinico')).toBeInTheDocument();
   });
@@ -206,39 +206,39 @@ describe('TelaDeAtendimento', () => {
     expect(badge).toBeInTheDocument();
   });
 
-  it('mostra mensagem quando nao ha alergias', () => {
+  it('mostra mensagem quando não há alergias', () => {
     renderTela({
       paciente: { nome: 'Joao', alergias: [] },
     });
-    // Secao de alergias ja inicia aberta
+    // Seção de alergias já inicia aberta
     expect(screen.getByText('Nenhuma alergia registrada')).toBeInTheDocument();
   });
 
   it('renderiza medicamentos em uso', () => {
     renderTela();
-    // Expandir secao de medicamentos
+    // Expandir seção de medicamentos
     const medBtn = screen.getByRole('button', { name: /medicamentos/i });
     fireEvent.click(medBtn);
     expect(screen.getByText('Losartana 50mg')).toBeInTheDocument();
   });
 
-  it('renderiza ultimos atendimentos', () => {
+  it('renderiza últimos atendimentos', () => {
     renderTela();
-    // Expandir secao de ultimos atendimentos
-    const ateBtn = screen.getByRole('button', { name: /ultimos atendimentos/i });
+    // Expandir seção de últimos atendimentos
+    const ateBtn = screen.getByRole('button', { name: /últimos atendimentos/i });
     fireEvent.click(ateBtn);
     expect(screen.getByText('Retorno')).toBeInTheDocument();
     expect(screen.getByText('Consulta inicial')).toBeInTheDocument();
   });
 
-  it('renderiza barra de acoes', () => {
-    // Com o gancho de emissao: a barra completa. Sem ele o botao de documento
-    // some, e isso e coberto pelo teste 'sem gancho de emissao'.
+  it('renderiza barra de ações', () => {
+    // Com o gancho de emissão: a barra completa. Sem ele o botão de documento
+    // some, e isso é coberto pelo teste 'sem gancho de emissão'.
     renderTela({ aoEmitirDocumento: vi.fn() });
-    // Verifica a barra de acoes via aria-label
-    const barraAcoes = screen.getByRole('navigation', { name: /acoes do atendimento/i });
+    // Verifica a barra de ações via aria-label
+    const barraAcoes = screen.getByRole('navigation', { name: /ações do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
-    // Verifica os botoes dentro da barra de acoes (using within)
+    // Verifica os botões dentro da barra de ações (using within)
     const botoes = barraAcoes.querySelectorAll('button');
     expect(botoes.length).toBe(4);
     const textos = Array.from(botoes).map((b) => b.textContent?.trim());
@@ -248,11 +248,11 @@ describe('TelaDeAtendimento', () => {
     expect(textos).toContain('Finalizar');
   });
 
-  it('botao Finalizar chama callback', async () => {
+  it('botão Finalizar chama callback', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
 
-    // Seleciona o botao Finalizar da barra de acoes (nao o mock do editor)
+    // Seleciona o botão Finalizar da barra de ações (não o mock do editor)
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
     await act(async () => {
@@ -275,13 +275,13 @@ describe('TelaDeAtendimento', () => {
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
     await act(async () => { fireEvent.click(botaoFinalizar); });
 
-    // O botao do cabecalho nao passa pelo editor. Sem descarga explicita, o que
-    // foi digitado nos ultimos 2s do debounce nunca chega ao servidor — e a
-    // versao selada e imutavel.
+    // O botão do cabeçalho não passa pelo editor. Sem descarga explícita, o que
+    // foi digitado nos últimos 2s do debounce nunca chega ao servidor — e a
+    // versão selada é imutável.
     expect(ordem).toEqual(['descarregou', 'finalizou']);
   });
 
-  it('nao finaliza duas vezes com dois cliques', async () => {
+  it('não finaliza duas vezes com dois cliques', async () => {
     descargaEspia.mockImplementation(async () => true);
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
@@ -293,21 +293,21 @@ describe('TelaDeAtendimento', () => {
       fireEvent.click(botaoFinalizar);
     });
 
-    // Finalizar duas vezes nao e clique duplo distraido apenas: Ctrl+Enter e
+    // Finalizar duas vezes não é clique duplo distraído apenas: Ctrl+Enter é
     // ouvido pelo editor E pela tela. A segunda chamada acha o atendimento fora
-    // de rascunho e devolve erro ao medico que fez tudo certo.
+    // de rascunho e devolve erro ao médico que fez tudo certo.
     expect(aoFinalizar).toHaveBeenCalledTimes(1);
   });
 
-  it('a sessao do prescritor abre ANTES de o medico pedir', async () => {
+  it('a sessão do prescritor abre ANTES de o médico pedir', async () => {
     const abrirSessaoDoPrescritor = vi.fn().mockResolvedValue({
       mode: 'embedded', scriptUrl: 'https://memed.test/s.js', token: 't',
       patientPayload: { nome: 'Maria Silva' },
     });
     renderTela({ abrirSessaoDoPrescritor });
 
-    // Buscar o token so quando o medico clica em Prescrever custa a ida a Memed
-    // com o paciente esperando. A sessao e aberta ao montar a tela.
+    // Buscar o token só quando o médico clica em Prescrever custa a ida à Memed
+    // com o paciente esperando. A sessão é aberta ao montar a tela.
     await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalledTimes(1));
 
     const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
@@ -317,7 +317,7 @@ describe('TelaDeAtendimento', () => {
     expect(painel.dataset['sessao']).toBe('sim');
   });
 
-  it('Memed fora do ar nao impede o atendimento', async () => {
+  it('Memed fora do ar não impede o atendimento', async () => {
     const abrirSessaoDoPrescritor = vi.fn().mockResolvedValue({ mode: 'indisponivel' });
     renderTela({ abrirSessaoDoPrescritor });
     await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalled());
@@ -325,14 +325,14 @@ describe('TelaDeAtendimento', () => {
     const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
     await act(async () => { fireEvent.click(botao); });
 
-    // O painel abre dizendo que nao da; a consulta continua. Travar a tela
-    // inteira porque um parceiro caiu e transformar indisponibilidade deles em
+    // O painel abre dizendo que não dá; a consulta continua. Travar a tela
+    // inteira porque um parceiro caiu é transformar indisponibilidade deles em
     // indisponibilidade nossa.
     expect(screen.getByTestId('painel-prescricao').dataset['sessao']).toBe('nao');
     expect(screen.getByTestId('editor-clinico')).toBeInTheDocument();
   });
 
-  it('a ficha estruturada aparece quando a clinica configurou campos', () => {
+  it('a ficha estruturada aparece quando a clínica configurou campos', () => {
     renderTela({
       secoesDaFicha: [{
         sectionId: 's1', code: 'antecedentes', label: 'Antecedentes',
@@ -349,9 +349,9 @@ describe('TelaDeAtendimento', () => {
     expect(screen.getByLabelText(/alergias/i)).toBeInTheDocument();
   });
 
-  it('sem campos configurados a ficha nao ocupa espaco', () => {
+  it('sem campos configurados a ficha não ocupa espaço', () => {
     renderTela({ secoesDaFicha: [], aoMudarFicha: vi.fn() });
-    // Clinica que usa so evolucao narrativa nao ve caixa vazia pedindo atencao.
+    // Clínica que usa só evolução narrativa não vê caixa vazia pedindo atenção.
     expect(screen.queryByRole('region', { name: /ficha do atendimento/i }))
       .not.toBeInTheDocument();
   });
@@ -363,23 +363,23 @@ describe('TelaDeAtendimento', () => {
     const botao = screen.getAllByRole('button', { name: /emitir documento/i })[0]!;
     await act(async () => { fireEvent.click(botao); });
 
-    // O botao existia e nao fazia nada — placeholder que parece funcionalidade
-    // e pior que botao ausente, porque o medico conta com ele na frente do
-    // paciente e descobre no pior momento que nao emite nada.
+    // O botão existia e não fazia nada — placeholder que parece funcionalidade
+    // é pior que botão ausente, porque o médico conta com ele na frente do
+    // paciente e descobre no pior momento que não emite nada.
     expect(screen.getByTestId('painel-documentos')).toBeInTheDocument();
   });
 
-  it('sem gancho de emissao o botao de documento nao aparece', () => {
+  it('sem gancho de emissão o botão de documento não aparece', () => {
     renderTela();
     expect(screen.queryAllByRole('button', { name: /emitir documento/i }))
       .toHaveLength(0);
   });
 
-  it('mostra status finalizado apos clicar Finalizar', async () => {
+  it('mostra status finalizado após clicar Finalizar', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
 
-    // Seleciona o botao Finalizar da barra de acoes (nao o mock do editor)
+    // Seleciona o botão Finalizar da barra de ações (não o mock do editor)
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
     await act(async () => {
@@ -389,38 +389,38 @@ describe('TelaDeAtendimento', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Atendimento finalizado');
   });
 
-  it('atalho Ctrl+P abre prescricao', async () => {
+  it('atalho Ctrl+P abre prescrição', async () => {
     renderTela();
 
     await act(async () => {
       fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
     });
 
-    // Agora a prescricao tem painel proprio (Memed embarcada), e nao mais o
-    // PainelLateral generico com um paragrafo de placeholder dentro.
+    // Agora a prescrição tem painel próprio (Memed embarcada), e não mais o
+    // PainelLateral genérico com um parágrafo de placeholder dentro.
     expect(screen.getByTestId('painel-prescricao')).toBeInTheDocument();
   });
 
-  it('renderiza botao Voltar quando aoVoltar fornecido', () => {
+  it('renderiza botão Voltar quando aoVoltar fornecido', () => {
     const aoVoltar = vi.fn();
     renderTela({ aoVoltar });
     expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument();
   });
 
-  it('nao renderiza botao Voltar quando aoVoltar nao fornecido', () => {
+  it('não renderiza botão Voltar quando aoVoltar não fornecido', () => {
     renderTela();
-    // Default props nao incluem aoVoltar, entao o botao nao deve aparecer
+    // Default props não incluem aoVoltar, então o botão não deve aparecer
     expect(screen.queryByRole('button', { name: /^voltar$/i })).not.toBeInTheDocument();
   });
 
-  it('renderiza atalhos de teclado na barra de acoes', () => {
+  it('renderiza atalhos de teclado na barra de ações', () => {
     renderTela();
     expect(screen.getByText('Ctrl+P')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+E')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+D')).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = renderTela();
     expect(await axe(container)).toHaveNoViolations();
   });

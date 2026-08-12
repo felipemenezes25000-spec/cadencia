@@ -107,9 +107,9 @@ describe('ConveniosRecursos', () => {
     const secao = await screen.findByRole('region', { name: /Lista de recursos/i });
     expect(within(secao).getByText('Unimed')).toBeVisible();
     expect(within(secao).getByText('Bradesco Saude')).toBeVisible();
-    // Cabecalhos da tabela
+    // Cabeçalhos da tabela
     expect(screen.getByText('Recurso')).toBeVisible();
-    // Valores monetarios
+    // Valores monetários
     expect(within(secao).getByText('R$ 230,00')).toBeVisible();
     expect(within(secao).getByText('R$ 500,00')).toBeVisible();
   });
@@ -120,7 +120,7 @@ describe('ConveniosRecursos', () => {
     expect(within(secao).getByText('Unimed')).toBeVisible();
     const select = screen.getByLabelText(/Status/i);
     await userEvent.selectOptions(select, 'enviado');
-    // So Bradesco Saude (enviado) deve aparecer na tabela
+    // Só Bradesco Saude (enviado) deve aparecer na tabela
     expect(within(secao).queryByText('Unimed')).not.toBeInTheDocument();
     expect(within(secao).getByText('Bradesco Saude')).toBeVisible();
   });
@@ -131,7 +131,7 @@ describe('ConveniosRecursos', () => {
     expect(within(secao).getByText('Unimed')).toBeVisible();
     const select = screen.getByLabelText(/Operadora/i);
     await userEvent.selectOptions(select, 'op1');
-    // So Unimed (op1) deve aparecer na tabela
+    // Só Unimed (op1) deve aparecer na tabela
     expect(within(secao).getByText('Unimed')).toBeVisible();
     expect(within(secao).queryByText('Bradesco Saude')).not.toBeInTheDocument();
   });
@@ -142,7 +142,7 @@ describe('ConveniosRecursos', () => {
     expect(within(secao).getByText('Unimed')).toBeVisible();
     const campoBusca = screen.getByLabelText(/Buscar recursos/i);
     await userEvent.type(campoBusca, 'Bradesco');
-    // Unimed nao aparece mais na tabela (mas pode estar no filtro)
+    // Unimed não aparece mais na tabela (mas pode estar no filtro)
     expect(within(secao).queryByText('Unimed')).not.toBeInTheDocument();
     expect(within(secao).getByText('Bradesco Saude')).toBeVisible();
   });
@@ -150,14 +150,14 @@ describe('ConveniosRecursos', () => {
   it('mostra ChipDeStatusTiss correto', async () => {
     montar();
     const secao = await screen.findByRole('region', { name: /Lista de recursos/i });
-    // Chips de status na tabela (texto pode existir tambem no filtro dropdown)
+    // Chips de status na tabela (texto pode existir também no filtro dropdown)
     const rascunhoChips = within(secao).getAllByText(/Rascunho/i);
     expect(rascunhoChips.length).toBeGreaterThanOrEqual(1);
     const enviadoChips = within(secao).getAllByText(/Enviado/i);
     expect(enviadoChips.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('botao Editar aparece para recurso em rascunho', async () => {
+  it('botão Editar aparece para recurso em rascunho', async () => {
     const { aoEditar } = montar();
     await screen.findByRole('region', { name: /Lista de recursos/i });
     const botoes = screen.getAllByRole('button', { name: /Editar/i });
@@ -166,13 +166,13 @@ describe('ConveniosRecursos', () => {
     expect(aoEditar).toHaveBeenCalledWith('r1');
   });
 
-  it('botao Enviar aparece para recurso em rascunho', async () => {
+  it('botão Enviar aparece para recurso em rascunho', async () => {
     montar();
     await screen.findByRole('region', { name: /Lista de recursos/i });
     expect(screen.getByRole('button', { name: /Enviar/i })).toBeVisible();
   });
 
-  it('botao Ver resultado aparece para recurso enviado', async () => {
+  it('botão Ver resultado aparece para recurso enviado', async () => {
     const { aoVerResultado } = montar();
     await screen.findByRole('region', { name: /Lista de recursos/i });
     const botao = screen.getByRole('button', { name: /Ver resultado/i });
@@ -205,7 +205,7 @@ describe('ConveniosRecursos', () => {
     });
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <ConveniosRecursos
         carregarDados={async () => DADOS}

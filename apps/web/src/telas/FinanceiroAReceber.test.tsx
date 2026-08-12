@@ -85,7 +85,7 @@ describe('FinanceiroAReceber', () => {
     expect(screen.getByText('Ana Costa')).toBeVisible();
   });
 
-  it('ordena ao clicar no cabecalho de coluna', async () => {
+  it('ordena ao clicar no cabeçalho de coluna', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByRole('table')).toBeInTheDocument(),
@@ -108,10 +108,10 @@ describe('FinanceiroAReceber', () => {
     const de = screen.getByLabelText('De');
     fireEvent.change(de, { target: { value: '2026-07-20' } });
 
-    // e1 dueDate 2026-08-10 >= 2026-07-20 -> visivel
+    // e1 dueDate 2026-08-10 >= 2026-07-20 -> visível
     // e2 dueDate 2026-07-15 < 2026-07-20 -> oculto
     // e3 dueDate 2026-07-01 < 2026-07-20 -> oculto
-    // e4 dueDate 2026-08-05 >= 2026-07-20 -> visivel
+    // e4 dueDate 2026-08-05 >= 2026-07-20 -> visível
     await waitFor(() => {
       expect(screen.getByText('Maria Souza')).toBeVisible();
       expect(screen.queryByText('Joao Silva')).not.toBeInTheDocument();
@@ -179,12 +179,12 @@ describe('FinanceiroAReceber', () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByText(/Nenhum lancamento encontrado/),
+        screen.getByText(/Nenhum lançamento encontrado/),
       ).toBeVisible(),
     );
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroAReceber
         carregarDados={async () => DADOS}

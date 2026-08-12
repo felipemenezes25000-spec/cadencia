@@ -60,7 +60,7 @@ describe('FinanceiroEstoque', () => {
     expect(linhaLuva!.getAttribute('data-alerta')).toBe('baixo');
     // Verifica badge "Estoque baixo"
     expect(within(secao).getAllByText('Estoque baixo').length).toBeGreaterThan(0);
-    // Produto OK nao tem alerta
+    // Produto OK não tem alerta
     const linhaSeringa = within(secao).getByText('Seringa 10ml').closest('tr');
     expect(linhaSeringa!.getAttribute('data-alerta')).toBe('ok');
   });
@@ -73,7 +73,7 @@ describe('FinanceiroEstoque', () => {
     const campoBusca = screen.getByLabelText('Buscar produto');
     await user.type(campoBusca, 'Seringa');
 
-    // Seringa deve continuar visivel
+    // Seringa deve continuar visível
     expect(within(secao).getByText('Seringa 10ml')).toBeVisible();
     // Luva e Gaze devem sumir da tabela de produtos
     expect(within(secao).queryByText('Luva P')).not.toBeInTheDocument();
@@ -88,9 +88,9 @@ describe('FinanceiroEstoque', () => {
     const selectCategoria = screen.getByLabelText('Filtrar por categoria');
     await user.selectOptions(selectCategoria, 'EPI');
 
-    // Luva e EPI, deve continuar visivel
+    // Luva é EPI, deve continuar visível
     expect(within(secao).getByText('Luva P')).toBeVisible();
-    // Seringa e Gaze sao Insumos, devem sumir da tabela
+    // Seringa e Gaze são Insumos, devem sumir da tabela
     expect(within(secao).queryByText('Seringa 10ml')).not.toBeInTheDocument();
     expect(within(secao).queryByText('Gaze esteril')).not.toBeInTheDocument();
   });
@@ -103,26 +103,26 @@ describe('FinanceiroEstoque', () => {
     const checkbox = screen.getByLabelText('Apenas estoque baixo');
     await user.click(checkbox);
 
-    // Luva e Gaze tem estoque baixo, devem continuar
+    // Luva e Gaze têm estoque baixo, devem continuar
     expect(within(secao).getByText('Luva P')).toBeVisible();
     expect(within(secao).getByText('Gaze esteril')).toBeVisible();
-    // Seringa nao tem estoque baixo, deve sumir
+    // Seringa não tem estoque baixo, deve sumir
     expect(within(secao).queryByText('Seringa 10ml')).not.toBeInTheDocument();
   });
 
-  it('exibe o historico de movimentacoes recentes', async () => {
+  it('exibe o histórico de movimentações recentes', async () => {
     montar();
     await waitFor(() => expect(
-      screen.getByRole('region', { name: /Movimentacoes recentes/i })).toBeVisible());
+      screen.getByRole('region', { name: /Movimentações recentes/i })).toBeVisible());
   });
 
-  it('tem botao para registrar nova movimentacao', async () => {
+  it('tem botão para registrar nova movimentação', async () => {
     montar();
     await waitFor(() => expect(
-      screen.getByRole('button', { name: /Nova movimentacao/i })).toBeVisible());
+      screen.getByRole('button', { name: /Nova movimentação/i })).toBeVisible());
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroEstoque
         carregarDados={async () => DADOS}

@@ -128,7 +128,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
 
   return (
     <div className="space-y-6">
-      {/* Cabecalho */}
+      {/* Cabeçalho */}
       <h3 className="text-[length:var(--fs-15)] font-semibold">Recursos</h3>
 
       {/* Filtros */}
@@ -200,7 +200,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                      <span className="sr-only">Acoes</span>
+                      <span className="sr-only">Ações</span>
                     </th>
                   </tr>
                 </thead>
@@ -289,7 +289,7 @@ function RecursoLinhas({
             <span aria-hidden="true">{chip.glifo}</span>{chip.rotulo}
           </span>
         </td>
-        {/* Acoes */}
+        {/* Ações */}
         <td className="px-4 py-3">
           <div className="flex gap-1">
             {rec.status === 'rascunho' && (

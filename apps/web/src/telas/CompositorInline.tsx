@@ -33,12 +33,12 @@ export interface CompositorInlineProps {
     procedureId: string;
     operadoraNome: string;
     /**
-     * Dia e hora DE PAREDE, como o usuario digitou nos campos do formulario.
+     * Dia e hora DE PAREDE, como o usuário digitou nos campos do formulário.
      *
-     * Estavam faltando neste contrato, e por isso os dois campos — visiveis,
-     * obrigatorios e editaveis — eram simplesmente descartados no submit: o
-     * agendamento saia sempre no slot que tinha sido clicado na grade. Quem
-     * abria o compositor as 09:00 e corrigia para 10:30 marcava as 09:00, e so
+     * Estavam faltando neste contrato, e por isso os dois campos — visíveis,
+     * obrigatórios e editáveis — eram simplesmente descartados no submit: o
+     * agendamento saía sempre no slot que tinha sido clicado na grade. Quem
+     * abria o compositor às 09:00 e corrigia para 10:30 marcava às 09:00, e só
      * descobria quando o paciente aparecia na hora errada.
      */
     data: string;
@@ -48,7 +48,7 @@ export interface CompositorInlineProps {
   readonly aoFechar: () => void;
   /** Elemento trigger para o popover */
   readonly children?: ReactNode;
-  /** Controla se o popover esta aberto */
+  /** Controla se o popover está aberto */
   readonly aberto?: boolean;
 }
 
@@ -283,13 +283,13 @@ export function CompositorInline(p: CompositorInlineProps) {
         <CampoRegistrado
           rotulo="Data"
           type="date"
-          registro={register('data', { required: 'Obrigatorio' })}
+          registro={register('data', { required: 'Obrigatório' })}
           {...(errors.data?.message != null ? { erro: errors.data.message } : {})}
         />
         <CampoRegistrado
-          rotulo="Horario"
+          rotulo="Horário"
           type="time"
-          registro={register('horario', { required: 'Obrigatorio' })}
+          registro={register('horario', { required: 'Obrigatório' })}
           {...(errors.horario?.message != null ? { erro: errors.horario.message } : {})}
         />
       </div>

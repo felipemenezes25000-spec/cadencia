@@ -6,7 +6,7 @@ import { axe } from 'vitest-axe';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { FinanceiroVisao, type VisaoDados } from './FinanceiroVisao';
 
-// -- Mock ResizeObserver (necessario para visx ParentSize em jsdom) ----------
+// -- Mock ResizeObserver (necessário para visx ParentSize em jsdom) ----------
 
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === 'undefined') {
@@ -16,7 +16,7 @@ beforeAll(() => {
         this.cb = cb;
       }
       observe(target: Element) {
-        // Simula dimensoes para o ParentSize
+        // Simula dimensões para o ParentSize
         this.cb(
           [
             {
@@ -125,27 +125,27 @@ describe('FinanceiroVisao', () => {
     expect(screen.getByText('R$ 450,00')).toBeVisible(); // pendente
   });
 
-  it('mostra variacao percentual', async () => {
+  it('mostra variação percentual', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText(/12\.5% vs\. periodo anterior/)).toBeVisible());
-    expect(screen.getByText(/5\.3% vs\. periodo anterior/)).toBeVisible();
+    await waitFor(() => expect(screen.getByText(/12\.5% vs\. período anterior/)).toBeVisible());
+    expect(screen.getByText(/5\.3% vs\. período anterior/)).toBeVisible();
   });
 
-  it('renderiza seletor de periodo', async () => {
+  it('renderiza seletor de período', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
-    expect(screen.getByRole('group', { name: /Seletor de periodo/i })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Diario' })).toBeVisible();
+    expect(screen.getByRole('group', { name: /Seletor de período/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Diário' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Semanal' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Mensal' })).toBeVisible();
   });
 
-  it('muda periodo ao clicar', async () => {
+  it('muda período ao clicar', async () => {
     const user = userEvent.setup();
     const { onUrlUpdate } = montar();
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
 
-    await user.click(screen.getByRole('button', { name: 'Diario' }));
+    await user.click(screen.getByRole('button', { name: 'Diário' }));
 
     await waitFor(() => {
       expect(onUrlUpdate).toHaveBeenCalledWith(
@@ -156,13 +156,13 @@ describe('FinanceiroVisao', () => {
     });
   });
 
-  it('renderiza grafico de receita', async () => {
+  it('renderiza gráfico de receita', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
     expect(screen.getByTestId('grafico-receita')).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = montar();
     await waitFor(() => expect(screen.getByText('R$ 3.500,00')).toBeVisible());
     expect(await axe(container)).toHaveNoViolations();

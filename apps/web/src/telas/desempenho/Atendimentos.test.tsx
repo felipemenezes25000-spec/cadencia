@@ -38,7 +38,7 @@ function montar(over: Partial<AtendimentosProps> = {}) {
 }
 
 describe('tela Atendimentos (Desempenho)', () => {
-  it('exibe o titulo Atendimentos', async () => {
+  it('exibe o título Atendimentos', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Atendimentos/ })).toBeVisible());
@@ -53,14 +53,14 @@ describe('tela Atendimentos (Desempenho)', () => {
     });
   });
 
-  it('exibe totais no rodape da tabela', async () => {
+  it('exibe totais no rodapé da tabela', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('77')).toBeVisible();
     });
   });
 
-  it('exibe a duracao media em minutos', async () => {
+  it('exibe a duração média em minutos', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText('25 min')).toBeVisible();
@@ -70,10 +70,10 @@ describe('tela Atendimentos (Desempenho)', () => {
 
   it('exibe carimbo de frescor dos dados', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText(/dados ate/i)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/dados até/i)).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Atendimentos
         dateFrom="2026-07-01"

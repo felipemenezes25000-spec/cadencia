@@ -27,12 +27,12 @@ function montar(over: Partial<ExportarProps> = {}) {
 }
 
 describe('tela Exportar (Desempenho)', () => {
-  it('exibe o titulo Exportar', () => {
+  it('exibe o título Exportar', () => {
     montar();
     expect(screen.getByRole('heading', { level: 1, name: /Exportar/ })).toBeVisible();
   });
 
-  it('lista as visoes salvas para selecao', () => {
+  it('lista as visões salvas para seleção', () => {
     montar();
     expect(screen.getByRole('radio', { name: 'Receita por procedimento' })).toBeVisible();
     expect(screen.getByRole('radio', { name: 'Atendimentos por profissional' })).toBeVisible();
@@ -44,13 +44,13 @@ describe('tela Exportar (Desempenho)', () => {
     expect(screen.getByRole('radio', { name: 'XLSX' })).toBeVisible();
   });
 
-  it('exibe campos de data de inicio e fim', () => {
+  it('exibe campos de data de início e fim', () => {
     montar();
     expect(screen.getByLabelText(/De/)).toBeVisible();
-    expect(screen.getByLabelText(/^Ate$/)).toBeVisible();
+    expect(screen.getByLabelText(/^Até$/)).toBeVisible();
   });
 
-  it('botao exportar chama callback com visao, formato e periodo', async () => {
+  it('botão exportar chama callback com visão, formato e período', async () => {
     const props = montar();
     await userEvent.click(screen.getByRole('radio', { name: 'Receita por procedimento' }));
     await userEvent.click(screen.getByRole('radio', { name: 'CSV' }));
@@ -59,17 +59,17 @@ describe('tela Exportar (Desempenho)', () => {
       expect.objectContaining({ viewId: 'v1', format: 'csv' }));
   });
 
-  it('botao fica desabilitado sem visao selecionada', () => {
+  it('botão fica desabilitado sem visão selecionada', () => {
     montar();
     expect(screen.getByRole('button', { name: /Exportar/ })).toBeDisabled();
   });
 
   it('exibe carimbo de frescor dos dados', () => {
     montar();
-    expect(screen.getByText(/dados ate/i)).toBeVisible();
+    expect(screen.getByText(/dados até/i)).toBeVisible();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Exportar
         savedViews={VIEWS}

@@ -82,7 +82,7 @@ describe('FinanceiroAPagar', () => {
     expect(screen.getByText(/Imobiliaria XYZ/)).toBeVisible();
   });
 
-  it('ordena ao clicar no cabecalho de coluna', async () => {
+  it('ordena ao clicar no cabeçalho de coluna', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByRole('table')).toBeInTheDocument(),
@@ -171,12 +171,12 @@ describe('FinanceiroAPagar', () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByText(/Nenhum lancamento encontrado/),
+        screen.getByText(/Nenhum lançamento encontrado/),
       ).toBeVisible(),
     );
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroAPagar
         carregarDados={async () => DADOS}

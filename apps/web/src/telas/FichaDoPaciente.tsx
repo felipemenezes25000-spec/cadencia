@@ -66,15 +66,15 @@ export interface FichaDoPacienteProps {
   readonly podeVerFinanceiro: boolean;
   /** Exibir skeleton de carregamento */
   readonly carregando?: boolean;
-  /** Historico de atendimentos para a timeline */
+  /** Histórico de atendimentos para a timeline */
   readonly atendimentos?: readonly AtendimentoResumo[];
   /**
-   * Acoes extras no cabecalho.
+   * Ações extras no cabeçalho.
    *
-   * E um slot e nao um callback porque quem pode compartilhar prontuario depende
-   * de `record.share`, e o papel da sessao vive na PAGINA. Receber um callback
-   * obrigaria esta tela a ganhar tambem um `podeCompartilhar`, duplicando uma
-   * decisao de autorizacao que ja existe um nivel acima.
+   * É um slot e não um callback porque quem pode compartilhar prontuário depende
+   * de `record.share`, e o papel da sessão vive na PÁGINA. Receber um callback
+   * obrigaria esta tela a ganhar também um `podeCompartilhar`, duplicando uma
+   * decisão de autorização que já existe um nível acima.
    */
   readonly acoesExtras?: ReactNode;
 }
@@ -229,7 +229,7 @@ function ResumoTab({
 
       {/* Dados pessoais */}
       <section
-        aria-label="Dados demograficos"
+        aria-label="Dados demográficos"
         className="rounded-xl border border-line bg-surface shadow-elev-1 p-4"
       >
         <h2 className="mb-3 text-sm font-semibold text-text">Dados pessoais</h2>
@@ -252,7 +252,7 @@ function ResumoTab({
   );
 }
 
-/* ── Tab: Historico ──────────────────────────────────────────────────── */
+/* ── Tab: Histórico ──────────────────────────────────────────────────── */
 
 function HistoricoTab({
   atendimentos,
@@ -311,7 +311,7 @@ function FinanceiroTab({
     return (
       <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-6">
         <p className="m-0 text-sm text-text-muted">
-          Sem permissao para visualizar dados financeiros.
+          Sem permissão para visualizar dados financeiros.
         </p>
       </div>
     );
@@ -326,7 +326,7 @@ function FinanceiroTab({
         <p className="m-0 text-text-muted">Carregando financeiro...</p>
       ) : lancamentos.length === 0 ? (
         <p className="m-0 text-text-muted">
-          Nenhum lancamento para este paciente.
+          Nenhum lançamento para este paciente.
         </p>
       ) : (
         <ul className="m-0 grid list-none gap-3 p-0">
@@ -385,7 +385,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
 
   return (
     <div className="cadencia-page grid gap-6">
-      {/* Page header com breadcrumbs e acoes */}
+      {/* Page header com breadcrumbs e ações */}
       <PageHeader
         titulo={p.paciente.displayName}
         breadcrumbs={[
@@ -405,7 +405,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
         }
       />
 
-      {/* Barra de resumo com dados demograficos */}
+      {/* Barra de resumo com dados demográficos */}
       <div className="flex items-center gap-4 rounded-xl border border-line bg-surface shadow-elev-1 p-4 max-sm:flex-col max-sm:items-start">
         {/* Avatar */}
         <div
@@ -444,9 +444,9 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
       <Tabs defaultValue="resumo" onValueChange={aoMudarTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="historico">Historico</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
-          <TabsTrigger value="convenios">Convenios</TabsTrigger>
+          <TabsTrigger value="convenios">Convênios</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
         </TabsList>
 
@@ -475,7 +475,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
         <TabsContent value="convenios">
           <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-6">
             <p className="m-0 text-sm text-text-muted">
-              Nenhum convenio vinculado.
+              Nenhum convênio vinculado.
             </p>
           </div>
         </TabsContent>

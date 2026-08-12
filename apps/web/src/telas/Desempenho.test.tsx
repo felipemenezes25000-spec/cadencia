@@ -27,21 +27,21 @@ function montar(searchParams: Record<string, string> = {}) {
 // -- Testes do shell ----------------------------------------------------------
 
 describe("tela Desempenho", () => {
-  it("renderiza titulo", () => {
+  it("renderiza título", () => {
     montar();
     expect(
       screen.getByRole("heading", { name: /Desempenho/ }),
     ).toBeVisible();
   });
 
-  it("renderiza seletor de periodo com 4 opcoes", () => {
+  it("renderiza seletor de período com 4 opções", () => {
     montar();
     const grupo = screen.getByRole("group", {
-      name: /Seletor de periodo/i,
+      name: /Seletor de período/i,
     });
     expect(grupo).toBeVisible();
     expect(screen.getByRole("button", { name: "Semana" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Mes" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Mês" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Trimestre" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Ano" })).toBeVisible();
   });
@@ -49,12 +49,12 @@ describe("tela Desempenho", () => {
   it("renderiza 4 tabs", () => {
     montar();
     expect(screen.getByRole("tab", { name: /Explorar/ })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Variacoes/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Variações/ })).toBeVisible();
     expect(screen.getByRole("tab", { name: /Atendimentos/ })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Satisfacao/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Satisfação/ })).toBeVisible();
   });
 
-  it("muda periodo ao clicar", async () => {
+  it("muda período ao clicar", async () => {
     const user = userEvent.setup();
     const { onUrlUpdate } = montar();
 
@@ -73,7 +73,7 @@ describe("tela Desempenho", () => {
     const user = userEvent.setup();
     const { onUrlUpdate } = montar();
 
-    await user.click(screen.getByRole("tab", { name: /Satisfacao/ }));
+    await user.click(screen.getByRole("tab", { name: /Satisfação/ }));
 
     await waitFor(() => {
       expect(onUrlUpdate).toHaveBeenCalledWith(
@@ -84,10 +84,10 @@ describe("tela Desempenho", () => {
     });
   });
 
-  it("persiste periodo e aba na URL", () => {
+  it("persiste período e aba na URL", () => {
     montar({ periodo: "trimestre", aba: "atendimentos" });
 
-    // Periodo trimestre deve estar pressionado
+    // Período trimestre deve estar pressionado
     expect(
       screen.getByRole("button", { name: "Trimestre" }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -98,48 +98,48 @@ describe("tela Desempenho", () => {
     ).toHaveAttribute("data-state", "active");
   });
 
-  it("renderiza conteudo da tab ativa", () => {
+  it("renderiza conteúdo da tab ativa", () => {
     montar({ aba: "explorar" });
     expect(
       screen.getByRole("region", { name: /Explorar/ }),
     ).toBeVisible();
   });
 
-  it("renderiza conteudo ao trocar de tab", async () => {
+  it("renderiza conteúdo ao trocar de tab", async () => {
     const user = userEvent.setup();
     montar();
 
-    await user.click(screen.getByRole("tab", { name: /Satisfacao/ }));
+    await user.click(screen.getByRole("tab", { name: /Satisfação/ }));
 
     await waitFor(() => {
       expect(
-        screen.getByRole("region", { name: /Satisfacao/ }),
+        screen.getByRole("region", { name: /Satisfação/ }),
       ).toBeVisible();
     });
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = montar();
     expect(await axe(container)).toHaveNoViolations();
   });
 });
 
-// -- Testes de navegacao (preservados) ----------------------------------------
+// -- Testes de navegação (preservados) ----------------------------------------
 
 import { FASE_ATUAL, ITENS_NAV } from "../ui/nav";
 
-describe("navegacao Desempenho", () => {
+describe("navegação Desempenho", () => {
   it("FASE_ATUAL inclui fase do Desempenho", () => {
     expect(FASE_ATUAL).toBeGreaterThanOrEqual(3);
   });
 
-  it("item Desempenho esta disponivel na fase 3", () => {
+  it("item Desempenho está disponível na fase 3", () => {
     const item = ITENS_NAV.find((i) => i.rotulo === "Desempenho");
     expect(item).toBeDefined();
     expect(item!.disponivelNaFase).toBeLessThanOrEqual(FASE_ATUAL);
   });
 
-  it("todos os itens de navegacao estao disponiveis na fase atual", () => {
+  it("todos os itens de navegação estão disponíveis na fase atual", () => {
     for (const item of ITENS_NAV) {
       expect(item.disponivelNaFase).toBeLessThanOrEqual(FASE_ATUAL);
     }

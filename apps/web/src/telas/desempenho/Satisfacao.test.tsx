@@ -42,11 +42,11 @@ function montar(over: Partial<SatisfacaoProps> = {}) {
   return props;
 }
 
-describe('tela Satisfacao (Desempenho)', () => {
-  it('exibe o titulo Satisfacao', async () => {
+describe('tela Satisfação (Desempenho)', () => {
+  it('exibe o título Satisfação', async () => {
     montar();
     await waitFor(() => expect(
-      screen.getByRole('heading', { level: 1, name: /Satisfacao/ })).toBeVisible());
+      screen.getByRole('heading', { level: 1, name: /Satisfação/ })).toBeVisible());
   });
 
   it('exibe o score NPS em destaque', async () => {
@@ -54,7 +54,7 @@ describe('tela Satisfacao (Desempenho)', () => {
     await waitFor(() => expect(screen.getByText('72')).toBeVisible());
   });
 
-  it('exibe a distribuicao promotores/neutros/detratores', async () => {
+  it('exibe a distribuição promotores/neutros/detratores', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText(/45/)).toBeVisible();
@@ -71,7 +71,7 @@ describe('tela Satisfacao (Desempenho)', () => {
     await waitFor(() => expect(screen.getByText(/73 respostas/)).toBeVisible());
   });
 
-  it('exibe grafico evolutivo com periodos', async () => {
+  it('exibe gráfico evolutivo com períodos', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('img', { name: /NPS evolutivo/ })).toBeVisible());
@@ -89,10 +89,10 @@ describe('tela Satisfacao (Desempenho)', () => {
 
   it('exibe carimbo de frescor dos dados', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText(/dados ate/i)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/dados até/i)).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Satisfacao
         dateFrom="2026-07-01"

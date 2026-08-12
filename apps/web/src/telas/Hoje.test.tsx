@@ -56,11 +56,11 @@ describe('tela Hoje', () => {
     // Skeleton components renderizam com role="status"
     const skeletons = screen.getAllByRole('status');
     expect(skeletons.length).toBeGreaterThan(0);
-    // Nao deve renderizar o titulo real durante carregamento
+    // Não deve renderizar o título real durante carregamento
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
   });
 
-  it('renderiza titulo e data por extenso apos carregar', async () => {
+  it('renderiza título e data por extenso após carregar', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByRole('heading', { level: 1, name: 'Hoje' })).toBeVisible(),
@@ -68,14 +68,14 @@ describe('tela Hoje', () => {
     expect(screen.getByText(/segunda-feira, 3 de agosto/i)).toBeVisible();
   });
 
-  it('mostra badge de mensagens nao-lidas no cabecalho', async () => {
+  it('mostra badge de mensagens não-lidas no cabeçalho', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByLabelText('5 mensagens não lidas')).toBeVisible(),
     );
   });
 
-  it('NAO mostra badge quando nao ha mensagens nao-lidas', async () => {
+  it('NÃO mostra badge quando não há mensagens não-lidas', async () => {
     montar({ mensagensNaoLidasTotal: 0 });
     await waitFor(() =>
       expect(screen.getByRole('heading', { level: 1 })).toBeVisible(),
@@ -83,7 +83,7 @@ describe('tela Hoje', () => {
     expect(screen.queryByLabelText(/mensagens não lidas/)).not.toBeInTheDocument();
   });
 
-  it('mostra a faixa de contadores e a fila em ordem de horario', async () => {
+  it('mostra a faixa de contadores e a fila em ordem de horário', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Agendados/ })).toBeVisible(),
@@ -93,7 +93,7 @@ describe('tela Hoje', () => {
     expect(linhas[1]).toHaveTextContent('Joana Prado');
   });
 
-  it('clicar num contador vira query string, nao estado local', async () => {
+  it('clicar num contador vira query string, não estado local', async () => {
     const { aoMudarFiltro } = montar();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Agendados/ })).toBeVisible(),
@@ -110,7 +110,7 @@ describe('tela Hoje', () => {
     expect(linhas[1]).toHaveTextContent(/encaixe/i);
   });
 
-  it('check-in e otimista: o chip muda antes da resposta', async () => {
+  it('check-in é otimista: o chip muda antes da resposta', async () => {
     const aoCheckIn = vi.fn(() => new Promise<void>(() => { /* nunca resolve */ }));
     montar({ aoCheckIn });
     const linhas = await screen.findAllByRole('listitem');
@@ -118,7 +118,7 @@ describe('tela Hoje', () => {
     expect(linhas[1]).toHaveTextContent(/Aguardando/);
   });
 
-  it('acao Mensagem aparece para todos os pacientes e mostra contagem se > 0', async () => {
+  it('ação Mensagem aparece para todos os pacientes e mostra contagem se > 0', async () => {
     const { aoMensagem } = montar();
     await waitFor(() =>
       expect(
@@ -137,7 +137,7 @@ describe('tela Hoje', () => {
     expect(aoMensagem).toHaveBeenCalledWith(DIA.fila[0]);
   });
 
-  it('acao Cobrar aparece SOMENTE para quem tem pagamento pendente', async () => {
+  it('ação Cobrar aparece SOMENTE para quem tem pagamento pendente', async () => {
     const { aoCobrar } = montar();
     await waitFor(() =>
       expect(
@@ -153,7 +153,7 @@ describe('tela Hoje', () => {
     expect(aoCobrar).toHaveBeenCalledWith(DIA.fila[0]);
   });
 
-  it('o painel Precisa de voce lista as pendencias com numeros', async () => {
+  it('o painel Precisa de você lista as pendências com números', async () => {
     montar();
     await waitFor(() =>
       expect(
@@ -174,13 +174,13 @@ describe('tela Hoje', () => {
     await waitFor(() =>
       expect(screen.getByText('Nenhum agendamento hoje')).toBeVisible(),
     );
-    expect(screen.getByText('Sua agenda esta livre!')).toBeVisible();
+    expect(screen.getByText('Sua agenda está livre!')).toBeVisible();
     expect(
       screen.getByRole('button', { name: /Novo agendamento/ }),
     ).toBeVisible();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Hoje
         dia="2026-08-03" timezone="America/Sao_Paulo"

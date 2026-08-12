@@ -53,21 +53,21 @@ export interface EditorClinicoProps {
   readonly aoEmitirDocumento: () => void;
   readonly aoFinalizar: () => void;
   readonly aoCobrar?: () => void;
-  /** Conteudo inicial em HTML ou JSON do TipTap */
+  /** Conteúdo inicial em HTML ou JSON do TipTap */
   readonly conteudoInicial?: string;
   /** Callback de salvamento — recebe o JSON do editor */
   readonly onSalvar?: (conteudo: Record<string, unknown>) => Promise<void>;
   /** Modo somente leitura */
   readonly readOnly?: boolean;
   /**
-   * Entrega ao pai uma funcao que grava AGORA o que esta na tela, devolvendo se
-   * conseguiu. Existe porque quem finaliza pelo botao do cabecalho esta fora do
-   * editor e nao tem como esperar o debounce de 2s do autosave.
+   * Entrega ao pai uma função que grava AGORA o que está na tela, devolvendo se
+   * conseguiu. Existe porque quem finaliza pelo botão do cabeçalho está fora do
+   * editor e não tem como esperar o debounce de 2s do autosave.
    */
   readonly registrarDescarga?: (descarregar: () => Promise<boolean>) => void;
 }
 
-/* ── mapa de atalhos clinicos ─────────────────────────────────────────── */
+/* ── mapa de atalhos clínicos ─────────────────────────────────────────── */
 
 const MAPA_ATALHOS: Record<string, string> = {};
 for (const a of ATALHOS_DO_ATENDIMENTO) {
@@ -134,7 +134,7 @@ export function EditorClinico(p: EditorClinicoProps) {
   const intervalo = useRef<ReturnType<typeof setInterval> | null>(null);
   const docVersionRef = useRef(0);
 
-  /* cronometro do atendimento */
+  /* cronômetro do atendimento */
   useEffect(() => {
     intervalo.current = setInterval(() => setSegundos((s) => s + 1), 1000);
     return () => {
@@ -158,7 +158,7 @@ export function EditorClinico(p: EditorClinicoProps) {
         code: {},
       }),
       Placeholder.configure({
-        placeholder: "Comece a digitar o registro clinico...",
+        placeholder: "Comece a digitar o registro clínico...",
       }),
       SlashCommandExtension,
     ],
@@ -206,17 +206,17 @@ export function EditorClinico(p: EditorClinicoProps) {
   }, [editor?.state.doc, editor, onSalvar, readOnly]);
 
   /**
-   * Descarrega o que esta na tela e so entao finaliza.
+   * Descarrega o que está na tela e só então finaliza.
    *
    * O autosave tem 2s de debounce. Quem digita a conduta e aperta Ctrl+Enter em
-   * seguida perderia a ultima frase — e a versao clinica, uma vez selada, e
-   * imutavel por design: o texto nao volta por retentativa nem por suporte.
-   * Salvar antes custa uma ida ao servidor; nao salvar custa registro clinico.
+   * seguida perderia a última frase — e a versão clínica, uma vez selada, é
+   * imutável por design: o texto não volta por retentativa nem por suporte.
+   * Salvar antes custa uma ida ao servidor; não salvar custa registro clínico.
    */
   const descarregar = useCallback(async (): Promise<boolean> => {
-    // Sem condicional de "so se editou": o contador de edicoes e otimizacao, e
-    // otimizacao decidindo se o registro clinico e gravado e a troca errada.
-    // Uma escrita a mais por atendimento custa uma requisicao.
+    // Sem condicional de "só se editou": o contador de edições é otimização, e
+    // otimização decidindo se o registro clínico é gravado é a troca errada.
+    // Uma escrita a mais por atendimento custa uma requisição.
     if (!editor || !onSalvar || readOnly) return true;
     setSaveStatus("saving");
     try {
@@ -235,33 +235,33 @@ export function EditorClinico(p: EditorClinicoProps) {
   /**
    * `conteudoInicial` que muda DEPOIS da montagem precisa entrar no editor.
    *
-   * `useEditor({ content })` so usa o valor na CRIACAO — e o editor e criado
-   * assim que a tela de atendimento abre, muito antes de a transcricao por IA
-   * existir. Quando o medico gravava a consulta e clicava em "aceitar", o texto
-   * subia pela cadeia ate virar `conteudoInicial` e parava ali: a evolucao
-   * aceita nunca aparecia, e o medico redigitava tudo achando que a IA falhou.
+   * `useEditor({ content })` só usa o valor na CRIAÇÃO — e o editor é criado
+   * assim que a tela de atendimento abre, muito antes de a transcrição por IA
+   * existir. Quando o médico gravava a consulta e clicava em "aceitar", o texto
+   * subia pela cadeia até virar `conteudoInicial` e parava ali: a evolução
+   * aceita nunca aparecia, e o médico redigitava tudo achando que a IA falhou.
    *
-   * `aplicado` guarda o ultimo valor JA aplicado, entao um re-render com o
-   * mesmo texto nao mexe no editor nem move o cursor de quem esta digitando.
+   * `aplicado` guarda o último valor JÁ aplicado, então um re-render com o
+   * mesmo texto não mexe no editor nem move o cursor de quem está digitando.
    */
   const aplicado = useRef(conteudoInicial ?? '');
   useEffect(() => {
     const novo = conteudoInicial ?? '';
     if (editor === null || novo === '' || novo === aplicado.current) return;
     aplicado.current = novo;
-    // `emitUpdate: true` de proposito: o autosave escuta o update, e conteudo
+    // `emitUpdate: true` de propósito: o autosave escuta o update, e conteúdo
     // que entra sem disparar salvamento se perde ao fechar a aba.
     editor.commands.setContent(novo, { emitUpdate: true });
   }, [conteudoInicial, editor]);
 
   const finalizarDescarregando = useCallback(async () => {
-    // Falhou o salvamento: NAO finaliza. Selar por cima de um rascunho que o
-    // servidor nao recebeu transforma queda de rede em perda de registro.
+    // Falhou o salvamento: NÃO finaliza. Selar por cima de um rascunho que o
+    // servidor não recebeu transforma queda de rede em perda de registro.
     if (!(await descarregar())) return;
     p.aoFinalizar();
   }, [descarregar, p]);
 
-  /* atalhos clinicos (Ctrl+R, Ctrl+E, etc.) */
+  /* atalhos clínicos (Ctrl+R, Ctrl+E, etc.) */
   const aoTeclar = useCallback(
     (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
@@ -306,12 +306,12 @@ export function EditorClinico(p: EditorClinicoProps) {
       className="grid h-full grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
       onKeyDown={aoTeclar}
     >
-      {/* header: cronometro + atalhos + toolbar */}
+      {/* header: cronômetro + atalhos + toolbar */}
       <div className="border-b border-line">
-        {/* linha do cronometro e atalhos */}
+        {/* linha do cronômetro e atalhos */}
         <div className="flex items-center justify-between px-[var(--s-4)] py-[var(--s-2)]">
           <span className="text-[length:var(--fs-12)] text-text-muted">
-            {`Duracao: ${String(minutos).padStart(2, "0")}:${String(segs).padStart(2, "0")}`}
+            {`Duração: ${String(minutos).padStart(2, "0")}:${String(segs).padStart(2, "0")}`}
           </span>
           <div className="flex gap-[var(--s-2)]">
             {ATALHOS_DO_ATENDIMENTO.slice(0, 4).map((a) => (
@@ -326,15 +326,15 @@ export function EditorClinico(p: EditorClinicoProps) {
           </div>
         </div>
 
-        {/* toolbar de formatacao */}
+        {/* toolbar de formatação */}
         {!readOnly && editor && <BarraDeFormatacao editor={editor} />}
       </div>
 
-      {/* area do editor */}
+      {/* área do editor */}
       <div
         className="scrollbar-thin overflow-y-auto"
         role="article"
-        aria-label="Editor clinico"
+        aria-label="Editor clínico"
       >
         <EditorContent editor={editor} />
       </div>
@@ -349,14 +349,14 @@ export function EditorClinico(p: EditorClinicoProps) {
   );
 }
 
-/* ── toolbar de formatacao ────────────────────────────────────────────── */
+/* ── toolbar de formatação ────────────────────────────────────────────── */
 
 function BarraDeFormatacao({ editor }: { readonly editor: Editor }) {
   return (
     <div
       className="flex items-center gap-0.5 border-t border-line bg-surface px-2 py-1 print:hidden"
       role="toolbar"
-      aria-label="Formatacao de texto"
+      aria-label="Formatação de texto"
     >
       <BotaoDaToolbar
         icon={TextB}
@@ -369,23 +369,23 @@ function BarraDeFormatacao({ editor }: { readonly editor: Editor }) {
         icon={TextItalic}
         ativo={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        tooltip="Italico (Ctrl+I)"
-        ariaLabel="Italico"
+        tooltip="Itálico (Ctrl+I)"
+        ariaLabel="Itálico"
       />
       <SeparadorDaToolbar />
       <BotaoDaToolbar
         icon={TextHTwo}
         ativo={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        tooltip="Titulo (Ctrl+Shift+2)"
-        ariaLabel="Titulo"
+        tooltip="Título (Ctrl+Shift+2)"
+        ariaLabel="Título"
       />
       <BotaoDaToolbar
         icon={TextHThree}
         ativo={editor.isActive("heading", { level: 3 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        tooltip="Subtitulo (Ctrl+Shift+3)"
-        ariaLabel="Subtitulo"
+        tooltip="Subtítulo (Ctrl+Shift+3)"
+        ariaLabel="Subtítulo"
       />
       <SeparadorDaToolbar />
       <BotaoDaToolbar
@@ -406,8 +406,8 @@ function BarraDeFormatacao({ editor }: { readonly editor: Editor }) {
         icon={Quotes}
         ativo={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        tooltip="Citacao (Ctrl+Shift+B)"
-        ariaLabel="Citacao"
+        tooltip="Citação (Ctrl+Shift+B)"
+        ariaLabel="Citação"
       />
     </div>
   );
@@ -457,7 +457,7 @@ function IndicadorAutoSave({ status }: { readonly status: SaveStatus }) {
     saved: { icon: Check, texto: "Salvo", cor: "text-ok" },
     saving: { icon: SpinnerGap, texto: "Salvando...", cor: "text-text-muted" },
     error: { icon: Warning, texto: "Erro ao salvar", cor: "text-danger" },
-    unsaved: { icon: FloppyDisk, texto: "Nao salvo", cor: "text-warn" },
+    unsaved: { icon: FloppyDisk, texto: "Não salvo", cor: "text-warn" },
   };
 
   const cfg = configs[status];

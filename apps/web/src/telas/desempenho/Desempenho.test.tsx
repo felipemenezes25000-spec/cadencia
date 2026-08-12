@@ -55,15 +55,15 @@ function montar(over: Partial<DesempenhoProps> = {}) {
   return props;
 }
 
-describe('tela Desempenho — Variacoes do periodo', () => {
-  it('exibe o titulo com o periodo selecionado', async () => {
+describe('tela Desempenho — Variações do período', () => {
+  it('exibe o título com o período selecionado', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Desempenho/ })).toBeVisible());
     expect(screen.getByText('Julho 2026 vs Junho 2026')).toBeVisible();
   });
 
-  it('exibe tres frases de variacao em linguagem natural', async () => {
+  it('exibe três frases de variação em linguagem natural', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByText(/Receita caiu R\$ 14\.200/)).toBeVisible();
@@ -72,14 +72,14 @@ describe('tela Desempenho — Variacoes do periodo', () => {
     });
   });
 
-  it('cada frase e um botao clicavel', async () => {
+  it('cada frase é um botão clicável', async () => {
     montar();
     await waitFor(() => expect(screen.getByText(/Receita caiu/)).toBeVisible());
     const botoes = screen.getAllByRole('button', { name: /Receita|Ticket|Ocupacao/ });
     expect(botoes.length).toBe(3);
   });
 
-  it('clicar numa frase carrega o waterfall de decomposicao', async () => {
+  it('clicar numa frase carrega o waterfall de decomposição', async () => {
     const props = montar();
     await waitFor(() => expect(screen.getByText(/Receita caiu/)).toBeVisible());
     await userEvent.click(screen.getByRole('button', { name: /Receita caiu/ }));
@@ -114,7 +114,7 @@ describe('tela Desempenho — Variacoes do periodo', () => {
     });
   });
 
-  it('drill-down mostra acao sugerida com link para automacoes', async () => {
+  it('drill-down mostra ação sugerida com link para automações', async () => {
     montar();
     await waitFor(() => expect(screen.getByText(/Receita caiu/)).toBeVisible());
     await userEvent.click(screen.getByRole('button', { name: /Receita caiu/ }));
@@ -127,12 +127,12 @@ describe('tela Desempenho — Variacoes do periodo', () => {
     });
   });
 
-  it('exibe carimbo "dados ate HH:MM" quando fonte e matview', async () => {
+  it('exibe carimbo "dados até HH:MM" quando fonte é matview', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText(/dados ate/i)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/dados até/i)).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Desempenho
         period={{ current: '2026-07', previous: '2026-06' }}

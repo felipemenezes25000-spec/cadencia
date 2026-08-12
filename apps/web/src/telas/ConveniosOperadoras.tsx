@@ -84,7 +84,7 @@ function EstadoVazioOperadoras() {
       <Buildings size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
       <p className="text-sm font-medium text-text">Nenhuma operadora cadastrada</p>
       <p className="mt-1 text-xs text-text-muted">
-        Cadastre a primeira operadora para comecar a faturar.
+        Cadastre a primeira operadora para começar a faturar.
       </p>
     </div>
   );
@@ -180,7 +180,7 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
 
   return (
     <div className="space-y-4">
-      {/* Acoes */}
+      {/* Ações */}
       <div className="flex items-center justify-between gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
@@ -218,7 +218,7 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
                       Pacientes
                     </th>
                     <th className="px-4 py-2.5 w-20">
-                      <span className="sr-only">Acoes</span>
+                      <span className="sr-only">Ações</span>
                     </th>
                   </tr>
                 </thead>
@@ -300,7 +300,7 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
         </section>
       )}
 
-      {/* Formulario de nova/editar operadora */}
+      {/* Formulário de nova/editar operadora */}
       <PainelLateral
         aberto={formAberto}
         titulo={tituloForm}
@@ -323,10 +323,10 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
             required
           />
           <Campo
-            rotulo="Versao TISS"
+            rotulo="Versão TISS"
             value={versaoTiss}
             onChange={(e) => setVersaoTiss(e.target.value)}
-            aria-label="Versao TISS"
+            aria-label="Versão TISS"
           />
           <Campo
             rotulo="CNPJ"

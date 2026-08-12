@@ -89,7 +89,7 @@ export function Atendimentos(p: AtendimentosProps) {
 
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
         <p className="m-0 text-[var(--fs-11)] uppercase tracking-[.04em] text-text-faint">
-          dados ate {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
+          dados até {new Date(freshness.refreshedAt).toLocaleTimeString('pt-BR',
             { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
         </p>
       ) : null}
@@ -102,7 +102,7 @@ export function Atendimentos(p: AtendimentosProps) {
               <th className={cn(thClasses, 'text-left')}>Procedimento</th>
               <th className={cn(thClasses, 'text-right')}>Qtd</th>
               <th className={cn(thClasses, 'text-right')}>Valor</th>
-              <th className={cn(thClasses, 'text-right')}>Duracao media</th>
+              <th className={cn(thClasses, 'text-right')}>Duração média</th>
             </tr>
           </thead>
           <tbody>

@@ -15,7 +15,7 @@ type Periodo = (typeof PERIODOS)[number];
 
 const PERIODO_ROTULOS: Record<Periodo, string> = {
   semana: "Semana",
-  mes: "Mes",
+  mes: "Mês",
   trimestre: "Trimestre",
   ano: "Ano",
 };
@@ -39,7 +39,7 @@ export function DesempenhoSkeleton() {
   );
 }
 
-/* ── Conteudo principal ────────────────────────────────────────────── */
+/* ── Conteúdo principal ────────────────────────────────────────────── */
 
 function DesempenhoConteudo() {
   const [periodo, setPeriodo] = useQueryState("periodo", {
@@ -49,14 +49,14 @@ function DesempenhoConteudo() {
 
   return (
     <div className="cadencia-page space-y-6">
-      {/* Header + seletor de periodo */}
+      {/* Header + seletor de período */}
       <div className="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-3">
         <PageHeader titulo="Desempenho" semBreadcrumb className="pb-0" />
 
         <div
           className="flex items-center gap-2"
           role="group"
-          aria-label="Seletor de periodo"
+          aria-label="Seletor de período"
         >
           {PERIODOS.map((p) => (
             <button
@@ -79,16 +79,16 @@ function DesempenhoConteudo() {
         </div>
       </div>
 
-      {/* Abas de navegacao */}
+      {/* Abas de navegação */}
       <Tabs
         value={aba}
         onValueChange={(v) => void setAba(v)}
       >
         <TabsList className="overflow-x-auto max-sm:scrollbar-none">
           <TabsTrigger value="explorar">Explorar</TabsTrigger>
-          <TabsTrigger value="variacoes">Variacoes</TabsTrigger>
+          <TabsTrigger value="variacoes">Variações</TabsTrigger>
           <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
-          <TabsTrigger value="satisfacao">Satisfacao</TabsTrigger>
+          <TabsTrigger value="satisfacao">Satisfação</TabsTrigger>
         </TabsList>
 
         <TabsContent value="explorar">
@@ -97,18 +97,18 @@ function DesempenhoConteudo() {
             className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-elev-1 p-6"
           >
             <p className="text-sm text-[var(--text-muted)]">
-              Selecione uma visao para explorar dados do periodo.
+              Selecione uma visão para explorar dados do período.
             </p>
           </section>
         </TabsContent>
 
         <TabsContent value="variacoes">
           <section
-            aria-label="Variacoes"
+            aria-label="Variações"
             className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-elev-1 p-6"
           >
             <p className="text-sm text-[var(--text-muted)]">
-              Variacoes do periodo selecionado.
+              Variações do período selecionado.
             </p>
           </section>
         </TabsContent>
@@ -119,18 +119,18 @@ function DesempenhoConteudo() {
             className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-elev-1 p-6"
           >
             <p className="text-sm text-[var(--text-muted)]">
-              Resumo de atendimentos do periodo.
+              Resumo de atendimentos do período.
             </p>
           </section>
         </TabsContent>
 
         <TabsContent value="satisfacao">
           <section
-            aria-label="Satisfacao"
+            aria-label="Satisfação"
             className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-elev-1 p-6"
           >
             <p className="text-sm text-[var(--text-muted)]">
-              Indicadores de satisfacao e NPS.
+              Indicadores de satisfação e NPS.
             </p>
           </section>
         </TabsContent>

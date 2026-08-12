@@ -4,10 +4,10 @@ import { Check, ShieldCheck } from '@phosphor-icons/react';
 import { ACTIONS, ROLES, type ActionDef, type Role } from '@cadencia/authz';
 
 const ROTULO_ROLE: Record<Role, string> = {
-  admin_clinico: 'Administracao',
-  diretor_tecnico: 'Direcao tecnica',
+  admin_clinico: 'Administração',
+  diretor_tecnico: 'Direção técnica',
   profissional: 'Profissional',
-  recepcao: 'Recepcao',
+  recepcao: 'Recepção',
   financeiro: 'Financeiro',
 };
 
@@ -29,7 +29,7 @@ export function MatrizPermissoes() {
       <table className="w-full min-w-[800px] text-sm">
         <thead className="bg-surface-2 text-left text-xs uppercase text-text-muted">
           <tr>
-            <th className="w-80 px-4 py-2.5 font-medium">Acao</th>
+            <th className="w-80 px-4 py-2.5 font-medium">Ação</th>
             {ROLES.map((r) => <th key={r} className="px-3 py-2.5 text-center font-medium">{ROTULO_ROLE[r]}</th>)}
           </tr>
         </thead>

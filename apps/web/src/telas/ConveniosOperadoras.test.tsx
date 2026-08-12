@@ -12,7 +12,7 @@ import {
 } from './ConveniosOperadoras';
 
 // Polyfills para jsdom: Radix Tooltip (Popper) depende de ResizeObserver e
-// DOMRect que nao existem no jsdom
+// DOMRect que não existem no jsdom
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === 'undefined') {
     globalThis.ResizeObserver = class ResizeObserver {
@@ -23,7 +23,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === 'undefined') {
-    // @ts-ignore - polyfill basico para testes no jsdom
+    // @ts-ignore - polyfill básico para testes no jsdom
     globalThis.DOMRect = class DOMRect {
       x = 0; y = 0; width = 0; height = 0;
       top = 0; right = 0; bottom = 0; left = 0;
@@ -80,9 +80,9 @@ describe('ConveniosOperadoras', () => {
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
     expect(screen.getByText('Bradesco Saude')).toBeVisible();
     expect(screen.getByText('SulAmerica')).toBeVisible();
-    // Verifica que ha uma tabela
+    // Verifica que há uma tabela
     expect(screen.getByRole('table')).toBeVisible();
-    // Verifica cabecalhos
+    // Verifica cabeçalhos
     expect(screen.getByText('Operadora')).toBeVisible();
     expect(screen.getByText('Registro ANS')).toBeVisible();
     expect(screen.getByText('CNPJ')).toBeVisible();
@@ -99,10 +99,10 @@ describe('ConveniosOperadoras', () => {
     expect(screen.getByText('XY9876543210ZW')).toBeVisible();
   });
 
-  it('mostra botoes editar e excluir', async () => {
+  it('mostra botões editar e excluir', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
-    // Deve haver botoes com aria-label Editar e Excluir para cada operadora
+    // Deve haver botões com aria-label Editar e Excluir para cada operadora
     const botoesEditar = screen.getAllByLabelText('Editar');
     const botoesExcluir = screen.getAllByLabelText('Excluir');
     expect(botoesEditar).toHaveLength(3);
@@ -114,13 +114,13 @@ describe('ConveniosOperadoras', () => {
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
     const campoBusca = screen.getByLabelText('Buscar operadora');
     await userEvent.type(campoBusca, 'Bradesco');
-    // Apenas Bradesco deve estar visivel
+    // Apenas Bradesco deve estar visível
     expect(screen.getByText('Bradesco Saude')).toBeVisible();
     expect(screen.queryByText('Unimed')).not.toBeInTheDocument();
     expect(screen.queryByText('SulAmerica')).not.toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <ConveniosOperadoras
         carregarDados={async () => DADOS}

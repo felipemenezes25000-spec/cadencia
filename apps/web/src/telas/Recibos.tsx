@@ -88,7 +88,7 @@ function TabelaSkeleton() {
   );
 }
 
-/* ── classes reutilizaveis ────────────────────────────────────────── */
+/* ── classes reutilizáveis ────────────────────────────────────────── */
 
 const thClasses =
   'px-4 py-2.5 text-left text-xs font-medium text-text-muted';
@@ -148,7 +148,7 @@ export function Recibos(p: RecibosProps) {
       <div className="flex flex-wrap items-end gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar por paciente ou numero..."
+          placeholder="Buscar por paciente ou número..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="max-w-xs"
@@ -197,7 +197,7 @@ export function Recibos(p: RecibosProps) {
                 <thead>
                   <tr className="border-b border-line bg-surface-raised">
                     <th scope="col" className={thClasses}>
-                      Numero
+                      Número
                     </th>
                     <th scope="col" className={thClasses}>
                       Paciente
@@ -215,7 +215,7 @@ export function Recibos(p: RecibosProps) {
                       Forma pgto
                     </th>
                     <th scope="col" className="px-4 py-2.5 w-20">
-                      <span className="sr-only">Acoes</span>
+                      <span className="sr-only">Ações</span>
                     </th>
                   </tr>
                 </thead>

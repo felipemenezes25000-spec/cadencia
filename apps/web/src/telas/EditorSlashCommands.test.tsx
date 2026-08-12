@@ -22,7 +22,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.DOMRect = class DOMRect {
       x = 0;
       y = 0;
@@ -52,7 +52,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.ClipboardEvent === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.ClipboardEvent = class ClipboardEvent extends Event {
       clipboardData: DataTransfer | null = null;
       constructor(type: string, init?: EventInit) {
@@ -62,7 +62,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DragEvent === "undefined") {
-    // @ts-ignore - polyfill basico
+    // @ts-ignore - polyfill básico
     globalThis.DragEvent = class DragEvent extends Event {
       dataTransfer: DataTransfer | null = null;
       constructor(type: string, init?: EventInit) {
@@ -96,16 +96,16 @@ describe("EditorSlashCommands", () => {
   it("mostra todos os 7 comandos quando / digitado sozinho", () => {
     renderSlashMenu();
 
-    // Deve haver 7 botoes de opcao
+    // Deve haver 7 botões de opção
     const opcoes = screen.getAllByRole("option");
     expect(opcoes).toHaveLength(7);
 
-    // Verifica que todos os titulos aparecem
+    // Verifica que todos os títulos aparecem
     expect(screen.getByText("Subjetivo")).toBeInTheDocument();
     expect(screen.getByText("Objetivo")).toBeInTheDocument();
-    expect(screen.getByText("Avaliacao")).toBeInTheDocument();
+    expect(screen.getByText("Avaliação")).toBeInTheDocument();
     expect(screen.getByText("Plano")).toBeInTheDocument();
-    expect(screen.getByText("Prescricao")).toBeInTheDocument();
+    expect(screen.getByText("Prescrição")).toBeInTheDocument();
     expect(screen.getByText("Exame")).toBeInTheDocument();
     expect(screen.getByText("CID")).toBeInTheDocument();
   });
@@ -129,10 +129,10 @@ describe("EditorSlashCommands", () => {
 
     const opcoes = screen.getAllByRole("option");
     expect(opcoes).toHaveLength(1);
-    expect(screen.getByText("Prescricao")).toBeInTheDocument();
+    expect(screen.getByText("Prescrição")).toBeInTheDocument();
   });
 
-  it("insere secao Subjetivo ao selecionar", () => {
+  it("insere seção Subjetivo ao selecionar", () => {
     const command = vi.fn();
     renderSlashMenu(SLASH_COMMANDS, command);
 
@@ -145,7 +145,7 @@ describe("EditorSlashCommands", () => {
     );
   });
 
-  it("insere secao Plano ao selecionar", () => {
+  it("insere seção Plano ao selecionar", () => {
     const command = vi.fn();
     renderSlashMenu(SLASH_COMMANDS, command);
 
@@ -161,7 +161,7 @@ describe("EditorSlashCommands", () => {
   it("navega com ArrowUp/ArrowDown", async () => {
     const { getRef } = renderSlashMenu();
 
-    // Inicialmente o primeiro item esta ativo (indice 0)
+    // Inicialmente o primeiro item está ativo (índice 0)
     const opcoes = screen.getAllByRole("option");
     expect(opcoes[0]).toHaveAttribute("aria-selected", "true");
 
@@ -172,7 +172,7 @@ describe("EditorSlashCommands", () => {
       });
     });
 
-    // Apos re-render, o segundo item deve estar ativo
+    // Após re-render, o segundo item deve estar ativo
     const opcoesAtualizadas = screen.getAllByRole("option");
     expect(opcoesAtualizadas[0]).toHaveAttribute("aria-selected", "false");
     expect(opcoesAtualizadas[1]).toHaveAttribute("aria-selected", "true");
@@ -184,7 +184,7 @@ describe("EditorSlashCommands", () => {
 
     const ref = getRef();
 
-    // Enter seleciona o item ativo (indice 0 = Subjetivo)
+    // Enter seleciona o item ativo (índice 0 = Subjetivo)
     const handled = ref.onKeyDown({
       event: new KeyboardEvent("keydown", { key: "Enter" }),
     });
@@ -206,7 +206,7 @@ describe("EditorSlashCommands", () => {
     expect(handled).toBe(true);
   });
 
-  it("agrupa comandos por secao (SOAP, Acoes, Codigos)", () => {
+  it("agrupa comandos por seção (SOAP, Acoes, Codigos)", () => {
     const grupos = agruparPorSecao(SLASH_COMMANDS);
 
     expect(Object.keys(grupos)).toEqual(["SOAP", "Acoes", "Codigos"]);
@@ -215,25 +215,25 @@ describe("EditorSlashCommands", () => {
     expect(grupos["Codigos"]).toHaveLength(1);
   });
 
-  it("mostra descricoes dos comandos", () => {
+  it("mostra descrições dos comandos", () => {
     renderSlashMenu();
 
     expect(
-      screen.getByText("Queixa e historia do paciente"),
+      screen.getByText("Queixa e história do paciente"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Exame fisico e sinais vitais"),
+      screen.getByText("Exame físico e sinais vitais"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Hipotese diagnostica")).toBeInTheDocument();
-    expect(screen.getByText("Conduta terapeutica")).toBeInTheDocument();
-    expect(screen.getByText("Inserir prescricao medica")).toBeInTheDocument();
+    expect(screen.getByText("Hipótese diagnóstica")).toBeInTheDocument();
+    expect(screen.getByText("Conduta terapêutica")).toBeInTheDocument();
+    expect(screen.getByText("Inserir prescrição médica")).toBeInTheDocument();
     expect(
       screen.getByText("Solicitar exame complementar"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Buscar codigo CID-10")).toBeInTheDocument();
+    expect(screen.getByText("Buscar código CID-10")).toBeInTheDocument();
   });
 
-  it("mostra rotulos de secao no popup", () => {
+  it("mostra rótulos de seção no popup", () => {
     renderSlashMenu();
 
     expect(screen.getByText("SOAP")).toBeInTheDocument();
@@ -249,11 +249,11 @@ describe("EditorSlashCommands", () => {
     ).toBeInTheDocument();
   });
 
-  it("ArrowDown retorna ao primeiro item apos o ultimo", async () => {
+  it("ArrowDown retorna ao primeiro item após o último", async () => {
     const command = vi.fn();
     const { getRef } = renderSlashMenu(SLASH_COMMANDS, command);
 
-    // Move ate o ultimo item (7 vezes ArrowDown para ir de 0 ate wrap-around ao 0)
+    // Move até o último item (7 vezes ArrowDown para ir de 0 até wrap-around ao 0)
     for (let i = 0; i < SLASH_COMMANDS.length; i++) {
       await act(() => {
         getRef().onKeyDown({
@@ -273,18 +273,18 @@ describe("EditorSlashCommands", () => {
     );
   });
 
-  it("ArrowUp do primeiro vai ao ultimo", async () => {
+  it("ArrowUp do primeiro vai ao último", async () => {
     const command = vi.fn();
     const { getRef } = renderSlashMenu(SLASH_COMMANDS, command);
 
-    // ArrowUp do indice 0 deve ir para o ultimo
+    // ArrowUp do índice 0 deve ir para o último
     await act(() => {
       getRef().onKeyDown({
         event: new KeyboardEvent("keydown", { key: "ArrowUp" }),
       });
     });
 
-    // Apos re-render, Enter seleciona o ultimo item
+    // Após re-render, Enter seleciona o último item
     await act(() => {
       getRef().onKeyDown({
         event: new KeyboardEvent("keydown", { key: "Enter" }),
@@ -295,7 +295,7 @@ describe("EditorSlashCommands", () => {
     );
   });
 
-  it("insertarSecao insere conteudo para cada tipo", () => {
+  it("insertarSecao insere conteúdo para cada tipo", () => {
     // Mock do editor TipTap
     const chainMock: Record<string, ReturnType<typeof vi.fn>> = {};
     const chain = () => {
@@ -316,7 +316,7 @@ describe("EditorSlashCommands", () => {
 
     const editorMock = { chain } as unknown as import("@tiptap/react").Editor;
 
-    // Testa cada tipo de secao
+    // Testa cada tipo de seção
     const tipos = [
       "subjetivo",
       "objetivo",
@@ -331,11 +331,11 @@ describe("EditorSlashCommands", () => {
       insertarSecao(editorMock, tipo);
     }
 
-    // Se chegou aqui sem erro, todos os tipos sao tratados
+    // Se chegou aqui sem erro, todos os tipos são tratados
     expect(true).toBe(true);
   });
 
-  it("sem violacoes de acessibilidade", async () => {
+  it("sem violações de acessibilidade", async () => {
     const { container } = renderSlashMenu();
     expect(await axe(container)).toHaveNoViolations();
   });

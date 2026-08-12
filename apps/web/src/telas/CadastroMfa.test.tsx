@@ -18,17 +18,17 @@ function montar(over: Partial<Parameters<typeof CadastroMfa>[0]> = {}) {
 }
 
 describe('CadastroMfa', () => {
-  it('exibe botao "Configurar MFA" quando nao cadastrado', () => {
+  it('exibe botão "Configurar MFA" quando não cadastrado', () => {
     montar({ mfaCadastrado: false });
     expect(screen.getByRole('button', { name: /configurar mfa/i })).toBeDefined();
   });
 
-  it('exibe botao "Reconfigurar" quando ja cadastrado', () => {
+  it('exibe botão "Reconfigurar" quando já cadastrado', () => {
     montar({ mfaCadastrado: true });
     expect(screen.getByRole('button', { name: /reconfigurar/i })).toBeDefined();
   });
 
-  it('ao clicar em configurar, exibe segredo e campo de codigo', async () => {
+  it('ao clicar em configurar, exibe segredo e campo de código', async () => {
     montar();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /configurar mfa/i }));
@@ -36,19 +36,19 @@ describe('CadastroMfa', () => {
     await waitFor(() => {
       expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeDefined();
     });
-    expect(screen.getByLabelText(/codigo de 6 digitos/i)).toBeDefined();
+    expect(screen.getByLabelText(/código de 6 dígitos/i)).toBeDefined();
   });
 
-  it('confirma com codigo e exibe badge de sucesso', async () => {
+  it('confirma com código e exibe badge de sucesso', async () => {
     const props = montar();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /configurar mfa/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/codigo de 6 digitos/i)).toBeDefined();
+      expect(screen.getByLabelText(/código de 6 dígitos/i)).toBeDefined();
     });
 
-    await user.type(screen.getByLabelText(/codigo de 6 digitos/i), '123456');
+    await user.type(screen.getByLabelText(/código de 6 dígitos/i), '123456');
     await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     expect(props.aoConfirmar).toHaveBeenCalledWith('123456');
@@ -57,16 +57,16 @@ describe('CadastroMfa', () => {
     });
   });
 
-  it('exibe erro quando confirmacao falha', async () => {
+  it('exibe erro quando confirmação falha', async () => {
     montar({ aoConfirmar: vi.fn(async () => { throw new Error('codigo_invalido'); }) });
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /configurar mfa/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/codigo de 6 digitos/i)).toBeDefined();
+      expect(screen.getByLabelText(/código de 6 dígitos/i)).toBeDefined();
     });
 
-    await user.type(screen.getByLabelText(/codigo de 6 digitos/i), '000000');
+    await user.type(screen.getByLabelText(/código de 6 dígitos/i), '000000');
     await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     await waitFor(() => {

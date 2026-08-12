@@ -66,7 +66,7 @@ function calcularAging(daysPastDue: number): AgingLevel {
   return 'ok';
 }
 
-// ── Ordenacao ──────────────────────────────────────────────────────────────
+// ── Ordenação ──────────────────────────────────────────────────────────────
 
 type DirecaoOrdenacao = 'asc' | 'desc';
 
@@ -176,10 +176,10 @@ function EstadoVazio() {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Icone icon={Receipt} size="xl" className="text-text-muted mb-3" />
       <p className="text-base font-medium text-text">
-        Nenhum lancamento encontrado
+        Nenhum lançamento encontrado
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Ajuste os filtros ou adicione um novo lancamento
+        Ajuste os filtros ou adicione um novo lançamento
       </p>
     </div>
   );
@@ -270,7 +270,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
 
   return (
     <div className="space-y-6">
-      {/* Cabecalho com total */}
+      {/* Cabeçalho com total */}
       <div className="flex items-baseline justify-between">
         <h2 className="m-0 text-[length:var(--fs-15)] font-semibold">
           A receber
@@ -292,7 +292,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
             className="w-36"
           />
           <Campo
-            rotulo="Ate"
+            rotulo="Até"
             type="date"
             denso
             value={dataFim}
@@ -350,7 +350,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
       {vazio ? (
         <EstadoVazio />
       ) : (
-        <section aria-label="Lancamentos a receber">
+        <section aria-label="Lançamentos a receber">
           <div className="rounded-lg border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -363,7 +363,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
                       onSort={setOrdenacao}
                     />
                     <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                      Descricao
+                      Descrição
                     </th>
                     <ThSortavel
                       campo="valor"
@@ -376,7 +376,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
                       Status
                     </th>
                     <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-text-muted">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

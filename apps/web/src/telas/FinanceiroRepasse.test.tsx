@@ -69,11 +69,11 @@ describe('FinanceiroRepasse', () => {
     expect(screen.getByLabelText('Carregando repasse...')).toBeInTheDocument();
   });
 
-  it('renderiza seletor de periodo', async () => {
+  it('renderiza seletor de período', async () => {
     montarGestora();
     await waitFor(() => expect(screen.getByText(/Agosto 2026/)).toBeVisible());
-    expect(screen.getByLabelText(/Mes anterior/i)).toBeVisible();
-    expect(screen.getByLabelText(/Proximo mes/i)).toBeVisible();
+    expect(screen.getByLabelText(/Mês anterior/i)).toBeVisible();
+    expect(screen.getByLabelText(/Próximo mês/i)).toBeVisible();
   });
 
   it('renderiza cards de resumo por profissional', async () => {
@@ -94,7 +94,7 @@ describe('FinanceiroRepasse', () => {
     // Headers da tabela
     expect(within(tabela).getByText('Profissional')).toBeVisible();
     expect(within(tabela).getByText('Atendimentos')).toBeVisible();
-    expect(within(tabela).getByText('Producao')).toBeVisible();
+    expect(within(tabela).getByText('Produção')).toBeVisible();
     // Dados na tabela
     expect(within(tabela).getByText('Dr. Alceu Moreira')).toBeVisible();
     expect(within(tabela).getByText('Dra. Beatriz Lima')).toBeVisible();
@@ -105,18 +105,18 @@ describe('FinanceiroRepasse', () => {
     const props = montarGestora();
     await waitFor(() => expect(screen.getByText(/Agosto 2026/)).toBeVisible());
 
-    // Clicar no botao de proximo mes
-    await user.click(screen.getByLabelText(/Proximo mes/i));
+    // Clicar no botão de próximo mês
+    await user.click(screen.getByLabelText(/Próximo mês/i));
     expect(props.carregarDados).toHaveBeenCalledTimes(2);
 
-    // Clicar no botao de mes anterior
-    await user.click(screen.getByLabelText(/Mes anterior/i));
+    // Clicar no botão de mês anterior
+    await user.click(screen.getByLabelText(/Mês anterior/i));
     expect(props.carregarDados).toHaveBeenCalledTimes(3);
   });
 
   it('exibe o total geral de repasse', async () => {
     montarGestora();
-    // O total aparece tanto no cabecalho quanto no rodape da tabela
+    // O total aparece tanto no cabeçalho quanto no rodapé da tabela
     await waitFor(() => expect(screen.getAllByText('R$ 4.750,00').length).toBeGreaterThan(0));
   });
 
@@ -126,14 +126,14 @@ describe('FinanceiroRepasse', () => {
     expect(screen.getByText(/Pago/i)).toBeVisible();
   });
 
-  it('medico ve so o seu proprio repasse', async () => {
+  it('médico vê só o seu próprio repasse', async () => {
     montarMedico();
     const secao = await screen.findByRole('region', { name: /Repasse por profissional/i });
     expect(within(secao).getByText('Dr. Alceu Moreira')).toBeVisible();
     expect(screen.queryByText('Dra. Beatriz Lima')).not.toBeInTheDocument();
   });
 
-  it('renderiza estado vazio quando nao ha profissionais', async () => {
+  it('renderiza estado vazio quando não há profissionais', async () => {
     render(
       <FinanceiroRepasse
         carregarDados={async () => DADOS_VAZIO}
@@ -143,7 +143,7 @@ describe('FinanceiroRepasse', () => {
     await waitFor(() => expect(screen.getByText(/Nenhum repasse encontrado/)).toBeVisible());
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FinanceiroRepasse
         carregarDados={async () => DADOS_GESTORA}

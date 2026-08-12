@@ -47,30 +47,30 @@ function montar(overrides: Partial<Parameters<typeof Explorar>[0]> = {}) {
 }
 
 describe('tela Explorar', () => {
-  it('renderiza o titulo "Explorar"', () => {
+  it('renderiza o título "Explorar"', () => {
     montar();
     expect(screen.getByRole('heading', { name: /Explorar/ })).toBeVisible();
   });
 
-  it('exibe lista de visoes salvas como botoes de acesso rapido', () => {
+  it('exibe lista de visões salvas como botões de acesso rápido', () => {
     montar();
     expect(screen.getByRole('button', { name: /Atendimentos realizados/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /Faltas/ })).toBeVisible();
   });
 
-  it('ao clicar em visao salva, carrega filtros e dispara consulta', async () => {
+  it('ao clicar em visão salva, carrega filtros e dispara consulta', async () => {
     const props = montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(props.aoConsultar).toHaveBeenCalled());
   });
 
-  it('exibe seletor de periodo com campos de data inicio e fim', () => {
+  it('exibe seletor de período com campos de data início e fim', () => {
     montar();
-    expect(screen.getByLabelText(/Data inicio/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Data início/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Data fim/i)).toBeInTheDocument();
   });
 
-  it('exibe tabela de resultados apos consulta', async () => {
+  it('exibe tabela de resultados após consulta', async () => {
     montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(screen.getByRole('table')).toBeVisible());
@@ -78,7 +78,7 @@ describe('tela Explorar', () => {
     expect(screen.getByText('Maria')).toBeVisible();
   });
 
-  it('exibe cabecalhos de coluna na tabela', async () => {
+  it('exibe cabeçalhos de coluna na tabela', async () => {
     montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(screen.getByRole('table')).toBeVisible());
@@ -87,7 +87,7 @@ describe('tela Explorar', () => {
     expect(screen.getByRole('columnheader', { name: /Profissional/ })).toBeVisible();
   });
 
-  it('exibe botoes de exportar CSV e XLSX', () => {
+  it('exibe botões de exportar CSV e XLSX', () => {
     montar();
     expect(screen.getByRole('button', { name: /CSV/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /XLSX/ })).toBeVisible();
@@ -103,12 +103,12 @@ describe('tela Explorar', () => {
     ));
   });
 
-  it('exibe botao "Salvar visao" e chama aoSalvarVisao com nome', async () => {
+  it('exibe botão "Salvar visão" e chama aoSalvarVisao com nome', async () => {
     const props = montar();
     await userEvent.click(screen.getByRole('button', { name: /Atendimentos realizados/ }));
     await waitFor(() => expect(screen.getByRole('table')).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Salvar visao/ }));
-    const campo = screen.getByLabelText(/Nome da visao/i);
+    await userEvent.click(screen.getByRole('button', { name: /Salvar visão/ }));
+    const campo = screen.getByLabelText(/Nome da visão/i);
     await userEvent.clear(campo);
     await userEvent.type(campo, 'Minha visao');
     await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
@@ -117,7 +117,7 @@ describe('tela Explorar', () => {
     ));
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Explorar
         visoesSalvas={VISOES_MOCK}

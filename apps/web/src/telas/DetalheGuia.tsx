@@ -70,8 +70,8 @@ function centavosParaReais(centavos: number): string {
 }
 
 const CAMPOS_AJUSTAVEIS: readonly { value: string; label: string }[] = [
-  { value: 'codigo_procedimento', label: 'Codigo do procedimento' },
-  { value: 'codigo_tabela', label: 'Codigo da tabela' },
+  { value: 'codigo_procedimento', label: 'Código do procedimento' },
+  { value: 'codigo_tabela', label: 'Código da tabela' },
   { value: 'valor_procedimento', label: 'Valor do procedimento' },
   { value: 'tipo_consulta', label: 'Tipo de consulta' },
   { value: 'regime_atendimento', label: 'Regime de atendimento' },
@@ -125,9 +125,9 @@ export function DetalheGuia(p: DetalheGuiaProps) {
       largura="lg"
     >
       <div className="grid gap-4 mt-1">
-        {/* Informacoes da guia */}
+        {/* Informações da guia */}
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold text-text">Informacoes da guia</h3>
+          <h3 className="text-sm font-semibold text-text">Informações da guia</h3>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-text-muted">Paciente</dt>
             <dd className="text-text font-medium">{p.guia.pacienteNome}</dd>
@@ -135,7 +135,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
             <dd className="text-text">{p.guia.operadoraNome}</dd>
             <dt className="text-text-muted">Procedimento</dt>
             <dd className="text-text">{p.guia.nomeProcedimento}</dd>
-            <dt className="text-text-muted">Codigo</dt>
+            <dt className="text-text-muted">Código</dt>
             <dd className="text-text font-mono text-xs tabular-nums">{p.guia.codigoProcedimento}</dd>
             <dt className="text-text-muted">Data</dt>
             <dd className="text-text font-mono text-xs tabular-nums">{p.guia.dataAtendimento}</dd>
@@ -169,7 +169,7 @@ export function DetalheGuia(p: DetalheGuiaProps) {
           </div>
         </section>
 
-        {/* Botao ajustar */}
+        {/* Botão ajustar */}
         {!ajustando ? (
           <Botao variante="secundario" tamanho="md" onClick={() => setAjustando(true)}>
             Ajustar
@@ -239,11 +239,11 @@ export function DetalheGuia(p: DetalheGuiaProps) {
           </div>
         )}
 
-        {/* Historico de ajustes */}
+        {/* Histórico de ajustes */}
         {p.guia.ajustes.length > 0 ? (
-          <section aria-label="Historico de ajustes" className="grid gap-1.5">
+          <section aria-label="Histórico de ajustes" className="grid gap-1.5">
             <h3 className="text-[length:var(--fs-13)] font-semibold uppercase tracking-[0.04em] text-text-muted m-0">
-              Historico de ajustes
+              Histórico de ajustes
             </h3>
             <ul className="list-none m-0 p-0 border border-line rounded-sm overflow-hidden bg-surface-sunken">
               {p.guia.ajustes.map((aj) => (

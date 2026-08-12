@@ -59,12 +59,12 @@ function centavosParaReais(centavos: number): string {
 }
 
 /**
- * Aceita 'AAAA-MM-DD' e tambem o ISO completo.
+ * Aceita 'AAAA-MM-DD' e também o ISO completo.
  *
- * A versao anterior fazia `split('-')` e montava DD/MM/AAAA com as partes cruas:
+ * A versão anterior fazia `split('-')` e montava DD/MM/AAAA com as partes cruas:
  * dado um '2026-08-09T04:49:13Z' ela devolvia '09T04:49:13Z/08/2026' — uma data
- * que nao existe, exibida com a mesma confianca de uma correta. Recortar os dez
- * primeiros caracteres antes de partir e o que impede o formato de inventar.
+ * que não existe, exibida com a mesma confiança de uma correta. Recortar os dez
+ * primeiros caracteres antes de partir é o que impede o formato de inventar.
  */
 function formatarData(data: string): string {
   const partes = data.slice(0, 10).split('-');
@@ -108,7 +108,7 @@ function EstadoVazioLotes() {
       <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
       <p className="text-sm font-medium text-text">Nenhum lote encontrado</p>
       <p className="mt-1 text-xs text-text-muted">
-        Crie um novo lote para comecar a faturar.
+        Crie um novo lote para começar a faturar.
       </p>
     </div>
   );
@@ -150,7 +150,7 @@ export function ConveniosLotes(p: ConveniosLotesProps) {
 
   return (
     <div className="space-y-4">
-      {/* Acoes */}
+      {/* Ações */}
       <div className="flex items-center justify-between gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
@@ -179,7 +179,7 @@ export function ConveniosLotes(p: ConveniosLotesProps) {
                   'hover:bg-surface-raised transition-colors-fast',
                 )}
               >
-                {/* Cabecalho */}
+                {/* Cabeçalho */}
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-mono font-medium text-text tabular-nums">
                     {lote.numero}

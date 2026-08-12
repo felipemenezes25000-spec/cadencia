@@ -43,7 +43,7 @@ function montar(over: Partial<Parameters<typeof CaixaDeConversas>[0]> = {}) {
 }
 
 describe('tela Caixa de Conversas', () => {
-  it('o titulo diz Conversas', async () => {
+  it('o título diz Conversas', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Conversas/i })).toBeVisible());
@@ -57,28 +57,28 @@ describe('tela Caixa de Conversas', () => {
     expect(itens[2]).toHaveTextContent('Joana Prado');
   });
 
-  it('conversa com numero desconhecido mostra "Numero desconhecido" e opcao de vincular a paciente', async () => {
+  it('conversa com número desconhecido mostra "Número desconhecido" e opção de vincular a paciente', async () => {
     montar();
     const itens = await screen.findAllByRole('listitem');
     expect(itens[1]).toHaveTextContent('+5511888880002');
     expect(itens[1]).not.toHaveTextContent('null');
   });
 
-  it('mostra badge de nao-lidas quando unreadCount > 0', async () => {
+  it('mostra badge de não-lidas quando unreadCount > 0', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('2')).toBeVisible());
   });
 
-  it('mostra preview da ultima mensagem em cada linha', async () => {
+  it('mostra preview da última mensagem em cada linha', async () => {
     montar();
     await waitFor(() =>
       expect(screen.getByText('Bom dia, confirmo a consulta')).toBeVisible());
   });
 
-  it('filtros sao botoes com aria-pressed e vao para query string', async () => {
+  it('filtros são botões com aria-pressed e vão para query string', async () => {
     const { aoMudarFiltro } = montar();
     await waitFor(() => expect(screen.getByRole('button', { name: /Todas/ })).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Nao lidas/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Não lidas/ }));
     expect(aoMudarFiltro).toHaveBeenCalledWith('nao_lidas');
   });
 
@@ -104,7 +104,7 @@ describe('tela Caixa de Conversas', () => {
     expect(indicadores).toHaveLength(1);
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <CaixaDeConversas filtro="todas" carregar={async () => CONVERSAS}
         aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()} />);

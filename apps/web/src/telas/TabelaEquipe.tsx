@@ -73,7 +73,7 @@ export function TabelaEquipe({
             <th className="px-4 py-2.5 font-medium">Papel</th>
             <th className="px-4 py-2.5 font-medium">Registro</th>
             <th className="px-4 py-2.5 font-medium">Desde</th>
-            {ehAdmin && <th className="px-4 py-2.5 font-medium">Acoes</th>}
+            {ehAdmin && <th className="px-4 py-2.5 font-medium">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -117,7 +117,7 @@ export function TabelaEquipe({
                             value={motivo}
                             onChange={(e) => setMotivo(e.target.value)}
                             className="rounded-lg border border-line bg-surface px-2 py-1 text-xs"
-                            aria-label="Motivo da revogacao"
+                            aria-label="Motivo da revogação"
                           />
                         )}
                         <div className="flex gap-2">
@@ -175,7 +175,7 @@ export function TabelaEquipe({
             <tr>
               <td colSpan={ehAdmin ? 5 : 4}
                 className="px-4 py-6 text-center text-text-muted">
-                Nenhum vinculo nesta unidade.
+                Nenhum vínculo nesta unidade.
               </td>
             </tr>
           )}

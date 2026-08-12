@@ -14,7 +14,7 @@ const ITENS = [
 ];
 
 describe('lista de espera', () => {
-  it('e painel lateral FIXO, nao um modal que some ao clicar fora', () => {
+  it('é painel lateral FIXO, não um modal que some ao clicar fora', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(screen.getByRole('complementary', { name: 'Lista de espera' })).toBeVisible();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -32,36 +32,36 @@ describe('lista de espera', () => {
     expect(linhas[0]).toHaveTextContent('Maria Souza Lima');
   });
 
-  it('mostra posicao numerica', () => {
+  it('mostra posição numérica', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(screen.getByText('1')).toBeVisible();
     expect(screen.getByText('2')).toBeVisible();
   });
 
-  it('mostra alca de arraste', () => {
+  it('mostra alça de arraste', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(screen.getByRole('button', { name: /Arrastar Maria Souza Lima/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /Arrastar Joana Prado/ })).toBeVisible();
   });
 
-  it('cada item tem alternativa de TECLADO ao arraste — arrastar nao pode ser o unico caminho', async () => {
+  it('cada item tem alternativa de TECLADO ao arraste — arrastar não pode ser o único caminho', async () => {
     const aoChamar = vi.fn();
     render(<ListaDeEspera itens={ITENS} aoChamar={aoChamar} />);
     await userEvent.click(screen.getByRole('button', { name: /Chamar Joana Prado/ }));
     expect(aoChamar).toHaveBeenCalledWith('w2');
   });
 
-  it('mostra botao Chamar', () => {
+  it('mostra botão Chamar', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(screen.getAllByRole('button', { name: /Chamar/ })).toHaveLength(2);
   });
 
-  it('mostra ha quanto tempo a pessoa espera, em texto', () => {
+  it('mostra há quanto tempo a pessoa espera, em texto', () => {
     render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(screen.getByText(/desde 20\/07/)).toBeVisible();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(<ListaDeEspera itens={ITENS} aoChamar={vi.fn()} />);
     expect(await axe(container)).toHaveNoViolations();
   });

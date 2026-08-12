@@ -60,7 +60,7 @@ function formatarData(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ── Ordenacao ──────────────────────────────────────────────────────────────
+// ── Ordenação ──────────────────────────────────────────────────────────────
 
 type DirecaoOrdenacao = 'asc' | 'desc';
 
@@ -165,10 +165,10 @@ function EstadoVazio() {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Icone icon={Receipt} size="xl" className="text-text-muted mb-3" />
       <p className="text-base font-medium text-text">
-        Nenhum lancamento encontrado
+        Nenhum lançamento encontrado
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Ajuste os filtros ou adicione um novo lancamento
+        Ajuste os filtros ou adicione um novo lançamento
       </p>
     </div>
   );
@@ -299,7 +299,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
             className="w-36"
           />
           <Campo
-            rotulo="Ate"
+            rotulo="Até"
             type="date"
             denso
             value={dataFim}
@@ -399,7 +399,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
                       onSort={setOrdenacao}
                     />
                     <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                      Descricao
+                      Descrição
                     </th>
                     <ThSortavel
                       campo="categoria"
@@ -459,7 +459,7 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
                       colSpan={3}
                       className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted"
                     >
-                      Saldo do periodo
+                      Saldo do período
                     </td>
                     <td className="num px-4 py-3 text-right font-mono tabular-nums font-semibold">
                       {centavosParaReais(dados.saldo)}

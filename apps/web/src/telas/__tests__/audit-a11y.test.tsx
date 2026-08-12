@@ -230,7 +230,7 @@ describe('Auditoria de acessibilidade', () => {
         <div>Conteudo da sub-aba</div>
       </ConveniosLayout>,
     );
-    expect(screen.getByRole('heading', { level: 2, name: /Convenios/ })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 2, name: /Convênio/ })).toBeVisible();
     expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
   });
 

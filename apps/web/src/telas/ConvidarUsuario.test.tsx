@@ -21,11 +21,11 @@ describe('ConvidarUsuario', () => {
     expect(screen.getByLabelText(/email/i)).toBeDefined();
     expect(screen.getByLabelText(/nome completo/i)).toBeDefined();
     expect(screen.getByLabelText(/papel/i)).toBeDefined();
-    expect(screen.getByLabelText(/senha temporaria/i)).toBeDefined();
+    expect(screen.getByLabelText(/senha temporária/i)).toBeDefined();
     expect(screen.getByRole('button', { name: /convidar/i })).toBeDefined();
   });
 
-  it('nao renderiza nada quando aberto=false', () => {
+  it('não renderiza nada quando aberto=false', () => {
     montar({ aberto: false });
     expect(screen.queryByLabelText(/email/i)).toBeNull();
   });
@@ -33,10 +33,10 @@ describe('ConvidarUsuario', () => {
   it('campos profissionais aparecem ao selecionar role profissional', async () => {
     montar();
     const user = userEvent.setup();
-    expect(screen.queryByLabelText(/numero do conselho/i)).toBeNull();
+    expect(screen.queryByLabelText(/número do conselho/i)).toBeNull();
     await user.selectOptions(screen.getByLabelText(/papel/i), 'profissional');
     expect(screen.getByLabelText(/^conselho$/i)).toBeDefined();
-    expect(screen.getByLabelText(/numero do conselho/i)).toBeDefined();
+    expect(screen.getByLabelText(/número do conselho/i)).toBeDefined();
     expect(screen.getByLabelText(/uf do conselho/i)).toBeDefined();
   });
 
@@ -44,10 +44,10 @@ describe('ConvidarUsuario', () => {
     montar();
     const user = userEvent.setup();
     await user.selectOptions(screen.getByLabelText(/papel/i), 'recepcao');
-    expect(screen.queryByLabelText(/numero do conselho/i)).toBeNull();
+    expect(screen.queryByLabelText(/número do conselho/i)).toBeNull();
   });
 
-  it('botao desabilitado com campos vazios', () => {
+  it('botão desabilitado com campos vazios', () => {
     montar();
     expect(screen.getByRole('button', { name: /convidar/i })).toBeDisabled();
   });
@@ -58,7 +58,7 @@ describe('ConvidarUsuario', () => {
     await user.type(screen.getByLabelText(/email/i), 'novo@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Novo Usuario');
     await user.selectOptions(screen.getByLabelText(/papel/i), 'recepcao');
-    await user.type(screen.getByLabelText(/senha temporaria/i), 'Temp@2026xx');
+    await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
     await user.click(screen.getByRole('button', { name: /convidar/i }));
     expect(props.aoConvidar).toHaveBeenCalledWith({
       email: 'novo@test.local',
@@ -74,8 +74,8 @@ describe('ConvidarUsuario', () => {
     await user.type(screen.getByLabelText(/email/i), 'dr@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Dr Novo');
     await user.selectOptions(screen.getByLabelText(/papel/i), 'profissional');
-    await user.type(screen.getByLabelText(/senha temporaria/i), 'Temp@2026xx');
-    await user.type(screen.getByLabelText(/numero do conselho/i), '54321');
+    await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
+    await user.type(screen.getByLabelText(/número do conselho/i), '54321');
     await user.click(screen.getByRole('button', { name: /convidar/i }));
     expect(props.aoConvidar).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -96,11 +96,11 @@ describe('ConvidarUsuario', () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/email/i), 'dup@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Dup User');
-    await user.type(screen.getByLabelText(/senha temporaria/i), 'Temp@2026xx');
+    await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
     await user.click(screen.getByRole('button', { name: /convidar/i }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeDefined();
-      expect(screen.getByText(/ja tem esse papel/i)).toBeDefined();
+      expect(screen.getByText(/já tem esse papel/i)).toBeDefined();
     });
   });
 

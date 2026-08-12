@@ -6,18 +6,18 @@ import { MatrizPermissoes } from './MatrizPermissoes';
 describe('MatrizPermissoes', () => {
   it('renderiza todas as colunas de roles', () => {
     render(<MatrizPermissoes />);
-    expect(screen.getByText('Administracao')).toBeDefined();
-    expect(screen.getByText('Direcao tecnica')).toBeDefined();
+    expect(screen.getByText('Administração')).toBeDefined();
+    expect(screen.getByText('Direção técnica')).toBeDefined();
     expect(screen.getByText('Profissional')).toBeDefined();
-    expect(screen.getByText('Recepcao')).toBeDefined();
+    expect(screen.getByText('Recepção')).toBeDefined();
     expect(screen.getByText('Financeiro')).toBeDefined();
   });
-  it('renderiza ao menos 10 linhas de acao', () => {
+  it('renderiza ao menos 10 linhas de ação', () => {
     render(<MatrizPermissoes />);
     const rows = screen.getAllByRole('row');
     expect(rows.length).toBeGreaterThan(10);
   });
-  it('indica acoes que exigem MFA', () => {
+  it('indica ações que exigem MFA', () => {
     render(<MatrizPermissoes />);
     expect(screen.getAllByText('MFA').length).toBeGreaterThan(0);
   });

@@ -28,7 +28,7 @@ export const FACETAS: readonly Faceta[] = [
 
 /* ── Helpers ────────────────────────────────────────────── */
 
-/** Extrai iniciais do nome (ate 2 letras) */
+/** Extrai iniciais do nome (até 2 letras) */
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
   const primeira = partes[0];
@@ -38,7 +38,7 @@ function iniciais(nome: string): string {
   return (primeira.charAt(0) + ultima.charAt(0)).toUpperCase();
 }
 
-/** Formata data ISO para exibicao curta */
+/** Formata data ISO para exibição curta */
 function formatarData(iso: string): string {
   try {
     const d = new Date(iso);
@@ -55,7 +55,7 @@ export interface PacientesProps {
   readonly buscar: (termo: string, faceta: string) => Promise<PacienteHit[]>;
   readonly aoMudarFaceta: (faceta: string) => void;
   readonly aoAbrir: (patientId: string) => void;
-  /** Callback para botao "Novo paciente" */
+  /** Callback para botão "Novo paciente" */
   readonly aoCriar?: () => void;
 }
 
@@ -138,7 +138,7 @@ export function Pacientes(p: PacientesProps) {
 
   const carregando = itens === null;
 
-  // Contagem para o subtitulo
+  // Contagem para o subtítulo
   const contagem = itens?.length ?? 0;
 
   // Filtro local pelo termo digitado (antes do debounce resolver)
@@ -149,7 +149,7 @@ export function Pacientes(p: PacientesProps) {
 
   return (
     <div className="cadencia-page grid gap-6">
-      {/* Cabecalho */}
+      {/* Cabeçalho */}
       <PageHeader
         titulo="Pacientes"
         {...(carregando ? {} : { subtitulo: `${contagem} paciente${contagem !== 1 ? 's' : ''}` })}
@@ -200,7 +200,7 @@ export function Pacientes(p: PacientesProps) {
         ))}
       </div>
 
-      {/* Conteudo */}
+      {/* Conteúdo */}
       {carregando ? (
         <PacientesSkeleton />
       ) : pacientesFiltrados.length === 0 ? (
@@ -249,7 +249,7 @@ export function Pacientes(p: PacientesProps) {
                   )}
                 </div>
 
-                {/* Telefone (visivel apenas no desktop) */}
+                {/* Telefone (visível apenas no desktop) */}
                 <span className="text-xs text-text-muted max-sm:hidden">
                   {pac.phonePrimary ?? '—'}
                 </span>

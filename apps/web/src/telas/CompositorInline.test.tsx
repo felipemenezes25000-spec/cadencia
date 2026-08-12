@@ -65,7 +65,7 @@ async function digitarCombobox(texto: string) {
 }
 
 describe('CompositorInline', () => {
-  it('renderiza formulario quando aberto', () => {
+  it('renderiza formulário quando aberto', () => {
     render(
       <CompositorInline {...propsBase({ aberto: true })}>
         <button>Abrir</button>
@@ -76,7 +76,7 @@ describe('CompositorInline', () => {
     ).toBeInTheDocument();
   });
 
-  it('renderiza formulario inline sem popover quando children nao e fornecido', () => {
+  it('renderiza formulário inline sem popover quando children não é fornecido', () => {
     render(<CompositorInline {...propsBase()} />);
     expect(
       screen.getByRole('form', { name: 'Novo agendamento' }),
@@ -88,7 +88,7 @@ describe('CompositorInline', () => {
   it('pre-preenche horario e data quando fornecidos', () => {
     render(<CompositorInline {...propsBase()} />);
     const campoData = screen.getByLabelText('Data') as HTMLInputElement;
-    const campoHorario = screen.getByLabelText('Horario') as HTMLInputElement;
+    const campoHorario = screen.getByLabelText('Horário') as HTMLInputElement;
     expect(campoData.value).toBe('2026-08-03');
     expect(campoHorario.value).toBe('13:00');
   });
@@ -100,7 +100,7 @@ describe('CompositorInline', () => {
 
     // Limpa os campos de data e horario para forcar erro
     const campoData = screen.getByLabelText('Data') as HTMLInputElement;
-    const campoHorario = screen.getByLabelText('Horario') as HTMLInputElement;
+    const campoHorario = screen.getByLabelText('Horário') as HTMLInputElement;
     await user.clear(campoData);
     await user.clear(campoHorario);
 

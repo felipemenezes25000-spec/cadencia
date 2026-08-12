@@ -109,12 +109,12 @@ export function Desempenho(p: DesempenhoProps) {
       {freshness !== null && freshness.source === 'matview' && freshness.refreshedAt !== null ? (
         <p style={{ fontSize: 'var(--fs-11)', color: 'var(--text-faint)',
                     textTransform: 'uppercase', letterSpacing: '.04em', margin: 0 }}>
-          dados ate {formatFreshnessTime(freshness.refreshedAt)}
+          dados até {formatFreshnessTime(freshness.refreshedAt)}
         </p>
       ) : null}
 
-      {/* Frases de variacao */}
-      <section aria-label="Variacoes do periodo"
+      {/* Frases de variação */}
+      <section aria-label="Variações do período"
         style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
                  background: 'var(--surface)', padding: 'var(--s-6)',
                  display: 'grid', gap: 'var(--s-4)' }}>
@@ -141,15 +141,15 @@ export function Desempenho(p: DesempenhoProps) {
         })}
       </section>
 
-      {/* Waterfall de decomposicao */}
+      {/* Waterfall de decomposição */}
       {selectedMetric !== null && waterfall.length > 0 ? (
-        <section aria-label="Decomposicao"
+        <section aria-label="Decomposição"
           style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
                    background: 'var(--surface)', padding: 'var(--s-6)',
                    overflowX: 'auto' }}>
           <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
                        margin: `0 0 var(--s-6)` }}>
-            Decomposicao
+            Decomposição
           </h2>
           <WaterfallChart factors={waterfall} onFactorClick={onFactorClick} />
         </section>
@@ -205,7 +205,7 @@ export function Desempenho(p: DesempenhoProps) {
             </tbody>
           </table>
 
-          {/* Acoes sugeridas */}
+          {/* Ações sugeridas */}
           {actions.length > 0 ? (
             <div style={{ marginTop: 'var(--s-6)', display: 'grid', gap: 'var(--s-3)' }}>
               {actions.map((a) => (

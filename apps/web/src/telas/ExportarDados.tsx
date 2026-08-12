@@ -129,7 +129,7 @@ export function ExportarDados(p: ExportarDadosProps) {
       {precisaPeriodo ? (
         <fieldset className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
           <legend className="px-1 text-[var(--fs-15)] font-semibold">
-            Periodo
+            Período
           </legend>
           <div className="mt-2 flex gap-4">
             <div>
@@ -157,7 +157,7 @@ export function ExportarDados(p: ExportarDadosProps) {
                 htmlFor="exportar-date-to"
                 className="mb-0.5 block text-[var(--fs-12)] text-text-muted"
               >
-                Ate
+                Até
               </label>
               <input
                 id="exportar-date-to"

@@ -56,18 +56,18 @@ describe('FormRecursoGlosa', () => {
     expect(campos).toHaveLength(2);
   });
 
-  it('passo 1: botao Proximo desabilitado se justificativas estao vazias', () => {
+  it('passo 1: botão Próximo desabilitado se justificativas estão vazias', () => {
     montar();
-    const proximo = screen.getByRole('button', { name: /Proximo/i });
+    const proximo = screen.getByRole('button', { name: /Próximo/i });
     expect(proximo).toBeDisabled();
   });
 
-  it('passo 1: botao Proximo habilitado apos preencher todas as justificativas', async () => {
+  it('passo 1: botão Próximo habilitado após preencher todas as justificativas', async () => {
     montar();
     const campos = screen.getAllByLabelText(/Justificativa/i);
     await userEvent.type(campos[0]!, 'Procedimento estava devidamente autorizado.');
     await userEvent.type(campos[1]!, 'Envio realizado dentro do prazo contratual.');
-    const proximo = screen.getByRole('button', { name: /Proximo/i });
+    const proximo = screen.getByRole('button', { name: /Próximo/i });
     expect(proximo).toBeEnabled();
   });
 
@@ -76,19 +76,19 @@ describe('FormRecursoGlosa', () => {
     const campos = screen.getAllByLabelText(/Justificativa/i);
     await userEvent.type(campos[0]!, 'Autorizado.');
     await userEvent.type(campos[1]!, 'Dentro do prazo.');
-    await userEvent.click(screen.getByRole('button', { name: /Proximo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Próximo/i }));
     expect(screen.getByText(/Passo 2/i)).toBeVisible();
     expect(screen.getByLabelText(/Justificativa geral/i)).toBeVisible();
     expect(screen.getByText(/2 glosa/i)).toBeVisible();
     expect(screen.getByText('R$ 230,00')).toBeVisible();
   });
 
-  it('passo 2: botao Submeter chama aoSubmeter com dados corretos', async () => {
+  it('passo 2: botão Submeter chama aoSubmeter com dados corretos', async () => {
     const { aoSubmeter } = montar();
     const campos = screen.getAllByLabelText(/Justificativa/i);
     await userEvent.type(campos[0]!, 'Autorizado.');
     await userEvent.type(campos[1]!, 'Dentro do prazo.');
-    await userEvent.click(screen.getByRole('button', { name: /Proximo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Próximo/i }));
     const geral = screen.getByLabelText(/Justificativa geral/i);
     await userEvent.type(geral, 'Recurso fundamentado conforme protocolo.');
     await userEvent.click(screen.getByRole('button', { name: /Submeter/i }));
@@ -103,24 +103,24 @@ describe('FormRecursoGlosa', () => {
     });
   });
 
-  it('passo 2: botao Voltar retorna ao passo 1', async () => {
+  it('passo 2: botão Voltar retorna ao passo 1', async () => {
     montar();
     const campos = screen.getAllByLabelText(/Justificativa/i);
     await userEvent.type(campos[0]!, 'Autorizado.');
     await userEvent.type(campos[1]!, 'Dentro do prazo.');
-    await userEvent.click(screen.getByRole('button', { name: /Proximo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Próximo/i }));
     expect(screen.getByText(/Passo 2/i)).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: /Voltar/i }));
     expect(screen.getByText(/Passo 1/i)).toBeVisible();
   });
 
-  it('botao Cancelar chama aoCancelar', async () => {
+  it('botão Cancelar chama aoCancelar', async () => {
     const { aoCancelar } = montar();
     await userEvent.click(screen.getByRole('button', { name: /Cancelar/i }));
     expect(aoCancelar).toHaveBeenCalled();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FormRecursoGlosa
         glosas={GLOSAS}

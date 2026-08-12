@@ -59,7 +59,7 @@ function formatarData(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ── Ordenacao ──────────────────────────────────────────────────────────────
+// ── Ordenação ──────────────────────────────────────────────────────────────
 
 type DirecaoOrdenacao = 'asc' | 'desc';
 
@@ -170,10 +170,10 @@ function EstadoVazio() {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Icone icon={Receipt} size="xl" className="text-text-muted mb-3" />
       <p className="text-base font-medium text-text">
-        Nenhum lancamento encontrado
+        Nenhum lançamento encontrado
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Ajuste os filtros ou adicione um novo lancamento
+        Ajuste os filtros ou adicione um novo lançamento
       </p>
     </div>
   );
@@ -303,7 +303,7 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
             className="w-36"
           />
           <Campo
-            rotulo="Ate"
+            rotulo="Até"
             type="date"
             denso
             value={dataFim}
@@ -364,7 +364,7 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
                       onSort={setOrdenacao}
                     />
                     <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                      Descricao
+                      Descrição
                     </th>
                     <ThSortavel
                       campo="categoria"
@@ -383,7 +383,7 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
                       Status
                     </th>
                     <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-text-muted">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

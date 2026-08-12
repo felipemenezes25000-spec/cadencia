@@ -27,7 +27,7 @@ function montar(over: Partial<ExplorarProps> = {}) {
     aoMudarFiltros: vi.fn(),
     aoMudarGrafico: vi.fn(),
     carregarDados: vi.fn(async () => ({ rows: ROWS, freshness: FRESHNESS })),
-    aoSalvarVisao: vi.fn(async () => ({ viewId: 'v3', name: 'Nova visao', filters: {}, chartKind: 'bar' as ChartKind })),
+    aoSalvarVisao: vi.fn(async () => ({ viewId: 'v3', name: 'Nova visão', filters: {}, chartKind: 'bar' as ChartKind })),
     aoSelecionarVisao: vi.fn(),
     ...over,
   };
@@ -36,13 +36,13 @@ function montar(over: Partial<ExplorarProps> = {}) {
 }
 
 describe('tela Explorar', () => {
-  it('exibe o titulo Explorar', async () => {
+  it('exibe o título Explorar', async () => {
     montar();
     await waitFor(() => expect(
       screen.getByRole('heading', { level: 1, name: /Explorar/ })).toBeVisible());
   });
 
-  it('exibe tabs de visoes salvas', async () => {
+  it('exibe tabs de visões salvas', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: 'Receita por procedimento' })).toBeVisible();
@@ -50,7 +50,7 @@ describe('tela Explorar', () => {
     });
   });
 
-  it('clicar numa tab de visao salva chama callback', async () => {
+  it('clicar numa tab de visão salva chama callback', async () => {
     const props = montar();
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Receita por procedimento' })).toBeVisible());
     await userEvent.click(screen.getByRole('tab', { name: 'Receita por procedimento' }));
@@ -65,7 +65,7 @@ describe('tela Explorar', () => {
     });
   });
 
-  it('exibe os tres botoes de tipo de grafico (bar/line/pie)', async () => {
+  it('exibe os três botões de tipo de gráfico (bar/line/pie)', async () => {
     montar();
     await waitFor(() => {
       expect(screen.getByRole('radio', { name: /Barras/ })).toBeVisible();
@@ -74,25 +74,25 @@ describe('tela Explorar', () => {
     });
   });
 
-  it('clicar no botao de tipo de grafico chama callback', async () => {
+  it('clicar no botão de tipo de gráfico chama callback', async () => {
     const props = montar();
     await waitFor(() => expect(screen.getByRole('radio', { name: /Linhas/ })).toBeVisible());
     await userEvent.click(screen.getByRole('radio', { name: /Linhas/ }));
     expect(props.aoMudarGrafico).toHaveBeenCalledWith('line');
   });
 
-  it('botao Salvar visao esta presente', async () => {
+  it('botão Salvar visão está presente', async () => {
     montar();
     await waitFor(() => expect(
-      screen.getByRole('button', { name: /Salvar visao/ })).toBeVisible());
+      screen.getByRole('button', { name: /Salvar visão/ })).toBeVisible());
   });
 
-  it('exibe carimbo de dados quando fonte e matview', async () => {
+  it('exibe carimbo de dados quando fonte é matview', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText(/dados ate/i)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/dados até/i)).toBeVisible());
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <Explorar
         filters={{}}
@@ -101,7 +101,7 @@ describe('tela Explorar', () => {
         aoMudarFiltros={() => {}}
         aoMudarGrafico={() => {}}
         carregarDados={async () => ({ rows: ROWS, freshness: FRESHNESS })}
-        aoSalvarVisao={async () => ({ viewId: 'v3', name: 'Nova visao', filters: {}, chartKind: 'bar' })}
+        aoSalvarVisao={async () => ({ viewId: 'v3', name: 'Nova visão', filters: {}, chartKind: 'bar' })}
         aoSelecionarVisao={() => {}}
       />);
     await waitFor(() => expect(screen.getByText('Consulta')).toBeVisible());

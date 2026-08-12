@@ -40,28 +40,28 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: "subjetivo",
     titulo: "Subjetivo",
-    descricao: "Queixa e historia do paciente",
+    descricao: "Queixa e história do paciente",
     icone: ChatCircle,
     secao: "SOAP",
   },
   {
     id: "objetivo",
     titulo: "Objetivo",
-    descricao: "Exame fisico e sinais vitais",
+    descricao: "Exame físico e sinais vitais",
     icone: Heartbeat,
     secao: "SOAP",
   },
   {
     id: "avaliacao",
-    titulo: "Avaliacao",
-    descricao: "Hipotese diagnostica",
+    titulo: "Avaliação",
+    descricao: "Hipótese diagnóstica",
     icone: Brain,
     secao: "SOAP",
   },
   {
     id: "plano",
     titulo: "Plano",
-    descricao: "Conduta terapeutica",
+    descricao: "Conduta terapêutica",
     icone: ListChecks,
     secao: "SOAP",
   },
@@ -69,8 +69,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   // Actions
   {
     id: "prescricao",
-    titulo: "Prescricao",
-    descricao: "Inserir prescricao medica",
+    titulo: "Prescrição",
+    descricao: "Inserir prescrição médica",
     icone: Pill,
     secao: "Acoes",
   },
@@ -86,13 +86,13 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: "cid",
     titulo: "CID",
-    descricao: "Buscar codigo CID-10",
+    descricao: "Buscar código CID-10",
     icone: MagnifyingGlass,
     secao: "Codigos",
   },
 ];
 
-/* ── agrupar por secao ────────────────────────────────────────────────── */
+/* ── agrupar por seção ────────────────────────────────────────────────── */
 
 export function agruparPorSecao(
   items: SlashCommand[],
@@ -108,7 +108,7 @@ export function agruparPorSecao(
   return grupos;
 }
 
-/* ── inserir secao no editor ──────────────────────────────────────────── */
+/* ── inserir seção no editor ──────────────────────────────────────────── */
 
 export function insertarSecao(editor: Editor, id: string): void {
   switch (id) {
@@ -148,7 +148,7 @@ export function insertarSecao(editor: Editor, id: string): void {
           {
             type: "heading",
             attrs: { level: 2 },
-            content: [{ type: "text", text: "Avaliacao" }],
+            content: [{ type: "text", text: "Avaliação" }],
           },
           { type: "paragraph" },
         ])
@@ -184,7 +184,7 @@ export function insertarSecao(editor: Editor, id: string): void {
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "Prescricao" }],
+            content: [{ type: "text", text: "Prescrição" }],
           },
           {
             type: "orderedList",
@@ -354,7 +354,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
   },
 );
 
-/* ── extensao TipTap ──────────────────────────────────────────────────── */
+/* ── extensão TipTap ──────────────────────────────────────────────────── */
 
 export const SlashCommandExtension = Extension.create({
   name: "slashCommand",

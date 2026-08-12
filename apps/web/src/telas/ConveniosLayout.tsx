@@ -47,7 +47,7 @@ const ROTULOS_CONTADORES: Record<FiltroConvenios, string> = {
   guiasAFaturar: "Guias a faturar",
   lotesRascunho: "Lotes rascunho",
   lotesEnviados: "Lotes enviados",
-  pendencias: "Pendencias",
+  pendencias: "Pendências",
   glosasPendentes: "Glosas pendentes",
   recursosRascunho: "Recursos rascunho",
 };
@@ -66,7 +66,7 @@ export interface ConveniosLayoutProps {
   /* ── Props legadas (backward compat) ─────────────────────────── */
   /** @deprecated Determinado automaticamente pelo pathname */
   readonly abaAtiva?: SubAbaConvenios;
-  /** @deprecated Navegacao agora usa router.push */
+  /** @deprecated Navegação agora usa router.push */
   readonly aoNavegar?: (aba: SubAbaConvenios) => void;
 }
 
@@ -93,16 +93,16 @@ export function ConveniosLayout({
 
   return (
     <div className="space-y-6 max-sm:p-4">
-      {/* h2 porque ConveniosLayout e aninhado dentro de FinanceiroLayout (h1) */}
+      {/* h2 porque ConveniosLayout é aninhado dentro de FinanceiroLayout (h1) */}
       <h2 className="text-lg font-semibold tracking-[-0.02em] text-text">
-        Convenios
+        Convênios
       </h2>
 
       {/* Faixa de contadores */}
       {contadores && (
         <div
           role="group"
-          aria-label="Contadores de convenios"
+          aria-label="Contadores de convênios"
           aria-live="polite"
           className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"
         >
@@ -132,7 +132,7 @@ export function ConveniosLayout({
         </div>
       )}
 
-      {/* Abas de navegacao */}
+      {/* Abas de navegação */}
       <Tabs
         value={abaAtiva}
         onValueChange={(value: string) => {
@@ -170,7 +170,7 @@ export function ConveniosLayout({
         </div>
       </Tabs>
 
-      {/* Conteudo da rota filha */}
+      {/* Conteúdo da rota filha */}
       {children}
     </div>
   );

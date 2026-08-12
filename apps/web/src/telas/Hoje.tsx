@@ -52,7 +52,7 @@ export interface PrecisaDeVoce {
 
 export interface HojeProps {
   readonly dia: string;
-  /** Fuso da UNIDADE. Os carimbos chegam em UTC e sao exibidos neste fuso. */
+  /** Fuso da UNIDADE. Os carimbos chegam em UTC e são exibidos neste fuso. */
   readonly timezone: string;
   readonly filtro?: FiltroDoDia;
   readonly mensagensNaoLidasTotal: number;
@@ -88,23 +88,23 @@ function porExtenso(dia: string): string {
 }
 
 /**
- * `porExtenso` acima formata em UTC de proposito e esta certo: recebe uma DATA
- * ('AAAA-MM-DD'), ancora ao meio-dia UTC para escapar de borda de fuso e le de
- * volta a mesma data. Nao ha instante envolvido.
+ * `porExtenso` acima formata em UTC de propósito e está certo: recebe uma DATA
+ * ('AAAA-MM-DD'), ancora ao meio-dia UTC para escapar de borda de fuso e lê de
+ * volta a mesma data. Não há instante envolvido.
  *
- * `hora` e o oposto: recebe um INSTANTE em UTC vindo da API. Formatar em UTC
- * mostrava o horario tres horas adiantado no Brasil — a consulta das 14h
- * aparecia como 17:00 na fila, e a recepcao chamava o paciente errado.
+ * `hora` é o oposto: recebe um INSTANTE em UTC vindo da API. Formatar em UTC
+ * mostrava o horário três horas adiantado no Brasil — a consulta das 14h
+ * aparecia como 17:00 na fila, e a recepção chamava o paciente errado.
  */
 function hora(iso: string, fuso: string): string {
   return horaNaClinica(iso, fuso);
 }
 
-/** Esqueleto de carregamento para a pagina Hoje */
+/** Esqueleto de carregamento para a página Hoje */
 function HojeSkeleton() {
   return (
     <div className="cadencia-page space-y-6">
-      {/* Titulo skeleton */}
+      {/* Título skeleton */}
       <div className="space-y-2">
         <Skeleton variant="text" width="120px" />
         <Skeleton variant="text" width="200px" />
@@ -169,7 +169,7 @@ export function Hoje(p: HojeProps) {
 
   return (
     <div className="cadencia-page space-y-6">
-      {/* ── Cabecalho ──────────────────────────────────────────────── */}
+      {/* ── Cabeçalho ──────────────────────────────────────────────── */}
       <PageHeader
         titulo="Hoje"
         subtitulo={porExtenso(p.dia)}
@@ -199,7 +199,7 @@ export function Hoje(p: HojeProps) {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface/70 px-6 py-16 text-center shadow-elev-1">
           <Icone icon={CalendarBlank} size="xl" className="text-text-muted mb-3" />
           <p className="text-base font-medium text-text">Nenhum agendamento hoje</p>
-          <p className="text-sm text-text-muted mt-1">Sua agenda esta livre!</p>
+          <p className="text-sm text-text-muted mt-1">Sua agenda está livre!</p>
           <Botao variante="primario" className="mt-4" iconeEsquerda={Plus}>
             Novo agendamento
           </Botao>
@@ -273,7 +273,7 @@ export function Hoje(p: HojeProps) {
         </section>
       )}
 
-      {/* ── Precisa de voce ────────────────────────────────────────── */}
+      {/* ── Precisa de você ────────────────────────────────────────── */}
       {precisa !== null && (
         <section aria-label="Precisa de você">
           <h2 className="text-base font-semibold text-text mb-3">

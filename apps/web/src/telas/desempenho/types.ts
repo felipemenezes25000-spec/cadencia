@@ -1,16 +1,16 @@
 // apps/web/src/telas/desempenho/types.ts
 
-/** Indicador exibido como frase clicavel na pagina de entrada /desempenho. */
+/** Indicador exibido como frase clicável na página de entrada /desempenho. */
 export interface VariationIndicator {
-  /** Chave semantica do indicador. */
+  /** Chave semântica do indicador. */
   readonly metric: 'receita' | 'ticket_medio' | 'ocupacao';
-  /** Delta absoluto em centavos (receita/ticket) ou pontos percentuais (ocupacao). */
+  /** Delta absoluto em centavos (receita/ticket) ou pontos percentuais (ocupação). */
   readonly deltaAbsolute: number;
   /** Delta percentual (ex: -18 para queda de 18%). */
   readonly deltaPercent: number;
 }
 
-/** Um fator que compoe o waterfall de decomposicao de um indicador. */
+/** Um fator que compõe o waterfall de decomposição de um indicador. */
 export interface WaterfallFactor {
   readonly factorId: string;
   readonly label: string;
@@ -26,7 +26,7 @@ export interface DrillDownGroup {
   readonly valueCents: number;
 }
 
-/** Linha de drill-down agrupada por dimensao. */
+/** Linha de drill-down agrupada por dimensão. */
 export interface DrillDownResult {
   readonly dimension: 'profissional' | 'dia_semana' | 'faixa_horario';
   readonly groups: readonly DrillDownGroup[];
@@ -34,24 +34,24 @@ export interface DrillDownResult {
   readonly totalCount: number;
 }
 
-/** Acao sugerida ao final do drill-down. */
+/** Ação sugerida ao final do drill-down. */
 export interface SuggestedAction {
   readonly actionId: string;
   readonly label: string;
-  /** Link para a tela de automacoes com parametros pre-preenchidos. */
+  /** Link para a tela de automações com parâmetros pré-preenchidos. */
   readonly href: string;
 }
 
-/** Periodo selecionado no formato YYYY-MM. */
+/** Período selecionado no formato YYYY-MM. */
 export interface Period {
   readonly current: string;
   readonly previous: string;
 }
 
-/** Carimbo de atualizacao dos dados vindos de matview. */
+/** Carimbo de atualização dos dados vindos de matview. */
 export interface DataFreshness {
   readonly source: 'live' | 'matview';
-  /** ISO 8601 do momento do ultimo refresh, presente apenas quando source=matview. */
+  /** ISO 8601 do momento do último refresh, presente apenas quando source=matview. */
   readonly refreshedAt: string | null;
 }
 
@@ -83,7 +83,7 @@ export interface SavedView {
   readonly chartKind: ChartKind;
 }
 
-// -- Satisfacao ---------------------------------------------------------------
+// -- Satisfação ---------------------------------------------------------------
 
 export interface NpsSummary {
   readonly score: number;

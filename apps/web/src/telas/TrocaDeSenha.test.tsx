@@ -14,7 +14,7 @@ function montar(over: Partial<Parameters<typeof TrocaDeSenha>[0]> = {}) {
 }
 
 describe('TrocaDeSenha', () => {
-  it('renderiza os tres campos e o botao desabilitado', () => {
+  it('renderiza os três campos e o botão desabilitado', () => {
     montar();
     expect(screen.getByLabelText(/senha atual/i)).toBeDefined();
     expect(screen.getByLabelText(/nova senha/i)).toBeDefined();
@@ -22,7 +22,7 @@ describe('TrocaDeSenha', () => {
     expect(screen.getByRole('button', { name: /trocar senha/i })).toBeDisabled();
   });
 
-  it('habilita o botao quando os campos sao preenchidos corretamente', async () => {
+  it('habilita o botão quando os campos são preenchidos corretamente', async () => {
     montar();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/senha atual/i), 'MinhaAtual@1');
@@ -31,7 +31,7 @@ describe('TrocaDeSenha', () => {
     expect(screen.getByRole('button', { name: /trocar senha/i })).toBeEnabled();
   });
 
-  it('mantem desabilitado se nova senha < 8 caracteres', async () => {
+  it('mantém desabilitado se nova senha < 8 caracteres', async () => {
     montar();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/senha atual/i), 'Atual@123');
@@ -40,7 +40,7 @@ describe('TrocaDeSenha', () => {
     expect(screen.getByRole('button', { name: /trocar senha/i })).toBeDisabled();
   });
 
-  it('mantem desabilitado se confirmacao nao bate', async () => {
+  it('mantém desabilitado se confirmação não bate', async () => {
     montar();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/senha atual/i), 'Atual@123');
