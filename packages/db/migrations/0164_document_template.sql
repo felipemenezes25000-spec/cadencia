@@ -5,14 +5,18 @@
 CREATE TABLE clin.document_template (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
-  clinic_id       uuid NOT NULL REFERENCES app.clinic(id),
-  professional_id uuid REFERENCES app.professional(id),
+  clinic_id       uuid NOT NULL,
+  professional_id uuid,
   kind            text NOT NULL CHECK (kind IN (
     'atestado','declaracao_comparecimento','pedido_exame','relatorio')),
   titulo          text NOT NULL,
   corpo           text NOT NULL,
   created_at      timestamptz DEFAULT now(),
   updated_at      timestamptz DEFAULT now(),
+  CONSTRAINT document_template_clinic_fk
+    FOREIGN KEY (tenant_id, clinic_id) REFERENCES app.clinic(tenant_id, id),
+  CONSTRAINT document_template_professional_fk
+    FOREIGN KEY (tenant_id, professional_id) REFERENCES app.professional(tenant_id, id),
   CONSTRAINT document_template_kind_uniq
     UNIQUE (tenant_id, clinic_id, professional_id, kind)
 );

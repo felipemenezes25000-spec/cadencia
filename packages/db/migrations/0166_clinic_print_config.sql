@@ -3,7 +3,7 @@
 
 CREATE TABLE app.clinic_print_config (
   tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
-  clinic_id       uuid NOT NULL REFERENCES app.clinic(id),
+  clinic_id       uuid NOT NULL,
   -- Cabecalho
   logo_url           text,
   header_line1       text,
@@ -18,7 +18,9 @@ CREATE TABLE app.clinic_print_config (
   show_professional boolean DEFAULT true,
   paper_size        text DEFAULT 'A4' CHECK (paper_size IN ('A4', 'CARD')),
   updated_at        timestamptz DEFAULT now(),
-  PRIMARY KEY (tenant_id, clinic_id)
+  PRIMARY KEY (tenant_id, clinic_id),
+  CONSTRAINT clinic_print_config_clinic_fk
+    FOREIGN KEY (tenant_id, clinic_id) REFERENCES app.clinic(tenant_id, id)
 );
 ALTER TABLE app.clinic_print_config OWNER TO app_owner;
 

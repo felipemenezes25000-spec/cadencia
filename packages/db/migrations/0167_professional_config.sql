@@ -3,7 +3,7 @@
 
 CREATE TABLE app.professional_config (
   tenant_id       uuid NOT NULL DEFAULT app.require_tenant_id(),
-  professional_id uuid NOT NULL REFERENCES app.professional(id),
+  professional_id uuid NOT NULL,
   -- Identificacao extra
   especialidade         text,
   rp                    text,          -- Registro Profissional (CFO, CRF, etc.)
@@ -18,7 +18,9 @@ CREATE TABLE app.professional_config (
   -- Preferencias de agenda
   duracao_padrao_min    integer DEFAULT 30,
   updated_at            timestamptz DEFAULT now(),
-  PRIMARY KEY (tenant_id, professional_id)
+  PRIMARY KEY (tenant_id, professional_id),
+  CONSTRAINT professional_config_professional_fk
+    FOREIGN KEY (tenant_id, professional_id) REFERENCES app.professional(tenant_id, id)
 );
 ALTER TABLE app.professional_config OWNER TO app_owner;
 
