@@ -14,7 +14,7 @@ import { cn } from '../lib/cn';
 
 export interface CampoProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'size'> {
-  /** Rotulo visivel */
+  /** Rótulo visível */
   readonly rotulo?: string;
   /** Texto de ajuda abaixo do campo */
   readonly ajuda?: string;
@@ -22,13 +22,13 @@ export interface CampoProps
   readonly dica?: string;
   /** Mensagem de erro (ativa estado de erro) */
   readonly erro?: string | undefined;
-  /** Variante: input padrao ou textarea */
+  /** Variante: input padrão ou textarea */
   readonly variante?: 'default' | 'textarea';
-  /** Numero de linhas para textarea */
+  /** Número de linhas para textarea */
   readonly linhas?: number;
-  /** Slot de prefixo (icone, simbolo) */
+  /** Slot de prefixo (ícone, símbolo) */
   readonly prefixo?: ReactNode;
-  /** Slot de sufixo (icone, botao) */
+  /** Slot de sufixo (ícone, botão) */
   readonly sufixo?: ReactNode;
   /** @deprecated Use Tailwind sizing. Mantido para compatibilidade. */
   readonly denso?: boolean;

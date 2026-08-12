@@ -17,15 +17,15 @@ export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>
   readonly tamanho?: TamanhoBotao;
   /** @deprecated Use `tamanho` instead. Mantido para compatibilidade. */
   readonly altura?: AlturaBotao;
-  /** Icone a esquerda */
+  /** Ícone à esquerda */
   readonly iconeEsquerda?: PhosphorIcon;
-  /** Icone a direita */
+  /** Ícone à direita */
   readonly iconeDireita?: PhosphorIcon;
   /** Estado de carregamento */
   readonly carregando?: boolean;
   /** Largura total do container */
   readonly fullWidth?: boolean;
-  /** Conteudo */
+  /** Conteúdo */
   readonly children: ReactNode;
 }
 

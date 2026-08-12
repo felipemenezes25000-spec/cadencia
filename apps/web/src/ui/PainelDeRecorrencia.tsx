@@ -3,12 +3,12 @@
 
 import { useState } from 'react';
 import { ArrowsClockwise, Warning } from '@phosphor-icons/react';
-// Subpath, nao o barrel: `@cadencia/scheduling` reexporta appointments, check-in,
+// Subpath, não o barrel: `@cadencia/scheduling` reexporta appointments, check-in,
 // day, needs-you e criar-recorrencia, e todos esses pedem `TxClient` do
 // `@cadencia/db` e `uuidv7` do kernel — que abre `node:crypto`. Importar o barrel
 // aqui arrasta o pacote de banco inteiro para dentro do bundle do navegador e o
 // `next build` quebra em "Reading from node:crypto is not handled by plugins".
-// `recorrencia.ts` nao importa nada: e a unica peca de agenda segura no browser.
+// `recorrencia.ts` não importa nada: é a única peça de agenda segura no browser.
 import { expandirRecorrencia, type FrequenciaRecorrencia } from '@cadencia/scheduling/recorrencia';
 import { PainelLateral } from './PainelLateral';
 import { Botao } from './Botao';
@@ -21,7 +21,7 @@ export interface ProcedimentoOpcao {
 
 export interface NovaRecorrencia {
   readonly procedureId: string;
-  /** 'AAAA-MM-DD' no fuso da clinica. */
+  /** 'AAAA-MM-DD' no fuso da clínica. */
   readonly primeiraData: string;
   /** 'HH:MM' de parede. */
   readonly hora: string;
@@ -40,7 +40,7 @@ export interface ResultadoDaSerie {
 
 export interface PainelDeRecorrenciaProps {
   readonly aberto: boolean;
-  /** Data da primeira ocorrencia — define o dia da semana e do mes da serie. */
+  /** Data da primeira ocorrência — define o dia da semana e do mês da série. */
   readonly dia: string;
   readonly pacienteNome: string;
   readonly procedimentos: readonly ProcedimentoOpcao[];
@@ -51,14 +51,14 @@ export interface PainelDeRecorrenciaProps {
 const FREQUENCIAS: readonly { id: FrequenciaRecorrencia; rotulo: string }[] = [
   { id: 'semanal', rotulo: 'Toda semana' },
   { id: 'quinzenal', rotulo: 'A cada 15 dias' },
-  { id: 'mensal', rotulo: 'Todo mes' },
+  { id: 'mensal', rotulo: 'Todo mês' },
   { id: 'diaria', rotulo: 'Todo dia' },
 ];
 
 const MOTIVO: Record<string, string> = {
-  horario_ocupado: 'horario ocupado',
+  horario_ocupado: 'horário ocupado',
   sala_ocupada: 'sala ocupada',
-  erro: 'nao foi possivel',
+  erro: 'não foi possível',
 };
 
 /** 'AAAA-MM-DDTHH:MM' -> '09/03', sem passar por Date (e sem fuso junto). */
@@ -67,24 +67,24 @@ function diaCurto(parede: string): string {
 }
 
 /**
- * Agendamento recorrente — fisioterapia toda terca, retorno mensal.
+ * Agendamento recorrente — fisioterapia toda terça, retorno mensal.
  *
- * O painel entrega DATA e HORA separadas, nunca um instante: "toda terca as
- * 14h" e um compromisso com o relogio da clinica, e quem esta olhando pode
- * estar em outro estado. Quem converte para instante e o Postgres, com o fuso
+ * O painel entrega DATA e HORA separadas, nunca um instante: "toda terça às
+ * 14h" é um compromisso com o relógio da clínica, e quem está olhando pode
+ * estar em outro estado. Quem converte para instante é o Postgres, com o fuso
  * da unidade.
  *
- * A previa usa a MESMA funcao de expansao que o servidor (`expandirRecorrencia`,
+ * A prévia usa a MESMA função de expansão que o servidor (`expandirRecorrencia`,
  * de `@cadencia/scheduling`). Reimplementar a contagem aqui criaria duas
- * verdades sobre quantas consultas a serie gera, e elas divergiriam no primeiro
- * mes de 31 dias.
+ * verdades sobre quantas consultas a série gera, e elas divergiriam no primeiro
+ * mês de 31 dias.
  */
 export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
-  // Comeca VAZIO e cai no primeiro procedimento quando a lista chega.
+  // Começa VAZIO e cai no primeiro procedimento quando a lista chega.
   //
-  // `useState(p.procedimentos[0]?.id)` so roda o inicializador uma vez: o painel
+  // `useState(p.procedimentos[0]?.id)` só roda o inicializador uma vez: o painel
   // abre antes de a lista carregar, o estado nasce '' e NUNCA se corrige — o
-  // select mostra as opcoes e o botao fica travado para sempre. Derivar em vez
+  // select mostra as opções e o botão fica travado para sempre. Derivar em vez
   // de guardar resolve sem efeito colateral.
   const [escolhido, setProcedureId] = useState('');
   const procedureId = escolhido !== '' ? escolhido : (p.procedimentos[0]?.id ?? '');
@@ -104,7 +104,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
       }).length;
     } catch {
       // O servidor recusaria de qualquer forma; avisar aqui evita a viagem e,
-      // principalmente, evita a recepcao combinar com o paciente algo que nao
+      // principalmente, evita a recepção combinar com o paciente algo que não
       // vai acontecer.
       excedeLimite = true;
     }
@@ -121,7 +121,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
         procedureId, primeiraData: p.dia, hora, freq, intervalo: 1, horizonteAte,
       }));
     } catch {
-      setErro('Nao foi possivel criar a serie. Nada foi marcado.');
+      setErro('Não foi possível criar a série. Nada foi marcado.');
     } finally {
       setCriando(false);
     }
@@ -131,7 +131,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
     <PainelLateral aberto={p.aberto} titulo="Repetir consulta" aoFechar={p.aoFechar}>
       <div className="grid gap-4">
         <p className="text-sm text-text-muted">
-          Serie para <strong className="text-text">{p.pacienteNome}</strong>,
+          Série para <strong className="text-text">{p.pacienteNome}</strong>,
           a partir de {diaCurto(`${p.dia}T00:00`)}.
         </p>
 
@@ -150,7 +150,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1.5 text-sm">
-            <span className="font-medium text-text">Frequencia</span>
+            <span className="font-medium text-text">Frequência</span>
             <select
               value={freq}
               onChange={(e) => setFreq(e.target.value as FrequenciaRecorrencia)}
@@ -172,22 +172,22 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
         </div>
 
         <label className="grid gap-1.5 text-sm">
-          <span className="font-medium text-text">Repetir ate</span>
+          <span className="font-medium text-text">Repetir até</span>
           <input
             type="date" value={horizonteAte} min={p.dia}
             onChange={(e) => setHorizonteAte(e.target.value)}
             className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text"
           />
           <span className="text-xs text-text-muted">
-            Serie sem fim marcaria consulta para sempre. Este e o combinado com
-            o paciente — "doze sessoes, ate o fim de marco".
+            Série sem fim marcaria consulta para sempre. Este é o combinado com
+            o paciente — "doze sessões, até o fim de março".
           </span>
         </label>
 
         {excedeLimite && (
           <p role="alert" className="flex items-start gap-2 rounded-[var(--r-sm)] border border-danger/40 bg-danger/5 p-3 text-sm text-text">
             <Warning size={18} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0 text-danger" />
-            <span>Essa combinacao passa do limite de 200 consultas. Aproxime a data final.</span>
+            <span>Essa combinação passa do limite de 200 consultas. Aproxime a data final.</span>
           </p>
         )}
 
@@ -205,7 +205,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
           carregando={criando}
           onClick={() => { void criar(); }}
         >
-          Criar serie
+          Criar série
         </Botao>
 
         {resultado !== null && (
@@ -215,8 +215,8 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
             </p>
             {resultado.recusadas.length > 0 && (
               <div className="grid gap-1">
-                {/* Recusar em silencio deixaria o paciente achando que tem
-                    consulta num dia em que nao tem. Cada dia aparece. */}
+                {/* Recusar em silêncio deixaria o paciente achando que tem
+                    consulta num dia em que não tem. Cada dia aparece. */}
                 <p className="text-sm text-text">
                   Estes dias ficaram de fora — remarque um a um:
                 </p>

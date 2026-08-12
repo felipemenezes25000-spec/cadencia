@@ -45,8 +45,8 @@ interface MetodoPagamentoOpcao {
 const METODOS_PAGAMENTO: readonly MetodoPagamentoOpcao[] = [
   { id: 'pix', rotulo: 'PIX', icone: QrCode },
   { id: 'dinheiro', rotulo: 'Dinheiro', icone: Money },
-  { id: 'credito', rotulo: 'Cartao de credito', icone: CreditCard },
-  { id: 'debito', rotulo: 'Cartao de debito', icone: CreditCard },
+  { id: 'credito', rotulo: 'Cartão de crédito', icone: CreditCard },
+  { id: 'debito', rotulo: 'Cartão de débito', icone: CreditCard },
   { id: 'boleto', rotulo: 'Boleto', icone: Barcode },
 ];
 
@@ -133,7 +133,7 @@ export function PainelDeCobranca({
   return (
     <PainelLateral
       aberto={aberto}
-      titulo="Cobranca"
+      titulo="Cobrança"
       aoFechar={aoFechar}
       largura="sm"
     >
@@ -141,7 +141,7 @@ export function PainelDeCobranca({
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-[var(--s-6)]"
       >
-        {/* Informacoes do paciente */}
+        {/* Informações do paciente */}
         <div className="rounded-xl border border-line bg-surface-raised p-3.5">
           <p className="text-sm font-medium text-text">{pacienteNome}</p>
           <p className="text-xs text-text-muted">{procedimentoNome}</p>
@@ -194,7 +194,7 @@ export function PainelDeCobranca({
           ))}
         </fieldset>
 
-        {/* Acoes */}
+        {/* Ações */}
         <div className="flex flex-col gap-2 pt-2">
           <Botao
             variante="primario"

@@ -82,10 +82,10 @@ beforeEach(() => {
   localStorageMock.clear();
 });
 
-/* ── Testes de configuracao ──────────────────────────────────────────── */
+/* ── Testes de configuração ──────────────────────────────────────────── */
 
 describe('nav.ts', () => {
-  it('todos os itens tem icone e id unicos', () => {
+  it('todos os itens têm ícone e id únicos', () => {
     const ids = ITENS_NAV.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const item of ITENS_NAV) {
@@ -100,7 +100,7 @@ describe('BarraDeNavegacao', () => {
   it('renderiza os dois grupos da sidebar', () => {
     render(<BarraDeNavegacao />);
     expect(screen.getByText('Workspace')).toBeDefined();
-    expect(screen.getByText('Gestao')).toBeDefined();
+    expect(screen.getByText('Gestão')).toBeDefined();
   });
 
   it('mostra Convenios na sidebar', () => {
@@ -113,17 +113,17 @@ describe('BarraDeNavegacao', () => {
     expect(screen.getByRole('link', { name: /relatorios/i })).toBeDefined();
   });
 
-  it('mostra nome do usuario real', () => {
+  it('mostra nome do usuário real', () => {
     render(<BarraDeNavegacao />);
     expect(screen.getByText('Dr. Test')).toBeDefined();
   });
 
-  it('mostra nome da clinica ativa', () => {
+  it('mostra nome da clínica ativa', () => {
     render(<BarraDeNavegacao />);
     expect(screen.getByText(/Clinica A/)).toBeDefined();
   });
 
-  it('tem link para configuracoes', () => {
+  it('tem link para configurações', () => {
     render(<BarraDeNavegacao />);
     expect(screen.getByRole('link', { name: /configuracoes/i })).toBeDefined();
   });
@@ -149,7 +149,7 @@ describe('BarraDeNavegacao', () => {
     ).toBeInTheDocument();
   });
 
-  it('salva preferencia de colapso no localStorage', async () => {
+  it('salva preferência de colapso no localStorage', async () => {
     const user = userEvent.setup();
     render(<BarraDeNavegacao />);
     const toggle = screen.getByRole('button', { name: /colapsar/i });
@@ -165,7 +165,7 @@ describe('BarraDeNavegacao', () => {
     expect(nav.className).toMatch(/bottom-0/);
   });
 
-  it('mostra "Mais" no mobile quando ha itens overflow', () => {
+  it('mostra "Mais" no mobile quando há itens overflow', () => {
     mediaMock = true;
     render(<BarraDeNavegacao />);
     expect(
@@ -173,14 +173,14 @@ describe('BarraDeNavegacao', () => {
     ).toBeInTheDocument();
   });
 
-  it('tem navegacao acessivel com role=navigation', () => {
+  it('tem navegação acessível com role=navigation', () => {
     render(<BarraDeNavegacao />);
     expect(
-      screen.getByRole('navigation', { name: 'Navegacao principal' }),
+      screen.getByRole('navigation', { name: 'Navegação principal' }),
     ).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade no modo mobile', async () => {
+  it('não tem violações de acessibilidade no modo mobile', async () => {
     mediaMock = true;
     const { container } = render(<BarraDeNavegacao />);
     expect(await axe(container)).toHaveNoViolations();

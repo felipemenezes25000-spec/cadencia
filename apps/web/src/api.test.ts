@@ -4,7 +4,7 @@ import { apiFetch, ApiError } from './api';
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('cliente da API', () => {
-  it('manda o cabecalho da unidade e o CSRF em metodo mutante', async () => {
+  it('manda o cabeçalho da unidade e o CSRF em método mutante', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
     await apiFetch('/v1/pacientes', { method: 'POST', body: { fullName: 'X' },
@@ -16,7 +16,7 @@ describe('cliente da API', () => {
     expect(init.credentials).toBe('include');
   });
 
-  it('NAO manda CSRF em GET — cabecalho a mais em leitura e ruido', async () => {
+  it('NÃO manda CSRF em GET — cabeçalho a mais em leitura é ruído', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
     await apiFetch('/v1/pacientes?termo=a', { clinicId: 'c1', csrfToken: 'tok' });
@@ -24,7 +24,7 @@ describe('cliente da API', () => {
     expect(headers.get('x-csrf-token')).toBeNull();
   });
 
-  it('traduz o erro de dominio em ApiError com o codigo nomeado', async () => {
+  it('traduz o erro de domínio em ApiError com o código nomeado', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ erro: 'horario_ocupado', encaixePossivel: true }),
         { status: 409, headers: { 'content-type': 'application/json' } }));
@@ -34,12 +34,12 @@ describe('cliente da API', () => {
                                dados: { encaixePossivel: true } });
   });
 
-  it('204 e sucesso sem corpo — nao pode virar erro de parse', async () => {
+  it('204 é sucesso sem corpo — não pode virar erro de parse', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(null, { status: 204 }));
     // `resposta.json()` num corpo vazio estoura SyntaxError. Como isso acontece
-    // DEPOIS de a operacao ter sido feita, quem chamou ve "nao foi possivel" e
-    // tenta de novo — enquanto o servidor ja apagou. Vale para todo DELETE.
+    // DEPOIS de a operação ter sido feita, quem chamou vê "não foi possível" e
+    // tenta de novo — enquanto o servidor já apagou. Vale para todo DELETE.
     await expect(apiFetch('/v1/agenda/bloqueios/abc', {
       method: 'DELETE', clinicId: 'c', csrfToken: 't' })).resolves.toBeNull();
   });

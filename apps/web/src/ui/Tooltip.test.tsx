@@ -7,7 +7,7 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { Tooltip } from "./Tooltip";
 
 // Polyfills para jsdom: Radix Tooltip (Popper) depende de ResizeObserver e
-// DOMRect que nao existem no jsdom
+// DOMRect que não existem no jsdom
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === "undefined") {
     globalThis.ResizeObserver = class ResizeObserver {
@@ -18,7 +18,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === "undefined") {
-    // @ts-ignore - polyfill basico para testes no jsdom
+    // @ts-ignore - polyfill básico para testes no jsdom
     globalThis.DOMRect = class DOMRect {
       x = 0;
       y = 0;
@@ -51,7 +51,7 @@ beforeAll(() => {
 
 /**
  * Wrapper com TooltipProvider exigido pelo Radix.
- * delayDuration=0 para testes rapidos.
+ * delayDuration=0 para testes rápidos.
  */
 function renderComProvider(ui: ReactNode) {
   return render(
@@ -60,7 +60,7 @@ function renderComProvider(ui: ReactNode) {
 }
 
 describe("Tooltip", () => {
-  it("nao mostra tooltip inicialmente", () => {
+  it("não mostra tooltip inicialmente", () => {
     renderComProvider(
       <Tooltip conteudo="Dica">
         <button>Hover me</button>
@@ -94,8 +94,8 @@ describe("Tooltip", () => {
     expect(tooltip).toBeInTheDocument();
 
     // Radix Tooltip escuta pointerdown fora do trigger para fechar.
-    // No jsdom, unhover nao dispara os eventos de ponteiro necessarios,
-    // entao disparamos pointerdown no body para simular clique fora.
+    // No jsdom, unhover não dispara os eventos de ponteiro necessários,
+    // então disparamos pointerdown no body para simular clique fora.
     fireEvent.pointerDown(document.body);
     await waitFor(() => {
       expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
@@ -117,13 +117,13 @@ describe("Tooltip", () => {
     );
   });
 
-  it("renderiza na posicao correta (lado top por padrao)", () => {
+  it("renderiza na posição correta (lado top por padrão)", () => {
     renderComProvider(
       <Tooltip conteudo="Topo">
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
-    // Verifica que o componente renderiza sem erro com lado padrao
+    // Verifica que o componente renderiza sem erro com lado padrão
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
@@ -131,7 +131,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     renderComProvider(
       <Tooltip conteudo="Embaixo" lado="bottom" delay={0}>
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
 
@@ -144,7 +144,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     renderComProvider(
       <Tooltip conteudo="Esquerda" lado="left" delay={0}>
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
 
@@ -157,7 +157,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     renderComProvider(
       <Tooltip conteudo="Direita" lado="right" delay={0}>
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
 
@@ -170,7 +170,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     renderComProvider(
       <Tooltip conteudo="Com classe" className="font-bold" delay={0}>
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
 
@@ -179,29 +179,29 @@ describe("Tooltip", () => {
     expect(tooltip).toHaveClass("font-bold");
   });
 
-  it("usa delay padrao de 300ms", () => {
+  it("usa delay padrão de 300ms", () => {
     renderComProvider(
       <Tooltip conteudo="Dica">
-        <button>Botao</button>
+        <button>Botão</button>
       </Tooltip>,
     );
-    // Componente renderiza sem erro com delay padrao
+    // Componente renderiza sem erro com delay padrão
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = renderComProvider(
-      <Tooltip conteudo="Dica acessivel">
+      <Tooltip conteudo="Dica acessível">
         <button>Hover me</button>
       </Tooltip>,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade com tooltip visivel", async () => {
+  it("não tem violações de acessibilidade com tooltip visível", async () => {
     const user = userEvent.setup();
     const { container } = renderComProvider(
-      <Tooltip conteudo="Dica acessivel" delay={0}>
+      <Tooltip conteudo="Dica acessível" delay={0}>
         <button>Hover me</button>
       </Tooltip>,
     );

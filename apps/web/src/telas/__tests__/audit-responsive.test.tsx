@@ -345,7 +345,7 @@ describe('Auditoria responsiva', () => {
           <div>Conteudo</div>
         </ConveniosLayout>,
       );
-      const grupo = screen.getByRole('group', { name: /Contadores de convenios/i });
+      const grupo = screen.getByRole('group', { name: /Contadores de convênios/i });
       const botoes = within(grupo).getAllByRole('button');
       botoes.forEach((botao) => {
         const match = botao.className.match(/min-h-\[(\d+)px\]/);

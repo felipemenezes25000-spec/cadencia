@@ -24,17 +24,17 @@ export interface PacienteHit {
 }
 
 interface ComboboxDePacienteProps {
-  /** Rotulo do campo */
+  /** Rótulo do campo */
   readonly rotulo?: string;
   /** Placeholder do input */
   readonly placeholder?: string;
-  /** Funcao de busca que retorna resultados */
+  /** Função de busca que retorna resultados */
   readonly buscar: (termo: string) => Promise<PacienteHit[]>;
   /** Callback ao escolher um paciente */
   readonly aoEscolher: (hit: PacienteHit) => void;
   /** Callback ao criar novo paciente */
   readonly aoCriar: (termo: string) => void;
-  /** Foco automatico no input */
+  /** Foco automático no input */
   readonly autoFocus?: boolean;
   /** Mensagem de erro */
   readonly erro?: string;
@@ -110,7 +110,7 @@ export function ComboboxDePaciente({
 
   const termoDebounced = useDebounce(termo, 100);
 
-  /* Busca quando o valor debounced muda (minimo 2 caracteres) */
+  /* Busca quando o valor debounced muda (mínimo 2 caracteres) */
   useEffect(() => {
     if (termoDebounced.length < 2) {
       setHits([]);

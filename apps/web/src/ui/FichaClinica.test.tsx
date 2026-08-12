@@ -59,32 +59,32 @@ function montar(over: Record<string, unknown> = {}) {
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('FichaClinica', () => {
-  it('renderiza os campos que a CLINICA configurou, nao uma lista fixa', () => {
+  it('renderiza os campos que a CLÍNICA configurou, não uma lista fixa', () => {
     montar();
     expect(screen.getByLabelText(/alergias/i)).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /sinais vitais/i })).toBeInTheDocument();
   });
 
-  it('campo numerico mostra a unidade ao lado', () => {
+  it('campo numérico mostra a unidade ao lado', () => {
     montar();
     // Sem a unidade na tela, "70" pode ser kg ou lb, e "1.70" pode ser m ou cm.
-    // O grafico de evolucao de peso e construido em cima desse numero.
+    // O gráfico de evolução de peso é construído em cima desse número.
     expect(screen.getByText('kg')).toBeInTheDocument();
   });
 
   it('campo composto vira DOIS campos, um por componente', () => {
     montar();
-    // PA como caixa unica faz o medico digitar "12x8": nao existe serie
-    // numerica, nem grafico, nem alerta de hipertensao em cima de texto livre.
+    // PA como caixa única faz o médico digitar "12x8": não existe série
+    // numérica, nem gráfico, nem alerta de hipertensão em cima de texto livre.
     expect(screen.getByLabelText(/sistolica/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/diastolica/i)).toBeInTheDocument();
   });
 
-  it('avisa em vez de esconder o tipo de campo que ainda nao renderiza', () => {
+  it('avisa em vez de esconder o tipo de campo que ainda não renderiza', () => {
     montar();
-    // Sumir com o campo faria a clinica achar que configurou algo que nao existe
-    // e o dado nunca ser coletado, sem ninguem perceber.
-    expect(screen.getByText(/odontograma.*ainda nao|nao suportado/i)).toBeInTheDocument();
+    // Sumir com o campo faria a clínica achar que configurou algo que não existe
+    // e o dado nunca ser coletado, sem ninguém perceber.
+    expect(screen.getByText(/odontograma.*ainda não|não suportado/i)).toBeInTheDocument();
   });
 
   it('digitar alergia avisa o pai com o fieldId', () => {
@@ -94,27 +94,27 @@ describe('FichaClinica', () => {
     expect(aoMudar).toHaveBeenCalledWith('f-alergias', 'Dipirona');
   });
 
-  it('componente do composto avisa com sufixo do codigo de observacao', () => {
+  it('componente do composto avisa com sufixo do código de observação', () => {
     const { aoMudar } = montar();
     fireEvent.change(screen.getByLabelText(/sistolica/i), { target: { value: '120' } });
-    // A chave carrega o observation_code porque e ele que vira clin.observation.
+    // A chave carrega o observation_code porque é ele que vira clin.observation.
     expect(aoMudar).toHaveBeenCalledWith('f-pa:PA_SIS', '120');
   });
 
-  it('busca_tabela consulta o catalogo e devolve o codigo escolhido', async () => {
+  it('busca_tabela consulta o catálogo e devolve o código escolhido', async () => {
     const { aoMudar, buscarCodigo } = montar();
     fireEvent.change(screen.getByLabelText(/cid-10/i), { target: { value: 'infec' } });
     await waitFor(() => expect(buscarCodigo).toHaveBeenCalledWith('infec'));
 
     const opcao = await screen.findByRole('button', { name: /J06\.9/ });
     fireEvent.click(opcao);
-    // Guarda codigo E descricao: o display_snapshot da versao selada precisa do
-    // texto vigente na epoca, nao do texto que o catalogo tiver daqui a 5 anos.
+    // Guarda código E descrição: o display_snapshot da versão selada precisa do
+    // texto vigente na época, não do texto que o catálogo tiver daqui a 5 anos.
     expect(aoMudar).toHaveBeenCalledWith(
       'f-cid', 'J06.9|Infeccao aguda das vias aereas superiores');
   });
 
-  it('nao busca com menos de dois caracteres', async () => {
+  it('não busca com menos de dois caracteres', async () => {
     const { buscarCodigo } = montar();
     fireEvent.change(screen.getByLabelText(/cid-10/i), { target: { value: 'j' } });
     await new Promise((r) => { setTimeout(r, 50); });

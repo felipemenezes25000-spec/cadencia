@@ -16,7 +16,7 @@ beforeAll(() => {
   }
 
   if (typeof globalThis.DOMRect === 'undefined') {
-    // @ts-ignore — polyfill basico para testes no jsdom
+    // @ts-ignore — polyfill básico para testes no jsdom
     globalThis.DOMRect = class DOMRect {
       x = 0;
       y = 0;
@@ -61,7 +61,7 @@ describe('FaixaDeContadores', () => {
     expect(botoes).toHaveLength(3);
   });
 
-  it('mostra valores numericos', () => {
+  it('mostra valores numéricos', () => {
     render(
       <FaixaDeContadores contadores={contadores} />,
     );
@@ -70,7 +70,7 @@ describe('FaixaDeContadores', () => {
     expect(screen.getByText('30')).toBeInTheDocument();
   });
 
-  it('mostra rotulos', () => {
+  it('mostra rótulos', () => {
     render(
       <FaixaDeContadores contadores={contadores} />,
     );
@@ -109,12 +109,12 @@ describe('FaixaDeContadores', () => {
     const indicadores = container.querySelectorAll('.bg-warn, .bg-ok');
     expect(indicadores).toHaveLength(2);
 
-    // "Total" nao tem cor, nao deve ter indicador
+    // "Total" não tem cor, não deve ter indicador
     const totalBtn = screen.getByRole('button', { name: /Total/ });
     expect(totalBtn.querySelector('.bg-warn, .bg-ok, .bg-danger, .bg-accent')).toBeNull();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <FaixaDeContadores contadores={contadores} />,
     );

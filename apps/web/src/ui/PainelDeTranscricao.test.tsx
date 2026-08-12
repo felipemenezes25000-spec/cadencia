@@ -13,7 +13,7 @@ const SUGESTAO: SugestaoDaIA = {
   confianca: 0.92,
 };
 
-/** MediaRecorder e getUserMedia nao existem no jsdom. */
+/** MediaRecorder e getUserMedia não existem no jsdom. */
 function instalarMicrofone(): { pararChamado: () => boolean } {
   let parou = false;
   const trilha = { stop: () => { parou = true; } };
@@ -44,7 +44,7 @@ function montar(over: Record<string, unknown> = {}) {
 
 async function gravarEParar(): Promise<void> {
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: /comecar a gravar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /começar a gravar/i }));
   });
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: /parar e transcrever/i }));
@@ -57,30 +57,30 @@ describe('PainelDeTranscricao', () => {
   it('avisa que o paciente precisa consentir ANTES de gravar', () => {
     instalarMicrofone();
     montar();
-    // Gravar consulta sem avisar e ilegal. O aviso vem antes do botao, nao
+    // Gravar consulta sem avisar é ilegal. O aviso vem antes do botão, não
     // depois do fato.
     expect(screen.getByText(/avise o paciente antes de gravar/i)).toBeInTheDocument();
   });
 
-  it('nada vem pre-marcado — sugestao nao pode virar padrao', async () => {
+  it('nada vem pré-marcado — sugestão não pode virar padrão', async () => {
     instalarMicrofone();
     montar();
     await gravarEParar();
 
     const caixas = screen.getAllByRole('checkbox');
     expect(caixas.length).toBeGreaterThan(0);
-    // Pre-marcar faria quem esta com pressa aceitar tudo sem ler — o modo de
-    // falha exato que a decisao do medico existe para impedir.
+    // Pré-marcar faria quem está com pressa aceitar tudo sem ler — o modo de
+    // falha exato que a decisão do médico existe para impedir.
     expect(caixas.every((c) => !(c as HTMLInputElement).checked)).toBe(true);
     expect(screen.getByRole('button', { name: /marque o que aceita/i })).toBeDisabled();
   });
 
-  it('so entrega o que o medico marcou', async () => {
+  it('só entrega o que o médico marcou', async () => {
     instalarMicrofone();
     const { aoAceitar } = montar();
     await gravarEParar();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /evolucao/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /evolução/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /cid/i }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /usar 2 campos/i }));
@@ -88,12 +88,12 @@ describe('PainelDeTranscricao', () => {
 
     const campos = aoAceitar.mock.calls[0]?.[1] as Set<string>;
     expect([...campos].sort()).toEqual(['cid', 'evolucao']);
-    // Peso e pressao foram sugeridos e NAO marcados: nao podem passar.
+    // Peso e pressão foram sugeridos e NÃO marcados: não podem passar.
     expect(campos.has('pesoKg')).toBe(false);
     expect(campos.has('pa')).toBe(false);
   });
 
-  it('campo sem sugestao nao aparece como opcao vazia', async () => {
+  it('campo sem sugestão não aparece como opção vazia', async () => {
     instalarMicrofone();
     montar();
     await gravarEParar();
@@ -105,12 +105,12 @@ describe('PainelDeTranscricao', () => {
     const mic = instalarMicrofone();
     montar();
     await gravarEParar();
-    // Sem isto o indicador de microfone fica aceso e o proximo paciente entra
+    // Sem isto o indicador de microfone fica aceso e o próximo paciente entra
     // na sala com a luz vermelha piscando.
     expect(mic.pararChamado()).toBe(true);
   });
 
-  it('falha na transcricao nao derruba o atendimento', async () => {
+  it('falha na transcrição não derruba o atendimento', async () => {
     instalarMicrofone();
     montar({ aoTranscrever: vi.fn(async () => { throw new Error('fora do ar'); }) });
     await gravarEParar();

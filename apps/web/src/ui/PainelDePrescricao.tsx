@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Warning } from '@phosphor-icons/react';
 import { PainelLateral } from './PainelLateral';
 
-/** Sessao do prescritor, vinda de POST /v1/prescricoes/sessao. */
+/** Sessão do prescritor, vinda de POST /v1/prescricoes/sessao. */
 export interface SessaoDoPrescritor {
   readonly scriptUrl: string;
   readonly token: string;
@@ -14,14 +14,14 @@ export interface SessaoDoPrescritor {
 
 export interface PainelDePrescricaoProps {
   readonly aberto: boolean;
-  /** `null` quando a Memed nao respondeu: a consulta continua, a receita nao. */
+  /** `null` quando a Memed não respondeu: a consulta continua, a receita não. */
   readonly sessao: SessaoDoPrescritor | null;
   readonly aoConfirmar: (dados: { providerPrescriptionId: string })
     => Promise<{ prescriptionId: string }>;
   readonly aoFechar: () => void;
 }
 
-/* ── superficie do MdHub que usamos ───────────────────────────────────── */
+/* ── superfície do MdHub que usamos ───────────────────────────────────── */
 
 interface MdHub {
   command: { send: (modulo: string, comando: string, args?: unknown) => Promise<unknown> };
@@ -40,7 +40,7 @@ function hub(): MdHub | null {
   return g.MdHub ?? null;
 }
 
-/** O evento traz o id como numero; nosso backend guarda texto. */
+/** O evento traz o id como número; nosso backend guarda texto. */
 function idDaPrescricao(evento: unknown): string | null {
   if (typeof evento !== 'object' || evento === null) return null;
   const p = (evento as { prescricao?: { id?: unknown } }).prescricao;
@@ -53,22 +53,22 @@ function idDaPrescricao(evento: unknown): string | null {
 function foiAssinada(evento: unknown): boolean {
   if (typeof evento !== 'object' || evento === null) return false;
   const v = (evento as { signed?: unknown }).signed;
-  // Ausencia vira FALSE, nunca true: tratar "nao sei" como "assinada" e mandar
-  // o paciente para a farmacia com um papel sem validade.
+  // Ausência vira FALSE, nunca true: tratar "não sei" como "assinada" é mandar
+  // o paciente para a farmácia com um papel sem validade.
   return v === true || v === 1 || v === '1' || v === 'true';
 }
 
 /**
- * A prescricao da Memed, embarcada.
+ * A prescrição da Memed, embarcada.
  *
- * A Memed nao e uma API REST que a gente chama para criar receita: e um MODULO
- * JS que roda dentro da nossa tela. O backend so emite o token do prescritor; o
- * medico prescreve na interface deles, e a assinatura ICP-Brasil acontece la.
- * Quando ele imprime, o evento `prescricaoImpressa` volta com o id, e so entao
- * registramos a receita no nosso prontuario.
+ * A Memed não é uma API REST que a gente chama para criar receita: é um MÓDULO
+ * JS que roda dentro da nossa tela. O backend só emite o token do prescritor; o
+ * médico prescreve na interface deles, e a assinatura ICP-Brasil acontece lá.
+ * Quando ele imprime, o evento `prescricaoImpressa` volta com o id, e só então
+ * registramos a receita no nosso prontuário.
  *
- * Por isso a confirmacao nao pode ser um botao nosso: botao nosso registraria
- * receita que talvez nao exista do lado deles.
+ * Por isso a confirmação não pode ser um botão nosso: botão nosso registraria
+ * receita que talvez não exista do lado deles.
  */
 export function PainelDePrescricao(p: PainelDePrescricaoProps) {
   const { sessao } = p;
@@ -82,9 +82,9 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
   useEffect(() => {
     if (sessao === null) return undefined;
 
-    // Prontidao NAO e o `load` do script. `integration.js` carrega e so entao
+    // Prontidão NÃO é o `load` do script. `integration.js` carrega e só então
     // monta o MdHub, avisando pelo evento `MdSinapsePrescricao` no document.
-    // Agir no onload encontra MdHub indefinido e desiste de uma sessao que
+    // Agir no onload encontra MdHub indefinido e desiste de uma sessão que
     // estava a caminho — foi exatamente o que aconteceu contra a Memed real.
     let sondagem: ReturnType<typeof setInterval> | null = null;
     const pararSondagem = (): void => {
@@ -95,16 +95,16 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
     document.addEventListener('MdSinapsePrescricao', conferir);
     conferir();
 
-    // Sondagem curta ALEM do evento. Contra a Memed real o evento dispara na
+    // Sondagem curta ALÉM do evento. Contra a Memed real o evento dispara na
     // janela entre montar o efeito e o listener existir, e o painel ficava
-    // eternamente em "Abrindo a prescricao" com MdHub.initialized === true na
-    // pagina. Depender de um evento unico de terceiro que nao controlamos e
+    // eternamente em "Abrindo a prescrição" com MdHub.initialized === true na
+    // página. Depender de um evento único de terceiro que não controlamos é
     // apostar numa corrida; sondar por 20s remove a aposta e para sozinho.
     let tentativas = 0;
     sondagem = setInterval(() => {
       tentativas += 1;
       conferir();
-      if (tentativas > 130) { pararSondagem(); setErro('A prescricao nao respondeu.'); }
+      if (tentativas > 130) { pararSondagem(); setErro('A prescrição não respondeu.'); }
     }, 150);
 
     const existente = document.getElementById(ID_SCRIPT);
@@ -113,14 +113,14 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
       s.id = ID_SCRIPT;
       s.src = sessao.scriptUrl;
       // O token vai em `data-token`, jamais na URL: query string aparece em log
-      // de servidor, em cabecalho Referer e no historico do navegador.
+      // de servidor, em cabeçalho Referer e no histórico do navegador.
       s.dataset['token'] = sessao.token;
       s.dataset['color'] = '#2f6f6a';
       s.async = true;
       s.onload = conferir;
-      s.onerror = () => setErro('Nao foi possivel carregar a prescricao.');
+      s.onerror = () => setErro('Não foi possível carregar a prescrição.');
       document.body.appendChild(s);
-      // O script NAO e removido na desmontagem: a Memed registra estado global e
+      // O script NÃO é removido na desmontagem: a Memed registra estado global e
       // recarregar a cada abertura do painel derrubaria a receita em andamento.
     }
 
@@ -130,10 +130,10 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
     };
   }, [sessao]);
 
-  /* ── prepara o modulo e escuta a impressao ───────────────────────────── */
+  /* ── prepara o módulo e escuta a impressão ───────────────────────────── */
   useEffect(() => {
     if (!carregado || sessao === null) return undefined;
-    // `carregado` so vira true depois de MdHub existir, entao aqui ele existe.
+    // `carregado` só vira true depois de MdHub existir, então aqui ele existe.
     const h = hub();
     if (h === null) return undefined;
 
@@ -143,24 +143,24 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
       if (id === null) { setErro('A receita foi emitida sem identificador.'); return; }
       void p.aoConfirmar({ providerPrescriptionId: id })
         .then((r) => setConfirmada(r.prescriptionId))
-        .catch(() => setErro('A receita saiu, mas nao foi registrada no prontuario.'));
+        .catch(() => setErro('A receita saiu, mas não foi registrada no prontuário.'));
     };
     h.event.add('prescricaoImpressa', aoImprimir);
 
     void (async () => {
       try {
         // Ordem deliberada: paciente primeiro, depois as regras de assinatura,
-        // e so entao o modulo aparece. Mostrar antes faz o medico ver a tela
-        // vazia e digitar o nome do paciente que ja tinhamos.
+        // e só então o módulo aparece. Mostrar antes faz o médico ver a tela
+        // vazia e digitar o nome do paciente que já tínhamos.
         await h.command.send(MODULO, 'setPaciente', sessao.patientPayload);
-        // forceSign: receita sem assinatura ICP-Brasil nao vale em farmacia, e o
-        // medico so descobre quando o paciente volta.
+        // forceSign: receita sem assinatura ICP-Brasil não vale em farmácia, e o
+        // médico só descobre quando o paciente volta.
         await h.command.send(MODULO, 'setFeatureToggle', {
           forceSign: true, deletePrescription: false, removePatient: false,
         });
         if (!jaAbriu.current) { jaAbriu.current = true; await h.module.show(MODULO); }
       } catch {
-        setErro('Nao foi possivel preparar a prescricao.');
+        setErro('Não foi possível preparar a prescrição.');
       }
     })();
 
@@ -171,7 +171,7 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
     <PainelLateral aberto={p.aberto} titulo="Prescrever" aoFechar={p.aoFechar}>
       {sessao === null ? (
         <p className="text-sm text-text-muted">
-          Prescricao indisponivel no momento. O atendimento continua normalmente;
+          Prescrição indisponível no momento. O atendimento continua normalmente;
           tente novamente em instantes.
         </p>
       ) : (
@@ -185,22 +185,22 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
             >
               <Warning size={18} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0" />
               <span>
-                Receita emitida <strong>sem assinatura</strong> digital. A farmacia
+                Receita emitida <strong>sem assinatura</strong> digital. A farmácia
                 pode recusar. Emita novamente com o certificado do prescritor.
               </span>
             </p>
           )}
 
           {confirmada !== null && (
-            <p className="text-sm text-text">Receita registrada no prontuario.</p>
+            <p className="text-sm text-text">Receita registrada no prontuário.</p>
           )}
 
           {!carregado && erro === null && (
-            <p className="text-sm text-text-muted">Abrindo a prescricao…</p>
+            <p className="text-sm text-text-muted">Abrindo a prescrição…</p>
           )}
 
           <p className="text-xs text-text-muted">
-            A prescricao abre em janela propria da Memed. Ao imprimir, a receita e
+            A prescrição abre em janela própria da Memed. Ao imprimir, a receita é
             registrada automaticamente neste atendimento.
           </p>
         </div>

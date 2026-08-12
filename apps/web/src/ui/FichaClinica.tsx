@@ -11,7 +11,7 @@ export interface FichaClinicaProps {
   readonly secoes: readonly SecaoDaFicha[];
   /**
    * Valores por chave. Campo simples usa `fieldId`; componente de campo composto
-   * usa `fieldId:OBSERVATION_CODE`, porque e o observation_code que vira linha
+   * usa `fieldId:OBSERVATION_CODE`, porque é o observation_code que vira linha
    * em clin.observation.
    */
   readonly valores: Readonly<Record<string, string>>;
@@ -21,13 +21,13 @@ export interface FichaClinicaProps {
 }
 
 /**
- * Os campos ESTRUTURADOS do prontuario, renderizados a partir da configuracao
- * da clinica — nao de uma lista fixa no codigo.
+ * Os campos ESTRUTURADOS do prontuário, renderizados a partir da configuração
+ * da clínica — não de uma lista fixa no código.
  *
- * Sem esta ficha, o template instanciado fica configurado e inalcancavel: a
+ * Sem esta ficha, o template instanciado fica configurado e inalcançável: a
  * barra lateral promete alergias que nenhuma tela escreve, e sinais vitais
- * declarados nunca viram serie numerica. O texto livre do editor nao substitui:
- * "PA 120x80" escrito na evolucao nao gera grafico, nem alerta, nem relatorio.
+ * declarados nunca viram série numérica. O texto livre do editor não substitui:
+ * "PA 120x80" escrito na evolução não gera gráfico, nem alerta, nem relatório.
  */
 
 const CLASSE_ENTRADA = cn(
@@ -35,7 +35,7 @@ const CLASSE_ENTRADA = cn(
   'text-text focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
 );
 
-/* ── busca em tabela de referencia (CID-10, TUSS) ─────────────────────── */
+/* ── busca em tabela de referência (CID-10, TUSS) ─────────────────────── */
 
 function BuscaEmTabela({ campo, valor, aoMudar, buscarCodigo }: {
   readonly campo: CampoDaFicha;
@@ -47,7 +47,7 @@ function BuscaEmTabela({ campo, valor, aoMudar, buscarCodigo }: {
   const [hits, setHits] = useState<readonly { code: string; display: string }[]>([]);
 
   useEffect(() => {
-    // Menos de dois caracteres devolveria meio catalogo e nao ajuda ninguem.
+    // Menos de dois caracteres devolveria meio catálogo e não ajuda ninguém.
     if (termo.trim().length < 2) { setHits([]); return undefined; }
     let vivo = true;
     const t = setTimeout(() => {
@@ -85,7 +85,7 @@ function BuscaEmTabela({ campo, valor, aoMudar, buscarCodigo }: {
             id={campo.fieldId}
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
-            placeholder="Codigo ou descricao"
+            placeholder="Código ou descrição"
             className={CLASSE_ENTRADA}
           />
           {hits.length > 0 && (
@@ -95,9 +95,9 @@ function BuscaEmTabela({ campo, valor, aoMudar, buscarCodigo }: {
                   <button
                     type="button"
                     onClick={() => {
-                      // Codigo E descricao. O display_snapshot da versao selada
-                      // precisa do texto VIGENTE na epoca do atendimento, nao do
-                      // que o catalogo tiver daqui a cinco anos.
+                      // Código E descrição. O display_snapshot da versão selada
+                      // precisa do texto VIGENTE na época do atendimento, não do
+                      // que o catálogo tiver daqui a cinco anos.
                       aoMudar(campo.fieldId, `${h.code}|${h.display}`);
                       setHits([]);
                     }}
@@ -174,8 +174,8 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
             onChange={(e) => aoMudar(campo.fieldId, e.target.value)}
             className={CLASSE_ENTRADA}
           />
-          {/* A unidade fica na tela: "70" sozinho pode ser kg ou lb, e o grafico
-              de evolucao de peso e construido em cima desse numero. */}
+          {/* A unidade fica na tela: "70" sozinho pode ser kg ou lb, e o gráfico
+              de evolução de peso é construído em cima desse número. */}
           {campo.unit !== null && (
             <span className="shrink-0 text-xs text-text-muted">{campo.unit}</span>
           )}
@@ -245,11 +245,11 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
     );
   }
 
-  // Tipo ainda sem renderizacao. Sumir com o campo faria a clinica achar que
-  // configurou algo que existe e o dado nunca ser coletado, sem ninguem notar.
+  // Tipo ainda sem renderização. Sumir com o campo faria a clínica achar que
+  // configurou algo que existe e o dado nunca ser coletado, sem ninguém notar.
   return (
     <p className="rounded-[var(--r-sm)] border border-dashed border-line px-3 py-2 text-xs text-text-muted">
-      <strong>{campo.label}</strong> ({campo.kind}) ainda nao e preenchivel por
+      <strong>{campo.label}</strong> ({campo.kind}) ainda não é preenchível por
       esta tela. O campo continua configurado e nada foi perdido.
     </p>
   );
@@ -258,8 +258,8 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
 /* ── a ficha ──────────────────────────────────────────────────────────── */
 
 export function FichaClinica(p: FichaClinicaProps) {
-  // A secao da evolucao narrativa e o editor de texto, e nao entra aqui: teria
-  // duas caixas para a mesma coisa e o medico escreveria em uma das duas.
+  // A seção da evolução narrativa é o editor de texto, e não entra aqui: teria
+  // duas caixas para a mesma coisa e o médico escreveria em uma das duas.
   const secoes = p.secoes.filter((s) => s.code !== 'evolucao');
   if (secoes.length === 0) return null;
 

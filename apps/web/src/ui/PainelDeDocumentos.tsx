@@ -17,7 +17,7 @@ export interface PainelDeDocumentosProps {
     => Promise<{
       documentId: string;
       urlPdf: string;
-      /** Falso quando nao ha PSC ICP-Brasil: o documento sai PENDENTE. */
+      /** Falso quando não há PSC ICP-Brasil: o documento sai PENDENTE. */
       assinado: boolean;
       motivo?: string;
     }>;
@@ -31,12 +31,12 @@ interface Modelo {
 }
 
 /**
- * Os quatro documentos do dia a dia, ja redigidos.
+ * Os quatro documentos do dia a dia, já redigidos.
  *
- * O texto padrao nao e enfeite: atestado em branco faz o medico redigir a mesma
- * frase dez vezes por dia, e frase escrita com pressa e frase que esquece o
- * periodo de afastamento — que e justamente o que o empregador vai cobrar.
- * O texto continua editavel; o padrao so tira o custo do caso comum.
+ * O texto padrão não é enfeite: atestado em branco faz o médico redigir a mesma
+ * frase dez vezes por dia, e frase escrita com pressa é frase que esquece o
+ * período de afastamento — que é justamente o que o empregador vai cobrar.
+ * O texto continua editável; o padrão só tira o custo do caso comum.
  */
 const MODELOS: readonly Modelo[] = [
   {
@@ -46,17 +46,17 @@ const MODELOS: readonly Modelo[] = [
       + `por ___ (___) dias a partir de hoje.`,
   },
   {
-    id: 'declaracao_comparecimento', rotulo: 'Declaracao de comparecimento',
+    id: 'declaracao_comparecimento', rotulo: 'Declaração de comparecimento',
     texto: (p) => `Declaro para os devidos fins que ${p} compareceu a esta `
-      + `unidade nesta data, no periodo das ___h as ___h, para atendimento.`,
+      + `unidade nesta data, no período das ___h às ___h, para atendimento.`,
   },
   {
     id: 'pedido_exame', rotulo: 'Pedido de exame',
-    texto: () => `Solicito:\n\n- \n- \n\nHipotese diagnostica: `,
+    texto: () => `Solicito:\n\n- \n- \n\nHipótese diagnóstica: `,
   },
   {
-    id: 'relatorio', rotulo: 'Relatorio',
-    texto: (p) => `Relatorio referente ao acompanhamento de ${p}.\n\n`,
+    id: 'relatorio', rotulo: 'Relatório',
+    texto: (p) => `Relatório referente ao acompanhamento de ${p}.\n\n`,
   },
 ];
 
@@ -80,8 +80,8 @@ export function PainelDeDocumentos(p: PainelDeDocumentosProps) {
 
   async function emitir(): Promise<void> {
     if (corpo.trim() === '') {
-      // Corpo vazio nao e "documento simples": e o hash selando o nada e a
-      // assinatura do medico valendo para uma folha em branco.
+      // Corpo vazio não é "documento simples": é o hash selando o nada e a
+      // assinatura do médico valendo para uma folha em branco.
       setErro('Escreva o texto do documento antes de emitir.');
       return;
     }
@@ -90,7 +90,7 @@ export function PainelDeDocumentos(p: PainelDeDocumentosProps) {
     try {
       setEmitido(await p.aoEmitir({ kind: tipo, corpo: corpo.trim() }));
     } catch {
-      setErro('Nao foi possivel emitir o documento. Tente de novo.');
+      setErro('Não foi possível emitir o documento. Tente de novo.');
     } finally {
       setEmitindo(false);
     }
@@ -154,7 +154,7 @@ export function PainelDeDocumentos(p: PainelDeDocumentosProps) {
         ) : (
           <div className="grid gap-2 rounded-[var(--r-sm)] border border-line bg-surface-raised p-3">
             {emitido.assinado ? (
-              <p className="text-sm text-text">Documento emitido e registrado no prontuario.</p>
+              <p className="text-sm text-text">Documento emitido e registrado no prontuário.</p>
             ) : (
               <p
                 role="alert"
@@ -164,7 +164,7 @@ export function PainelDeDocumentos(p: PainelDeDocumentosProps) {
                 <span>
                   Emitido <strong>sem assinatura</strong> digital e registrado como
                   pendente. Sem certificado ICP-Brasil, empregador e INSS podem
-                  recusar. Assine quando o certificado estiver disponivel.
+                  recusar. Assine quando o certificado estiver disponível.
                 </span>
               </p>
             )}

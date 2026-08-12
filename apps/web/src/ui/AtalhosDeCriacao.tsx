@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useSessao } from '../sessao';
 
 /**
- * O botao `+` do inventario: Novo Agendamento, Adicionar Paciente,
- * Prof. de Saude, Recepcionista.
+ * O botão `+` do inventário: Novo Agendamento, Adicionar Paciente,
+ * Prof. de Saúde, Recepcionista.
  *
- * Os atalhos sao filtrados pelo PAPEL do vinculo, e nao apenas escondidos por
- * estilo: quem nao pode conceder acesso nao ve "adicionar recepcionista", e nao
- * ve porque a rota tambem recusaria. Menu que oferece o que a API nega ensina o
- * usuario a nao confiar na tela.
+ * Os atalhos são filtrados pelo PAPEL do vínculo, e não apenas escondidos por
+ * estilo: quem não pode conceder acesso não vê "adicionar recepcionista", e não
+ * vê porque a rota também recusaria. Menu que oferece o que a API nega ensina o
+ * usuário a não confiar na tela.
  */
 
 interface Atalho {
@@ -26,7 +26,7 @@ const ATALHOS: readonly Atalho[] = [
     papeis: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
   { id: 'paciente', rotulo: 'Adicionar paciente', destino: '/pacientes?novo=1',
     papeis: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
-  { id: 'profissional', rotulo: 'Profissional de saude', destino: '/configuracoes?novo=profissional',
+  { id: 'profissional', rotulo: 'Profissional de saúde', destino: '/configuracoes?novo=profissional',
     papeis: ['admin_clinico', 'diretor_tecnico'] },
   { id: 'recepcionista', rotulo: 'Recepcionista', destino: '/configuracoes?novo=recepcao',
     papeis: ['admin_clinico', 'diretor_tecnico'] },

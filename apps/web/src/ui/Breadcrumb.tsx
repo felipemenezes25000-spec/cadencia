@@ -6,14 +6,14 @@ import { CaretRight } from "@phosphor-icons/react";
 import { cn } from "../lib/cn";
 import { Icone } from "./Icone";
 
-/** Mapa de segmentos de rota para rotulos em portugues */
+/** Mapa de segmentos de rota para rótulos em português */
 const ROTULOS: Record<string, string> = {
   hoje: "Hoje",
   agenda: "Agenda",
   pacientes: "Pacientes",
   financeiro: "Financeiro",
   conversas: "Conversas",
-  convenios: "Convenios",
+  convenios: "Convênios",
   desempenho: "Desempenho",
   caixa: "Caixa",
   "a-receber": "A receber",
@@ -22,20 +22,20 @@ const ROTULOS: Record<string, string> = {
   repasse: "Repasse",
   estoque: "Estoque",
   explorar: "Explorar",
-  variacoes: "Variacoes",
+  variacoes: "Variações",
   atendimentos: "Atendimentos",
-  satisfacao: "Satisfacao",
+  satisfacao: "Satisfação",
 };
 
 export interface BreadcrumbItem {
-  /** Texto visivel */
+  /** Texto visível */
   rotulo: string;
   /** Link (undefined para item atual) */
   href?: string;
 }
 
 export interface BreadcrumbProps {
-  /** Itens manuais (sobreescreve auto-geracao) */
+  /** Itens manuais (sobrescreve auto-geração) */
   readonly itens?: BreadcrumbItem[];
   /** Classes adicionais */
   readonly className?: string;
@@ -67,7 +67,7 @@ export function Breadcrumb({ itens: itensManuais, className }: BreadcrumbProps) 
 
   return (
     <nav
-      aria-label="Navegacao estrutural"
+      aria-label="Navegação estrutural"
       className={cn("flex items-center gap-1 text-[11px] font-medium", className)}
     >
       <ol className="flex items-center gap-1.5">

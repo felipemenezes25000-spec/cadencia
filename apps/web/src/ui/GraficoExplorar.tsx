@@ -27,13 +27,13 @@ export interface GraficoExplorarProps {
   readonly dados: readonly DadoGrafico[];
   /** Largura fixa (px). Quando omitido, usa ParentSize responsivo. */
   readonly largura?: number;
-  /** Altura do grafico em px. Padrao: 300. */
+  /** Altura do gráfico em px. Padrão: 300. */
   readonly altura?: number;
-  /** Titulo exibido acima do grafico. */
+  /** Título exibido acima do gráfico. */
   readonly titulo?: string;
-  /** Rotulo do eixo X (bar/line). */
+  /** Rótulo do eixo X (bar/line). */
   readonly eixoX?: string;
-  /** Rotulo do eixo Y (bar/line). */
+  /** Rótulo do eixo Y (bar/line). */
   readonly eixoY?: string;
   readonly className?: string;
 }
@@ -427,7 +427,7 @@ export function GraficoExplorar({
         className,
       )}
       role="img"
-      aria-label="Grafico do relatorio"
+      aria-label="Gráfico do relatório"
     >
       {titulo && (
         <h3 className="px-[var(--s-6)] pt-[var(--s-6)] text-[var(--fs-14)] font-semibold text-[var(--text)]">

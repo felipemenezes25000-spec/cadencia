@@ -4,14 +4,14 @@ import { axe } from "vitest-axe";
 import { Skeleton } from "./Skeleton";
 
 describe("Skeleton", () => {
-  it("renderiza variante text por padrao", () => {
+  it("renderiza variante text por padrão", () => {
     render(<Skeleton />);
     const el = screen.getByRole("status");
     expect(el).toBeInTheDocument();
     expect(el).toHaveClass("rounded-md");
   });
 
-  it("renderiza variante avatar como circulo", () => {
+  it("renderiza variante avatar como círculo", () => {
     render(<Skeleton variant="avatar" />);
     const el = screen.getByRole("status");
     expect(el).toHaveClass("rounded-full");
@@ -30,14 +30,14 @@ describe("Skeleton", () => {
     expect(el.children).toHaveLength(3);
   });
 
-  it("renderiza multiplas linhas para variante text", () => {
+  it("renderiza múltiplas linhas para variante text", () => {
     render(<Skeleton variant="text" lines={3} />);
     const el = screen.getByRole("status");
     // 3 barras de shimmer como filhos
     expect(el.children).toHaveLength(3);
   });
 
-  it("ultima linha de multiplas linhas tem largura reduzida", () => {
+  it("última linha de múltiplas linhas tem largura reduzida", () => {
     render(<Skeleton variant="text" lines={4} />);
     const el = screen.getByRole("status");
     const lastChild = el.children[3] as HTMLElement;
@@ -56,7 +56,7 @@ describe("Skeleton", () => {
     expect(el).toHaveAttribute("aria-busy", "true");
   });
 
-  it("tem aria-label padrao 'Carregando...'", () => {
+  it("tem aria-label padrão 'Carregando...'", () => {
     render(<Skeleton />);
     const el = screen.getByRole("status");
     expect(el).toHaveAttribute("aria-label", "Carregando...");
@@ -80,22 +80,22 @@ describe("Skeleton", () => {
     expect(el).toHaveStyle({ width: "64px" });
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = render(<Skeleton />);
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade (variante avatar)", async () => {
+  it("não tem violações de acessibilidade (variante avatar)", async () => {
     const { container } = render(<Skeleton variant="avatar" />);
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade (multiplas linhas)", async () => {
+  it("não tem violações de acessibilidade (múltiplas linhas)", async () => {
     const { container } = render(<Skeleton variant="text" lines={3} />);
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade (table-row)", async () => {
+  it("não tem violações de acessibilidade (table-row)", async () => {
     const { container } = render(<Skeleton variant="table-row" />);
     expect(await axe(container)).toHaveNoViolations();
   });

@@ -1,7 +1,7 @@
 import { cn } from "../lib/cn";
 import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 
-/** Tamanhos padrao em pixels */
+/** Tamanhos padrão em pixels */
 const TAMANHOS = {
   sm: 16,
   md: 20,
@@ -16,11 +16,11 @@ interface IconeProps {
   readonly icon: PhosphorIcon;
   /** Tamanho padronizado */
   readonly size?: TamanhoIcone;
-  /** Peso do icone Phosphor */
+  /** Peso do ícone Phosphor */
   readonly weight?: IconWeight;
   /** Classes adicionais Tailwind */
   readonly className?: string;
-  /** Acessibilidade: texto alternativo. Se omitido, icone e decorativo (aria-hidden) */
+  /** Acessibilidade: texto alternativo. Se omitido, ícone é decorativo (aria-hidden) */
   readonly label?: string;
 }
 

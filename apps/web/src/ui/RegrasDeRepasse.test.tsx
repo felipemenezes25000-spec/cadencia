@@ -29,29 +29,29 @@ function montar(over: Record<string, unknown> = {}) {
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('RegrasDeRepasse', () => {
-  it('mostra a regra em linguagem de gente, nao em colunas de banco', () => {
+  it('mostra a regra em linguagem de gente, não em colunas de banco', () => {
     montar();
     const linhas = screen.getAllByRole('listitem');
     expect(linhas[0]).toHaveTextContent(/60%/);
     expect(linhas[0]).toHaveTextContent(/dra\. helena vasques/i);
-    // Valor fixo e percentual sao formatos diferentes e a tela precisa mostrar
-    // qual e qual — R$ 120,00 e 120% seriam o mesmo numero na tela errada.
+    // Valor fixo e percentual são formatos diferentes e a tela precisa mostrar
+    // qual é qual — R$ 120,00 e 120% seriam o mesmo número na tela errada.
     expect(linhas[1]).toHaveTextContent(/R\$\s*120,00/);
   });
 
-  it('regra sem convenio vale para todos — e a tela diz isso', () => {
+  it('regra sem convênio vale para todos — e a tela diz isso', () => {
     montar();
-    // `null` em `conventionName` significa "qualquer convenio". Deixar a celula
+    // `null` em `conventionName` significa "qualquer convênio". Deixar a célula
     // vazia faria parecer cadastro incompleto.
     expect(screen.getAllByRole('listitem')[0])
-      .toHaveTextContent(/qualquer convenio/i);
+      .toHaveTextContent(/qualquer convênio/i);
   });
 
-  it('a prioridade e visivel — e ela que decide qual regra ganha', () => {
+  it('a prioridade é visível — é ela que decide qual regra ganha', () => {
     montar();
     const linhas = screen.getAllByRole('listitem');
     // Duas regras podem casar com o mesmo atendimento. Sem ver a prioridade,
-    // ninguem entende por que o repasse saiu 60% e nao R$ 120,00.
+    // ninguém entende por que o repasse saiu 60% e não R$ 120,00.
     expect(within(linhas[0]!).getByText(/prioridade 1/i)).toBeInTheDocument();
     expect(within(linhas[1]!).getByText(/prioridade 2/i)).toBeInTheDocument();
   });
@@ -61,7 +61,7 @@ describe('RegrasDeRepasse', () => {
     fireEvent.change(screen.getByLabelText(/profissional/i), { target: { value: 'p2' } });
     fireEvent.change(screen.getByLabelText(/percentual/i), { target: { value: '50' } });
     fireEvent.change(screen.getByLabelText(/valor fixo/i), { target: { value: '100,00' } });
-    // Os dois preenchidos e ambiguidade pura: o backend teria de escolher, e
+    // Os dois preenchidos é ambiguidade pura: o backend teria de escolher, e
     // qualquer escolha dele surpreende quem cadastrou.
     expect(screen.getByRole('button', { name: /adicionar regra/i })).toBeDisabled();
     expect(screen.getByRole('alert')).toHaveTextContent(/um dos dois/i);
@@ -92,16 +92,16 @@ describe('RegrasDeRepasse', () => {
     }));
   });
 
-  it('percentual acima de 100 nao passa', () => {
+  it('percentual acima de 100 não passa', () => {
     montar();
     fireEvent.change(screen.getByLabelText(/profissional/i), { target: { value: 'p2' } });
     fireEvent.change(screen.getByLabelText(/percentual/i), { target: { value: '150' } });
-    // Repassar 150% do que entrou faria a clinica pagar para atender.
+    // Repassar 150% do que entrou faria a clínica pagar para atender.
     expect(screen.getByRole('button', { name: /adicionar regra/i })).toBeDisabled();
   });
 
-  it('sem regra nenhuma explica o efeito, nao mostra lista vazia', () => {
+  it('sem regra nenhuma explica o efeito, não mostra lista vazia', () => {
     montar({ regras: [] });
-    expect(screen.getByText(/nenhum repasse sera calculado/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhum repasse será calculado/i)).toBeInTheDocument();
   });
 });

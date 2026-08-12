@@ -9,7 +9,7 @@ interface SkeletonProps {
   readonly width?: string;
   /** Altura customizada (CSS value) */
   readonly height?: string;
-  /** Numero de linhas (para variant="text") */
+  /** Número de linhas (para variant="text") */
   readonly lines?: number;
   /** Label de acessibilidade customizado */
   readonly ariaLabel?: string;
@@ -58,11 +58,11 @@ export function Skeleton({
   ariaLabel = "Carregando...",
   className,
 }: SkeletonProps) {
-  // Estilos dinamicos apenas quando o usuario fornece width/height custom
+  // Estilos dinâmicos apenas quando o usuário fornece width/height custom
   const dynamicStyle: React.CSSProperties | undefined =
     width || height ? { ...(width ? { width } : {}), ...(height ? { height } : {}) } : undefined;
 
-  // --- Variante text com multiplas linhas ---
+  // --- Variante text com múltiplas linhas ---
   if (variant === "text" && lines > 1) {
     return (
       <div

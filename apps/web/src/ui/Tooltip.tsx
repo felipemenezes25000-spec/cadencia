@@ -5,15 +5,15 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { cn } from "../lib/cn";
 
 export interface TooltipProps {
-  /** Conteudo do tooltip */
+  /** Conteúdo do tooltip */
   readonly conteudo: string;
-  /** Posicao relativa ao trigger */
+  /** Posição relativa ao trigger */
   readonly lado?: "top" | "bottom" | "left" | "right";
   /** Delay em ms antes de mostrar */
   readonly delay?: number;
   /** Elemento que ativa o tooltip */
   readonly children: ReactNode;
-  /** Classes adicionais para o conteudo */
+  /** Classes adicionais para o conteúdo */
   readonly className?: string;
 }
 

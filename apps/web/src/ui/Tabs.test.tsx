@@ -5,25 +5,25 @@ import { axe } from "vitest-axe";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 
 describe("Tabs", () => {
-  it("renderiza tab ativa por padrao (defaultValue)", () => {
+  it("renderiza tab ativa por padrão (defaultValue)", () => {
     render(
       <Tabs defaultValue="resumo">
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="historico">Historico</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
-        <TabsContent value="resumo">Conteudo Resumo</TabsContent>
-        <TabsContent value="historico">Conteudo Historico</TabsContent>
+        <TabsContent value="resumo">Conteúdo Resumo</TabsContent>
+        <TabsContent value="historico">Conteúdo Histórico</TabsContent>
       </Tabs>,
     );
 
-    // Conteudo da tab ativa deve estar visivel
-    expect(screen.getByText("Conteudo Resumo")).toBeInTheDocument();
-    // Conteudo da tab inativa nao deve estar visivel
-    expect(screen.queryByText("Conteudo Historico")).not.toBeInTheDocument();
+    // Conteúdo da tab ativa deve estar visível
+    expect(screen.getByText("Conteúdo Resumo")).toBeInTheDocument();
+    // Conteúdo da tab inativa não deve estar visível
+    expect(screen.queryByText("Conteúdo Histórico")).not.toBeInTheDocument();
   });
 
-  it("muda conteudo ao clicar em outra tab", async () => {
+  it("muda conteúdo ao clicar em outra tab", async () => {
     const user = userEvent.setup();
 
     render(
@@ -32,18 +32,18 @@ describe("Tabs", () => {
           <TabsTrigger value="a">Tab A</TabsTrigger>
           <TabsTrigger value="b">Tab B</TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo A</TabsContent>
-        <TabsContent value="b">Conteudo B</TabsContent>
+        <TabsContent value="a">Conteúdo A</TabsContent>
+        <TabsContent value="b">Conteúdo B</TabsContent>
       </Tabs>,
     );
 
-    expect(screen.getByText("Conteudo A")).toBeInTheDocument();
-    expect(screen.queryByText("Conteudo B")).not.toBeInTheDocument();
+    expect(screen.getByText("Conteúdo A")).toBeInTheDocument();
+    expect(screen.queryByText("Conteúdo B")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Tab B" }));
 
-    expect(screen.queryByText("Conteudo A")).not.toBeInTheDocument();
-    expect(screen.getByText("Conteudo B")).toBeInTheDocument();
+    expect(screen.queryByText("Conteúdo A")).not.toBeInTheDocument();
+    expect(screen.getByText("Conteúdo B")).toBeInTheDocument();
   });
 
   it("navega com ArrowRight/ArrowLeft", async () => {
@@ -56,9 +56,9 @@ describe("Tabs", () => {
           <TabsTrigger value="b">Tab B</TabsTrigger>
           <TabsTrigger value="c">Tab C</TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo A</TabsContent>
-        <TabsContent value="b">Conteudo B</TabsContent>
-        <TabsContent value="c">Conteudo C</TabsContent>
+        <TabsContent value="a">Conteúdo A</TabsContent>
+        <TabsContent value="b">Conteúdo B</TabsContent>
+        <TabsContent value="c">Conteúdo C</TabsContent>
       </Tabs>,
     );
 
@@ -90,14 +90,14 @@ describe("Tabs", () => {
             Documentos
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo</TabsContent>
+        <TabsContent value="a">Conteúdo</TabsContent>
       </Tabs>,
     );
 
     expect(screen.getByText("5")).toBeInTheDocument();
   });
 
-  it("nao mostra badge quando valor e 0", () => {
+  it("não mostra badge quando valor é 0", () => {
     render(
       <Tabs defaultValue="a">
         <TabsList>
@@ -105,7 +105,7 @@ describe("Tabs", () => {
             Documentos
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo</TabsContent>
+        <TabsContent value="a">Conteúdo</TabsContent>
       </Tabs>,
     );
 
@@ -119,8 +119,8 @@ describe("Tabs", () => {
           <TabsTrigger value="a">Tab A</TabsTrigger>
           <TabsTrigger value="b">Tab B</TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo A</TabsContent>
-        <TabsContent value="b">Conteudo B</TabsContent>
+        <TabsContent value="a">Conteúdo A</TabsContent>
+        <TabsContent value="b">Conteúdo B</TabsContent>
       </Tabs>,
     );
 
@@ -132,15 +132,15 @@ describe("Tabs", () => {
     expect(tabB).toHaveAttribute("data-state", "inactive");
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = render(
       <Tabs defaultValue="a">
         <TabsList>
           <TabsTrigger value="a">A</TabsTrigger>
           <TabsTrigger value="b">B</TabsTrigger>
         </TabsList>
-        <TabsContent value="a">Conteudo A</TabsContent>
-        <TabsContent value="b">Conteudo B</TabsContent>
+        <TabsContent value="a">Conteúdo A</TabsContent>
+        <TabsContent value="b">Conteúdo B</TabsContent>
       </Tabs>,
     );
     expect(await axe(container)).toHaveNoViolations();

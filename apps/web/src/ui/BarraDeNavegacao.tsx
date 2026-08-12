@@ -101,7 +101,7 @@ function CommandPalette({ aberto, setAberto }: {
           )}
         >
           <RadixDialog.Title className="sr-only">Busca e comandos</RadixDialog.Title>
-          <RadixDialog.Description className="sr-only">Navegue rapidamente pelas areas do Cadencia.</RadixDialog.Description>
+          <RadixDialog.Description className="sr-only">Navegue rapidamente pelas áreas do Cadencia.</RadixDialog.Description>
 
           <div className="flex items-center gap-3 border-b border-line/80 px-5 py-4">
             <MagnifyingGlass size={20} className="shrink-0 text-text-muted" aria-hidden />
@@ -109,7 +109,7 @@ function CommandPalette({ aberto, setAberto }: {
               autoFocus
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Ir para uma area..."
+              placeholder="Ir para uma área..."
               aria-label="Buscar comando"
               className="min-w-0 flex-1 bg-transparent text-[15px] text-text outline-none placeholder:text-text-faint"
             />
@@ -117,7 +117,7 @@ function CommandPalette({ aberto, setAberto }: {
           </div>
 
           <div className="max-h-[52vh] overflow-y-auto p-2.5 scrollbar-thin">
-            <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[.13em] text-text-faint">Navegacao</p>
+            <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[.13em] text-text-faint">Navegação</p>
             <div className="grid gap-1">
               {itens.map((item) => (
                   <button
@@ -159,7 +159,7 @@ function MenuMais({ itens, caminho, aoAbrirComandos }: {
     <RadixPopover.Root>
       <RadixPopover.Trigger asChild>
         <button
-          type="button" aria-label="Mais opcoes de navegacao"
+          type="button" aria-label="Mais opções de navegação"
           className="relative flex min-w-[52px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-text-muted transition-colors duration-[var(--dur-2)] hover:text-text"
         >
           <DotsThreeVertical size={23} weight="bold" />
@@ -210,7 +210,7 @@ function MenuUsuario({ colapsado }: { readonly colapsado: boolean }) {
       <RadixPopover.Trigger asChild>
         <button
           type="button"
-          aria-label={`Menu do usuario ${usuario.nome}`}
+          aria-label={`Menu do usuário ${usuario.nome}`}
           className={cn(
             'flex min-h-[64px] w-full items-center rounded-2xl border border-white/8 bg-white/[.045] shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.04)] transition-colors hover:bg-white/[.065]',
             colapsado ? 'justify-center px-1' : 'gap-3 px-3',
@@ -356,7 +356,7 @@ function BarraDeNavegacaoInterna() {
       <>
         <CommandPalette aberto={comandosAbertos} setAberto={setComandosAbertos} />
         <nav
-          aria-label="Navegacao principal"
+          aria-label="Navegação principal"
           className={cn(
             'cadencia-mobile-dock fixed bottom-0 left-0 right-0 z-30',
             'border-t border-line/70 bg-surface/86 backdrop-blur-2xl',
@@ -395,7 +395,7 @@ function BarraDeNavegacaoInterna() {
     <RadixTooltip.Provider delayDuration={180}>
       <CommandPalette aberto={comandosAbertos} setAberto={setComandosAbertos} />
       <motion.nav
-        aria-label="Navegacao principal"
+        aria-label="Navegação principal"
         className={cn(
           'fixed left-0 top-0 z-30 flex h-screen flex-col overflow-hidden border-r border-white/8 text-white',
           '[background:linear-gradient(165deg,oklch(19%_0.072_270),oklch(15.5%_0.045_270)_54%,oklch(17%_0.062_296))]',
@@ -452,7 +452,7 @@ function BarraDeNavegacaoInterna() {
           </ul>
 
           <AnimatePresence initial={false}>
-            {!colapsado && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-2 mt-5 px-3 text-[9px] font-bold uppercase tracking-[.17em] text-white/32">Gestao</motion.p>}
+            {!colapsado && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-2 mt-5 px-3 text-[9px] font-bold uppercase tracking-[.17em] text-white/32">Gestão</motion.p>}
           </AnimatePresence>
           <ul className="m-0 list-none space-y-1 p-0">
             {gestao.map(renderNavItem)}
@@ -497,7 +497,7 @@ function BarraDeNavegacaoInterna() {
 
         <div className="relative px-2.5 pb-3">
           <button
-            type="button" onClick={alternar} aria-label={colapsado ? 'Expandir navegacao' : 'Colapsar navegacao'}
+            type="button" onClick={alternar} aria-label={colapsado ? 'Expandir navegação' : 'Colapsar navegação'}
             className="flex h-9 w-full items-center justify-center rounded-xl text-white/38 transition-colors hover:bg-white/[.06] hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
             <motion.div animate={{ rotate: colapsado ? 180 : 0 }} transition={{ duration: 0.2 }}><CaretLeft size={18} /></motion.div>

@@ -7,7 +7,7 @@ import 'vitest';
  */
 declare module 'vitest' {
   interface Assertion<T = any> {
-    /** Verifica que o resultado de `axe()` nao contem violacoes WCAG. */
+    /** Verifica que o resultado de `axe()` não contém violações WCAG. */
     toHaveNoViolations(): this;
   }
 

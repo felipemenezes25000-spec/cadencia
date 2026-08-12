@@ -39,25 +39,25 @@ export async function apiFetch<T>(caminho: string, opts: ApiOptions): Promise<T>
     const { erro, ...resto } = corpo;
     throw new ApiError(typeof erro === 'string' ? erro : 'interno', resposta.status, resto);
   }
-  // 204 nao tem corpo POR DEFINICAO, e `json()` de corpo vazio estoura
-  // SyntaxError. O estouro viria DEPOIS de o servidor ter feito a operacao:
-  // quem chamou leria "nao foi possivel" e tentaria de novo um DELETE que ja
-  // aconteceu. Sucesso sem conteudo e `null`, nao excecao.
+  // 204 não tem corpo POR DEFINIÇÃO, e `json()` de corpo vazio estoura
+  // SyntaxError. O estouro viria DEPOIS de o servidor ter feito a operação:
+  // quem chamou leria "não foi possível" e tentaria de novo um DELETE que já
+  // aconteceu. Sucesso sem conteúdo é `null`, não exceção.
   if (resposta.status === 204) return null as T;
   return await resposta.json() as T;
 }
 
 /**
- * Busca um binario (PDF, XML) e devolve uma URL de blob para abrir em aba nova.
+ * Busca um binário (PDF, XML) e devolve uma URL de blob para abrir em aba nova.
  *
- * Existe porque `<a href="/v1/documentos/.../pdf">` NAO funciona: a navegacao do
- * navegador nao carrega o cabecalho `x-clinic-id`, e a API responde 400. Baixar
- * com os cabecalhos certos e entregar um blob resolve sem afrouxar o contrato da
- * API — que continua exigindo a unidade explicitamente, e nao adivinhando qual
- * das unidades do usuario ele quis.
+ * Existe porque `<a href="/v1/documentos/.../pdf">` NÃO funciona: a navegação do
+ * navegador não carrega o cabeçalho `x-clinic-id`, e a API responde 400. Baixar
+ * com os cabeçalhos certos e entregar um blob resolve sem afrouxar o contrato da
+ * API — que continua exigindo a unidade explicitamente, e não adivinhando qual
+ * das unidades do usuário ele quis.
  *
- * Quem chama e dono da URL: `URL.revokeObjectURL` so pode acontecer depois que a
- * aba que a abriu terminar de ler, entao nao revogamos aqui.
+ * Quem chama é dono da URL: `URL.revokeObjectURL` só pode acontecer depois que a
+ * aba que a abriu terminar de ler, então não revogamos aqui.
  */
 export async function apiFetchBlobUrl(
   caminho: string, opts: Omit<ApiOptions, 'body' | 'method'>,

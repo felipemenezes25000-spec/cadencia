@@ -43,7 +43,7 @@ describe("Breadcrumb", () => {
     expect(screen.getByText("Caixa")).toBeInTheDocument();
   });
 
-  it("ultimo item nao e link", () => {
+  it("último item não é link", () => {
     render(
       <Breadcrumb
         itens={[
@@ -53,12 +53,12 @@ describe("Breadcrumb", () => {
       />,
     );
     const ultimoItem = screen.getByText("Maria Silva");
-    // O ultimo item deve ser um <span>, nao um <a>
+    // O último item deve ser um <span>, não um <a>
     expect(ultimoItem.tagName).toBe("SPAN");
     expect(ultimoItem.closest("a")).toBeNull();
   });
 
-  it("ultimo item tem aria-current=page", () => {
+  it("último item tem aria-current=page", () => {
     render(
       <Breadcrumb
         itens={[
@@ -81,12 +81,12 @@ describe("Breadcrumb", () => {
         ]}
       />,
     );
-    // Para 3 itens, devem existir 2 separadores (SVGs do icone CaretRight)
+    // Para 3 itens, devem existir 2 separadores (SVGs do ícone CaretRight)
     const separadores = container.querySelectorAll("svg");
     expect(separadores).toHaveLength(2);
   });
 
-  it("itens intermediarios sao links", () => {
+  it("itens intermediários são links", () => {
     render(
       <Breadcrumb
         itens={[
@@ -105,14 +105,14 @@ describe("Breadcrumb", () => {
     expect(linkCaixa).toHaveAttribute("href", "/financeiro/caixa");
   });
 
-  it("tem aria-label=Navegacao estrutural", () => {
+  it("tem aria-label=Navegação estrutural", () => {
     render(<Breadcrumb itens={[{ rotulo: "Teste" }]} />);
     expect(
-      screen.getByRole("navigation", { name: "Navegacao estrutural" }),
+      screen.getByRole("navigation", { name: "Navegação estrutural" }),
     ).toBeInTheDocument();
   });
 
-  it("usa ol para estrutura semantica", () => {
+  it("usa ol para estrutura semântica", () => {
     const { container } = render(
       <Breadcrumb itens={[{ rotulo: "Teste" }]} />,
     );
@@ -120,13 +120,13 @@ describe("Breadcrumb", () => {
     expect(ol).not.toBeNull();
   });
 
-  it("auto-gera itens a partir da rota quando itens nao e fornecido", () => {
+  it("auto-gera itens a partir da rota quando itens não é fornecido", () => {
     mockPathname = "/financeiro/caixa";
     render(<Breadcrumb />);
     expect(screen.getByText("Financeiro")).toBeInTheDocument();
     expect(screen.getByText("Caixa")).toBeInTheDocument();
 
-    // Financeiro deve ser link, Caixa nao
+    // Financeiro deve ser link, Caixa não
     const linkFinanceiro = screen.getByText("Financeiro").closest("a");
     expect(linkFinanceiro).toHaveAttribute("href", "/financeiro");
 
@@ -135,7 +135,7 @@ describe("Breadcrumb", () => {
     expect(caixa).toHaveAttribute("aria-current", "page");
   });
 
-  it("itens manuais sobreescrevem auto-geracao", () => {
+  it("itens manuais sobrescrevem auto-geração", () => {
     mockPathname = "/financeiro/caixa";
     render(
       <Breadcrumb
@@ -145,14 +145,14 @@ describe("Breadcrumb", () => {
         ]}
       />,
     );
-    // Deve mostrar os itens manuais, nao os auto-gerados
+    // Deve mostrar os itens manuais, não os auto-gerados
     expect(screen.getByText("Pacientes")).toBeInTheDocument();
     expect(screen.getByText("Maria Silva")).toBeInTheDocument();
     expect(screen.queryByText("Financeiro")).not.toBeInTheDocument();
     expect(screen.queryByText("Caixa")).not.toBeInTheDocument();
   });
 
-  it("retorna null quando nao ha itens", () => {
+  it("retorna null quando não há itens", () => {
     mockPathname = "/";
     const { container } = render(<Breadcrumb />);
     expect(container.querySelector("nav")).toBeNull();
@@ -166,7 +166,7 @@ describe("Breadcrumb", () => {
     expect(nav.classList.contains("mt-4")).toBe(true);
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = render(
       <Breadcrumb
         itens={[

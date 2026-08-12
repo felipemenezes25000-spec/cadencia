@@ -28,35 +28,35 @@ vi.mock("next/link", () => ({
 /* ── Testes ──────────────────────────────────────────────────────────── */
 
 describe("PageHeader", () => {
-  it("renderiza titulo", () => {
+  it("renderiza título", () => {
     render(<PageHeader titulo="Pacientes" />);
     expect(
       screen.getByRole("heading", { level: 1, name: "Pacientes" }),
     ).toBeInTheDocument();
   });
 
-  it("renderiza subtitulo quando fornecido", () => {
+  it("renderiza subtítulo quando fornecido", () => {
     render(<PageHeader titulo="T" subtitulo="Sub" />);
     expect(screen.getByText("Sub")).toBeInTheDocument();
   });
 
-  it("nao renderiza subtitulo quando omitido", () => {
+  it("não renderiza subtítulo quando omitido", () => {
     render(<PageHeader titulo="T" />);
-    // Deve haver somente o h1 como filho de texto direto, sem paragrafo de subtitulo
+    // Deve haver somente o h1 como filho de texto direto, sem parágrafo de subtítulo
     const heading = screen.getByRole("heading", { level: 1 });
     const container = heading.closest("div")!.parentElement!;
     expect(container.querySelector("p")).toBeNull();
   });
 
-  it("renderiza acoes quando fornecidas", () => {
-    render(<PageHeader titulo="T" acoes={<button>Acao</button>} />);
-    expect(screen.getByRole("button", { name: "Acao" })).toBeInTheDocument();
+  it("renderiza ações quando fornecidas", () => {
+    render(<PageHeader titulo="T" acoes={<button>Ação</button>} />);
+    expect(screen.getByRole("button", { name: "Ação" })).toBeInTheDocument();
   });
 
-  it("renderiza breadcrumb por padrao", () => {
+  it("renderiza breadcrumb por padrão", () => {
     render(<PageHeader titulo="T" />);
     expect(
-      screen.getByRole("navigation", { name: "Navegacao estrutural" }),
+      screen.getByRole("navigation", { name: "Navegação estrutural" }),
     ).toBeInTheDocument();
   });
 
@@ -86,7 +86,7 @@ describe("PageHeader", () => {
     expect(wrapper.classList.contains("mt-8")).toBe(true);
   });
 
-  it("titulo e subtitulo empilham e acoes ficam a direita", () => {
+  it("título e subtítulo empilham e ações ficam à direita", () => {
     render(
       <PageHeader
         titulo="Pacientes"
@@ -94,21 +94,21 @@ describe("PageHeader", () => {
         acoes={<button>Novo</button>}
       />,
     );
-    // Verifica que o h1 e p estao dentro do mesmo div
+    // Verifica que o h1 e p estão dentro do mesmo div
     const h1 = screen.getByRole("heading", { level: 1 });
     const subtitulo = screen.getByText("124 pacientes cadastrados");
     expect(h1.parentElement).toBe(subtitulo.parentElement);
 
-    // Verifica que o botao de acao esta presente
+    // Verifica que o botão de ação está presente
     expect(screen.getByRole("button", { name: "Novo" })).toBeInTheDocument();
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = render(
       <PageHeader
         titulo="Teste"
-        subtitulo="Subtitulo de teste"
-        acoes={<button>Acao</button>}
+        subtitulo="Subtítulo de teste"
+        acoes={<button>Ação</button>}
       />,
     );
     expect(await axe(container)).toHaveNoViolations();

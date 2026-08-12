@@ -18,23 +18,23 @@ export interface SelectGroup {
 }
 
 export interface SelectProps {
-  /** Rotulo visivel */
+  /** Rótulo visível */
   readonly rotulo?: string;
   /** Placeholder quando nada selecionado */
   readonly placeholder?: string;
-  /** Opcoes simples */
+  /** Opções simples */
   readonly opcoes?: SelectOption[];
-  /** Opcoes agrupadas */
+  /** Opções agrupadas */
   readonly grupos?: SelectGroup[];
   /** Valor atual */
   readonly value?: string;
-  /** Callback de mudanca */
+  /** Callback de mudança */
   readonly onChange?: (value: string) => void;
   /** Mensagem de erro */
   readonly erro?: string;
   /** Desabilitado */
   readonly disabled?: boolean;
-  /** Nome do campo (para formularios) */
+  /** Nome do campo (para formulários) */
   readonly name?: string;
   /** Classes adicionais */
   readonly className?: string;

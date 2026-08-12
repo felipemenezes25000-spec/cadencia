@@ -5,17 +5,17 @@ import { axe } from 'vitest-axe';
 import { Campo } from './Campo';
 
 describe('Campo', () => {
-  // ── Testes de renderizacao basica ──────────────────────────────────────
+  // ── Testes de renderização básica ──────────────────────────────────────
 
-  it('renderiza input por padrao', () => {
+  it('renderiza input por padrão', () => {
     render(<Campo rotulo="Nome" />);
     const input = screen.getByLabelText('Nome');
     expect(input.tagName).toBe('INPUT');
   });
 
   it('renderiza textarea quando variante=textarea', () => {
-    render(<Campo rotulo="Observacoes" variante="textarea" />);
-    const textarea = screen.getByLabelText('Observacoes');
+    render(<Campo rotulo="Observações" variante="textarea" />);
+    const textarea = screen.getByLabelText('Observações');
     expect(textarea.tagName).toBe('TEXTAREA');
   });
 
@@ -25,15 +25,15 @@ describe('Campo', () => {
     expect(textarea).toHaveAttribute('rows', '5');
   });
 
-  it('textarea usa 3 linhas por padrao', () => {
+  it('textarea usa 3 linhas por padrão', () => {
     render(<Campo rotulo="Bio" variante="textarea" />);
     const textarea = screen.getByLabelText('Bio');
     expect(textarea).toHaveAttribute('rows', '3');
   });
 
-  // ── Testes de rotulo, ajuda e dica ─────────────────────────────────────
+  // ── Testes de rótulo, ajuda e dica ─────────────────────────────────────
 
-  it('mostra rotulo quando fornecido', () => {
+  it('mostra rótulo quando fornecido', () => {
     render(<Campo rotulo="Telefone" placeholder="(11) 90000-0000" />);
     expect(screen.getByText('Telefone')).toBeVisible();
     expect(screen.getByLabelText('Telefone')).toHaveAttribute(
@@ -42,19 +42,19 @@ describe('Campo', () => {
     );
   });
 
-  it('renderiza sem rotulo quando nao fornecido', () => {
+  it('renderiza sem rótulo quando não fornecido', () => {
     const { container } = render(<Campo placeholder="buscar" />);
     expect(container.querySelector('label')).toBeNull();
   });
 
   it('mostra texto de ajuda via ajuda', () => {
-    render(<Campo rotulo="CPF" ajuda="Somente numeros" />);
-    expect(screen.getByText('Somente numeros')).toBeVisible();
+    render(<Campo rotulo="CPF" ajuda="Somente números" />);
+    expect(screen.getByText('Somente números')).toBeVisible();
   });
 
   it('mostra texto de ajuda via dica (retrocompatibilidade)', () => {
-    render(<Campo rotulo="CPF" dica="Somente numeros" />);
-    expect(screen.getByText('Somente numeros')).toBeVisible();
+    render(<Campo rotulo="CPF" dica="Somente números" />);
+    expect(screen.getByText('Somente números')).toBeVisible();
   });
 
   it('ajuda tem prioridade sobre dica', () => {
@@ -66,32 +66,32 @@ describe('Campo', () => {
   // ── Testes de erro ─────────────────────────────────────────────────────
 
   it('mostra mensagem de erro com estilo vermelho', () => {
-    render(<Campo rotulo="CPF" erro="CPF invalido" />);
-    const erroEl = screen.getByText('CPF invalido');
-    // Motion anima opacity em JSDOM mas o elemento esta no DOM
+    render(<Campo rotulo="CPF" erro="CPF inválido" />);
+    const erroEl = screen.getByText('CPF inválido');
+    // Motion anima opacity em JSDOM mas o elemento está no DOM
     expect(erroEl).toBeInTheDocument();
     expect(erroEl).toHaveClass('text-danger');
   });
 
-  it('erro NUNCA e so cor: tem texto, aria-describedby e aria-invalid', () => {
-    render(<Campo rotulo="CPF" erro="CPF invalido" />);
+  it('erro NUNCA é só cor: tem texto, aria-describedby e aria-invalid', () => {
+    render(<Campo rotulo="CPF" erro="CPF inválido" />);
     const input = screen.getByLabelText('CPF');
     expect(input).toHaveAttribute('aria-invalid', 'true');
-    // Motion anima opacity em JSDOM mas o elemento esta no DOM
-    expect(screen.getByText('CPF invalido')).toBeInTheDocument();
+    // Motion anima opacity em JSDOM mas o elemento está no DOM
+    expect(screen.getByText('CPF inválido')).toBeInTheDocument();
     expect(input.getAttribute('aria-describedby')).toContain(
-      screen.getByText('CPF invalido').id,
+      screen.getByText('CPF inválido').id,
     );
   });
 
-  it('a dica tambem entra em aria-describedby, junto com o erro', () => {
-    render(<Campo rotulo="CNS" dica="15 digitos" erro="CNS invalido" />);
+  it('a dica também entra em aria-describedby, junto com o erro', () => {
+    render(<Campo rotulo="CNS" dica="15 dígitos" erro="CNS inválido" />);
     const descrito =
       screen.getByLabelText('CNS').getAttribute('aria-describedby') ?? '';
     expect(descrito.split(' ')).toHaveLength(2);
   });
 
-  it('sem erro, nao anuncia invalido', () => {
+  it('sem erro, não anuncia inválido', () => {
     render(<Campo rotulo="Nome" />);
     expect(screen.getByLabelText('Nome')).toHaveAttribute(
       'aria-invalid',
@@ -100,8 +100,8 @@ describe('Campo', () => {
   });
 
   it('erro tem role alert', () => {
-    render(<Campo rotulo="Email" erro="Email invalido" />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Email invalido');
+    render(<Campo rotulo="Email" erro="Email inválido" />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Email inválido');
   });
 
   // ── Testes de prefixo e sufixo ─────────────────────────────────────────
@@ -118,7 +118,7 @@ describe('Campo', () => {
     expect(screen.getByText('.00')).toBeVisible();
   });
 
-  it('nao renderiza slots quando nao fornecidos', () => {
+  it('não renderiza slots quando não fornecidos', () => {
     const { container } = render(<Campo rotulo="Simples" />);
     expect(container.querySelector('[data-testid="campo-prefixo"]')).toBeNull();
     expect(container.querySelector('[data-testid="campo-sufixo"]')).toBeNull();
@@ -146,7 +146,7 @@ describe('Campo', () => {
     expect(contador).toHaveClass('text-danger');
   });
 
-  it('nao mostra contador sem maxLength', () => {
+  it('não mostra contador sem maxLength', () => {
     const { container } = render(<Campo rotulo="Livre" />);
     expect(container.querySelector('[data-testid="campo-contador"]')).toBeNull();
   });
@@ -165,7 +165,7 @@ describe('Campo', () => {
     expect(ref.current).toBeInstanceOf(HTMLTextAreaElement);
   });
 
-  // ── Testes de integracao com react-hook-form ───────────────────────────
+  // ── Testes de integração com react-hook-form ───────────────────────────
 
   it('funciona com react-hook-form register', () => {
     // Simula o retorno de register(): ref + onChange + onBlur + name
@@ -204,30 +204,30 @@ describe('Campo', () => {
 
   // ── Testes de acessibilidade ───────────────────────────────────────────
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <Campo rotulo="Nome" ajuda="como no documento" />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade com dica (retrocompatibilidade)', async () => {
+  it('não tem violações de acessibilidade com dica (retrocompatibilidade)', async () => {
     const { container } = render(
       <Campo rotulo="Nome" dica="como no documento" />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade com erro', async () => {
+  it('não tem violações de acessibilidade com erro', async () => {
     const { container } = render(
-      <Campo rotulo="Email" erro="Email invalido" />,
+      <Campo rotulo="Email" erro="Email inválido" />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade como textarea', async () => {
+  it('não tem violações de acessibilidade como textarea', async () => {
     const { container } = render(
-      <Campo rotulo="Observacoes" variante="textarea" />,
+      <Campo rotulo="Observações" variante="textarea" />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });

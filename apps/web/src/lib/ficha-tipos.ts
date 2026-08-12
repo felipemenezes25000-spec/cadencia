@@ -1,9 +1,9 @@
 /**
- * A forma da configuracao de prontuario, como o backend a devolve.
+ * A forma da configuração de prontuário, como o backend a devolve.
  *
- * Mora em `lib` e nao junto do componente porque quem monta o payload clinico e
- * um transformador puro: fazer ele importar de um `.tsx` acopla regra de dado a
- * arvore de React — e o typecheck da raiz, que nao compila JSX, reprova.
+ * Mora em `lib` e não junto do componente porque quem monta o payload clínico é
+ * um transformador puro: fazer ele importar de um `.tsx` acopla regra de dado à
+ * árvore de React — e o typecheck da raiz, que não compila JSX, reprova.
  */
 
 export interface ComponenteDoCampo {

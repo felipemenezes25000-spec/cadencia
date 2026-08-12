@@ -1,4 +1,4 @@
-/** Estado de uma operacao assincrona */
+/** Estado de uma operação assíncrona */
 export type AsyncState<T> =
   | { status: "idle" }
   | { status: "loading" }
@@ -16,8 +16,8 @@ export interface ErrorState {
   retry?: () => void;
 }
 
-/** Tamanhos padrao do design system */
+/** Tamanhos padrão do design system */
 export type Size = "sm" | "md" | "lg" | "xl";
 
-/** Variantes semanticas */
+/** Variantes semânticas */
 export type Variant = "primario" | "secundario" | "fantasma" | "perigo";

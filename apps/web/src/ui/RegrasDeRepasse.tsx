@@ -46,11 +46,11 @@ function paraCentavos(texto: string): number {
  * Cadastro das regras de repasse.
  *
  * A tela `/financeiro/repasse` mostrava o RESULTADO do rateio e as regras que o
- * produzem nao tinham onde ser cadastradas — a clinica via quanto cada
+ * produzem não tinham onde ser cadastradas — a clínica via quanto cada
  * profissional recebeu sem poder mudar a conta que gerou aquilo.
  *
- * A regra e lida em portugues, nao em colunas: "60% para a Dra. Helena, em
- * qualquer convenio, prioridade 1". Mostrar `percentage: 60, convention: null`
+ * A regra é lida em português, não em colunas: "60% para a Dra. Helena, em
+ * qualquer convênio, prioridade 1". Mostrar `percentage: 60, convention: null`
  * obrigaria quem cadastra a decorar o significado de cada nulo.
  */
 export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
@@ -63,7 +63,7 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
 
   const temPercentual = percentual.trim() !== '';
   const temFixo = valorFixo.trim() !== '';
-  // Os dois preenchidos e ambiguidade pura: o backend teria de escolher, e
+  // Os dois preenchidos é ambiguidade pura: o backend teria de escolher, e
   // qualquer escolha dele surpreende quem cadastrou.
   const ambos = temPercentual && temFixo;
   const pct = Number(percentual);
@@ -106,7 +106,7 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
           </select>
         </label>
         <label className="grid gap-1.5 text-sm">
-          <span className="font-medium text-text">Convenio (opcional)</span>
+          <span className="font-medium text-text">Convênio (opcional)</span>
           <input type="text" value={convenio} placeholder="Qualquer"
             onChange={(e) => setConvenio(e.target.value)}
             className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
@@ -134,13 +134,13 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
       {ambos && (
         <p role="alert" className="text-sm text-danger">
           Preencha <strong>um dos dois</strong>: percentual ou valor fixo. Com os
-          dois, nao ha como saber qual vale.
+          dois, não há como saber qual vale.
         </p>
       )}
       {percentualInvalido && (
         <p role="alert" className="text-sm text-danger">
           Percentual tem de ficar entre 1 e 100 — repassar mais que 100% faria a
-          clinica pagar para atender.
+          clínica pagar para atender.
         </p>
       )}
 
@@ -153,7 +153,7 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
 
       {p.regras.length === 0 ? (
         <p className="text-sm text-text-muted">
-          Sem regra cadastrada, <strong>nenhum repasse sera calculado</strong> —
+          Sem regra cadastrada, <strong>nenhum repasse será calculado</strong> —
           o rateio sai zerado para todo mundo.
         </p>
       ) : (
@@ -167,13 +167,13 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
                   : reais(r.fixedAmountCents ?? 0)}
               </span>
               <span className="text-text">para {nomeDe(r.professionalId)}</span>
-              {/* `null` em convenio significa QUALQUER. Celula vazia pareceria
+              {/* `null` em convênio significa QUALQUER. Célula vazia pareceria
                   cadastro incompleto. */}
               <span className="text-text-muted">
-                · {r.conventionName ?? 'qualquer convenio'}
+                · {r.conventionName ?? 'qualquer convênio'}
               </span>
               {/* Duas regras podem casar com o mesmo atendimento. Sem ver a
-                  prioridade, ninguem entende por que o repasse saiu 60%. */}
+                  prioridade, ninguém entende por que o repasse saiu 60%. */}
               <span className="ml-auto text-xs text-text-muted">
                 prioridade {r.priority}
               </span>

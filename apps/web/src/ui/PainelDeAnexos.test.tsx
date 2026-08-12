@@ -33,12 +33,12 @@ function arquivo(nome: string, tipo: string, bytes: number): File {
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('PainelDeAnexos', () => {
-  it('lista os anexos com tamanho legivel', () => {
+  it('lista os anexos com tamanho legível', () => {
     montar();
     expect(screen.getByText('hemograma.pdf')).toBeInTheDocument();
-    // "240000 bytes" nao diz nada a quem esta decidindo se abre o arquivo no
+    // "240000 bytes" não diz nada a quem está decidindo se abre o arquivo no
     // meio da consulta; "234 KB" diz. O tamanho vive dentro da linha de
-    // metadados, entao a busca e por SUBSTRING e nao pelo texto inteiro do no.
+    // metadados, então a busca é por SUBSTRING e não pelo texto inteiro do nó.
     const tudo = document.body.textContent ?? '';
     expect(tudo).toContain('234 KB');
     expect(tudo).toContain('1,43 MB');
@@ -68,19 +68,19 @@ describe('PainelDeAnexos', () => {
     await act(async () => {
       fireEvent.change(entrada, { target: { files: [grande] } });
     });
-    // A API tambem recusa, mas so depois de o celular da recepcao gastar a
+    // A API também recusa, mas só depois de o celular da recepção gastar a
     // franquia subindo 21 MB. Barrar aqui poupa a subida inteira.
     expect(aoEnviar).not.toHaveBeenCalled();
     expect(await screen.findByText(/20 MB/i)).toBeInTheDocument();
   });
 
-  it('abrir chama o pai — o download precisa de cabecalho, nao de href', async () => {
+  it('abrir chama o pai — o download precisa de cabeçalho, não de href', async () => {
     const { aoAbrir } = montar();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /hemograma\.pdf/i }));
     });
-    // `<a href>` nao carrega `x-clinic-id` e a rota recusaria. Quem baixa e o
-    // pai, com os cabecalhos certos.
+    // `<a href>` não carrega `x-clinic-id` e a rota recusaria. Quem baixa é o
+    // pai, com os cabeçalhos certos.
     expect(aoAbrir).toHaveBeenCalledWith('a1');
   });
 });

@@ -48,20 +48,20 @@ const SECOES: SecaoDaFicha[] = [
   },
 ];
 
-describe('montagem do payload clinico', () => {
-  it('a evolucao do EDITOR entra como campo, e a ficha nao a duplica', () => {
+describe('montagem do payload clínico', () => {
+  it('a evolução do EDITOR entra como campo, e a ficha não a duplica', () => {
     const p = montarPayloadClinico({
       secoes: SECOES, valores: {}, evolucao: 'Paciente refere melhora.',
       competenciaCid: '202501',
     });
     const evo = p.fields.filter((f) => f.fieldId === 'f-evo');
-    // Duas caixas para a mesma coisa fariam o medico escrever numa e a outra
+    // Duas caixas para a mesma coisa fariam o médico escrever numa e a outra
     // sobrescrever com vazio na hora de selar.
     expect(evo).toHaveLength(1);
     expect(evo[0]?.value).toEqual({ slot: 'value_text', text: 'Paciente refere melhora.' });
   });
 
-  it('campo vazio nao vira linha — versao selada nao guarda branco', () => {
+  it('campo vazio não vira linha — versão selada não guarda branco', () => {
     const p = montarPayloadClinico({
       secoes: SECOES, valores: { 'f-alergias': '   ' }, evolucao: 'x',
       competenciaCid: '202501',
@@ -69,32 +69,32 @@ describe('montagem do payload clinico', () => {
     expect(p.fields.some((f) => f.fieldId === 'f-alergias')).toBe(false);
   });
 
-  it('numerico vira campo E observacao — e a observacao que faz grafico existir', () => {
+  it('numérico vira campo E observação — é a observação que faz gráfico existir', () => {
     const p = montarPayloadClinico({
       secoes: SECOES, valores: { 'f-peso': '72.4' }, evolucao: 'x',
       competenciaCid: '202501',
     });
     expect(p.fields.find((f) => f.fieldId === 'f-peso')?.value)
       .toEqual({ slot: 'value_num', num: '72.4' });
-    // Numero como STRING de ponta a ponta: "70.50" e "70.5" sao valores
+    // Número como STRING de ponta a ponta: "70.50" e "70.5" são valores
     // diferentes na tela e precisam de hashes diferentes (§4.3).
     expect(p.observations).toContainEqual({
-      // fieldId acompanha: `clin.observation.field_id` e NOT NULL porque a
-      // observacao e projecao de um campo, e sem a origem nao da para
+      // fieldId acompanha: `clin.observation.field_id` é NOT NULL porque a
+      // observação é projeção de um campo, e sem a origem não dá para
       // reprojetar quando o atendimento for retificado.
       fieldId: 'f-peso',
       observationCode: 'PESO', valueNum: '72.4', unit: 'kg', componentOrdinal: 1,
     });
   });
 
-  it('composto NAO vira campo — vira uma observacao por componente', () => {
+  it('composto NÃO vira campo — vira uma observação por componente', () => {
     const p = montarPayloadClinico({
       secoes: SECOES,
       valores: { 'f-pa:PA_SIS': '120', 'f-pa:PA_DIA': '80' },
       evolucao: 'x', competenciaCid: '202501',
     });
-    // FIELD_KINDS diz `slot: null` para composto: o campo em si nao tem valor,
-    // quem carrega o dado sao os componentes.
+    // FIELD_KINDS diz `slot: null` para composto: o campo em si não tem valor,
+    // quem carrega o dado são os componentes.
     expect(p.fields.some((f) => f.fieldId === 'f-pa')).toBe(false);
     expect(p.observations).toContainEqual({
       fieldId: 'f-pa',
@@ -106,7 +106,7 @@ describe('montagem do payload clinico', () => {
     });
   });
 
-  it('so a sistolica preenchida nao inventa a diastolica', () => {
+  it('só a sistólica preenchida não inventa a diastólica', () => {
     const p = montarPayloadClinico({
       secoes: SECOES, valores: { 'f-pa:PA_SIS': '120' }, evolucao: 'x',
       competenciaCid: '202501',
@@ -115,7 +115,7 @@ describe('montagem do payload clinico', () => {
       .toHaveLength(1);
   });
 
-  it('CID vira campo codificado E diagnostico, com a competencia do catalogo', () => {
+  it('CID vira campo codificado E diagnóstico, com a competência do catálogo', () => {
     const p = montarPayloadClinico({
       secoes: SECOES,
       valores: { 'f-cid': 'J06.9|Infeccao aguda das vias aereas superiores' },
@@ -126,19 +126,19 @@ describe('montagem do payload clinico', () => {
     expect(p.diagnoses).toEqual([{
       codeSystem: 'CID10', code: 'J06.9',
       displaySnapshot: 'Infeccao aguda das vias aereas superiores',
-      // A versao vem do catalogo. Fixar '2025' aqui seria afirmar em prontuario
-      // uma versao de terminologia que ninguem conferiu.
+      // A versão vem do catálogo. Fixar '2025' aqui seria afirmar em prontuário
+      // uma versão de terminologia que ninguém conferiu.
       terminologyVersion: '202501', isPrincipal: true,
     }]);
     expect(p.fields.find((f) => f.fieldId === 'f-cid')?.displaySnapshot)
       .toBe('Infeccao aguda das vias aereas superiores');
   });
 
-  it('CID-11 tambem vira diagnostico, marcada como CID11', () => {
+  it('CID-11 também vira diagnóstico, marcada como CID11', () => {
     // A partir de 2027 a ficha pode ter um campo com `refSource: 'CID11'`. Sem
-    // este ramo, o codigo entraria como campo codificado e NAO viraria
-    // diagnostico: o prontuario ficaria com a hipotese escrita e a lista de
-    // diagnosticos vazia, e nenhuma tela mostraria a diferenca.
+    // este ramo, o código entraria como campo codificado e NÃO viraria
+    // diagnóstico: o prontuário ficaria com a hipótese escrita e a lista de
+    // diagnósticos vazia, e nenhuma tela mostraria a diferença.
     const secaoCid11 = {
       ...SECOES[3]!,
       campos: [{ ...SECOES[3]!.campos[0]!, refSource: 'CID11', label: 'CID-11' }],
@@ -150,15 +150,15 @@ describe('montagem do payload clinico', () => {
     });
     expect(p.diagnoses).toEqual([{
       // `clin.diagnosis` tem CHECK (code_system IN ('CID10','CID11')). Gravar
-      // com o sistema errado nao daria erro: daria um diagnostico de 2027
-      // catalogado como CID-10, impossivel de reconciliar depois.
+      // com o sistema errado não daria erro: daria um diagnóstico de 2027
+      // catalogado como CID-10, impossível de reconciliar depois.
       codeSystem: 'CID11', code: 'ZZ90',
       displaySnapshot: 'Termo sintetico de teste',
       terminologyVersion: '202701', isPrincipal: true,
     }]);
   });
 
-  it('sem campo de evolucao configurado, avisa em vez de selar vazio', () => {
+  it('sem campo de evolução configurado, avisa em vez de selar vazio', () => {
     expect(() => montarPayloadClinico({
       secoes: [SECOES[1]!], valores: {}, evolucao: 'texto',
       competenciaCid: '202501',

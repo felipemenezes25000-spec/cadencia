@@ -5,9 +5,9 @@ import { axe } from 'vitest-axe';
 import { Select } from './Select';
 
 const opcoes = [
-  { value: 'a', label: 'Opcao A' },
-  { value: 'b', label: 'Opcao B' },
-  { value: 'c', label: 'Opcao C' },
+  { value: 'a', label: 'Opção A' },
+  { value: 'b', label: 'Opção B' },
+  { value: 'c', label: 'Opção C' },
 ];
 
 const grupos = [
@@ -28,10 +28,10 @@ const grupos = [
 ];
 
 // Polyfills para jsdom: Radix Select depende de APIs de ponteiro e scroll
-// que nao existem no jsdom
+// que não existem no jsdom
 beforeAll(() => {
   if (typeof window.PointerEvent === 'undefined') {
-    // @ts-expect-error - polyfill basico para testes
+    // @ts-expect-error - polyfill básico para testes
     window.PointerEvent = class PointerEvent extends MouseEvent {
       readonly pointerId: number;
       readonly pointerType: string;
@@ -62,33 +62,33 @@ beforeAll(() => {
 
 describe('Select', () => {
   it('renderiza com placeholder', () => {
-    render(<Select opcoes={opcoes} placeholder="Escolha uma opcao" />);
-    expect(screen.getByText('Escolha uma opcao')).toBeInTheDocument();
+    render(<Select opcoes={opcoes} placeholder="Escolha uma opção" />);
+    expect(screen.getByText('Escolha uma opção')).toBeInTheDocument();
   });
 
-  it('renderiza com placeholder padrao quando nao fornecido', () => {
+  it('renderiza com placeholder padrão quando não fornecido', () => {
     render(<Select opcoes={opcoes} />);
     expect(screen.getByText('Selecione...')).toBeInTheDocument();
   });
 
-  it('renderiza rotulo quando fornecido', () => {
+  it('renderiza rótulo quando fornecido', () => {
     render(<Select rotulo="Tipo" opcoes={opcoes} />);
     expect(screen.getByText('Tipo')).toBeVisible();
   });
 
-  it('mostra opcoes ao clicar', async () => {
+  it('mostra opções ao clicar', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(<Select rotulo="Tipo" opcoes={opcoes} />);
 
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
 
-    expect(screen.getByRole('option', { name: 'Opcao A' })).toBeVisible();
-    expect(screen.getByRole('option', { name: 'Opcao B' })).toBeVisible();
-    expect(screen.getByRole('option', { name: 'Opcao C' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Opção A' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Opção B' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Opção C' })).toBeVisible();
   });
 
-  it('seleciona opcao ao clicar', async () => {
+  it('seleciona opção ao clicar', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup({ pointerEventsCheck: 0 });
 
@@ -99,29 +99,29 @@ describe('Select', () => {
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
 
-    const opcaoB = screen.getByRole('option', { name: 'Opcao B' });
+    const opcaoB = screen.getByRole('option', { name: 'Opção B' });
     await user.click(opcaoB);
 
     expect(handleChange).toHaveBeenCalledWith('b');
   });
 
-  it('mostra opcoes agrupadas', async () => {
+  it('mostra opções agrupadas', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(<Select rotulo="Itens" grupos={grupos} />);
 
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
 
-    // Rotulos dos grupos sao visiveis
+    // Rótulos dos grupos são visíveis
     expect(screen.getByText('Grupo 1')).toBeVisible();
     expect(screen.getByText('Grupo 2')).toBeVisible();
 
-    // Opcoes dos grupos
+    // Opções dos grupos
     expect(screen.getByRole('option', { name: 'Item G1A' })).toBeVisible();
     expect(screen.getByRole('option', { name: 'Item G2A' })).toBeVisible();
   });
 
-  it('desabilita opcoes marcadas como disabled', async () => {
+  it('desabilita opções marcadas como disabled', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(<Select rotulo="Itens" grupos={grupos} />);
 
@@ -134,11 +134,11 @@ describe('Select', () => {
 
   it('mostra estado de erro', () => {
     render(
-      <Select rotulo="Tipo" opcoes={opcoes} erro="Campo obrigatorio" />,
+      <Select rotulo="Tipo" opcoes={opcoes} erro="Campo obrigatório" />,
     );
 
-    // Mensagem de erro visivel
-    expect(screen.getByRole('alert')).toHaveTextContent('Campo obrigatorio');
+    // Mensagem de erro visível
+    expect(screen.getByRole('alert')).toHaveTextContent('Campo obrigatório');
 
     // Trigger tem aria-invalid
     const trigger = screen.getByRole('combobox');
@@ -166,8 +166,8 @@ describe('Select', () => {
       <Select rotulo="Tipo" opcoes={opcoes} value="b" />,
     );
 
-    // Radix mostra o label da opcao selecionada no trigger
-    expect(screen.getByRole('combobox')).toHaveTextContent('Opcao B');
+    // Radix mostra o label da opção selecionada no trigger
+    expect(screen.getByRole('combobox')).toHaveTextContent('Opção B');
   });
 
   it('desabilita trigger quando disabled=true', () => {
@@ -206,13 +206,13 @@ describe('Select', () => {
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
 
-    // Verifica que esta aberto
+    // Verifica que está aberto
     expect(screen.getByRole('listbox')).toBeVisible();
 
     // Fecha com Escape
     await user.keyboard('{Escape}');
 
-    // Listbox nao deve mais estar visivel
+    // Listbox não deve mais estar visível
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
@@ -223,21 +223,21 @@ describe('Select', () => {
     expect(container.firstElementChild).toHaveClass('mt-4');
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <Select rotulo="Tipo" opcoes={opcoes} />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade com erro', async () => {
+  it('não tem violações de acessibilidade com erro', async () => {
     const { container } = render(
       <Select rotulo="Tipo" opcoes={opcoes} erro="Erro" />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade quando desabilitado', async () => {
+  it('não tem violações de acessibilidade quando desabilitado', async () => {
     const { container } = render(
       <Select rotulo="Tipo" opcoes={opcoes} disabled />,
     );

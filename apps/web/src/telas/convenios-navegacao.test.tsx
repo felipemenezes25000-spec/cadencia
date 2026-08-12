@@ -107,9 +107,9 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
     /* Aba Cadastros ativa via Radix Tabs (tab, nao link) */
     const abaCadastros = screen.getByRole('tab', { name: /Cadastros/i });
     expect(abaCadastros).toHaveAttribute('data-state', 'active');
-    expect(screen.getByRole('heading', { level: 2, name: /Convenios/ })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 2, name: /Convênio/ })).toBeVisible();
     /* "7" aparece no grupo de contadores e como badge na aba */
-    const grupo = screen.getByRole('group', { name: /Contadores de convenios/i });
+    const grupo = screen.getByRole('group', { name: /Contadores de convênios/i });
     expect(within(grupo).getByText('7')).toBeVisible();
     expect(screen.getByTestId('conteudo-afaturar')).toBeVisible();
   });
@@ -208,7 +208,7 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
     );
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
     expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
-    const grupoContadores = screen.getByRole('group', { name: /Contadores de convenios/i });
+    const grupoContadores = screen.getByRole('group', { name: /Contadores de convênios/i });
     expect(within(grupoContadores).getByText('4')).toBeVisible();
   });
 

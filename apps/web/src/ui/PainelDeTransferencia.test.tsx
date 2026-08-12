@@ -32,24 +32,24 @@ function preencher(de = 'c1', para = 'c2', valor = '500,00', desc = 'Reforco de 
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('PainelDeTransferencia', () => {
-  it('nao deixa transferir de uma conta para ela mesma', () => {
+  it('não deixa transferir de uma conta para ela mesma', () => {
     montar();
     preencher('c1', 'c1');
-    // Origem igual a destino gera dois lancamentos que se anulam e sujam o
+    // Origem igual a destino gera dois lançamentos que se anulam e sujam o
     // extrato sem mover dinheiro nenhum.
     expect(screen.getByRole('button', { name: /transferir/i })).toBeDisabled();
     expect(screen.getByRole('alert')).toHaveTextContent(/mesma conta/i);
   });
 
-  it('exige descricao — extrato sem historico nao concilia', () => {
+  it('exige descrição — extrato sem histórico não concilia', () => {
     montar();
     preencher('c1', 'c2', '500,00', '');
-    // Daqui a tres meses, "transferencia" sem motivo obriga alguem a caçar o
+    // Daqui a três meses, "transferência" sem motivo obriga alguém a caçar o
     // extrato do banco para lembrar o que foi.
     expect(screen.getByRole('button', { name: /transferir/i })).toBeDisabled();
   });
 
-  it('valor zero nao passa', () => {
+  it('valor zero não passa', () => {
     montar();
     preencher('c1', 'c2', '0,00');
     expect(screen.getByRole('button', { name: /transferir/i })).toBeDisabled();
@@ -67,14 +67,14 @@ describe('PainelDeTransferencia', () => {
     });
   });
 
-  it('avisa que a transferencia gera DOIS lancamentos', () => {
+  it('avisa que a transferência gera DOIS lançamentos', () => {
     montar();
-    // Quem ve so o saldo mudar acha que sumiu dinheiro. A transferencia debita
+    // Quem vê só o saldo mudar acha que sumiu dinheiro. A transferência debita
     // de um lado e credita do outro, e o extrato mostra os dois.
-    expect(screen.getByText(/dois lancamentos/i)).toBeInTheDocument();
+    expect(screen.getByText(/dois lançamentos/i)).toBeInTheDocument();
   });
 
-  it('falha nao apaga o que foi preenchido', async () => {
+  it('falha não apaga o que foi preenchido', async () => {
     montar({
       aoTransferir: vi.fn(async () => { throw new Error('fora do ar'); }),
     });
@@ -82,13 +82,13 @@ describe('PainelDeTransferencia', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /transferir/i }));
     });
-    expect(screen.getByRole('alert')).toHaveTextContent(/nao foi possivel/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/não foi possível/i);
     expect(screen.getByLabelText(/valor/i)).toHaveValue('500,00');
   });
 
-  it('sem duas contas cadastradas explica em vez de mostrar formulario vazio', () => {
+  it('sem duas contas cadastradas explica em vez de mostrar formulário vazio', () => {
     montar({ contas: [CONTAS[0]!] });
-    // Formulario com um select de uma opcao so e um beco sem saida silencioso.
+    // Formulário com um select de uma opção só é um beco sem saída silencioso.
     expect(screen.getByText(/cadastre pelo menos duas contas/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /transferir/i })).not.toBeInTheDocument();
   });

@@ -4,15 +4,15 @@ import { Icone } from "./Icone";
 import { cn } from "../lib/cn";
 
 interface EstadoVazioProps {
-  /** Icone ilustrativo */
+  /** Ícone ilustrativo */
   icone: PhosphorIcon;
-  /** Titulo principal */
+  /** Título principal */
   titulo: string;
-  /** Descricao explicativa */
+  /** Descrição explicativa */
   descricao?: string;
-  /** Acao principal (botao) */
+  /** Ação principal (botão) */
   acao?: ReactNode;
-  /** Tamanho compacto (para uso dentro de secoes) */
+  /** Tamanho compacto (para uso dentro de seções) */
   compacto?: boolean;
   /** Classes adicionais */
   className?: string;

@@ -30,16 +30,16 @@ function linhaDe(rotulo: string): HTMLElement {
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('LayoutDoProntuario', () => {
-  it('mostra as secoes na ordem em que aparecem na ficha', () => {
+  it('mostra as seções na ordem em que aparecem na ficha', () => {
     montar();
     const rotulos = screen.getAllByRole('listitem').map((l) => l.textContent ?? '');
     expect(rotulos[0]).toContain('Evolucao');
     expect(rotulos[2]).toContain('Sinais vitais');
   });
 
-  it('a primeira nao sobe e a ultima nao desce', () => {
+  it('a primeira não sobe e a última não desce', () => {
     montar();
-    // Botao que nao faz nada e pior que botao ausente: quem clica acha que a
+    // Botão que não faz nada é pior que botão ausente: quem clica acha que a
     // tela travou.
     expect(within(linhaDe('Evolucao')).getByRole('button', { name: /subir/i }))
       .toBeDisabled();
@@ -54,17 +54,17 @@ describe('LayoutDoProntuario', () => {
       fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
     });
     const itens = aoSalvar.mock.calls[0]![0];
-    // Os ordinais saem RENUMERADOS de 1 a N, nao com o valor antigo: buraco de
-    // ordinal faria a proxima reordenacao ficar ambigua.
+    // Os ordinais saem RENUMERADOS de 1 a N, não com o valor antigo: buraco de
+    // ordinal faria a próxima reordenação ficar ambígua.
     expect(itens.map((x) => x.sectionId)).toEqual(['s1', 's3', 's2']);
     expect(itens.map((x) => x.ordinal)).toEqual([1, 2, 3]);
   });
 
-  it('esconder uma secao nao a remove da lista de configuracao', async () => {
+  it('esconder uma seção não a remove da lista de configuração', async () => {
     const { aoSalvar } = montar();
     fireEvent.click(within(linhaDe('Antecedentes')).getByRole('checkbox', { name: /mostrar/i }));
-    // Sumir da propria tela de configuracao deixaria a secao inalcancavel: nao
-    // haveria como traze-la de volta.
+    // Sumir da própria tela de configuração deixaria a seção inalcançável: não
+    // haveria como trazê-la de volta.
     expect(linhaDe('Antecedentes')).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
@@ -73,37 +73,37 @@ describe('LayoutDoProntuario', () => {
       .toBe(false);
   });
 
-  it('esconder TODAS e recusado', () => {
+  it('esconder TODAS é recusado', () => {
     montar();
     for (const r of ['Evolucao', 'Antecedentes', 'Sinais vitais']) {
       fireEvent.click(within(linhaDe(r)).getByRole('checkbox', { name: /mostrar/i }));
     }
-    // Ficha sem nenhuma secao e uma tela de atendimento em branco — o medico
-    // abriria a consulta e nao teria onde escrever.
+    // Ficha sem nenhuma seção é uma tela de atendimento em branco — o médico
+    // abriria a consulta e não teria onde escrever.
     expect(screen.getByRole('button', { name: /salvar/i })).toBeDisabled();
     expect(screen.getByRole('alert')).toHaveTextContent(/pelo menos uma/i);
   });
 
   it('sem mexer em nada, salvar fica desabilitado', () => {
     montar();
-    // Salvar sem mudanca gravaria um layout personalizado identico ao padrao —
-    // e a partir dai o medico deixaria de receber mudancas da clinica.
+    // Salvar sem mudança gravaria um layout personalizado idêntico ao padrão —
+    // e a partir daí o médico deixaria de receber mudanças da clínica.
     expect(screen.getByRole('button', { name: /salvar/i })).toBeDisabled();
   });
 
-  it('quem esta no padrao ve que esta no padrao', () => {
+  it('quem está no padrão vê que está no padrão', () => {
     montar();
-    expect(screen.getByText(/seguindo a ordem da clinica/i)).toBeInTheDocument();
+    expect(screen.getByText(/seguindo a ordem da clínica/i)).toBeInTheDocument();
   });
 
-  it('quem personalizou pode voltar ao padrao', async () => {
+  it('quem personalizou pode voltar ao padrão', async () => {
     const { aoSalvar } = montar({
       secoes: SECOES.map((s) => ({ ...s, personalizado: true })),
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /voltar ao padr/i }));
     });
-    // Lista vazia = apaga a personalizacao e volta a seguir a clinica.
+    // Lista vazia = apaga a personalização e volta a seguir a clínica.
     expect(aoSalvar).toHaveBeenCalledWith([]);
   });
 });

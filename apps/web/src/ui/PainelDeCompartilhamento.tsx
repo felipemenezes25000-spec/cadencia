@@ -12,7 +12,7 @@ export interface Compartilhamento {
   readonly granteeNome: string;
   readonly concedidoPor: string;
   readonly motivo: string;
-  /** Instante absoluto. O deslocamento e o da sessao do Postgres, nao o da unidade. */
+  /** Instante absoluto. O deslocamento é o da sessão do Postgres, não o da unidade. */
   readonly concedidoEm: string;
   readonly expiraEm: string | null;
   readonly quebraVidro: boolean;
@@ -21,7 +21,7 @@ export interface Compartilhamento {
 export interface NovoCompartilhamento {
   readonly granteeProfessionalId: string;
   readonly reason: string;
-  /** `null` = nao expira. Nunca `0`, que significaria "expira agora". */
+  /** `null` = não expira. Nunca `0`, que significaria "expira agora". */
   readonly diasDeValidade: number | null;
 }
 
@@ -37,7 +37,7 @@ export interface PainelDeCompartilhamentoProps {
   readonly aoFechar: () => void;
 }
 
-/** O mesmo minimo que a API exige: motivo que explica, nao que preenche. */
+/** O mesmo mínimo que a API exige: motivo que explica, não que preenche. */
 const MOTIVO_MINIMO = 5;
 
 const PRAZOS: readonly { valor: string; rotulo: string }[] = [
@@ -48,12 +48,12 @@ const PRAZOS: readonly { valor: string; rotulo: string }[] = [
 ];
 
 /**
- * A data no fuso da CLINICA para um instante absoluto.
+ * A data no fuso da CLÍNICA para um instante absoluto.
  *
- * A rota formata com `to_char(..., 'OF:00')`, que usa o fuso da SESSAO do
- * Postgres — UTC —, e nao o da unidade. Recortar os 10 primeiros caracteres
- * anunciaria 01/09 para um acesso que vence as 23:00 do dia 31 em Sao Paulo: um
- * dia a mais de permissao na tela que o banco nao concede.
+ * A rota formata com `to_char(..., 'OF:00')`, que usa o fuso da SESSÃO do
+ * Postgres — UTC —, e não o da unidade. Recortar os 10 primeiros caracteres
+ * anunciaria 01/09 para um acesso que vence às 23:00 do dia 31 em São Paulo: um
+ * dia a mais de permissão na tela que o banco não concede.
  */
 function dataNaClinica(iso: string, timezone: string): string {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -62,20 +62,20 @@ function dataNaClinica(iso: string, timezone: string): string {
 }
 
 /**
- * Compartilhar o prontuario com outro profissional.
+ * Compartilhar o prontuário com outro profissional.
  *
- * A politica RESTRICTIVE `clinical_scope` em `clin.encounter` tem tres portas:
+ * A política RESTRICTIVE `clinical_scope` em `clin.encounter` tem três portas:
  * quem atendeu, quem tem escopo amplo, e quem consta em `clin.record_share`.
- * Esta tela e a terceira porta — sem ela o colega ve 404 e nao ha como liberar.
+ * Esta tela é a terceira porta — sem ela o colega vê 404 e não há como liberar.
  *
- * O motivo e obrigatorio e nao aceita "ok" porque a pergunta que a auditoria faz
- * nao e "quem acessou", e sim "por que este medico viu este paciente".
+ * O motivo é obrigatório e não aceita "ok" porque a pergunta que a auditoria faz
+ * não é "quem acessou", e sim "por que este médico viu este paciente".
  */
 export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
   const [granteeId, setGranteeId] = useState('');
   const [motivo, setMotivo] = useState('');
-  // 30 dias por padrao: o acesso permanente continua possivel, mas passa a ser
-  // um ato deliberado em vez do que acontece quando ninguem pensa no assunto.
+  // 30 dias por padrão: o acesso permanente continua possível, mas passa a ser
+  // um ato deliberado em vez do que acontece quando ninguém pensa no assunto.
   const [prazo, setPrazo] = useState('30');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -95,7 +95,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
       setMotivo('');
       setGranteeId('');
     } catch {
-      setErro('Nao foi possivel liberar o acesso. Tente de novo.');
+      setErro('Não foi possível liberar o acesso. Tente de novo.');
     } finally {
       setSalvando(false);
     }
@@ -107,19 +107,19 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
       await p.aoRevogar(shareId);
       setConfirmando(null);
     } catch {
-      setErro('Nao foi possivel revogar o acesso.');
+      setErro('Não foi possível revogar o acesso.');
     }
   }
 
   return (
     <PainelLateral
       aberto={p.aberto}
-      titulo="Compartilhar prontuario"
+      titulo="Compartilhar prontuário"
       aoFechar={p.aoFechar}
     >
       <div className="grid gap-5">
         <p className="text-sm text-text-muted">
-          Quem voce liberar aqui passa a ver o prontuario de{' '}
+          Quem você liberar aqui passa a ver o prontuário de{' '}
           <strong className="text-text">{p.paciente}</strong>. Todo acesso fica
           registrado com o motivo.
         </p>
@@ -132,7 +132,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
               onChange={(e) => setGranteeId(e.target.value)}
               className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text"
             >
-              <option value="">Escolha quem tera acesso</option>
+              <option value="">Escolha quem terá acesso</option>
               {p.profissionais.map((x) => (
                 <option key={x.professionalId} value={x.professionalId}>{x.nome}</option>
               ))}
@@ -146,7 +146,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
               maxLength={500}
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Segunda opiniao sobre a lesao do joelho direito"
+              placeholder="Segunda opinião sobre a lesão do joelho direito"
               className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text"
             />
             <span className="text-xs text-text-muted">
@@ -186,7 +186,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
           </h3>
           {p.itens.length === 0 ? (
             <p className="text-sm text-text-muted">
-              So quem atendeu este paciente ve o prontuario dele.
+              Só quem atendeu este paciente vê o prontuário dele.
             </p>
           ) : (
             <ul className="grid gap-1.5">
@@ -196,8 +196,8 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
                   <p className="flex flex-wrap items-center gap-x-2 font-medium text-text">
                     {c.granteeNome}
                     {c.quebraVidro && (
-                      // Acesso de urgencia sem consentimento previo e o primeiro
-                      // caso que a auditoria abre. Nao pode parecer rotina.
+                      // Acesso de urgência sem consentimento prévio é o primeiro
+                      // caso que a auditoria abre. Não pode parecer rotina.
                       <span className="inline-flex items-center gap-1 rounded-full bg-warn/10 px-2 py-0.5 text-xs font-semibold text-warn">
                         <Warning size={12} weight="fill" aria-hidden="true" />
                         Quebra de vidro
@@ -209,11 +209,11 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
                     Liberado por {c.concedidoPor === '' ? 'sistema' : c.concedidoPor}
                     {' em '}{dataNaClinica(c.concedidoEm, p.timezone)}
                     {' · '}
-                    {/* Campo em branco leria-se como "sem informacao"; e o
-                        oposto — este acesso nao expira sozinho. */}
+                    {/* Campo em branco leria-se como "sem informação"; é o
+                        oposto — este acesso não expira sozinho. */}
                     {c.expiraEm === null
                       ? 'sem prazo'
-                      : `ate ${dataNaClinica(c.expiraEm, p.timezone)}`}
+                      : `até ${dataNaClinica(c.expiraEm, p.timezone)}`}
                   </p>
 
                   {confirmando === c.shareId ? (

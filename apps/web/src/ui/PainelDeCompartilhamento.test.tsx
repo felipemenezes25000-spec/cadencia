@@ -11,9 +11,9 @@ const COM_PRAZO: Compartilhamento = {
   concedidoPor: 'Dra. Helena Prado',
   motivo: 'Segunda opiniao sobre a lesao do joelho direito',
   // Como a API responde de verdade: instante em UTC. `to_char(..., 'OF:00')` usa
-  // o fuso da SESSAO do Postgres, nao o da unidade.
+  // o fuso da SESSÃO do Postgres, não o da unidade.
   concedidoEm: '2026-08-01T12:00:00+00:00',
-  // 02:00Z de 01/09 e 23:00 do dia 31/08 em Sao Paulo. Recortar os 10 primeiros
+  // 02:00Z de 01/09 é 23:00 do dia 31/08 em São Paulo. Recortar os 10 primeiros
   // caracteres mostraria um acesso vencendo um dia DEPOIS do que vence.
   expiraEm: '2026-09-01T02:00:00+00:00',
   quebraVidro: false,
@@ -55,31 +55,31 @@ function escolherColega(): void {
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('PainelDeCompartilhamento', () => {
-  it('motivo generico nao libera o acesso', () => {
+  it('motivo genérico não libera o acesso', () => {
     montar();
     escolherColega();
     fireEvent.change(screen.getByLabelText(/motivo/i), { target: { value: 'ok' } });
-    // A pergunta que a auditoria faz nao e "quem acessou", e "POR QUE este medico
-    // viu este paciente". "ok" cumpre a coluna e nao responde nada.
+    // A pergunta que a auditoria faz não é "quem acessou", e "POR QUE este médico
+    // viu este paciente". "ok" cumpre a coluna e não responde nada.
     expect(screen.getByRole('button', { name: /liberar acesso/i })).toBeDisabled();
   });
 
-  it('sem escolher o colega nao libera', () => {
+  it('sem escolher o colega não libera', () => {
     montar();
     fireEvent.change(screen.getByLabelText(/motivo/i),
       { target: { value: 'Segunda opiniao ortopedica' } });
     expect(screen.getByRole('button', { name: /liberar acesso/i })).toBeDisabled();
   });
 
-  it('o padrao e ter prazo — acesso permanente e escolha explicita', () => {
+  it('o padrão é ter prazo — acesso permanente é escolha explícita', () => {
     montar();
-    // Compartilhamento sem prazo e um buraco permanente na politica. Deixar o
-    // padrao em 30 dias faz o caso perigoso exigir um ato deliberado.
+    // Compartilhamento sem prazo é um buraco permanente na política. Deixar o
+    // padrão em 30 dias faz o caso perigoso exigir um ato deliberado.
     const prazo = screen.getByLabelText(/prazo/i) as HTMLSelectElement;
     expect(prazo.value).toBe('30');
   });
 
-  it('entrega motivo e prazo em dias — quem vira instante e a pagina', async () => {
+  it('entrega motivo e prazo em dias — quem vira instante é a página', async () => {
     const { aoCompartilhar } = montar();
     escolherColega();
     fireEvent.change(screen.getByLabelText(/motivo/i),
@@ -94,7 +94,7 @@ describe('PainelDeCompartilhamento', () => {
     });
   });
 
-  it('sem prazo vira null, nao zero', async () => {
+  it('sem prazo vira null, não zero', async () => {
     const { aoCompartilhar } = montar();
     escolherColega();
     fireEvent.change(screen.getByLabelText(/motivo/i),
@@ -103,8 +103,8 @@ describe('PainelDeCompartilhamento', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /liberar acesso/i }));
     });
-    // `0` dias seria "expira agora"; `null` e "nao expira". Confundir os dois
-    // troca acesso permanente por acesso morto — ou o contrario.
+    // `0` dias seria "expira agora"; `null` é "não expira". Confundir os dois
+    // troca acesso permanente por acesso morto — ou o contrário.
     expect(aoCompartilhar).toHaveBeenCalledWith(expect.objectContaining({
       diasDeValidade: null,
     }));
@@ -115,20 +115,20 @@ describe('PainelDeCompartilhamento', () => {
     const item = screen.getByRole('listitem');
     expect(item).toHaveTextContent(/dr\. caio vasques/i);
     expect(item).toHaveTextContent(/segunda opiniao sobre a lesao/i);
-    // O acesso vence as 23:00 do dia 31 no fuso da clinica. Anunciar 01/09
-    // daria ao colega um dia de acesso que ele nao tem — e a auditoria veria
+    // O acesso vence às 23:00 do dia 31 no fuso da clínica. Anunciar 01/09
+    // daria ao colega um dia de acesso que ele não tem — e a auditoria veria
     // a tela contradizendo a policy.
     expect(item).toHaveTextContent('31/08/2026');
     expect(item).not.toHaveTextContent('01/09/2026');
   });
 
-  it('quebra de vidro fica visivel e o acesso sem prazo nao passa por vazio', () => {
+  it('quebra de vidro fica visível e o acesso sem prazo não passa por vazio', () => {
     montar({ itens: [VIDRO] });
     const item = screen.getByRole('listitem');
-    // Acesso de urgencia sem consentimento previo e o caso que a auditoria abre
-    // primeiro. Nao pode parecer um compartilhamento comum na lista.
+    // Acesso de urgência sem consentimento prévio é o caso que a auditoria abre
+    // primeiro. Não pode parecer um compartilhamento comum na lista.
     expect(item).toHaveTextContent(/quebra de vidro/i);
-    // Campo em branco leria-se como "sem informacao"; e o oposto — nao expira.
+    // Campo em branco leria-se como "sem informação"; é o oposto — não expira.
     expect(item).toHaveTextContent(/sem prazo/i);
   });
 

@@ -6,7 +6,7 @@ import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { cn } from '../lib/cn';
 import { Tooltip } from './Tooltip';
 
-/* ── Interface generica (nova) ──────────────────────────────────────── */
+/* ── Interface genérica (nova) ──────────────────────────────────────── */
 
 export interface Contador {
   readonly id: string;
@@ -34,7 +34,7 @@ interface FaixaNovaProps {
   readonly contadores: Contador[];
   /** ID do contador ativo (filtro selecionado) */
   readonly ativo?: string;
-  /** Callback quando um contador e clicado */
+  /** Callback quando um contador é clicado */
   readonly onClicar?: (id: string) => void;
   /** Classes adicionais */
   readonly className?: string;

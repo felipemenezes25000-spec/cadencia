@@ -6,7 +6,7 @@ import { Plus, ArrowRight } from '@phosphor-icons/react';
 import { Botao } from './Botao';
 
 describe('Botao', () => {
-  it('renderiza com variante primario por padrao', () => {
+  it('renderiza com variante primario por padrão', () => {
     render(<Botao>Salvar</Botao>);
     const botao = screen.getByRole('button', { name: 'Salvar' });
     expect(botao).toBeInTheDocument();
@@ -58,27 +58,27 @@ describe('Botao', () => {
     expect(screen.getByRole('button').className).toMatch(/h-10/);
   });
 
-  it('renderiza icone a esquerda', () => {
+  it('renderiza ícone à esquerda', () => {
     render(<Botao iconeEsquerda={Plus}>Adicionar</Botao>);
     expect(screen.getByTestId('icone-esquerda')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
   });
 
-  it('renderiza icone a direita', () => {
-    render(<Botao iconeDireita={ArrowRight}>Proximo</Botao>);
+  it('renderiza ícone à direita', () => {
+    render(<Botao iconeDireita={ArrowRight}>Próximo</Botao>);
     expect(screen.getByTestId('icone-direita')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Proximo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Próximo' })).toBeInTheDocument();
   });
 
   it('mostra spinner quando carregando', () => {
     render(<Botao carregando>Salvar</Botao>);
     expect(screen.getByTestId('spinner-carregando')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Carregando');
-    // Texto do botao continua visivel
+    // Texto do botão continua visível
     expect(screen.getByRole('button', { name: /Salvar/ })).toBeInTheDocument();
   });
 
-  it('substitui icone esquerdo por spinner quando carregando', () => {
+  it('substitui ícone esquerdo por spinner quando carregando', () => {
     render(<Botao carregando iconeEsquerda={Plus}>Salvar</Botao>);
     expect(screen.getByTestId('spinner-carregando')).toBeInTheDocument();
     expect(screen.queryByTestId('icone-esquerda')).not.toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('Botao', () => {
     expect(aoClicar).toHaveBeenCalledOnce();
   });
 
-  it('nao chama onClick quando desabilitado', async () => {
+  it('não chama onClick quando desabilitado', async () => {
     const aoClicar = vi.fn();
     render(<Botao disabled onClick={aoClicar}>Confirmar</Botao>);
     await userEvent.click(screen.getByRole('button'));
@@ -112,12 +112,12 @@ describe('Botao', () => {
     expect(screen.getByRole('button').className).toMatch(/mt-4/);
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(<Botao>Salvar</Botao>);
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade na variante perigo', async () => {
+  it('não tem violações de acessibilidade na variante perigo', async () => {
     const { container } = render(<Botao variante="perigo">Excluir</Botao>);
     expect(await axe(container)).toHaveNoViolations();
   });

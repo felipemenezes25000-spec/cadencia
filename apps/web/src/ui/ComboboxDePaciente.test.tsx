@@ -61,7 +61,7 @@ describe('ComboboxDePaciente', () => {
     expect(input).toHaveAttribute('placeholder', 'Buscar paciente...');
   });
 
-  it('tem os papeis ARIA de combobox com listbox', () => {
+  it('tem os papéis ARIA de combobox com listbox', () => {
     montar();
     const input = screen.getByRole('combobox', { name: 'Buscar paciente' });
     expect(input).toHaveAttribute('aria-expanded', 'false');
@@ -72,7 +72,7 @@ describe('ComboboxDePaciente', () => {
     const { buscar } = montar();
     const input = screen.getByRole('combobox');
 
-    // 1 caractere: nao abre
+    // 1 caractere: não abre
     fireEvent.change(input, { target: { value: 'm' } });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(300);
@@ -87,7 +87,7 @@ describe('ComboboxDePaciente', () => {
     expect(buscar).toHaveBeenCalledWith('ma');
   });
 
-  it('debounce de 300 ms: nao chama a busca a cada tecla', async () => {
+  it('debounce de 300 ms: não chama a busca a cada tecla', async () => {
     const { buscar } = montar();
     const input = screen.getByRole('combobox');
     fireEvent.change(input, { target: { value: 'mar' } });
@@ -111,7 +111,7 @@ describe('ComboboxDePaciente', () => {
       fireEvent.change(input, { target: { value: 'maria' } });
     });
 
-    // Spinner visivel enquanto debounce espera
+    // Spinner visível enquanto debounce espera
     expect(screen.getByRole('img', { name: 'Carregando' })).toBeInTheDocument();
   });
 
@@ -131,10 +131,10 @@ describe('ComboboxDePaciente', () => {
     expect(screen.getByText('JP')).toBeVisible(); // Joana Prado -> JP
   });
 
-  it('o nome SOCIAL fica em destaque e o civil aparece como secundario', async () => {
+  it('o nome SOCIAL fica em destaque e o civil aparece como secundário', async () => {
     montar();
     await digitar('joa');
-    // O HighlightMatch divide o nome em fragmentos, entao buscamos o textContent completo
+    // O HighlightMatch divide o nome em fragmentos, então buscamos o textContent completo
     const nomeEl = screen.getByText((_content, el) =>
       el?.tagName === 'P' && el?.textContent === 'Joana Prado',
     );
@@ -142,7 +142,7 @@ describe('ComboboxDePaciente', () => {
     expect(screen.getByText(/Joao Prado/)).toBeVisible();
   });
 
-  it('"Novo paciente" e SEMPRE a ultima linha, inclusive com resultados', async () => {
+  it('"Novo paciente" é SEMPRE a última linha, inclusive com resultados', async () => {
     montar();
     await digitar('maria');
     const opcoes = screen.getAllByRole('option');
@@ -191,7 +191,7 @@ describe('ComboboxDePaciente', () => {
     expect(aoEscolher).toHaveBeenCalledWith(HITS[0]);
   });
 
-  it('Enter na ultima linha cria o paciente com o termo digitado', async () => {
+  it('Enter na última linha cria o paciente com o termo digitado', async () => {
     const { aoCriar } = montar();
     const input = screen.getByRole('combobox');
     await digitar('maria sou');
@@ -215,19 +215,19 @@ describe('ComboboxDePaciente', () => {
     expect(screen.getByText('cadastro preliminar')).toBeVisible();
   });
 
-  it('mostra mensagem de erro quando prop erro esta presente', () => {
+  it('mostra mensagem de erro quando prop erro está presente', () => {
     render(
       <ComboboxDePaciente
         buscar={vi.fn(async () => [])}
         aoEscolher={vi.fn()}
         aoCriar={vi.fn()}
-        erro="Campo obrigatorio"
+        erro="Campo obrigatório"
       />,
     );
-    expect(screen.getByText('Campo obrigatorio')).toBeVisible();
+    expect(screen.getByText('Campo obrigatório')).toBeVisible();
   });
 
-  it('nao tem violacao de acessibilidade com a lista aberta', async () => {
+  it('não tem violação de acessibilidade com a lista aberta', async () => {
     const { container } = render(
       <ComboboxDePaciente
         buscar={async () => HITS}

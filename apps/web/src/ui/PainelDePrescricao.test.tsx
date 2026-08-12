@@ -41,9 +41,9 @@ function montar(over: Record<string, unknown> = {}) {
 }
 
 /**
- * Sinaliza que a Memed esta pronta.
+ * Sinaliza que a Memed está pronta.
  *
- * O `load` do script NAO basta: `integration.js` carrega e so DEPOIS define o
+ * O `load` do script NÃO basta: `integration.js` carrega e só DEPOIS define o
  * MdHub, avisando pelo evento `MdSinapsePrescricao` no document. Quem age no
  * onload encontra MdHub indefinido e desiste.
  */
@@ -54,7 +54,7 @@ function memedPronta() {
   return s;
 }
 
-/** So o load do script, sem o evento de prontidao da Memed. */
+/** Só o load do script, sem o evento de prontidão da Memed. */
 function apenasScriptCarregou() {
   const s = document.querySelector<HTMLScriptElement>('script[data-token]');
   if (s !== null) act(() => { s.dispatchEvent(new Event('load')); });
@@ -73,15 +73,15 @@ describe('PainelDePrescricao', () => {
     const s = document.querySelector<HTMLScriptElement>('script[data-token]');
     expect(s?.src).toBe(SESSAO.scriptUrl);
     // O token vai em `data-token` e nunca na URL: query string entra em log de
-    // servidor, em referer e no historico do navegador.
+    // servidor, em referer e no histórico do navegador.
     expect(s?.dataset['token']).toBe('tok-abc');
     expect(s?.src).not.toContain('tok-abc');
   });
 
-  it('nao injeta o script duas vezes ao trocar de atendimento', () => {
+  it('não injeta o script duas vezes ao trocar de atendimento', () => {
     instalarMdHub();
-    // Desmontar e montar DE NOVO e o caso real: o medico fecha um atendimento e
-    // abre o do proximo paciente. Rerender nao exercita nada — o efeito nem
+    // Desmontar e montar DE NOVO é o caso real: o médico fecha um atendimento e
+    // abre o do próximo paciente. Rerender não exercita nada — o efeito nem
     // reexecuta — e o teste passaria mesmo sem a guarda.
     const primeiro = render(
       <PainelDePrescricao aberto sessao={SESSAO}
@@ -90,11 +90,11 @@ describe('PainelDePrescricao', () => {
     render(
       <PainelDePrescricao aberto sessao={{ ...SESSAO, token: 'tok-outro' }}
         aoConfirmar={vi.fn(async () => ({ prescriptionId: 'x' }))} aoFechar={vi.fn()} />);
-    // Dois scripts = dois MdHub concorrentes disputando a mesma pagina.
+    // Dois scripts = dois MdHub concorrentes disputando a mesma página.
     expect(document.querySelectorAll('script[data-token]')).toHaveLength(1);
   });
 
-  it('identifica o paciente e exige assinatura antes de abrir o modulo', async () => {
+  it('identifica o paciente e exige assinatura antes de abrir o módulo', async () => {
     const { comandos, hub } = instalarMdHub();
     montar();
     memedPronta();
@@ -104,21 +104,21 @@ describe('PainelDePrescricao', () => {
     const setPaciente = comandos.find((c) => c.comando === 'setPaciente');
     expect(setPaciente?.args).toEqual(SESSAO.patientPayload);
 
-    // forceSign LIGADO: receita sem assinatura ICP-Brasil nao tem validade legal
-    // para o paciente comprar em farmacia — e o medico so descobre quando o
-    // paciente volta dizendo que a farmacia recusou.
+    // forceSign LIGADO: receita sem assinatura ICP-Brasil não tem validade legal
+    // para o paciente comprar em farmácia — e o médico só descobre quando o
+    // paciente volta dizendo que a farmácia recusou.
     const toggle = comandos.find((c) => c.comando === 'setFeatureToggle');
     expect(toggle?.args).toMatchObject({ forceSign: true });
 
-    // A ordem importa: o modulo so pode aparecer depois de saber quem e o
-    // paciente, senao o medico ve a tela em branco e digita o nome de novo.
+    // A ordem importa: o módulo só pode aparecer depois de saber quem é o
+    // paciente, senão o médico vê a tela em branco e digita o nome de novo.
     const iPaciente = comandos.findIndex((c) => c.comando === 'setPaciente');
     const iToggle = comandos.findIndex((c) => c.comando === 'setFeatureToggle');
     expect(iPaciente).toBeGreaterThanOrEqual(0);
     expect(iToggle).toBeGreaterThanOrEqual(0);
   });
 
-  it('confirma no nosso backend quando a receita e impressa', async () => {
+  it('confirma no nosso backend quando a receita é impressa', async () => {
     const { ouvintes } = instalarMdHub();
     const { aoConfirmar } = montar();
     memedPronta();
@@ -132,9 +132,9 @@ describe('PainelDePrescricao', () => {
       });
     });
 
-    // O id vem da Memed como numero; nosso backend guarda texto. Mandar numero
-    // faria o schema recusar com 400 no momento em que a receita ja existe do
-    // lado deles — e a receita ficaria orfa no nosso prontuario.
+    // O id vem da Memed como número; nosso backend guarda texto. Mandar número
+    // faria o schema recusar com 400 no momento em que a receita já existe do
+    // lado deles — e a receita ficaria órfã no nosso prontuário.
     expect(aoConfirmar).toHaveBeenCalledWith({ providerPrescriptionId: '998877' });
   });
 
@@ -148,19 +148,19 @@ describe('PainelDePrescricao', () => {
       ouvintes.get('prescricaoImpressa')!({ prescricao: { id: 1 }, signed: false });
     });
 
-    // Silenciar isso e deixar o paciente sair com um papel que a farmacia
-    // recusa. O aviso e na tela, com o medico ainda na sala.
+    // Silenciar isso é deixar o paciente sair com um papel que a farmácia
+    // recusa. O aviso é na tela, com o médico ainda na sala.
     expect(await screen.findByText(/sem assinatura/i)).toBeInTheDocument();
   });
 
-  it('espera o MdSinapsePrescricao — load do script nao e prontidao', async () => {
-    // MdHub ausente de proposito: e o estado real logo apos o load do script.
+  it('espera o MdSinapsePrescricao — load do script não é prontidão', async () => {
+    // MdHub ausente de propósito: é o estado real logo após o load do script.
     const { hub } = instalarMdHub();
     delete (globalThis as unknown as { MdHub?: unknown }).MdHub;
     montar();
     apenasScriptCarregou();
 
-    // Nada de erro e nada de comando: o painel esta esperando, nao desistindo.
+    // Nada de erro e nada de comando: o painel está esperando, não desistindo.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(hub.command.send).not.toHaveBeenCalled();
 
@@ -169,11 +169,11 @@ describe('PainelDePrescricao', () => {
     await waitFor(() => expect(hub.command.send).toHaveBeenCalled());
   });
 
-  it('percebe o MdHub mesmo se o evento de prontidao passar antes', async () => {
+  it('percebe o MdHub mesmo se o evento de prontidão passar antes', async () => {
     // Caso REAL contra a Memed: o evento `MdSinapsePrescricao` dispara na janela
     // entre o efeito montar e o listener existir, e o painel ficava eternamente
-    // em "Abrindo a prescricao" com MdHub.initialized === true na pagina.
-    // Depender de um evento unico de terceiro que nao controlamos e apostar numa
+    // em "Abrindo a prescrição" com MdHub.initialized === true na página.
+    // Depender de um evento único de terceiro que não controlamos é apostar numa
     // corrida; a sondagem curta remove a aposta.
     const { hub } = instalarMdHub();
     delete (globalThis as unknown as { MdHub?: unknown }).MdHub;
@@ -185,9 +185,9 @@ describe('PainelDePrescricao', () => {
     await waitFor(() => expect(hub.command.send).toHaveBeenCalled(), { timeout: 3000 });
   });
 
-  it('sem sessao do prescritor, diz que a prescricao esta indisponivel', () => {
+  it('sem sessão do prescritor, diz que a prescrição está indisponível', () => {
     montar({ sessao: null });
-    expect(screen.getByText(/indisponivel/i)).toBeInTheDocument();
+    expect(screen.getByText(/indisponível/i)).toBeInTheDocument();
     expect(document.querySelector('script[data-token]')).toBeNull();
   });
 });

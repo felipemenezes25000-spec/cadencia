@@ -10,7 +10,7 @@ export interface Bloqueio {
   readonly blockId: string;
   readonly kind: string;
   readonly motivo: string;
-  /** Instante absoluto. O deslocamento e o da sessao do Postgres, nao o da unidade. */
+  /** Instante absoluto. O deslocamento é o da sessão do Postgres, não o da unidade. */
   readonly startsAt: string;
   readonly endsAt: string;
   readonly professionalId: string | null;
@@ -18,7 +18,7 @@ export interface Bloqueio {
 }
 
 export interface NovoBloqueio {
-  /** 'AAAA-MM-DDTHH:MM' sem fuso. Quem converte e a pagina. */
+  /** 'AAAA-MM-DDTHH:MM' sem fuso. Quem converte é a página. */
   readonly inicioParede: string;
   readonly fimParede: string;
   readonly kind: string;
@@ -30,7 +30,7 @@ export interface PainelDeBloqueiosProps {
   readonly aberto: boolean;
   /** Dia exibido, 'AAAA-MM-DD'. */
   readonly dia: string;
-  /** Fuso da unidade (`vinculoAtivo.timezone`). Define o relogio exibido. */
+  /** Fuso da unidade (`vinculoAtivo.timezone`). Define o relógio exibido. */
   readonly timezone: string;
   readonly bloqueios: readonly Bloqueio[];
   readonly profissionais: readonly { professionalId: string; nome: string }[];
@@ -40,26 +40,26 @@ export interface PainelDeBloqueiosProps {
 }
 
 const TIPOS: readonly { id: string; rotulo: string }[] = [
-  { id: 'almoco', rotulo: 'Almoco' },
-  { id: 'ausencia', rotulo: 'Ausencia' },
+  { id: 'almoco', rotulo: 'Almoço' },
+  { id: 'ausencia', rotulo: 'Ausência' },
   { id: 'feriado', rotulo: 'Feriado' },
-  { id: 'manutencao', rotulo: 'Manutencao' },
+  { id: 'manutencao', rotulo: 'Manutenção' },
   { id: 'bloqueio', rotulo: 'Outro bloqueio' },
 ];
 
 const ROTULO_KIND = Object.fromEntries(TIPOS.map((t) => [t.id, t.rotulo]));
 
 /**
- * O relogio da CLINICA para um instante absoluto.
+ * O relógio da CLÍNICA para um instante absoluto.
  *
- * `to_char(..., 'OF:00')` na rota formata no fuso da SESSAO do Postgres — que e
- * UTC —, e nao no da unidade: o fuso da clinica so entra no `WHERE`, para
- * filtrar o intervalo. Entao o ISO que chega diz 15:00+00 para o almoco das
- * 12:00 em Sao Paulo. Ler os caracteres 11..16 mostraria o relogio de Greenwich
- * para quem esta na clinica, e a recepcao marcaria consulta em cima do almoco.
+ * `to_char(..., 'OF:00')` na rota formata no fuso da SESSÃO do Postgres — que é
+ * UTC —, e não no da unidade: o fuso da clínica só entra no `WHERE`, para
+ * filtrar o intervalo. Então o ISO que chega diz 15:00+00 para o almoço das
+ * 12:00 em São Paulo. Ler os caracteres 11..16 mostraria o relógio de Greenwich
+ * para quem está na clínica, e a recepção marcaria consulta em cima do almoço.
  *
- * Recortar tambem nao serviria para o fuso do navegador: quem olha pode estar em
- * casa, em outro estado. O unico relogio certo aqui e o da unidade.
+ * Recortar também não serviria para o fuso do navegador: quem olha pode estar em
+ * casa, em outro estado. O único relógio certo aqui é o da unidade.
  */
 function horaNaClinica(iso: string, timezone: string): string {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -68,17 +68,17 @@ function horaNaClinica(iso: string, timezone: string): string {
 }
 
 /**
- * Bloqueios da agenda: almoco, ausencia, feriado, manutencao de sala.
+ * Bloqueios da agenda: almoço, ausência, feriado, manutenção de sala.
  *
- * O painel NAO calcula instante nenhum: entrega hora de parede e deixa a pagina,
+ * O painel NÃO calcula instante nenhum: entrega hora de parede e deixa a página,
  * que sabe o fuso da unidade, converter. A recepcionista pode estar em casa, em
- * outro estado, bloqueando o almoco de uma clinica em Manaus — usar o fuso do
- * navegador poria o bloqueio na hora errada e ninguem perceberia ate a consulta
+ * outro estado, bloqueando o almoço de uma clínica em Manaus — usar o fuso do
+ * navegador poria o bloqueio na hora errada e ninguém perceberia até a consulta
  * cair em cima.
  */
 export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
-  // Um profissional so na unidade nao e palpite: e o unico possivel. Com dois ou
-  // mais, o padrao e a unidade inteira — escolher um por conta seria adivinhar.
+  // Um profissional só na unidade não é palpite: é o único possível. Com dois ou
+  // mais, o padrão é a unidade inteira — escolher um por conta seria adivinhar.
   const unico = p.profissionais.length === 1 ? p.profissionais[0]!.professionalId : '';
 
   const [kind, setKind] = useState(TIPOS[0]!.id);
@@ -94,10 +94,10 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
 
   async function criar(): Promise<void> {
     setErro(null);
-    // Comparacao de texto resolve: 'HH:MM' com zero a esquerda ordena igual ao
-    // relogio, e nao envolve fuso nenhum.
+    // Comparação de texto resolve: 'HH:MM' com zero à esquerda ordena igual ao
+    // relógio, e não envolve fuso nenhum.
     if (fim <= inicio) {
-      setErro('O bloqueio termina antes de comecar. Confira os horarios.');
+      setErro('O bloqueio termina antes de começar. Confira os horários.');
       return;
     }
     setSalvando(true);
@@ -113,12 +113,12 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
       setInicio('');
       setFim('');
     } catch (e) {
-      // 409 vem da constraint de exclusao no banco. "bloqueio_sobreposto" e a
-      // verdade tecnica; a recepcao precisa da frase que diz o que fazer.
+      // 409 vem da constraint de exclusão no banco. "bloqueio_sobreposto" é a
+      // verdade técnica; a recepção precisa da frase que diz o que fazer.
       const codigo = (e as { codigo?: string }).codigo;
       setErro(codigo === 'bloqueio_sobreposto'
-        ? 'Ja existe um bloqueio nesse horario. Ajuste o intervalo ou remova o outro.'
-        : 'Nao foi possivel bloquear. Tente de novo.');
+        ? 'Já existe um bloqueio nesse horário. Ajuste o intervalo ou remova o outro.'
+        : 'Não foi possível bloquear. Tente de novo.');
     } finally {
       setSalvando(false);
     }
@@ -130,7 +130,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
       await p.aoRemover(blockId);
       setConfirmando(null);
     } catch {
-      setErro('Nao foi possivel remover o bloqueio.');
+      setErro('Não foi possível remover o bloqueio.');
     }
   }
 
@@ -174,7 +174,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
               />
             </label>
             <label className="grid gap-1.5 text-sm">
-              <span className="font-medium text-text">Ate</span>
+              <span className="font-medium text-text">Até</span>
               <input
                 type="time"
                 value={fim}
@@ -191,12 +191,12 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
               maxLength={200}
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Almoco, congresso, manutencao do ar…"
+              placeholder="Almoço, congresso, manutenção do ar…"
               className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text"
             />
             <span className="text-xs text-text-muted">
-              Obrigatorio. Sem motivo o bloqueio vira um buraco que ninguem sabe
-              explicar — e alguem acaba removendo por engano.
+              Obrigatório. Sem motivo o bloqueio vira um buraco que ninguém sabe
+              explicar — e alguém acaba removendo por engano.
             </span>
           </label>
 
@@ -218,7 +218,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
           </h3>
           {p.bloqueios.length === 0 ? (
             <p className="text-sm text-text-muted">
-              Nenhum bloqueio neste dia. A agenda esta livre no horario de
+              Nenhum bloqueio neste dia. A agenda está livre no horário de
               funcionamento.
             </p>
           ) : (
@@ -236,8 +236,8 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
                     </span>
                   </p>
                   <p className="text-text">{b.motivo}</p>
-                  {/* Sem o dono, "12:00–13:00 bloqueado" nao diz a recepcao se
-                      ela ainda pode marcar com o OUTRO medico nesse horario. */}
+                  {/* Sem o dono, "12:00–13:00 bloqueado" não diz à recepção se
+                      ela ainda pode marcar com o OUTRO médico nesse horário. */}
                   <p className="text-xs text-text-muted">
                     {b.professionalNome ?? 'Toda a unidade'}
                   </p>
@@ -249,7 +249,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
                         tamanho="sm"
                         onClick={() => { void remover(b.blockId); }}
                       >
-                        Confirmar remocao
+                        Confirmar remoção
                       </Botao>
                       <Botao
                         variante="fantasma"

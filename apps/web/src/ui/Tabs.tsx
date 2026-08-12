@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import * as RadixTabs from "@radix-ui/react-tabs";
 import { cn } from "../lib/cn";
 
-/* ── Re-export Root (nao precisa de estilizacao) ────────────────────── */
+/* ── Re-export Root (não precisa de estilização) ────────────────────── */
 export const Tabs = RadixTabs.Root;
 
 /* ── TabsList ───────────────────────────────────────────────────────── */
@@ -30,7 +30,7 @@ export function TabsList({ children, className }: TabsListProps) {
 export interface TabsTriggerProps {
   readonly children: ReactNode;
   readonly value: string;
-  /** Contador de notificacao exibido como badge vermelho */
+  /** Contador de notificação exibido como badge vermelho */
   readonly badge?: number | undefined;
   readonly className?: string;
 }

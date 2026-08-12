@@ -16,7 +16,7 @@ describe('nav', () => {
     }
   });
 
-  it('atalhos sao unicos e sequenciais a partir de 1', () => {
+  it('atalhos são únicos e sequenciais a partir de 1', () => {
     const atalhos = ITENS_NAV
       .filter((i): i is ItemNav & { atalho: string } => i.atalho !== undefined)
       .map((i) => i.atalho);
@@ -28,7 +28,7 @@ describe('nav', () => {
     expect(hrefs.length).toBe(new Set(hrefs).size);
   });
 
-  it('CONFIG_NAV tem filhos e nao tem atalho numerico', () => {
+  it('CONFIG_NAV tem filhos e não tem atalho numérico', () => {
     expect(CONFIG_NAV.filhos.length).toBeGreaterThan(0);
     expect(CONFIG_NAV).not.toHaveProperty('atalho');
   });
@@ -45,7 +45,7 @@ describe('nav', () => {
     }
   });
 
-  it('nenhum id duplicado no indice', () => {
+  it('nenhum id duplicado no índice', () => {
     const indice = indiceDeNavegacao();
     const ids = indice.map((i) => i.id);
     expect(ids.length).toBe(new Set(ids).size);

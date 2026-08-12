@@ -2,8 +2,8 @@
 //
 // Tipos da guia SP/SADT, fora do componente.
 //
-// `emissao-sadt.ts` precisa deles e e um modulo `.ts` puro; importar de um
-// `.tsx` faz o tsconfig da raiz exigir `--jsx` para compilar logica que nao tem
+// `emissao-sadt.ts` precisa deles e é um módulo `.ts` puro; importar de um
+// `.tsx` faz o tsconfig da raiz exigir `--jsx` para compilar lógica que não tem
 // JSX nenhum. Mesmo arranjo de `ficha-tipos.ts`.
 
 export interface ItemDaGuia {

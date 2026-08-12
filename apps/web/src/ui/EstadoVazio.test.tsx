@@ -5,18 +5,18 @@ import { Users, FileText } from "@phosphor-icons/react";
 import { EstadoVazio } from "./EstadoVazio";
 
 describe("EstadoVazio", () => {
-  it("renderiza icone e titulo", () => {
+  it("renderiza ícone e título", () => {
     const { container } = render(
       <EstadoVazio icone={Users} titulo="Nenhum paciente encontrado" />,
     );
     expect(
       screen.getByText("Nenhum paciente encontrado"),
     ).toBeInTheDocument();
-    // Icone renderiza como SVG decorativo
+    // Ícone renderiza como SVG decorativo
     expect(container.querySelector("svg")).toBeTruthy();
   });
 
-  it("renderiza descricao quando fornecida", () => {
+  it("renderiza descrição quando fornecida", () => {
     render(
       <EstadoVazio
         icone={Users}
@@ -29,7 +29,7 @@ describe("EstadoVazio", () => {
     ).toBeInTheDocument();
   });
 
-  it("renderiza acao quando fornecida", () => {
+  it("renderiza ação quando fornecida", () => {
     render(
       <EstadoVazio
         icone={Users}
@@ -42,7 +42,7 @@ describe("EstadoVazio", () => {
     ).toBeInTheDocument();
   });
 
-  it("renderiza versao compacta com classes menores", () => {
+  it("renderiza versão compacta com classes menores", () => {
     const { container } = render(
       <EstadoVazio
         icone={FileText}
@@ -56,21 +56,21 @@ describe("EstadoVazio", () => {
     expect(wrapper.classList.contains("py-16")).toBe(false);
   });
 
-  it("nao renderiza descricao quando omitida", () => {
+  it("não renderiza descrição quando omitida", () => {
     const { container } = render(
       <EstadoVazio icone={Users} titulo="Nenhum paciente" />,
     );
-    // Deve haver apenas o titulo (p com font-medium) e nao um segundo p
+    // Deve haver apenas o título (p com font-medium) e não um segundo p
     const paragraphs = container.querySelectorAll("p");
     expect(paragraphs).toHaveLength(1);
     expect(paragraphs[0]!.textContent).toBe("Nenhum paciente");
   });
 
-  it("nao renderiza acao quando omitida", () => {
+  it("não renderiza ação quando omitida", () => {
     const { container } = render(
       <EstadoVazio icone={Users} titulo="Nenhum paciente" />,
     );
-    // Nao deve haver div.mt-4 (wrapper da acao)
+    // Não deve haver div.mt-4 (wrapper da ação)
     expect(container.querySelector(".mt-4")).toBeNull();
   });
 
@@ -86,7 +86,7 @@ describe("EstadoVazio", () => {
     expect(wrapper.classList.contains("custom-class")).toBe(true);
   });
 
-  it("nao tem violacoes de acessibilidade", async () => {
+  it("não tem violações de acessibilidade", async () => {
     const { container } = render(
       <EstadoVazio
         icone={Users}
@@ -98,7 +98,7 @@ describe("EstadoVazio", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade (compacto)", async () => {
+  it("não tem violações de acessibilidade (compacto)", async () => {
     const { container } = render(
       <EstadoVazio
         icone={FileText}

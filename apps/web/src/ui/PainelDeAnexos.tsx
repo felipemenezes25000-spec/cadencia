@@ -49,10 +49,10 @@ function dataCurta(iso: string): string {
 }
 
 /**
- * Os anexos do paciente: o exame que ele traz na mao.
+ * Os anexos do paciente: o exame que ele traz na mão.
  *
- * A lista mostra NOME, TIPO e TAMANHO — e o tamanho em unidade legivel, porque
- * quem decide se abre um arquivo no meio da consulta precisa saber se sao 200 KB
+ * A lista mostra NOME, TIPO e TAMANHO — e o tamanho em unidade legível, porque
+ * quem decide se abre um arquivo no meio da consulta precisa saber se são 200 KB
  * ou 40 MB antes de esperar o download.
  */
 export function PainelDeAnexos(p: PainelDeAnexosProps) {
@@ -66,7 +66,7 @@ export function PainelDeAnexos(p: PainelDeAnexosProps) {
     setErro(null);
     if (f.size === 0) { setErro('Arquivo vazio.'); return; }
     if (f.size > LIMITE_BYTES) {
-      // A API tambem recusa, mas so DEPOIS de o celular da recepcao gastar a
+      // A API também recusa, mas só DEPOIS de o celular da recepção gastar a
       // franquia subindo o arquivo inteiro.
       setErro(`Arquivo maior que 20 MB (${tamanho(f.size)}). Reduza ou envie por outro meio.`);
       return;
@@ -75,7 +75,7 @@ export function PainelDeAnexos(p: PainelDeAnexosProps) {
     try {
       await p.aoEnviar({ arquivo: f, kind });
     } catch {
-      setErro('Nao foi possivel enviar. Tente de novo.');
+      setErro('Não foi possível enviar. Tente de novo.');
     } finally {
       setEnviando(false);
     }
@@ -110,7 +110,7 @@ export function PainelDeAnexos(p: PainelDeAnexosProps) {
 
         <section className="grid gap-1.5">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            No prontuario
+            No prontuário
           </h3>
           {p.anexos.length === 0 ? (
             <p className="text-sm text-text-muted">
@@ -126,7 +126,7 @@ export function PainelDeAnexos(p: PainelDeAnexosProps) {
                     onClick={() => {
                       setAbrindo(a.attachmentId);
                       void p.aoAbrir(a.attachmentId)
-                        .catch(() => setErro('Nao foi possivel abrir o arquivo.'))
+                        .catch(() => setErro('Não foi possível abrir o arquivo.'))
                         .finally(() => setAbrindo(null));
                     }}
                     className={cn(

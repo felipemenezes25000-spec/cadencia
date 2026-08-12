@@ -6,12 +6,12 @@ import { useSessao } from '../sessao';
 
 /**
  * A faixa de painel que fica abaixo da fila do dia: aniversariantes e os seis
- * graficos do inventario.
+ * gráficos do inventário.
  *
- * Vive fora do componente `Hoje` de proposito. `Hoje` tem contrato proprio e
- * suite propria; enfiar mais responsabilidade nele obrigaria a mexer nos dois.
- * A composicao entre pedacos de tela e trabalho da pagina — a mesma regra que
- * o §2.2 aplica aos modulos.
+ * Vive fora do componente `Hoje` de propósito. `Hoje` tem contrato próprio e
+ * suíte própria; enfiar mais responsabilidade nele obrigaria a mexer nos dois.
+ * A composição entre pedaços de tela é trabalho da página — a mesma regra que
+ * o §2.2 aplica aos módulos.
  */
 
 interface Aniversariante {
@@ -31,7 +31,7 @@ interface Graficos {
   distribuicaoEtaria: { faixa: string; total: number }[];
 }
 
-/** Barra horizontal proporcional ao maior valor da serie. */
+/** Barra horizontal proporcional ao maior valor da série. */
 function Barras({ titulo, dados, sufixo }: {
   titulo: string;
   dados: readonly { rotulo: string; valor: number }[];
@@ -44,7 +44,7 @@ function Barras({ titulo, dados, sufixo }: {
         {titulo}
       </h3>
       {dados.length === 0 ? (
-        <p className="mt-3 text-sm text-text-muted">Sem dados no periodo.</p>
+        <p className="mt-3 text-sm text-text-muted">Sem dados no período.</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {dados.slice(0, 7).map((d) => (
@@ -54,8 +54,8 @@ function Barras({ titulo, dados, sufixo }: {
                 <div
                   className="mt-1 h-1.5 rounded-full bg-accent/70"
                   style={{ width: `${Math.round((d.valor / maior) * 100)}%` }}
-                  // A barra e decorativa: o numero ao lado ja carrega o dado,
-                  // e leitor de tela nao deve anunciar largura em porcentagem.
+                  // A barra é decorativa: o número ao lado já carrega o dado,
+                  // e leitor de tela não deve anunciar largura em porcentagem.
                   aria-hidden="true"
                 />
               </div>
@@ -83,7 +83,7 @@ function Serie({ titulo, dados }: {
       </h3>
       <p className="mt-1 font-mono text-2xl tabular-nums">{total}</p>
       <div className="mt-3 flex h-12 items-end gap-0.5" role="img"
-           aria-label={`${titulo}: ${total} no periodo`}>
+           aria-label={`${titulo}: ${total} no período`}>
         {dados.map((d) => (
           <div
             key={d.dia}
@@ -140,8 +140,8 @@ export function PainelDoDia() {
                 <span className="font-medium">{p.nome}</span>
                 <span className="text-text-muted">{p.idade} anos</span>
                 {p.temAgendamentoHoje && (
-                  // Quem ja vem hoje e cumprimentado pessoalmente: a marca evita
-                  // a clinica mandar parabens automatico para quem esta na sala.
+                  // Quem já vem hoje é cumprimentado pessoalmente: a marca evita
+                  // a clínica mandar parabéns automático para quem está na sala.
                   <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent">
                     vem hoje
                   </span>
@@ -154,18 +154,18 @@ export function PainelDoDia() {
 
       {graficos !== null && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Serie titulo="Atendimentos no periodo" dados={graficos.atendimentosNoPeriodo} />
+          <Serie titulo="Atendimentos no período" dados={graficos.atendimentosNoPeriodo} />
           <Serie titulo="Pacientes novos" dados={graficos.pacientesNovos} />
           <Barras titulo="Por procedimento"
                   dados={graficos.porProcedimento.map((x) => ({
                     rotulo: x.rotulo, valor: x.total }))} />
-          <Barras titulo="Por convenio"
+          <Barras titulo="Por convênio"
                   dados={graficos.porConvenio.map((x) => ({
                     rotulo: x.rotulo, valor: x.total }))} />
-          <Barras titulo="Duracao media realizada" sufixo=" min"
+          <Barras titulo="Duração média realizada" sufixo=" min"
                   dados={graficos.duracaoMedia.map((x) => ({
                     rotulo: x.rotulo, valor: x.minutos }))} />
-          <Barras titulo="Distribuicao etaria"
+          <Barras titulo="Distribuição etária"
                   dados={graficos.distribuicaoEtaria.map((x) => ({
                     rotulo: x.faixa, valor: x.total }))} />
         </div>

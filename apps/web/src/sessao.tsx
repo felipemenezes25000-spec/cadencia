@@ -10,14 +10,14 @@ export const CSRF_COOKIE = '__Host-cadencia_csrf';
 export const ROTA_ENTRAR = '/entrar';
 
 /**
- * Caminhos que NAO exigem sessao.
+ * Caminhos que NÃO exigem sessão.
  *
- * O provider empurra todo anonimo para `/entrar`. Isso e o certo para o produto
- * inteiro e errado para as duas telas que existem justamente para quem nao tem
+ * O provider empurra todo anônimo para `/entrar`. Isso é o certo para o produto
+ * inteiro e errado para as duas telas que existem justamente para quem não tem
  * conta: a de login e a de agendamento online. Um paciente que abre o link da
- * clinica no celular caia num formulario de login e desiste.
+ * clínica no celular caia num formulário de login e desiste.
  *
- * A lista e de PREFIXOS porque `/agendar/{clinicId}` carrega a unidade na URL.
+ * A lista é de PREFIXOS porque `/agendar/{clinicId}` carrega a unidade na URL.
  */
 const PREFIXOS_PUBLICOS = [ROTA_ENTRAR, '/agendar'] as const;
 
@@ -63,9 +63,9 @@ export function useSessao(): Sessao {
 }
 
 /**
- * O token de CSRF vem do cookie, nao de estado do React. O cookie e emitido
- * com httpOnly:false de proposito (double-submit): o servidor grava, o JS le e
- * reenvia no header. Guardar uma copia em memoria daria uma segunda fonte de
+ * O token de CSRF vem do cookie, não de estado do React. O cookie é emitido
+ * com httpOnly:false de propósito (double-submit): o servidor grava, o JS lê e
+ * reenvia no header. Guardar uma cópia em memória daria uma segunda fonte de
  * verdade que envelhece na hora em que o servidor rotaciona o cookie.
  */
 export function lerCsrf(): string {
@@ -91,7 +91,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   const carregar = useCallback(async () => {
     try {
-      // O proprio GET emite o cookie de CSRF quando ele nao existe — e por isso
+      // O próprio GET emite o cookie de CSRF quando ele não existe — é por isso
       // que esta chamada precisa vir ANTES de qualquer POST, inclusive o login.
       const quem = await apiFetch<QuemSou>('/v1/sessao', { clinicId: '', csrfToken: '' });
       setEstado({ fase: 'autenticado', quem });
@@ -108,9 +108,9 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (estado.fase === 'anonimo' && !emRotaPublica) router.replace(ROTA_ENTRAR);
-    // O caminho inverso importa tanto quanto: quem ja tem sessao e volta para
-    // /entrar (link antigo, botao de voltar, aba esquecida) ficaria olhando um
-    // formulario de login que nao serve para nada.
+    // O caminho inverso importa tanto quanto: quem já tem sessão e volta para
+    // /entrar (link antigo, botão de voltar, aba esquecida) ficaria olhando um
+    // formulário de login que não serve para nada.
     if (estado.fase === 'autenticado' && naTelaDeEntrada
         && estado.quem.unidadeAtiva !== null) {
       router.replace('/hoje');
@@ -146,16 +146,16 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     };
   }, [estado, trocarUnidade, sair]);
 
-  // Rota publica roda FORA do contexto de sessao. Para a tela de entrada isso e
-  // circular por natureza — e ela que cria a sessao. Para o agendamento online e
-  // por definicao: quem marca nao tem conta, e nunca vai ter.
+  // Rota pública roda FORA do contexto de sessão. Para a tela de entrada isso é
+  // circular por natureza — é ela que cria a sessão. Para o agendamento online é
+  // por definição: quem marca não tem conta, e nunca vai ter.
   if (emRotaPublica) return <>{children}</>;
 
   if (estado.fase === 'carregando') return <TelaDeEspera />;
   if (estado.fase === 'anonimo') return <TelaDeEspera />;
 
   // Autenticado sem unidade escolhida: nenhuma rota do sistema responde sem
-  // clinicId, entao a escolha vem antes de qualquer tela.
+  // clinicId, então a escolha vem antes de qualquer tela.
   if (valor === null) {
     return (
       <EscolhaDeUnidade
@@ -193,8 +193,8 @@ function EscolhaDeUnidade({ vinculos, aoEscolher, nome }: {
         <div className="max-w-md text-center">
           <h1 className="text-lg font-semibold">Sem unidade vinculada</h1>
           <p className="mt-2 text-sm text-text-muted">
-            {nome}, sua conta existe mas ainda nao tem vinculo com nenhuma clinica.
-            Peca a quem administra a clinica para conceder o acesso.
+            {nome}, sua conta existe mas ainda não tem vínculo com nenhuma clínica.
+            Peça a quem administra a clínica para conceder o acesso.
           </p>
         </div>
       </div>
@@ -204,10 +204,10 @@ function EscolhaDeUnidade({ vinculos, aoEscolher, nome }: {
   return (
     <div className="grid min-h-screen place-items-center p-6">
       <div className="w-full max-w-md">
-        <h1 className="text-lg font-semibold">Onde voce vai atender hoje?</h1>
+        <h1 className="text-lg font-semibold">Onde você vai atender hoje?</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Voce tem acesso a mais de uma unidade. Cada uma tem agenda, caixa e
-          prontuario proprios.
+          Você tem acesso a mais de uma unidade. Cada uma tem agenda, caixa e
+          prontuário próprios.
         </p>
         <ul className="mt-5 flex flex-col gap-2">
           {vinculos.map((v) => (
@@ -216,7 +216,7 @@ function EscolhaDeUnidade({ vinculos, aoEscolher, nome }: {
                 type="button"
                 onClick={() => {
                   setErro(null);
-                  void aoEscolher(v.clinicId).catch(() => setErro('Nao foi possivel entrar nesta unidade.'));
+                  void aoEscolher(v.clinicId).catch(() => setErro('Não foi possível entrar nesta unidade.'));
                 }}
                 className="w-full rounded-[var(--r-md)] border border-border bg-surface px-4 py-3 text-left transition hover:border-accent hover:bg-surface-2"
               >
@@ -235,9 +235,9 @@ function EscolhaDeUnidade({ vinculos, aoEscolher, nome }: {
 }
 
 export function rotulo(role: Vinculo['role']): string {
-  return role === 'admin_clinico' ? 'Administracao'
-    : role === 'diretor_tecnico' ? 'Direcao tecnica'
-    : role === 'profissional' ? 'Profissional de saude'
-    : role === 'recepcao' ? 'Recepcao'
+  return role === 'admin_clinico' ? 'Administração'
+    : role === 'diretor_tecnico' ? 'Direção técnica'
+    : role === 'profissional' ? 'Profissional de saúde'
+    : role === 'recepcao' ? 'Recepção'
     : 'Financeiro';
 }

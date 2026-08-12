@@ -63,27 +63,27 @@ describe('PainelDeCobranca', () => {
     expect(screen.getByText('Consulta')).toBeVisible();
   });
 
-  it('aceita valor monetario formatado', () => {
+  it('aceita valor monetário formatado', () => {
     montar();
     expect(screen.getByText('R$')).toBeInTheDocument();
     const campo = screen.getByLabelText(/Valor/i);
     expect(campo).toHaveValue('250,00');
   });
 
-  it('renderiza opcoes de forma de pagamento', () => {
+  it('renderiza opções de forma de pagamento', () => {
     montar();
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(5);
     expect(screen.getByText('PIX')).toBeInTheDocument();
     expect(screen.getByText('Dinheiro')).toBeInTheDocument();
-    expect(screen.getByText('Cartao de credito')).toBeInTheDocument();
-    expect(screen.getByText('Cartao de debito')).toBeInTheDocument();
+    expect(screen.getByText('Cartão de crédito')).toBeInTheDocument();
+    expect(screen.getByText('Cartão de débito')).toBeInTheDocument();
     expect(screen.getByText('Boleto')).toBeInTheDocument();
   });
 
   it('seleciona forma de pagamento ao clicar', async () => {
     montar();
-    // PIX esta pre-selecionado
+    // PIX está pré-selecionado
     const pix = screen.getAllByRole('radio')[0]!;
     expect(pix).toBeChecked();
     // Selecionar Dinheiro
@@ -93,7 +93,7 @@ describe('PainelDeCobranca', () => {
     expect(pix).not.toBeChecked();
   });
 
-  it('valida campo valor obrigatorio', async () => {
+  it('valida campo valor obrigatório', async () => {
     montar({ valorSugeridoCentavos: 0 });
     await userEvent.click(
       screen.getByRole('button', { name: /Registrar pagamento/i }),
@@ -161,12 +161,12 @@ describe('PainelDeCobranca', () => {
     });
   });
 
-  it('nao renderiza nada quando fechado', () => {
+  it('não renderiza nada quando fechado', () => {
     montar({ aberto: false });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = montar();
     expect(await axe(container)).toHaveNoViolations();
   });

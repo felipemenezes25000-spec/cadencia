@@ -13,28 +13,28 @@ describe('VersaoRetificada', () => {
     justificativa: 'digitado no paciente errado',
   };
 
-  it('mostra versao atual no botao', () => {
+  it('mostra versão atual no botão', () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo antigo</p>
+        <p>Conteúdo antigo</p>
       </VersaoRetificada>,
     );
     expect(screen.getByRole('button', { name: /versão 1/i })).toBeInTheDocument();
   });
 
-  it('conteudo recolhido por padrao', () => {
+  it('conteúdo recolhido por padrão', () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo antigo</p>
+        <p>Conteúdo antigo</p>
       </VersaoRetificada>,
     );
-    expect(screen.queryByText(/Conteudo antigo/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Conteúdo antigo/)).not.toBeInTheDocument();
   });
 
-  it('expande ao clicar mostrando versao anterior', async () => {
+  it('expande ao clicar mostrando versão anterior', async () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo antigo</p>
+        <p>Conteúdo antigo</p>
       </VersaoRetificada>,
     );
     await userEvent.click(screen.getByRole('button', { name: /versão 1/i }));
@@ -43,20 +43,20 @@ describe('VersaoRetificada', () => {
     expect(conteudo).toHaveStyle({ textDecorationLine: 'line-through' });
   });
 
-  it('mostra motivo da retificacao (justificativa)', async () => {
+  it('mostra motivo da retificação (justificativa)', async () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo</p>
+        <p>Conteúdo</p>
       </VersaoRetificada>,
     );
     await userEvent.click(screen.getByRole('button', { name: /versão 1/i }));
     expect(screen.getByText(/digitado no paciente errado/)).toBeVisible();
   });
 
-  it('mostra informacoes de retificacao no header', () => {
+  it('mostra informações de retificação no header', () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo</p>
+        <p>Conteúdo</p>
       </VersaoRetificada>,
     );
     expect(screen.getByText(/retificada em 12\/05\/2027 por Dr\. Alceu/)).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe('VersaoRetificada', () => {
   it('toggle recolhe ao clicar novamente', async () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo antigo</p>
+        <p>Conteúdo antigo</p>
       </VersaoRetificada>,
     );
     const botao = screen.getByRole('button', { name: /versão 1/i });
@@ -76,19 +76,19 @@ describe('VersaoRetificada', () => {
     expect(screen.queryByTestId('conteudo-retificado')).not.toBeInTheDocument();
   });
 
-  it('nao mostra verbo Excluir', () => {
+  it('não mostra verbo Excluir', () => {
     render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo</p>
+        <p>Conteúdo</p>
       </VersaoRetificada>,
     );
     expect(screen.queryByText(/Excluir/i)).not.toBeInTheDocument();
   });
 
-  it('sem violacao de acessibilidade', async () => {
+  it('sem violação de acessibilidade', async () => {
     const { container } = render(
       <VersaoRetificada {...propsBase}>
-        <p>Conteudo</p>
+        <p>Conteúdo</p>
       </VersaoRetificada>,
     );
     expect(await axe(container)).toHaveNoViolations();

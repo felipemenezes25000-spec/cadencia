@@ -16,11 +16,11 @@ export interface PainelLateralProps {
   readonly onFechar?: () => void;
   /** @deprecated Use `onFechar`. Mantido para compatibilidade. */
   readonly aoFechar?: () => void;
-  /** Titulo do painel (renderizado no cabecalho) */
+  /** Título do painel (renderizado no cabeçalho) */
   readonly titulo?: string;
   /** Largura do painel */
   readonly largura?: Largura;
-  /** Conteudo do painel */
+  /** Conteúdo do painel */
   readonly children: ReactNode;
   /** Classes adicionais */
   readonly className?: string;
@@ -77,7 +77,7 @@ export function PainelLateral({
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               >
-                {/* Cabecalho */}
+                {/* Cabeçalho */}
                 <div className="flex items-center justify-between border-b border-line px-[var(--s-6)] py-[var(--s-4)]">
                   {titulo && (
                     <Dialog.Title className="text-[length:var(--fs-18)] font-[number:var(--fw-semibold)] text-text">
@@ -100,7 +100,7 @@ export function PainelLateral({
                   </Dialog.Close>
                 </div>
 
-                {/* Conteudo com scroll */}
+                {/* Conteúdo com scroll */}
                 <div className="flex-1 overflow-y-auto p-[var(--s-6)]">
                   {children}
                 </div>

@@ -20,7 +20,7 @@ export interface PainelDeTransferenciaProps {
   readonly aoFechar: () => void;
 }
 
-/** '1.250,50' -> 125050. Aceita ponto e virgula: teclado de celular manda ponto. */
+/** '1.250,50' -> 125050. Aceita ponto e vírgula: teclado de celular manda ponto. */
 function paraCentavos(texto: string): number {
   const limpo = texto.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
   const n = Number.parseFloat(limpo);
@@ -28,11 +28,11 @@ function paraCentavos(texto: string): number {
 }
 
 /**
- * Transferencia entre contas — a peca que fecha a conciliacao de caixa.
+ * Transferência entre contas — a peça que fecha a conciliação de caixa.
  *
- * A rota existia e nao tinha tela, mas nao havia como usa-la de qualquer forma:
- * ate agora nem conta bancaria era cadastravel. Com o cadastro no ar, esta e a
- * operacao que explica por que o saldo de uma conta caiu sem despesa nenhuma.
+ * A rota existia e não tinha tela, mas não havia como usá-la de qualquer forma:
+ * até agora nem conta bancária era cadastrável. Com o cadastro no ar, esta é a
+ * operação que explica por que o saldo de uma conta caiu sem despesa nenhuma.
  */
 export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
   const [de, setDe] = useState('');
@@ -57,9 +57,9 @@ export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
       });
       setValor(''); setDescricao('');
     } catch {
-      // Nao limpa o formulario: refazer origem, destino e valor por causa de um
-      // erro de rede e onde nasce a transferencia digitada errado.
-      setErro('Nao foi possivel transferir. Nada foi lancado.');
+      // Não limpa o formulário: refazer origem, destino e valor por causa de um
+      // erro de rede é onde nasce a transferência digitada errado.
+      setErro('Não foi possível transferir. Nada foi lançado.');
     } finally {
       setEnviando(false);
     }
@@ -68,10 +68,10 @@ export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
   if (p.contas.length < 2) {
     return (
       <PainelLateral aberto={p.aberto} titulo="Transferir entre contas" aoFechar={p.aoFechar}>
-        {/* Formulario com um select de uma opcao so e um beco sem saida
-            silencioso: o usuario preenche tudo e descobre que nao da. */}
+        {/* Formulário com um select de uma opção só é um beco sem saída
+            silencioso: o usuário preenche tudo e descobre que não dá. */}
         <p className="text-sm text-text-muted">
-          Cadastre pelo menos duas contas bancarias para poder transferir entre
+          Cadastre pelo menos duas contas bancárias para poder transferir entre
           elas.
         </p>
       </PainelLateral>
@@ -82,9 +82,9 @@ export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
     <PainelLateral aberto={p.aberto} titulo="Transferir entre contas" aoFechar={p.aoFechar}>
       <div className="grid gap-4">
         <p className="rounded-[var(--r-sm)] border border-line bg-surface p-3 text-sm text-text-muted">
-          A transferencia gera <strong className="text-text">dois lancamentos</strong>:
-          uma saida na conta de origem e uma entrada na de destino. Os dois
-          aparecem no extrato — o dinheiro nao some, ele muda de lugar.
+          A transferência gera <strong className="text-text">dois lançamentos</strong>:
+          uma saída na conta de origem e uma entrada na de destino. Os dois
+          aparecem no extrato — o dinheiro não some, ele muda de lugar.
         </p>
 
         <div className="grid grid-cols-2 gap-3">
@@ -118,20 +118,20 @@ export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
         </label>
 
         <label className="grid gap-1.5 text-sm">
-          <span className="font-medium text-text">Descricao</span>
+          <span className="font-medium text-text">Descrição</span>
           <input type="text" value={descricao} maxLength={200}
-            placeholder="Reforco de caixa da recepcao"
+            placeholder="Reforço de caixa da recepção"
             onChange={(e) => setDescricao(e.target.value)}
             className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-2 text-sm text-text" />
           <span className="text-xs text-text-muted">
-            Daqui a tres meses, "transferencia" sem motivo obriga alguem a caçar
+            Daqui a três meses, "transferência" sem motivo obriga alguém a caçar
             o extrato do banco para lembrar o que foi.
           </span>
         </label>
 
         {mesmaConta && (
           <p role="alert" className="text-sm text-danger">
-            Origem e destino sao a mesma conta. Isso geraria dois lancamentos que
+            Origem e destino são a mesma conta. Isso geraria dois lançamentos que
             se anulam e sujam o extrato sem mover dinheiro.
           </p>
         )}

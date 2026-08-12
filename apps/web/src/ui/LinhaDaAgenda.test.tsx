@@ -16,7 +16,7 @@ const agendamentoPadrao = {
 };
 
 describe('LinhaDaAgenda', () => {
-  it('renderiza horario e nome do paciente', () => {
+  it('renderiza horário e nome do paciente', () => {
     render(
       <ul>
         <LinhaDaAgenda agendamento={agendamentoPadrao} />
@@ -44,7 +44,7 @@ describe('LinhaDaAgenda', () => {
     expect(screen.getByText(/Aguardando/)).toBeInTheDocument();
   });
 
-  it('renderiza badge de encaixe quando aplicavel', () => {
+  it('renderiza badge de encaixe quando aplicável', () => {
     render(
       <ul>
         <LinhaDaAgenda agendamento={{ ...agendamentoPadrao, encaixe: true }} />
@@ -53,7 +53,7 @@ describe('LinhaDaAgenda', () => {
     expect(screen.getByText('Encaixe')).toBeInTheDocument();
   });
 
-  it('nao renderiza badge de encaixe quando nao aplicavel', () => {
+  it('não renderiza badge de encaixe quando não aplicável', () => {
     render(
       <ul>
         <LinhaDaAgenda agendamento={{ ...agendamentoPadrao, encaixe: false }} />
@@ -62,7 +62,7 @@ describe('LinhaDaAgenda', () => {
     expect(screen.queryByText('Encaixe')).not.toBeInTheDocument();
   });
 
-  it('renderiza badge de teleconsulta quando aplicavel', () => {
+  it('renderiza badge de teleconsulta quando aplicável', () => {
     render(
       <ul>
         <LinhaDaAgenda
@@ -73,7 +73,7 @@ describe('LinhaDaAgenda', () => {
     expect(screen.getByText('Teleconsulta')).toBeInTheDocument();
   });
 
-  it('renderiza badge de primeira vez quando aplicavel', () => {
+  it('renderiza badge de primeira vez quando aplicável', () => {
     render(
       <ul>
         <LinhaDaAgenda
@@ -84,7 +84,7 @@ describe('LinhaDaAgenda', () => {
     expect(screen.getByText('1a vez')).toBeInTheDocument();
   });
 
-  it('abre menu de acoes ao clicar nos tres pontos', async () => {
+  it('abre menu de ações ao clicar nos três pontos', async () => {
     const user = userEvent.setup();
     render(
       <ul>
@@ -93,14 +93,14 @@ describe('LinhaDaAgenda', () => {
     );
 
     const botaoMenu = screen.getByRole('button', {
-      name: 'Acoes do agendamento',
+      name: 'Ações do agendamento',
     });
     await user.click(botaoMenu);
 
     expect(screen.getByText('Check-in')).toBeInTheDocument();
   });
 
-  it('menu tem opcoes: Check-in, Abrir atendimento, Mensagem, Cobrar', async () => {
+  it('menu tem opções: Check-in, Abrir atendimento, Mensagem, Cobrar', async () => {
     const user = userEvent.setup();
     render(
       <ul>
@@ -109,7 +109,7 @@ describe('LinhaDaAgenda', () => {
     );
 
     const botaoMenu = screen.getByRole('button', {
-      name: 'Acoes do agendamento',
+      name: 'Ações do agendamento',
     });
     await user.click(botaoMenu);
 
@@ -181,11 +181,11 @@ describe('LinhaDaAgenda', () => {
       </ul>,
     );
     const linha = screen.getByRole('listitem');
-    // Nao deve ter inline styles (style attribute vazio ou ausente)
+    // Não deve ter inline styles (style attribute vazio ou ausente)
     expect(linha.getAttribute('style')).toBeNull();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     const { container } = render(
       <ul>
         <LinhaDaAgenda agendamento={agendamentoPadrao} />
@@ -194,7 +194,7 @@ describe('LinhaDaAgenda', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade com todas as badges', async () => {
+  it('não tem violações de acessibilidade com todas as badges', async () => {
     const { container } = render(
       <ul>
         <LinhaDaAgenda

@@ -4,16 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { PainelLateral } from './PainelLateral';
 
-// Polyfills para jsdom: Radix Dialog depende de APIs que nao existem no jsdom
+// Polyfills para jsdom: Radix Dialog depende de APIs que não existem no jsdom
 beforeAll(() => {
-  // scrollIntoView nao existe no jsdom
+  // scrollIntoView não existe no jsdom
   if (!HTMLElement.prototype.scrollIntoView) {
     HTMLElement.prototype.scrollIntoView = () => {};
   }
 
-  // PointerEvent nao existe no jsdom — necessario para Radix DismissableLayer
+  // PointerEvent não existe no jsdom — necessário para Radix DismissableLayer
   if (typeof window.PointerEvent === 'undefined') {
-    // @ts-expect-error - polyfill basico para testes
+    // @ts-expect-error - polyfill básico para testes
     window.PointerEvent = class PointerEvent extends MouseEvent {
       readonly pointerId: number;
       readonly pointerType: string;
@@ -41,34 +41,34 @@ beforeAll(() => {
 });
 
 describe('PainelLateral', () => {
-  it('nao renderiza quando aberto=false', () => {
+  it('não renderiza quando aberto=false', () => {
     render(
       <PainelLateral aberto={false} onFechar={() => {}}>
-        Conteudo oculto
+        Conteúdo oculto
       </PainelLateral>,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.queryByText('Conteudo oculto')).not.toBeInTheDocument();
+    expect(screen.queryByText('Conteúdo oculto')).not.toBeInTheDocument();
   });
 
-  it('renderiza conteudo quando aberto=true', () => {
+  it('renderiza conteúdo quando aberto=true', () => {
     render(
       <PainelLateral aberto onFechar={() => {}}>
-        Conteudo visivel
+        Conteúdo visível
       </PainelLateral>,
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Conteudo visivel')).toBeInTheDocument();
+    expect(screen.getByText('Conteúdo visível')).toBeInTheDocument();
   });
 
-  it('mostra titulo no cabecalho', () => {
+  it('mostra título no cabeçalho', () => {
     render(
       <PainelLateral aberto titulo="Prescrever" onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     expect(screen.getByText('Prescrever')).toBeInTheDocument();
-    // Radix vincula o titulo ao dialog via aria-labelledby
+    // Radix vincula o título ao dialog via aria-labelledby
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAccessibleName('Prescrever');
   });
@@ -78,7 +78,7 @@ describe('PainelLateral', () => {
     const user = userEvent.setup();
     render(
       <PainelLateral aberto titulo="Teste" onFechar={onFechar}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const botaoFechar = screen.getByRole('button', { name: 'Fechar painel' });
@@ -91,7 +91,7 @@ describe('PainelLateral', () => {
     const user = userEvent.setup();
     render(
       <PainelLateral aberto titulo="Teste" onFechar={onFechar}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     await user.keyboard('{Escape}');
@@ -103,12 +103,12 @@ describe('PainelLateral', () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(
       <PainelLateral aberto titulo="Teste" onFechar={onFechar}>
-        <button type="button">Botao dentro</button>
+        <button type="button">Botão dentro</button>
       </PainelLateral>,
     );
     // Radix Dialog v1.1+ usa DismissableLayer com deferPointerDownOutside.
-    // O overlay e registrado como "dismissable surface" e despacha
-    // onDismiss quando o usuario clica nele. userEvent simula a sequencia
+    // O overlay é registrado como "dismissable surface" e despacha
+    // onDismiss quando o usuário clica nele. userEvent simula a sequência
     // completa de eventos de ponteiro que o Radix espera.
     const overlay = document.querySelector('[data-state="open"].fixed.inset-0') as HTMLElement;
     expect(overlay).toBeTruthy();
@@ -121,7 +121,7 @@ describe('PainelLateral', () => {
   it('aplica largura sm corretamente', () => {
     render(
       <PainelLateral aberto largura="sm" onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const dialog = screen.getByRole('dialog');
@@ -131,17 +131,17 @@ describe('PainelLateral', () => {
   it('aplica largura lg corretamente', () => {
     render(
       <PainelLateral aberto largura="lg" onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog.className).toContain('w-[560px]');
   });
 
-  it('aplica largura md por padrao', () => {
+  it('aplica largura md por padrão', () => {
     render(
       <PainelLateral aberto onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const dialog = screen.getByRole('dialog');
@@ -151,7 +151,7 @@ describe('PainelLateral', () => {
   it('tem role=dialog e aria-modal', () => {
     render(
       <PainelLateral aberto titulo="Teste" onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const dialog = screen.getByRole('dialog');
@@ -162,7 +162,7 @@ describe('PainelLateral', () => {
   it('aceita className adicional', () => {
     render(
       <PainelLateral aberto onFechar={() => {}} className="mt-4">
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     const dialog = screen.getByRole('dialog');
@@ -174,38 +174,38 @@ describe('PainelLateral', () => {
     const user = userEvent.setup();
     render(
       <PainelLateral aberto titulo="Compat" aoFechar={aoFechar}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     await user.keyboard('{Escape}');
     expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 
-  it('renderiza sem titulo', () => {
+  it('renderiza sem título', () => {
     render(
       <PainelLateral aberto onFechar={() => {}}>
-        Sem titulo
+        Sem título
       </PainelLateral>,
     );
-    // Botao de fechar deve estar presente mesmo sem titulo
+    // Botão de fechar deve estar presente mesmo sem título
     expect(screen.getByRole('button', { name: 'Fechar painel' })).toBeInTheDocument();
-    expect(screen.getByText('Sem titulo')).toBeInTheDocument();
+    expect(screen.getByText('Sem título')).toBeInTheDocument();
   });
 
-  it('nao tem violacoes de acessibilidade', async () => {
+  it('não tem violações de acessibilidade', async () => {
     render(
       <PainelLateral aberto titulo="Teste" onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
-    // Radix Portal renderiza em document.body, entao verificamos o body inteiro
+    // Radix Portal renderiza em document.body, então verificamos o body inteiro
     expect(await axe(document.body)).toHaveNoViolations();
   });
 
-  it('nao tem violacoes de acessibilidade sem titulo', async () => {
+  it('não tem violações de acessibilidade sem título', async () => {
     render(
       <PainelLateral aberto onFechar={() => {}}>
-        Conteudo
+        Conteúdo
       </PainelLateral>,
     );
     expect(await axe(document.body)).toHaveNoViolations();

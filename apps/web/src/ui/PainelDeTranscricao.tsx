@@ -20,29 +20,29 @@ export interface SugestaoDaIA {
 export interface PainelDeTranscricaoProps {
   readonly aberto: boolean;
   readonly aoTranscrever: (audio: Blob) => Promise<SugestaoDaIA>;
-  /** Aplica os campos que o medico aceitou. Nunca e chamado sozinho. */
+  /** Aplica os campos que o médico aceitou. Nunca é chamado sozinho. */
   readonly aoAceitar: (s: SugestaoDaIA, campos: ReadonlySet<string>) => void;
   readonly aoFechar: () => void;
 }
 
 /**
- * Transcricao da consulta por IA.
+ * Transcrição da consulta por IA.
  *
- * O medico grava, a IA sugere, e o MEDICO decide campo a campo. Nada e escrito
- * no prontuario sem alguem marcar a caixa — porque o acervo clinico e assinado
- * por ele, e texto que ninguem leu nao pode chegar la.
+ * O médico grava, a IA sugere, e o MÉDICO decide campo a campo. Nada é escrito
+ * no prontuário sem alguém marcar a caixa — porque o acervo clínico é assinado
+ * por ele, e texto que ninguém leu não pode chegar lá.
  *
- * O aviso ao paciente nao e formalidade: gravar consulta sem avisar e ilegal, e
- * a recusa dele bloqueia a transcricao no servidor (`clin.patient.ai_refused_at`).
+ * O aviso ao paciente não é formalidade: gravar consulta sem avisar é ilegal, e
+ * a recusa dele bloqueia a transcrição no servidor (`clin.patient.ai_refused_at`).
  * A tela avisa quem grava; o banco garante quem recusou.
  */
 
 const CAMPOS: readonly { id: string; rotulo: string }[] = [
-  { id: 'evolucao', rotulo: 'Evolucao' },
+  { id: 'evolucao', rotulo: 'Evolução' },
   { id: 'alergias', rotulo: 'Alergias' },
   { id: 'pesoKg', rotulo: 'Peso' },
   { id: 'alturaCm', rotulo: 'Altura' },
-  { id: 'pa', rotulo: 'Pressao arterial' },
+  { id: 'pa', rotulo: 'Pressão arterial' },
   { id: 'cid', rotulo: 'CID' },
 ];
 
@@ -77,8 +77,8 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
       pedacos.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) pedacos.current.push(e.data); };
       mr.onstop = () => {
-        // A trilha e encerrada explicitamente: sem isto o indicador de microfone
-        // do sistema fica aceso depois da consulta, e o proximo paciente entra
+        // A trilha é encerrada explicitamente: sem isto o indicador de microfone
+        // do sistema fica aceso depois da consulta, e o próximo paciente entra
         // na sala com a luz vermelha piscando.
         stream.getTracks().forEach((t) => { t.stop(); });
         void processar(new Blob(pedacos.current, { type: 'audio/webm' }));
@@ -87,7 +87,7 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
       gravador.current = mr;
       setGravando(true);
     } catch {
-      setErro('Nao foi possivel acessar o microfone. Verifique a permissao do navegador.');
+      setErro('Não foi possível acessar o microfone. Verifique a permissão do navegador.');
     }
   }
 
@@ -102,12 +102,12 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
     try {
       const s = await p.aoTranscrever(audio);
       setSugestao(s);
-      // NADA vem marcado. Pre-marcar transformaria "sugestao" em "padrao", e
-      // quem esta com pressa aceitaria tudo sem ler — que e exatamente o modo
-      // de falha que a decisao do medico existe para impedir.
+      // NADA vem marcado. Pré-marcar transformaria "sugestão" em "padrão", e
+      // quem está com pressa aceitaria tudo sem ler — que é exatamente o modo
+      // de falha que a decisão do médico existe para impedir.
       setAceitos(new Set());
     } catch {
-      setErro('Nao foi possivel transcrever. O atendimento continua normalmente.');
+      setErro('Não foi possível transcrever. O atendimento continua normalmente.');
     } finally {
       setProcessando(false);
     }
@@ -127,14 +127,14 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
         <p className="flex items-start gap-2 rounded-[var(--r-sm)] border border-warn/40 bg-warn/5 p-3 text-sm text-text">
           <Warning size={18} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0 text-warn" />
           <span>
-            Avise o paciente antes de gravar. Se ele recusar, a transcricao fica
+            Avise o paciente antes de gravar. Se ele recusar, a transcrição fica
             bloqueada para ele em todo o sistema.
           </span>
         </p>
 
         {!gravando && !processando && (
           <Botao iconeEsquerda={Microphone} onClick={() => { void comecar(); }}>
-            Comecar a gravar
+            Começar a gravar
           </Botao>
         )}
         {gravando && (
@@ -149,9 +149,9 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
         {sugestao !== null && (
           <section className="grid gap-3">
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold text-text">Sugestoes</h3>
+              <h3 className="text-sm font-semibold text-text">Sugestões</h3>
               <span className="text-xs text-text-muted">
-                confianca {Math.round(sugestao.confianca * 100)}%
+                confiança {Math.round(sugestao.confianca * 100)}%
               </span>
             </div>
 

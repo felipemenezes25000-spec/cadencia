@@ -5,7 +5,7 @@ import { House } from "@phosphor-icons/react";
 import { Icone } from "./Icone";
 
 describe("Icone", () => {
-  it("renderiza com tamanho padrao md (20px)", () => {
+  it("renderiza com tamanho padrão md (20px)", () => {
     const { container } = render(<Icone icon={House} />);
     const svg = container.querySelector("svg");
     expect(svg).toBeTruthy();
@@ -34,7 +34,7 @@ describe("Icone", () => {
     expect(svg?.getAttribute("height")).toBe("32");
   });
 
-  it("e decorativo por padrao (aria-hidden)", () => {
+  it("é decorativo por padrão (aria-hidden)", () => {
     const { container } = render(<Icone icon={House} />);
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("aria-hidden")).toBe("true");
@@ -42,13 +42,13 @@ describe("Icone", () => {
     expect(svg?.getAttribute("aria-label")).toBeNull();
   });
 
-  it("tem aria-label quando label e fornecido", () => {
-    render(<Icone icon={House} label="Inicio" />);
-    expect(screen.getByRole("img", { name: "Inicio" })).toBeInTheDocument();
+  it("tem aria-label quando label é fornecido", () => {
+    render(<Icone icon={House} label="Início" />);
+    expect(screen.getByRole("img", { name: "Início" })).toBeInTheDocument();
   });
 
-  it("nao tem aria-hidden quando label e fornecido", () => {
-    const { container } = render(<Icone icon={House} label="Inicio" />);
+  it("não tem aria-hidden quando label é fornecido", () => {
+    const { container } = render(<Icone icon={House} label="Início" />);
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("aria-hidden")).toBeNull();
   });
@@ -70,20 +70,20 @@ describe("Icone", () => {
     expect(svg?.classList.contains("text-blue-500")).toBe(true);
   });
 
-  it("usa peso regular por padrao", () => {
+  it("usa peso regular por padrão", () => {
     const { container } = render(<Icone icon={House} />);
     const svg = container.querySelector("svg");
     // Phosphor renderiza o SVG — verificamos que ele existe e tem o tamanho correto
     expect(svg).toBeTruthy();
   });
 
-  it("nao tem violacoes de acessibilidade (decorativo)", async () => {
+  it("não tem violações de acessibilidade (decorativo)", async () => {
     const { container } = render(<Icone icon={House} />);
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("nao tem violacoes de acessibilidade (com label)", async () => {
-    const { container } = render(<Icone icon={House} label="Inicio" />);
+  it("não tem violações de acessibilidade (com label)", async () => {
+    const { container } = render(<Icone icon={House} label="Início" />);
     expect(await axe(container)).toHaveNoViolations();
   });
 });

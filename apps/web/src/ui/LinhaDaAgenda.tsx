@@ -70,7 +70,7 @@ const COR_BORDA: Record<StatusAgenda, string> = {
   vencido:        'border-l-st-faltou',
 };
 
-/* ── Normalizacao de props ─────────────────────────────────────────────── */
+/* ── Normalização de props ─────────────────────────────────────────────── */
 
 interface Normalizado {
   ag: Agendamento;
@@ -115,7 +115,7 @@ function ItemDoMenu({ icon, rotulo }: { icon: PhosphorIcon; rotulo: string }) {
   );
 }
 
-/* ── Menu de acoes ─────────────────────────────────────────────────────── */
+/* ── Menu de ações ─────────────────────────────────────────────────────── */
 
 function AcoesMenu() {
   return (
@@ -129,7 +129,7 @@ function AcoesMenu() {
             "transition-colors-fast",
             "focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]",
           )}
-          aria-label="Acoes do agendamento"
+          aria-label="Ações do agendamento"
           onClick={(e) => e.stopPropagation()}
         >
           <Icone icon={DotsThreeVertical} size="md" />
@@ -196,7 +196,7 @@ export function LinhaDaAgenda(props: LinhaDaAgendaProps) {
         className,
       )}
     >
-      {/* Horario */}
+      {/* Horário */}
       <span className="text-[length:var(--fs-13)] font-mono font-medium text-text-muted tabular-nums">
         {ag.horario}
       </span>
@@ -234,7 +234,7 @@ export function LinhaDaAgenda(props: LinhaDaAgendaProps) {
       {/* Status chip */}
       <ChipDeStatus status={ag.status} />
 
-      {/* Menu de acoes */}
+      {/* Menu de ações */}
       <AcoesMenu />
     </li>
   );
