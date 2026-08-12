@@ -159,7 +159,7 @@ export function useOptimisticMutation<TData, TError, TVariables>(
       // Rollback se falhou
       const ctx = context as { snapshot?: TData } | undefined;
       if (queryKey && rollbackOnError && ctx?.snapshot !== undefined) {
-        client.setQueryData(queryKey as import('@tanstack/query-core').QueryKey, ctx.snapshot);
+        client.setQueryData(queryKey, ctx.snapshot);
       }
     },
     onSettled: (_data, _err, _variables) => {
