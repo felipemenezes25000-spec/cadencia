@@ -18,7 +18,7 @@ export interface ApiOptions {
 }
 
 /**
- * URL base da API. Vazia significa mesma origem — e é a unica forma que funciona:
+ * A API e sempre acessada pela mesma origem do frontend:
  *
  * - O navegador so aceita cookie `__Host-` quando ele vem da MESMA origem da
  *   pagina, e o `__Host-cadencia_csrf` e parte da defesa contra login CSRF.
@@ -28,11 +28,13 @@ export interface ApiOptions {
  *   A unica saida e o navegador chamar `/v1/*` no proprio Vercel e o rewrite
  *   do `next.config.ts` repassar para a API real.
  *
- * Configurar `NEXT_PUBLIC_API_URL` so faz sentido em desenvolvimento, quando
- * Next e API estao em portas diferentes na mesma maquina — e mesmo assim so
- * se o dev tiver HTTPS local configurado. Em producao, manter VAZIO.
+ * O rewrite do `next.config.ts` encaminha `/v1/*` para `API_ORIGIN`. Isso vale
+ * tambem em desenvolvimento, onde o fallback e `http://127.0.0.1:3001`.
+ *
+ * Nao leia `NEXT_PUBLIC_API_URL` aqui. Variaveis `NEXT_PUBLIC_*` sao gravadas
+ * no bundle do navegador durante o build e fariam o cliente contornar o proxy,
+ * quebrando TLS, CORS e os cookies `__Host-` de sessao.
  */
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const MUTANTES = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export async function apiFetch<T>(caminho: string, opts: ApiOptions): Promise<T> {
@@ -41,7 +43,7 @@ export async function apiFetch<T>(caminho: string, opts: ApiOptions): Promise<T>
   if (opts.body !== undefined) headers.set('content-type', 'application/json');
   if (MUTANTES.has(method)) headers.set('x-csrf-token', opts.csrfToken);
 
-  const resposta = await fetch(`${BASE}${caminho}`, {
+  const resposta = await fetch(caminho, {
     method,
     headers,
     credentials: 'include',
@@ -77,7 +79,7 @@ export async function apiFetch<T>(caminho: string, opts: ApiOptions): Promise<T>
 export async function apiFetchBlobUrl(
   caminho: string, opts: Omit<ApiOptions, 'body' | 'method'>,
 ): Promise<string> {
-  const resposta = await fetch(`${BASE}${caminho}`, {
+  const resposta = await fetch(caminho, {
     headers: new Headers({ 'x-clinic-id': opts.clinicId }),
     credentials: 'include',
     ...(opts.signal === undefined ? {} : { signal: opts.signal }),

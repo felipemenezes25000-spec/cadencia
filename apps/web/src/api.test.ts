@@ -9,6 +9,7 @@ describe('cliente da API', () => {
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
     await apiFetch('/v1/pacientes', { method: 'POST', body: { fullName: 'X' },
                                       clinicId: 'c1', csrfToken: 'tok' });
+    expect(spy.mock.calls[0]?.[0]).toBe('/v1/pacientes');
     const init = spy.mock.calls[0]?.[1] as RequestInit;
     const headers = new Headers(init.headers);
     expect(headers.get('x-clinic-id')).toBe('c1');
