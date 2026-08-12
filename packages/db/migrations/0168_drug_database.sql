@@ -37,6 +37,9 @@ CREATE INDEX idx_bula_medicamento ON drug.bula(medicamento_id);
 CREATE INDEX idx_bula_tipo ON drug.bula(tipo);
 
 -- Permissões
-GRANT USAGE ON SCHEMA drug TO app_reader, app_rw;
-GRANT SELECT ON drug.medicamento TO app_reader, app_rw;
-GRANT SELECT ON drug.bula TO app_reader, app_rw;
+GRANT USAGE ON SCHEMA drug TO app_owner;
+GRANT USAGE ON SCHEMA drug TO app_rw;
+GRANT SELECT ON drug.medicamento TO app_owner;
+GRANT SELECT ON drug.medicamento TO app_rw;
+GRANT SELECT ON drug.bula TO app_owner;
+GRANT SELECT ON drug.bula TO app_rw;

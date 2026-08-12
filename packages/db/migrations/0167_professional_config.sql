@@ -22,7 +22,7 @@ ALTER TABLE app.professional_config OWNER TO app_owner;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON app.professional_config TO app_rw;
 
--- RLS: mesma politica de app.professional — acesso pela clinic_id do contexto
+-- RLS: mesma politica de app.professional — acesso pelo tenant_id do contexto
 ALTER TABLE app.professional_config ENABLE ROW LEVEL SECURITY;
 
 DO $$
@@ -30,7 +30,7 @@ BEGIN
   CREATE POLICY professional_config_professional ON app.professional_config
     FOR ALL USING (professional_id IN (
       SELECT id FROM app.professional
-       WHERE clinic_id = current_setting('app.clinic_id')::uuid
+       WHERE tenant_id = current_setting('app.tenant_id')::uuid
     ));
 EXCEPTION
   WHEN duplicate_object THEN NULL;

@@ -32,7 +32,6 @@ GRANT SELECT, INSERT, UPDATE ON com.plano TO app_rw;
 
 GRANT USAGE ON SCHEMA com TO app_rw, app_support, jobs;
 GRANT SELECT ON com.plano TO jobs;
-GRANT SELECT ON com.assinatura TO jobs;
 
 -- Seed inicial de planos (via migration — nao editavel pela clinica)
 INSERT INTO com.plano (id, slug, nome, valor_por_profissional_cents, periodicidade, features)
@@ -62,6 +61,7 @@ CREATE TABLE com.assinatura (
 );
 ALTER TABLE com.assinatura OWNER TO app_owner;
 GRANT SELECT, INSERT, UPDATE ON com.assinatura TO app_rw;
+GRANT SELECT ON com.assinatura TO jobs;
 
 -- Index para jobs que buscam assinaturas por status
 CREATE INDEX ix_assinatura_status ON com.assinatura (status)

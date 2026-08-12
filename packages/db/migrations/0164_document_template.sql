@@ -1,10 +1,10 @@
-﻿-- 0164_document_template.sql
+-- 0164_document_template.sql
 -- Tabela de templates de documento por clinica/profissional.
 -- Profissional NULL = template vale para toda a clinica.
 
 CREATE TABLE clin.document_template (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       uuid NOT NULL REFERENCES auth.tenant(id),
+  tenant_id       uuid NOT NULL REFERENCES app.tenant(id),
   clinic_id       uuid NOT NULL REFERENCES app.clinic(id),
   professional_id uuid REFERENCES app.professional(id),
   kind            text NOT NULL CHECK (kind IN (
