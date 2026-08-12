@@ -10,6 +10,7 @@ import {
   GearSix,
   Stethoscope,
   UserCircleGear,
+  Pill,
 } from '@phosphor-icons/react';
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 
@@ -102,6 +103,10 @@ export const CONFIG_NAV = {
       descricao: 'Procedimentos cadastrados na unidade' },
     { id: 'cfg-prontuario', rotulo: 'Prontuário', href: '/configuracoes/prontuario',
       descricao: 'Seções e campos do prontuário' },
+    { id: 'cfg-canais', rotulo: 'Canais', href: '/configuracoes/canais',
+      descricao: 'WhatsApp, SMS e e-mail da clínica' },
+    { id: 'cfg-plano', rotulo: 'Plano', href: '/configuracoes/plano',
+      descricao: 'Assinatura e faturamento do produto' },
     { id: 'cfg-auditoria', rotulo: 'Auditoria', href: '/configuracoes/auditoria',
       descricao: 'Trilha de auditoria do tenant' },
     { id: 'cfg-catalogos', rotulo: 'Catálogos', href: '/catalogos',
@@ -153,6 +158,7 @@ export const NAVEGACAO_SHELL: readonly {
       { id: 'atendimentos', rotulo: 'Atendimentos', href: '/hoje#fluxo-de-hoje', icone: Stethoscope, prefixoAtivo: '/atendimento' },
       { id: 'pacientes', rotulo: 'Pacientes', href: '/pacientes', icone: Users, prefixoAtivo: '/pacientes' },
       { id: 'mensagens', rotulo: 'Mensagens', href: '/conversas', icone: ChatCircle, prefixoAtivo: '/conversas' },
+      { id: 'bulario', rotulo: 'Bulário', href: '/bulas', icone: Pill, prefixoAtivo: '/bulas' },
     ],
   },
   {

@@ -67,7 +67,7 @@ export default function PaginaDetalheDemonstrativo() {
   }, [id, clinicId, csrfToken]);
 
   if (erro !== null) {
-    return <div className="cadencia-page"><p className="text-sm text-danger">{erro}</p></div>;
+    return <div className="py-2"><p className="text-sm text-danger">{erro}</p></div>;
   }
 
   return (

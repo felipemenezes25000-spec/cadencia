@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { PageHeader } from '../../../../src/ui/PageHeader';
 import { Botao } from '../../../../src/ui/Botao';
 import { apiFetch } from '../../../../src/api';
 import { useSessao } from '../../../../src/sessao';
@@ -58,20 +57,20 @@ export default function PaginaDetalheRecurso() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   if (erro !== null) {
-    return <div className="cadencia-page"><p className="text-sm text-danger">{erro}</p></div>;
+    return <p role="alert" className="text-sm text-danger">{erro}</p>;
   }
   if (r === null) {
-    return <div className="cadencia-page"><p className="text-sm text-text-muted">Carregando…</p></div>;
+    return <p className="text-sm text-text-muted">Carregando…</p>;
   }
 
   const podeEnviar = r.status === 'pronto';
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo={`Recurso ${r.numeroRecurso}`}
-        subtitulo={`${r.operadoraNome} · ${r.status} · ${reais(r.totalRecursadoCents)} recursados`}
-      />
+    <section className="grid gap-6" aria-labelledby="titulo-recurso">
+      <div>
+        <h2 id="titulo-recurso" className="text-lg font-semibold tracking-[-0.02em] text-text">Recurso {r.numeroRecurso}</h2>
+        <p className="mt-1 text-sm text-text-muted">{r.operadoraNome} · {r.status} · {reais(r.totalRecursadoCents)} recursados</p>
+      </div>
 
       {r.justificativaGeral !== null && r.justificativaGeral !== '' && (
         <section className="rounded-[var(--r-md)] border border-line bg-surface p-4">
@@ -135,6 +134,6 @@ export default function PaginaDetalheRecurso() {
           </Botao>
         )}
       </div>
-    </div>
+    </section>
   );
 }

@@ -41,14 +41,14 @@ export interface SelectProps {
 }
 
 const triggerBase = [
-  'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3',
+  'flex h-10 w-full items-center justify-between gap-2 rounded-[10px] border bg-surface px-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.75)]',
   'text-sm text-text',
-  'transition-colors-fast',
+  'transition-all-fast hover:border-line-strong hover:bg-surface-raised',
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
 const triggerFocus =
-  'focus:border-accent focus:ring-2 focus:ring-accent/10 focus:outline-none';
+  'focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10 focus:shadow-elev-1 focus:outline-none';
 
 const triggerError =
   'border-danger focus:border-danger focus:ring-danger';
@@ -133,7 +133,7 @@ export function Select({
               'data-[state=closed]:animate-[fadeOut_100ms_ease]',
             )}
             position="popper"
-            sideOffset={4}
+            sideOffset={6}
             align="start"
           >
             <RadixSelect.ScrollUpButton className="flex h-6 cursor-default items-center justify-center bg-surface text-text-muted">

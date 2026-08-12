@@ -5,7 +5,6 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { FinanceiroLayout } from './FinanceiroLayout';
 
 /** Wrapper com TooltipProvider exigido pelo Radix Tooltip. */
 function Wrapper({ children }: { children: ReactNode }) {
@@ -90,24 +89,20 @@ const DADOS_RETORNOS: RetornosDados = {
   },
 };
 
-describe('Navegacao completa: Financeiro > Convenios', () => {
-  it('renderiza FinanceiroLayout com aba Cadastros ativa contendo ConveniosLayout', () => {
-    pathnameMock = '/financeiro/cadastros';
+describe('Navegacao completa de Convenios', () => {
+  it('renderiza ConveniosLayout como workspace de primeiro nivel', () => {
+    pathnameMock = '/convenios';
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="a-faturar" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <div data-testid="conteudo-afaturar">Fila</div>
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="a-faturar" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <div data-testid="conteudo-afaturar">Fila</div>
+      </ConveniosLayout>,
     );
-    expect(screen.getByRole('heading', { level: 1, name: /Financeiro/ })).toBeVisible();
-    /* Aba Cadastros ativa via Radix Tabs (tab, nao link) */
-    const abaCadastros = screen.getByRole('tab', { name: /Cadastros/i });
-    expect(abaCadastros).toHaveAttribute('data-state', 'active');
-    expect(screen.getByRole('heading', { level: 2, name: /Convênio/ })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: /Convênio/ })).toBeVisible();
+    const abaAFaturar = screen.getByRole('tab', { name: /A faturar/i });
+    expect(abaAFaturar).toHaveAttribute('data-state', 'active');
     /* "7" aparece no grupo de contadores e como badge na aba */
     const grupo = screen.getByRole('group', { name: /Contadores de convênios/i });
     expect(within(grupo).getByText('7')).toBeVisible();
@@ -116,18 +111,16 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('sub-aba A faturar renderiza lista de guias', async () => {
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="a-faturar" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <ConveniosAFaturar
-            carregarDados={async () => DADOS_FATURAR}
-            aoCriarLote={async () => {}}
-            aoAbrirGuia={() => {}}
-          />
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="a-faturar" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <ConveniosAFaturar
+          carregarDados={async () => DADOS_FATURAR}
+          aoCriarLote={async () => {}}
+          aoAbrirGuia={() => {}}
+        />
+      </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('Carlos Melo')).toBeVisible());
     expect(screen.getByText('000001')).toBeVisible();
@@ -135,19 +128,17 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('sub-aba Lotes renderiza lista de lotes', async () => {
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="lotes" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <ConveniosLotes
-            carregarDados={async () => DADOS_LOTES}
-            aoEnviar={async () => {}}
-            aoCancelar={async () => {}}
-            aoBaixarXml={async () => {}}
-          />
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="lotes" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <ConveniosLotes
+          carregarDados={async () => DADOS_LOTES}
+          aoEnviar={async () => {}}
+          aoCancelar={async () => {}}
+          aoBaixarXml={async () => {}}
+        />
+      </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('L-001')).toBeVisible());
     expect(screen.getByText('Rascunho')).toBeVisible();
@@ -155,18 +146,16 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('sub-aba Operadoras renderiza lista de operadoras', async () => {
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="operadoras" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <ConveniosOperadoras
-            carregarDados={async () => DADOS_OPERADORAS}
-            aoSalvar={async () => {}}
-            aoDesativar={async () => {}}
-          />
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="operadoras" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <ConveniosOperadoras
+          carregarDados={async () => DADOS_OPERADORAS}
+          aoSalvar={async () => {}}
+          aoDesativar={async () => {}}
+        />
+      </ConveniosLayout>,
       { wrapper: Wrapper },
     );
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
@@ -175,18 +164,16 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('sub-aba Retornos renderiza lista de demonstrativos', async () => {
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="retornos" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <ConveniosRetornos
-            carregarDados={async () => DADOS_RETORNOS}
-            aoImportarXml={async () => {}}
-            aoAbrirDemonstrativo={() => {}}
-          />
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="retornos" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <ConveniosRetornos
+          carregarDados={async () => DADOS_RETORNOS}
+          aoImportarXml={async () => {}}
+          aoAbrirDemonstrativo={() => {}}
+        />
+      </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
     /* ConveniosLayout agora usa Radix Tabs (tab, nao link) */
@@ -197,14 +184,12 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('contadores da faixa incluem glosas pendentes e recursos rascunho', () => {
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="a-faturar" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <div>Conteudo</div>
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="a-faturar" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <div>Conteudo</div>
+      </ConveniosLayout>,
     );
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
     expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
@@ -215,14 +200,12 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
   it('contadores da faixa sao botoes clicaveis', async () => {
     const aoFiltrar = vi.fn();
     render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="a-faturar" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={aoFiltrar}
-        >
-          <div>Conteudo</div>
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="a-faturar" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={aoFiltrar}
+      >
+        <div>Conteudo</div>
+      </ConveniosLayout>,
     );
     await userEvent.click(screen.getByRole('button', { name: /Glosas pendentes/i }));
     expect(aoFiltrar).toHaveBeenCalledWith('glosasPendentes');
@@ -230,18 +213,16 @@ describe('Navegacao completa: Financeiro > Convenios', () => {
 
   it('sem violacao de acessibilidade na composicao com Retornos', async () => {
     const { container } = render(
-      <FinanceiroLayout>
-        <ConveniosLayout
-          abaAtiva="retornos" aoNavegar={() => {}}
-          contadores={CONTADORES} aoFiltrar={() => {}}
-        >
-          <ConveniosRetornos
-            carregarDados={async () => DADOS_RETORNOS}
-            aoImportarXml={async () => {}}
-            aoAbrirDemonstrativo={() => {}}
-          />
-        </ConveniosLayout>
-      </FinanceiroLayout>,
+      <ConveniosLayout
+        abaAtiva="retornos" aoNavegar={() => {}}
+        contadores={CONTADORES} aoFiltrar={() => {}}
+      >
+        <ConveniosRetornos
+          carregarDados={async () => DADOS_RETORNOS}
+          aoImportarXml={async () => {}}
+          aoAbrirDemonstrativo={() => {}}
+        />
+      </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
     /*

@@ -29,11 +29,11 @@ export interface CampoProps
 }
 
 const wrapperBase = [
-  'flex items-center gap-2.5 rounded-lg border bg-surface px-3',
-  'transition-[border-color,background-color] duration-150 hover:border-line-strong',
+  'flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.75)]',
+  'transition-[border-color,background-color,box-shadow] duration-150 hover:border-line-strong hover:bg-surface-raised',
 ].join(' ');
 
-const wrapperFocus = 'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/10';
+const wrapperFocus = 'focus-within:border-accent focus-within:bg-surface focus-within:ring-4 focus-within:ring-accent/10 focus-within:shadow-elev-1';
 const wrapperError = 'border-danger focus-within:border-danger focus-within:ring-danger/12';
 const wrapperNormal = 'border-line';
 const inputBase = 'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Pacientes } from '../../src/telas/Pacientes';
 import { apiFetch } from '../../src/api';
@@ -11,6 +12,7 @@ const CHAVES_FACETA = ['ativos', 'inativos', 'obitos', 'cadastro_preliminar', 's
 
 function PacientesInner() {
   const { clinicId, csrfToken } = useSessao();
+  const router = useRouter();
   const [faceta, setFaceta] = useQueryState('faceta',
     parseAsStringLiteral(CHAVES_FACETA).withDefault('ativos'));
 
@@ -23,7 +25,7 @@ function PacientesInner() {
       buscar={(termo, f) => apiFetch<{ itens: PacienteHit[] }>(
         `/v1/pacientes/lista?faceta=${f}&termo=${encodeURIComponent(termo)}`,
         { clinicId, csrfToken }).then((r) => r.itens)}
-      aoAbrir={(id) => { window.location.href = `/pacientes/${id}`; }}
+      aoAbrir={(id) => { router.push(`/pacientes/${id}`); }}
     />
   );
 }

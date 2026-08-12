@@ -401,10 +401,7 @@ function FormContent({
 
       {passo.nome === 'credenciais' && (
         <p className="mt-6 text-center text-xs text-text-tertiary">
-          Problemas para acessar?{' '}
-          <a href="#" className="font-medium text-brand hover:underline">
-            Recupere sua senha
-          </a>
+          Problemas para acessar? <span className="font-medium text-text-secondary">Fale com a administração da sua clínica.</span>
         </p>
       )}
     </>

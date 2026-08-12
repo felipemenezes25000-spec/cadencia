@@ -5,8 +5,7 @@ import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "../lib/cn";
 import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
-
-/* ── Tipos exportados ────────────────────────────────────────────── */
+import { PageHeader } from "../ui/PageHeader";
 
 export type SubAbaConvenios =
   | "a-faturar"
@@ -52,25 +51,14 @@ const ROTULOS_CONTADORES: Record<FiltroConvenios, string> = {
   recursosRascunho: "Recursos rascunho",
 };
 
-/* ── Props ─────────────────────────────────────────────────────────── */
-
 export interface ConveniosLayoutProps {
   readonly children: ReactNode;
-  /** Contadores para badges nas abas e faixa de contadores */
   readonly contadores?: ContadoresConvenios;
-  /** Callback ao clicar em um contador */
   readonly aoFiltrar?: (filtro: FiltroConvenios) => void;
-  /** Filtro ativo (destaca o contador) */
   readonly filtroAtivo?: FiltroConvenios;
-
-  /* ── Props legadas (backward compat) ─────────────────────────── */
-  /** @deprecated Determinado automaticamente pelo pathname */
   readonly abaAtiva?: SubAbaConvenios;
-  /** @deprecated Navegação agora usa router.push */
   readonly aoNavegar?: (aba: SubAbaConvenios) => void;
 }
-
-/* ── Componente ────────────────────────────────────────────────────── */
 
 export function ConveniosLayout({
   children,
@@ -82,23 +70,21 @@ export function ConveniosLayout({
 }: ConveniosLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-
-  /* Determina aba ativa a partir do pathname, fallback para prop legada */
   const abaAtiva =
     ABAS.find((a) => a.href === pathname)?.value ?? abaAtivaLegada ?? "a-faturar";
-
   const chaves = contadores
     ? (Object.keys(ROTULOS_CONTADORES) as FiltroConvenios[])
     : [];
 
   return (
-    <div className="space-y-6 max-sm:p-4">
-      {/* h2 porque ConveniosLayout é aninhado dentro de FinanceiroLayout (h1) */}
-      <h2 className="text-lg font-semibold tracking-[-0.02em] text-text">
-        Convênios
-      </h2>
+    <div className="cadencia-page space-y-6 max-sm:p-4">
+      <PageHeader
+        titulo="Convênios"
+        eyebrow="Ciclo de receita"
+        subtitulo="Transforme atendimentos em faturamento e acompanhe cada etapa até o recebimento."
+        semBreadcrumb
+      />
 
-      {/* Faixa de contadores */}
       {contadores && (
         <div
           role="group"
@@ -132,13 +118,11 @@ export function ConveniosLayout({
         </div>
       )}
 
-      {/* Abas de navegação */}
       <Tabs
         value={abaAtiva}
         onValueChange={(value: string) => {
           const aba = ABAS.find((a) => a.value === value);
           if (aba) {
-            /* Suporte a callback legada */
             if (aoNavegar) {
               aoNavegar(aba.value);
             }
@@ -170,7 +154,6 @@ export function ConveniosLayout({
         </div>
       </Tabs>
 
-      {/* Conteúdo da rota filha */}
       {children}
     </div>
   );

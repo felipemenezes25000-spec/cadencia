@@ -40,11 +40,11 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="cadencia-shell-bg flex min-h-screen bg-canvas">
       <Sidebar collapsed={collapsed} onToggle={toggle} sessao={session} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
-        <main id="conteudo-principal" className="min-w-0 flex-1">{children}</main>
+        <main id="conteudo-principal" className="cadencia-workspace min-w-0 flex-1">{children}</main>
       </div>
       <MobileNavigation />
     </div>
@@ -62,7 +62,7 @@ function MobileNavigation() {
   ] as const;
 
   return (
-    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-start justify-around border-t border-line bg-surface px-1 pt-1.5 md:hidden">
+    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[68px] items-start justify-around border-t border-line bg-surface/90 px-1 pt-1.5 backdrop-blur-xl md:hidden">
       {items.map((item) => {
         const active = pathname === item.href
           || ('activePrefix' in item && pathname.startsWith(item.activePrefix))

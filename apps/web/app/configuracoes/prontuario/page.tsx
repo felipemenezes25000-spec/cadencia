@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   LayoutDoProntuario, type ItemSalvo, type SecaoDoLayout,
 } from '../../../src/ui/LayoutDoProntuario';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch, ApiError } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -39,18 +38,18 @@ export default function PaginaLayoutDoProntuario() {
 
   if (erro !== null) {
     return (
-      <div className="cadencia-page grid min-h-[40vh] place-items-center">
+      <div className="grid min-h-[36vh] place-items-center">
         <p className="max-w-md text-center text-sm text-text-muted">{erro}</p>
       </div>
     );
   }
 
   return (
-    <div className="cadencia-page grid gap-5">
-      <PageHeader
-        titulo="Meu prontuário"
-        subtitulo="A ordem das seções na tela de atendimento, e o que você quer ver. Vale só para você — os colegas continuam com a ordem deles."
-      />
+    <section className="grid gap-5" aria-labelledby="titulo-meu-prontuario">
+      <div>
+        <h2 id="titulo-meu-prontuario" className="text-lg font-semibold tracking-[-0.02em] text-text">Meu prontuário</h2>
+        <p className="mt-1 max-w-3xl text-sm text-text-muted">A ordem das seções na tela de atendimento e o que você quer ver. Vale só para você — os colegas continuam com a ordem deles.</p>
+      </div>
 
       {aviso !== null && <p className="text-sm text-ok">{aviso}</p>}
 
@@ -58,14 +57,9 @@ export default function PaginaLayoutDoProntuario() {
         <p className="text-sm text-text-muted">Carregando…</p>
       ) : (
         <LayoutDoProntuario
-          // `key` remonta o componente quando a lista do servidor muda: sem
-          // isso, o estado interno (a ordem em edição) sobreviveria ao salvar e
-          // a tela mostraria a ordem antiga como se nada tivesse acontecido.
           key={secoes.map((s) => `${s.sectionId}${s.ordinal}${s.visible}`).join('|')}
           secoes={secoes}
           aoSalvar={async (itens: readonly ItemSalvo[]) => {
-            // Lista vazia chega aqui quando o médico clica em "voltar ao
-            // padrão". A rota entende isso como apagar a personalização.
             await apiFetch('/v1/configuracoes/prontuario/layout', {
               method: 'PUT', body: { itens }, clinicId, csrfToken });
             setAviso('Ordem salva. Vale a partir do próximo atendimento que você abrir.');
@@ -73,6 +67,6 @@ export default function PaginaLayoutDoProntuario() {
           }}
         />
       )}
-    </div>
+    </section>
   );
 }

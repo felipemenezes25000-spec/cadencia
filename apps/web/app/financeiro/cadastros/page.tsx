@@ -23,8 +23,6 @@ export default function PaginaCadastrosFinanceiros() {
   const [transferindo, setTransferindo] = useState(false);
 
   const carregar = useCallback(async () => {
-    // As quatro juntas: são listas pequenas e a tela mostra as quatro abas.
-    // Buscar por aba faria a troca de aba parecer lenta sem economizar nada.
     const [f, c, cc, r] = await Promise.all([
       apiFetch<{ itens: DadosDosCadastros['fornecedores'] }>(
         '/v1/suppliers', { clinicId, csrfToken }).catch(() => ({ itens: [] })),
@@ -46,18 +44,16 @@ export default function PaginaCadastrosFinanceiros() {
   }, [carregar]);
 
   if (erro !== null) {
-    return <div className="cadencia-page"><p className="text-sm text-danger">{erro}</p></div>;
+    return <p role="alert" className="text-sm text-danger">{erro}</p>;
   }
 
   const contasParaTransferir: ContaParaTransferir[] = dados.contas
-    // Conta inativa não recebe nem envia: ela existe só para os lançamentos
-    // antigos continuarem apontando para algum lugar.
     .filter((c) => c.active)
     .map((c) => ({ bankAccountId: c.bankAccountId, name: c.name }));
 
   return (
     <>
-    <div className="cadencia-page pb-0">
+    <div className="pb-1">
       <Botao variante="secundario" iconeEsquerda={ArrowsLeftRight}
         onClick={() => setTransferindo(true)}>
         Transferir entre contas
@@ -70,8 +66,6 @@ export default function PaginaCadastrosFinanceiros() {
       aoTransferir={async (t) => {
         await apiFetch('/v1/transfers', {
           method: 'POST', body: t, clinicId, csrfToken });
-        // Recarrega: a transferência gera dois lançamentos e muda o saldo das
-        // duas contas na lista.
         await carregar();
       }}
       aoFechar={() => setTransferindo(false)}

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   FormRecursoGlosa, type GlosaParaRecurso,
 } from '../../../../src/telas/FormRecursoGlosa';
-import { PageHeader } from '../../../../src/ui/PageHeader';
 import { apiFetch } from '../../../../src/api';
 import { useSessao } from '../../../../src/sessao';
 
@@ -119,11 +118,11 @@ function NovoRecursoInner() {
   }, [brutas, clinicId, csrfToken, router]);
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Novo recurso de glosa"
-        subtitulo={`${glosas.length} ${glosas.length === 1 ? 'glosa' : 'glosas'} selecionadas`}
-      />
+    <section className="grid gap-6" aria-labelledby="titulo-novo-recurso">
+      <div>
+        <h2 id="titulo-novo-recurso" className="text-lg font-semibold tracking-[-0.02em] text-text">Novo recurso de glosa</h2>
+        <p className="mt-1 text-sm text-text-muted">{glosas.length} {glosas.length === 1 ? 'glosa' : 'glosas'} selecionadas</p>
+      </div>
 
       {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
 
@@ -134,7 +133,7 @@ function NovoRecursoInner() {
           aoCancelar={() => router.push('/convenios/glosas')}
         />
       )}
-    </div>
+    </section>
   );
 }
 
