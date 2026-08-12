@@ -52,6 +52,9 @@ const EXCECOES: Record<string, string> = {
   '/conversas/automacoes': 'Sub-rota, alcancada por aba na tela de Conversas',
   '/conversas/templates': 'Sub-rota, alcancada por aba na tela de Conversas',
   '/desempenho/nps': 'Sub-rota, alcancada por link na pagina de Desempenho',
+  '/catalogos/cid10': 'Sub-rota, alcancada por link no hub /catalogos',
+  '/catalogos/cid11': 'Sub-rota, alcancada por link no hub /catalogos',
+  '/catalogos/tuss': 'Sub-rota, alcancada por link no hub /catalogos',
 };
 
 /* ── Verification ─────────────────────────────────────────────────────── */
