@@ -128,7 +128,7 @@ export async function ddlLintViolations(db: Queryable): Promise<string[]> {
   for (const row of consent.rows) {
     if (row.label === 'atendimento') {
       out.push(
-        "app.consent_type contem o valor 'atendimento' — a base legal da assistencia e o art. 11 II f, nao consentimento",
+        "app.consent_type contem o valor 'atendimento' — a base legal da assistência é o art. 11 II f, não consentimento",
       );
     }
   }
@@ -148,7 +148,7 @@ export async function ddlLintViolations(db: Queryable): Promise<string[]> {
     if (row.comment === 'tenant-scoped-by-parent') continue;
     if (row.first_column === 'tenant_id') continue;
     out.push(
-      `${row.schema}.${row.relation} / ${row.index_name}: indice de tabela multi-tenant nao comeca por tenant_id (primeira coluna: ${row.first_column})`,
+      `${row.schema}.${row.relation} / ${row.index_name}: índice de tabela multi-tenant não começa por tenant_id (primeira coluna: ${row.first_column})`,
     );
   }
 

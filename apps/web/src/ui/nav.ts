@@ -66,7 +66,7 @@ export const ITENS_NAV: readonly ItemNav[] = [
       { id: 'fin-estoque', rotulo: 'Estoque', href: '/financeiro/estoque' },
     ] },
 
-  { id: 'convenios', rotulo: 'Convenios', href: '/convenios',
+  { id: 'convenios', rotulo: 'Convênios', href: '/convenios',
     icone: ShieldCheck, atalho: '6', grupo: 'gestao', disponivelNaFase: 4,
     filhos: [
       { id: 'conv-a-faturar', rotulo: 'A faturar', href: '/convenios' },
@@ -84,13 +84,13 @@ export const ITENS_NAV: readonly ItemNav[] = [
       { id: 'desemp-nps', rotulo: 'NPS', href: '/desempenho/nps' },
     ] },
 
-  { id: 'relatorios', rotulo: 'Relatorios', href: '/explorar',
+  { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar',
     icone: Table, atalho: '8', grupo: 'gestao', disponivelNaFase: 3 },
 ];
 
 export const CONFIG_NAV = {
   id: 'configuracoes',
-  rotulo: 'Configuracoes',
+  rotulo: 'Configurações',
   href: '/configuracoes',
   icone: GearSix,
   filhos: [

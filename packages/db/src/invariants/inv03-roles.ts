@@ -95,7 +95,7 @@ SELECT n.nspname || '.' || c.relname AS object,
   LEFT JOIN pg_roles g ON g.oid = a.grantee
  WHERE n.nspname = 'rpt'
    AND coalesce(g.rolname, 'PUBLIC') IN ('app_rw', 'api', 'PUBLIC')
-   -- refresh_log e tabela de infra (carimbo "dados ate HH:MM"), nao matview.
+   -- refresh_log e tabela de infra (carimbo "dados até HH:MM"), não matview.
    -- app_rw precisa de SELECT nela para exibir o timestamp no front (§3.8).
    AND c.relname <> 'refresh_log'
  ORDER BY 1, 2, 3`;

@@ -189,12 +189,12 @@ export function createMemedProvider(
   }
 
   /**
-   * Token ATUAL do prescritor. Consulta primeiro, cadastra so se nao existir.
+   * Token ATUAL do prescritor. Consulta primeiro, cadastra só se não existir.
    *
-   * A ordem importa e nao e estilo: POST e "cadastrar", nao "garantir que
+   * A ordem importa e não é estilo: POST é "cadastrar", não "garantir que
    * existe". Fazer POST a cada abertura de receita escreveria na conta de
-   * PRODUCAO da clinica toda vez que um medico prescreve. E a documentacao e
-   * explicita em que o token nao e estatico — ele vem da consulta.
+   * PRODUÇÃO da clínica toda vez que um médico prescreve. E a documentação é
+   * explícita em que o token não é estático — ele vem da consulta.
    */
   async function tokenDoPrescritor(
     ctx: ProviderCtx,

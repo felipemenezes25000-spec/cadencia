@@ -35,8 +35,8 @@ export function createUncontractedSignatureProvider(): SignatureProvider {
 
   return {
     id: 'signature-nao-contratado',
-    // Nao declara `ad-rt` nem `ltv`: quem consulta capabilities para decidir se
-    // pode emitir documento assinado precisa receber "nao" aqui.
+    // Não declara `ad-rt` nem `ltv`: quem consulta capabilities para decidir se
+    // pode emitir documento assinado precisa receber "não" aqui.
     capabilities: new Set(['residency:br']),
     safety: {
       authorizeSigner: 'idempotent',
@@ -47,22 +47,22 @@ export function createUncontractedSignatureProvider(): SignatureProvider {
     },
 
     async health() {
-      // `up: false` de proposito. O monitor precisa mostrar isto vermelho: nao e
-      // uma indisponibilidade passageira de rede, e a ausencia de um contrato —
-      // e um painel todo verde faria ninguem lembrar de resolver.
+      // `up: false` de propósito. O monitor precisa mostrar isto vermelho: não é
+      // uma indisponibilidade passageira de rede, e sim a ausência de um contrato —
+      // e um painel todo verde faria ninguém lembrar de resolver.
       return { up: false, latencyMs: 0, checkedAt: '1970-01-01T00:00:00.000Z' as Rfc3339 };
     },
 
-    async authorizeSigner() { return recusar('autorizacao de signatario'); },
-    async completeAuthorization() { return recusar('conclusao de autorizacao'); },
+    async authorizeSigner() { return recusar('autorização de signatário'); },
+    async completeAuthorization() { return recusar('conclusão de autorização'); },
     async sign() { return recusar('assinatura'); },
     async retimestamp() { return recusar('recarimbo'); },
 
     async verify(): Promise<ProviderResult<VerifyResult>> {
       // A chamada em si SUCEDE — o que ela informa e que nada pode ser afirmado.
-      // Devolver `invalida` diria que a assinatura foi conferida e reprovada;
-      // devolver erro faria a tela mostrar falha onde nao houve falha. A
-      // ICP-Brasil ja tem a palavra exata para "nao da para concluir".
+      // Devolver `inválida` diria que a assinatura foi conferida e reprovada;
+      // devolver erro faria a tela mostrar falha onde não houve falha. A
+      // ICP-Brasil já tem a palavra exata para "não dá para concluir".
       return success<VerifyResult>({
         status: 'indeterminada',
         chainOk: false,

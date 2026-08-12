@@ -16,7 +16,7 @@ SELECT n.nspname   AS schema,
        c.relname   AS relation,
        con.conname AS constraint_name,
        -- ::text e obrigatorio: array_agg(attname) devolve name[] (OID 1003), para o qual
-       -- o node-pg nao tem parser e entrega a string crua "{a,b}" no lugar do array.
+       -- o node-pg não tem parser e entrega a string crua "{a,b}" no lugar do array.
        (SELECT array_agg(a.attname::text ORDER BY k.ord)
           FROM unnest(con.conkey) WITH ORDINALITY AS k(attnum, ord)
           JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = k.attnum) AS columns,

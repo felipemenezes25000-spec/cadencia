@@ -112,7 +112,7 @@ function EstadoVazio() {
       <Package size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
       <p className="text-sm font-medium text-text">Nenhuma guia pendente</p>
       <p className="mt-1 text-xs text-text-muted">
-        Todas as guias foram faturadas ou nao ha registros para os filtros selecionados.
+        Todas as guias foram faturadas ou não há registros para os filtros selecionados.
       </p>
     </div>
   );
@@ -137,7 +137,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
   /**
    * A operadora do lote sai das guias selecionadas.
    *
-   * `null` quando a selecao mistura operadoras — e ai o botao fica desabilitado
+   * `null` quando a seleção mistura operadoras — e aí o botão fica desabilitado
    * em vez de montar um lote que a operadora recusaria inteiro. Antes disto a
    * tela mandava `operadoraId: null` para uma rota que exige uuid: a API
    * respondia 400, a promessa era descartada com `void` sem catch, e o usuario
@@ -159,7 +159,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
     try {
       await p.aoCriarLote(Array.from(selecionadas), operadoraDaSelecao);
     } catch {
-      setErroLote('Nao foi possivel criar o lote. Nenhuma guia foi alterada.');
+      setErroLote('Não foi possível criar o lote. Nenhuma guia foi alterada.');
     } finally {
       setCriandoLote(false);
     }
@@ -263,20 +263,20 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
         </div>
 
         <Campo
-          rotulo="Periodo inicio"
+          rotulo="Período início"
           type="date"
           denso
           value={dataInicio}
           onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Periodo inicio"
+          aria-label="Período início"
         />
         <Campo
-          rotulo="Periodo fim"
+          rotulo="Período fim"
           type="date"
           denso
           value={dataFim}
           onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Periodo fim"
+          aria-label="Período fim"
         />
         <Botao variante="secundario" tamanho="md" onClick={filtrar}>
           Filtrar
@@ -312,8 +312,8 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
       {/* Um lote e de UMA operadora: o XML vai para o webservice dela. */}
       {selecionadas.size > 0 && operadoraDaSelecao === null && (
         <p role="alert" className="text-sm text-danger">
-          As guias selecionadas sao de operadoras diferentes. Um lote pertence a
-          uma operadora so — selecione guias de uma de cada vez.
+          As guias selecionadas são de operadoras diferentes. Um lote pertence a
+          uma operadora só — selecione guias de uma cada vez.
         </p>
       )}
 
