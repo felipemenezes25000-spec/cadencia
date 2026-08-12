@@ -152,7 +152,7 @@ describe('buildQuery', () => {
       limit: 50,
       offset: 0,
     };
-    expect(() => buildQuery(q)).toThrow('nome de coluna invalido');
+    expect(() => buildQuery(q)).toThrow('nome de coluna inválido');
   });
 
   it('rejeita nome de coluna de filtro com caractere nao alfanumerico', () => {
@@ -164,6 +164,6 @@ describe('buildQuery', () => {
       limit: 50,
       offset: 0,
     };
-    expect(() => buildQuery(q)).toThrow('nome de coluna invalido');
+    expect(() => buildQuery(q)).toThrow('nome de coluna inválido');
   });
 });

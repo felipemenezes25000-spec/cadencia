@@ -27,7 +27,7 @@ describe('conformidade obrigatoria por adaptador', () => {
   it('reprova provedor que esqueceu de declarar a safety de um metodo', () => {
     const p = createFakeSignatureProvider();
     expect(() => assertSafetyDeclared(p, ['metodoInexistente']))
-      .toThrow(/safety nao declarada para metodoInexistente/);
+      .toThrow(/safety não declarada para metodoInexistente/);
   });
 
   it('timeout com efeito NAO duplica: a segunda chamada devolve o MESMO resultado', async () => {

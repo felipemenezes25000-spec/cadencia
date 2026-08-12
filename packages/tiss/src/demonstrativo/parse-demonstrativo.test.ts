@@ -204,7 +204,7 @@ describe('parseDemonstrativoXml', () => {
     const encoded = encodeIso8859(xmlSemDemo);
 
     expect(() => parseDemonstrativoXml(encoded.bytes)).toThrow(
-      'XML nao contem demonstrativoAnaliseConta nem demonstrativoPagamento',
+      'XML não contém demonstrativoAnaliseConta nem demonstrativoPagamento',
     );
   });
 
