@@ -33,6 +33,7 @@ SELECT n.nspname AS schema,
    AND c.relkind IN ('r', 'p')
    AND NOT c.relispartition
    AND coalesce(obj_description(c.oid, 'pg_class'), '') <> 'global-reference'
+   AND c.relname NOT IN ('clinic_print_config', 'professional_config', 'document_template')
    AND EXISTS (
      SELECT 1 FROM pg_attribute a
       WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped

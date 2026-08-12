@@ -118,7 +118,7 @@ export async function documentTemplateRoutes(app: FastifyInstance): Promise<void
     valores.push(p.id);
     const { rows } = await tx.query(
       `UPDATE clin.document_template SET ${campos.join(', ')}
-        WHERE id = $${idx} AND clinic_id = current_setting('app.clinic_id')::uuid
+        WHERE id = $${idx} AND tenant_id = current_setting('app.tenant_id')::uuid AND clinic_id = current_setting('app.clinic_id')::uuid
         RETURNING id, clinic_id, professional_id, kind, titulo, corpo,
                   created_at::text AS created_at, updated_at::text AS updated_at`,
       valores,
@@ -142,7 +142,7 @@ export async function documentTemplateRoutes(app: FastifyInstance): Promise<void
   }, rota('document_template.delete', async (tx, _ctx, req) => {
     const p = req.params as { id: string };
     const { rows } = await tx.query<{ id: string }>(
-      `DELETE FROM clin.document_template WHERE id = $1 AND clinic_id = current_setting('app.clinic_id')::uuid RETURNING id`,
+      `DELETE FROM clin.document_template WHERE id = $1 AND tenant_id = current_setting('app.tenant_id')::uuid AND clinic_id = current_setting('app.clinic_id')::uuid RETURNING id`,
       [p.id],
     );
     if (rows.length === 0) {
