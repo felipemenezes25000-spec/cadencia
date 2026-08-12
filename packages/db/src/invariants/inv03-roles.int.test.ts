@@ -44,7 +44,7 @@ describe('invariante 3 — o papel de login da aplicacao nao pode desligar o pro
       return roleViolations(c);
     });
     expect(violacoes).toContain(
-      'api e dona de app.__minha — dono desliga RLS e derruba policy, o isolamento inteiro vira decoracao',
+      'api é dona de app.__minha — dono desliga RLS e derruba policy, o isolamento inteiro vira decoração',
     );
   });
 
@@ -53,7 +53,7 @@ describe('invariante 3 — o papel de login da aplicacao nao pode desligar o pro
       await c.query('ALTER ROLE support BYPASSRLS');
       return roleViolations(c);
     });
-    expect(violacoes).toContain('papel inesperado com BYPASSRLS: support — so jobs e rpt_owner podem ter');
+    expect(violacoes).toContain('papel inesperado com BYPASSRLS: support — só jobs e rpt_owner podem ter');
   });
 });
 
@@ -67,7 +67,7 @@ describe('invariante 6 — a trilha nao aceita escrita direta e os relatorios na
       await c.query('GRANT INSERT ON audit.event TO app_rw');
       return forbiddenGrantViolations(c);
     });
-    expect(violacoes).toContain('audit.event: GRANT INSERT para app_rw — a trilha so se escreve por audit.log');
+    expect(violacoes).toContain('audit.event: GRANT INSERT para app_rw — a trilha só se escreve por audit.log');
   });
 
   it('reprova GRANT INSERT numa PARTICAO da trilha — a porta dos fundos que o GRANT no pai nao mostra', async () => {
@@ -84,19 +84,19 @@ describe('invariante 6 — a trilha nao aceita escrita direta e os relatorios na
       await c.query(`GRANT INSERT ON audit.${particao} TO app_rw`);
       return forbiddenGrantViolations(c);
     });
-    expect(violacoes.some((v) => v.includes('GRANT INSERT para app_rw — a trilha so se escreve por audit.log'))).toBe(
+    expect(violacoes.some((v) => v.includes('GRANT INSERT para app_rw — a trilha só se escreve por audit.log'))).toBe(
       true,
     );
   });
 
-  it('reprova qualquer GRANT em rpt.* para app_rw — matview nao suporta RLS', async () => {
+  it('reprova qualquer GRANT em rpt.* para app_rw — matview não suporta RLS', async () => {
     const violacoes = await inRollbackTx(async (c) => {
       await c.query('CREATE TABLE rpt.__mv_atendimentos (tenant_id uuid NOT NULL, total int NOT NULL)');
       await c.query('GRANT SELECT ON rpt.__mv_atendimentos TO app_rw');
       return forbiddenGrantViolations(c);
     });
     expect(violacoes).toContain(
-      'rpt.__mv_atendimentos: GRANT SELECT para app_rw — rpt e exposto so por view security_barrier',
+      'rpt.__mv_atendimentos: GRANT SELECT para app_rw — rpt é exposto só por view security_barrier',
     );
   });
 });

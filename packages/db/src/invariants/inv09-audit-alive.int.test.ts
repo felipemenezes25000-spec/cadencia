@@ -79,7 +79,7 @@ describe('invariante 9 — a trilha tem de estar viva, nao so existir', () => {
       await c.query('TRUNCATE audit.event');
       return auditAliveViolations(c);
     });
-    expect(violacoes).toEqual(['audit.event vazio — a trilha existe e ninguem escreve nela']);
+    expect(violacoes).toEqual(['audit.event vazio — a trilha existe e ninguém escreve nela']);
   });
 
   it('reprova trilha parada ha mais tempo que o orcamento', async () => {

@@ -19,7 +19,7 @@ describe('invariante 7 — privilegio e afirmado tabela a tabela, nao herdado de
       await c.query('GRANT SELECT ON app.__nova TO app_rw');
       return diffDeclaredGrants(await readEffectiveGrants(c), readDeclaredGrants());
     });
-    expect(diff).toContain('app.__nova: relacao existe no banco e nao esta declarada em packages/db/privileges.json');
+    expect(diff).toContain('app.__nova: relação existe no banco e não está declarada em packages/db/privileges.json');
   });
 
   it('reprova a tabela declarada cujo GRANT a migration esqueceu', async () => {

@@ -19,8 +19,8 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
       await c.query('CREATE TABLE clin.__violacao (tenant_id uuid NOT NULL, id uuid NOT NULL)');
       return rlsViolations(await readRelations(c));
     });
-    expect(violacoes).toContain('clin.__violacao: RLS nao habilitada');
-    expect(violacoes).toContain('clin.__violacao: RLS nao forcada — o dono da tabela escapa da policy');
+    expect(violacoes).toContain('clin.__violacao: RLS não habilitada');
+    expect(violacoes).toContain('clin.__violacao: RLS não forçada — o dono da tabela escapa da policy');
     expect(violacoes).toContain('clin.__violacao: nenhuma policy');
   });
 
@@ -65,13 +65,13 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
     );
   });
 
-  it('reprova matview em schema multi-tenant — matview nao suporta RLS e pertence a rpt', async () => {
+  it('reprova matview em schema multi-tenant — matview não suporta RLS e pertence a rpt', async () => {
     const violacoes = await inRollbackTx(async (c) => {
       await c.query('CREATE MATERIALIZED VIEW clin.__mv AS SELECT 1 AS n');
       return rlsViolations(await readRelations(c));
     });
     expect(violacoes).toContain(
-      'clin.__mv: matview em schema multi-tenant — matview nao suporta RLS; ela mora em rpt e e exposta por view security_barrier',
+      'clin.__mv: matview em schema multi-tenant — matview não suporta RLS; ela mora em rpt e é exposta por view security_barrier',
     );
   });
 
@@ -89,7 +89,7 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
         FOR VALUES FROM ('2026-01-01') TO ('2027-01-01')`);
       return rlsViolations(await readRelations(c));
     });
-    expect(violacoes).toContain('clin.__particionada_2026: RLS nao habilitada');
+    expect(violacoes).toContain('clin.__particionada_2026: RLS não habilitada');
   });
 
   it('app.secure_partition faz a particao herdar RLS forcada e as policies do pai', async () => {
@@ -119,8 +119,8 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
       await c.query('CREATE TABLE tiss.__sem_rls (tenant_id uuid NOT NULL, id uuid NOT NULL)');
       return rlsViolations(await readRelations(c));
     });
-    expect(violacoes).toContain('tiss.__sem_rls: RLS nao habilitada');
-    expect(violacoes).toContain('tiss.__sem_rls: RLS nao forcada — o dono da tabela escapa da policy');
+    expect(violacoes).toContain('tiss.__sem_rls: RLS não habilitada');
+    expect(violacoes).toContain('tiss.__sem_rls: RLS não forçada — o dono da tabela escapa da policy');
     expect(violacoes).toContain('tiss.__sem_rls: nenhuma policy');
   });
 
@@ -138,7 +138,7 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
       expect(rel, `tiss.${tabela} nao encontrada — a migration da Fase 5 nao foi aplicada`).toBeDefined();
       expect(rel!.hasDiscriminator, `tiss.${tabela} sem coluna tenant_id`).toBe(true);
       expect(rel!.rlsEnabled, `tiss.${tabela} com RLS desabilitada`).toBe(true);
-      expect(rel!.rlsForced, `tiss.${tabela} com RLS nao forcada`).toBe(true);
+      expect(rel!.rlsForced, `tiss.${tabela} com RLS não forçada`).toBe(true);
       expect(rel!.policies, `tiss.${tabela} sem nenhuma policy`).toBeGreaterThanOrEqual(1);
     }
   });

@@ -22,7 +22,7 @@ describe('invariante 2 — a FK composta e o que transforma bug de aplicacao em 
       return fkViolations(await readForeignKeys(c));
     });
     expect(violacoes).toContain(
-      'clin.__consulta.fk_paciente: FK de coluna unica (patient_id) para clin.patient, que e multi-tenant — precisa ser composta com tenant_id',
+      'clin.__consulta.fk_paciente: FK de coluna única (patient_id) para clin.patient, que é multi-tenant — precisa ser composta com tenant_id',
     );
   });
 
@@ -37,7 +37,7 @@ describe('invariante 2 — a FK composta e o que transforma bug de aplicacao em 
       return fkViolations(await readForeignKeys(c));
     });
     expect(violacoes).toContain(
-      'clin.__consulta.fk_ident: FK (patient_id, kind) para clin.patient_identifier nao inclui tenant_id',
+      'clin.__consulta.fk_ident: FK (patient_id, kind) para clin.patient_identifier não inclui tenant_id',
     );
   });
 

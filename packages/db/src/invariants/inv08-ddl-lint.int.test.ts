@@ -69,7 +69,7 @@ describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
       return ddlLintViolations(c);
     });
     expect(violacoes).toContain(
-      "app.consent_type contem o valor 'atendimento' — a base legal da assistencia e o art. 11 II f, nao consentimento",
+      "app.consent_type contem o valor 'atendimento' — a base legal da assistência é o art. 11 II f, não consentimento",
     );
   });
 
@@ -88,7 +88,7 @@ describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
       return ddlLintViolations(c);
     });
     expect(violacoes).toContain(
-      'clin.patient / ix__patient_created: indice de tabela multi-tenant nao comeca por tenant_id (primeira coluna: created_at)',
+      'clin.patient / ix__patient_created: índice de tabela multi-tenant não começa por tenant_id (primeira coluna: created_at)',
     );
   });
 
