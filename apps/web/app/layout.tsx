@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';
+import { OfflineIndicator } from '../src/components/mobile';
 import { AppShell } from '../src/components/shell/AppShell';
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
         <Providers>
           <ConnectivityStatus />
+          <OfflineIndicator />
           <AppShell>
             <ErrorBoundary>{children}</ErrorBoundary>
           </AppShell>

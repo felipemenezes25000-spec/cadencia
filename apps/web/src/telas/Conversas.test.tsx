@@ -98,7 +98,7 @@ describe('Conversas (split view)', () => {
       expect(screen.getByText('Maria Souza Lima')).toBeVisible(),
     );
     expect(
-      screen.getByText('Nenhuma conversa selecionada'),
+      screen.getByText('Sua central de relacionamento'),
     ).toBeVisible();
   });
 
@@ -119,7 +119,7 @@ describe('Conversas (split view)', () => {
       expect(screen.getByText('Maria Souza Lima')).toBeVisible(),
     );
 
-    const campoBusca = screen.getByPlaceholderText('Buscar conversas...');
+    const campoBusca = screen.getByPlaceholderText('Paciente, telefone ou mensagem…');
     await user.type(campoBusca, 'Maria');
 
     expect(screen.getByText('Maria Souza Lima')).toBeVisible();
@@ -143,7 +143,9 @@ describe('Conversas (split view)', () => {
     const { aoAbrirConversa } = montar();
 
     const itens = await screen.findAllByRole('listitem');
+    const botoes = await screen.findAllByRole('button');
     await user.click(itens[0]!);
+    await user.click(botoes.find((b) => b.textContent?.includes('Maria Souza Lima'))!);
     expect(aoAbrirConversa).toHaveBeenCalledWith('c1');
   });
 
@@ -151,7 +153,7 @@ describe('Conversas (split view)', () => {
     montar({ conversaAbertaId: 'c2' });
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: /Vincular a paciente/ }),
+        screen.getByRole('button', { name: /Vincular paciente/ }),
       ).toBeVisible(),
     );
     expect(screen.getAllByText('+5511888880002').length).toBeGreaterThanOrEqual(

@@ -356,3 +356,78 @@ tbody tr { transition: background-color var(--dur-1) ease; }
   nav, [role="toolbar"], .print\:hidden { display: none !important; }
   body { background: white; }
 }
+
+/* ── MOBILE TOUCH UTILITIES ──────────────────────────────────── */
+
+/*
+ * Touch targets mínimo 44x44px (Apple HIG / WCAG 2.2).
+ * Aplica a .touch-target em botões e ícones clicáveis.
+ */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Torna botões menores acessíveis em touch */
+@media (hover: none) and (pointer: coarse) {
+  .touch-expand {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Aumenta área de toque em chips e badges */
+  .chip-touch {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+
+  /* Garante que inputs de busca sejam grandes o suficiente */
+  input[type="search"],
+  input[type="text"] {
+    min-height: 44px;
+  }
+}
+
+/* Mobile: padding extra no bottom para o dock do sistema */
+@media (max-width: 768px) {
+  .cadencia-page,
+  .clinical-page {
+    padding-bottom: 84px; /* espaço para dock mobile */
+  }
+
+  /* Sidebar vira dock bottom em mobile */
+  [data-shell="sidebar"] {
+    display: none;
+  }
+
+  [data-shell="mobile-dock"] {
+    display: flex;
+  }
+}
+
+/* Desktop: esconde dock mobile */
+@media (min-width: 769px) {
+  [data-shell="mobile-dock"] {
+    display: none;
+  }
+}
+
+/* Swipe hint animation */
+@keyframes swipe-hint {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
+
+.swipe-hint {
+  animation: swipe-hint 1.5s ease-in-out infinite;
+}
+
+/* Pull to refresh indicator */
+@keyframes pull-refresh {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.pull-refresh-loading {
+  animation: pull-refresh 0.3s ease-out forwards;
+}

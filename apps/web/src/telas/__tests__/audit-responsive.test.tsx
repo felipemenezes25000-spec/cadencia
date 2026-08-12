@@ -309,7 +309,7 @@ describe('Auditoria responsiva', () => {
         expect(screen.getByTestId('split-view')).toBeInTheDocument(),
       );
       // Botao voltar existe com classe md:hidden (visivel apenas no mobile)
-      const botaoVoltar = screen.getByLabelText('Voltar para lista');
+      const botaoVoltar = screen.getByLabelText('Voltar');
       expect(botaoVoltar).toBeTruthy();
       // O container do botao deve ter md:hidden para esconder no desktop
       const voltarContainer = botaoVoltar.closest('[class*="md:hidden"]');

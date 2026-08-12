@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import type { NextConfig } from 'next';
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 /**
  * Raiz do workspace, cravada.
@@ -29,6 +30,26 @@ const config: NextConfig = {
   poweredByHeader: false,
   outputFileTracingRoot: RAIZ_DO_WORKSPACE,
   /**
+   * Lazy loading de componentes pesados para reduzir first load JS.
+   *
+   * Estes módulos são carregados sob demanda:
+   * - Tiptap: editor clínico rico
+   * - Visx: gráficos de relatórios
+   * - dnd-kit: drag-and-drop da agenda
+   * - Phosphor Icons: ícones (parcial)
+   */
+  experimental: {
+    optimizePackageImports: ['@phosphor-icons/react', '@visx/axis', '@visx/shape', '@visx/grid'],
+  },
+  /**
+   * Lazy loading explícito para componentes grandes.
+   */
+  modularizeImports: {
+    '@tiptap/react': {
+      transform: '{{module}}',
+    },
+  },
+  /**
    * Este repositorio nao usa ESLint: a rede de seguranca e `tsc` em strict, os
    * lints proprios em `tools/check-*.ts` e o `arch:check` do dependency-cruiser.
    *
@@ -45,4 +66,14 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+/**
+ * Bundle Analyzer - habilitado via ANALYZE=true pnpm build
+ *
+ * Gera relatório HTML em .next/analyze/
+ * Usa '@next/bundle-analyzer' para visualização interativa
+ */
+const nextConfig = process.env.ANALYZE === 'true'
+  ? withBundleAnalyzer({ enabled: true })(config)
+  : config;
+
+export default nextConfig;

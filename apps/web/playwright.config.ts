@@ -1,0 +1,90 @@
+/**
+ * Playwright E2E Configuration
+ *
+ * Uso:
+ *   pnpm test:e2e          # rodar todos os testes
+ *   pnpm test:e2e:ui      # abrir UI do Playwright
+ *   pnpm playwright test    # via CLI direto
+ *
+ * Ambientes:
+ *   - development: http://localhost:3000
+ *   - CI: via variável PLAYWRIGHT_BASE_URL
+ */
+
+import { defineConfig, devices } from '@playwright/test';
+
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+
+export default defineConfig({
+  /* ── Output ────────────────────────────────────────────────────── */
+  outputDir: '.playwright-results',
+  reportDir: '.playwright-report',
+
+  /* ── Ambientes ────────────────────────────────────────────────── */
+  baseURL: BASE_URL,
+  timeout: 30_000,
+
+  /* ── Retries ─────────────────────────────────────────────────── */
+  retries: {
+    passed: 0,
+    failed: 2, // retry 2x em falha (flaky networks)
+  },
+
+  /* ── Repórteres ──────────────────────────────────────────────── */
+  reporter: [
+    ['html', { open: 'never' }],
+    ['list'],
+  ],
+
+  /* ── Browsers ────────────────────────────────────────────────── */
+  projects: [
+    /* ── Chromium (principal) ─── */
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+
+    /* ── Firefox ─── */
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+
+    /* ── Mobile ─── */
+    {
+      name: 'mobile-chrome',
+      use: {
+        ...devices['Pixel 5'],
+      },
+    },
+    {
+      name: 'mobile-safari',
+      use: {
+        ...devices['iPhone 12'],
+      },
+    },
+  ],
+
+  /* ── WebServer (opcional) ────────────────────────────────────── */
+  // Descomente se quiser que o Playwright inicie o dev server:
+  // webServer: {
+  //   command: 'pnpm dev',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 60_000,
+  // },
+
+  /* ── Acessibilidade ───────────────────────────────────────────── */
+  use: {
+    /* Cabeçalhos customizados para testes */
+    extraHTTPHeaders: {
+      'X-Test-Environment': 'true',
+    },
+  },
+});

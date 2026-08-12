@@ -52,7 +52,7 @@ describe('fluxo: conversa com numero desconhecido', () => {
         aoEnviar={async () => ({ messageId: 'm9' })}
         aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Vincular a paciente/ })).toBeVisible());
+      expect(screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
   });
 
   it('clicar em "Vincular a paciente" chama o callback', async () => {
@@ -66,8 +66,8 @@ describe('fluxo: conversa com numero desconhecido', () => {
         aoEnviar={async () => ({ messageId: 'm9' })}
         aoVincularPaciente={aoVincularPaciente} aoSelecionarTemplate={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Vincular a paciente/ })).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Vincular a paciente/ }));
+      expect(screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
+    await userEvent.click(screen.getByRole('button', { name: /Vincular paciente/ }));
     expect(aoVincularPaciente).toHaveBeenCalled();
   });
 

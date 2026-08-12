@@ -88,7 +88,7 @@ describe('tela Pacientes', () => {
 
     await waitFor(() => expect(screen.getByText('Álvaro Neto')).toBeVisible());
 
-    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    const input = screen.getByRole('searchbox');
     await user.type(input, 'ana');
 
     // Avança o debounce
@@ -118,7 +118,7 @@ describe('tela Pacientes', () => {
     // Aguarda a primeira chamada (renderização inicial)
     await waitFor(() => expect(buscar).toHaveBeenCalledTimes(1));
 
-    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    const input = screen.getByRole('searchbox');
     await user.type(input, 'test');
 
     // Antes do debounce expirar, não deve ter chamado de novo com o termo
@@ -149,7 +149,7 @@ describe('tela Pacientes', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Nenhum paciente encontrado')).toBeVisible();
-      expect(screen.getByText('Adicione seu primeiro paciente')).toBeVisible();
+      expect(screen.getByText('Não há pacientes nesta visualização.')).toBeVisible();
     });
   });
 
@@ -170,7 +170,7 @@ describe('tela Pacientes', () => {
       expect(screen.getByText('Nenhum paciente encontrado')).toBeVisible();
     });
 
-    const input = screen.getByPlaceholderText('Buscar por nome, CPF ou telefone...');
+    const input = screen.getByRole('searchbox');
     await user.type(input, 'xyz');
 
     await act(async () => {
@@ -242,7 +242,7 @@ describe('tela Pacientes', () => {
         aoAbrir={vi.fn()}
       />,
     );
-    await waitFor(() => expect(screen.getByText('preliminar')).toBeVisible());
+    await waitFor(() => expect(screen.getByText('Cadastro preliminar')).toBeVisible());
   });
 
   it('não tem violações de acessibilidade', async () => {

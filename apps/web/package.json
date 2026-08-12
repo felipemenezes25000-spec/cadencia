@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "test": "vitest run"
+    "build:analyze": "ANALYZE=true next build",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:a11y": "vitest run --config vitest.a11y.config.ts"
   },
   "dependencies": {
     "@cadencia/authz": "workspace:*",
@@ -55,13 +59,17 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.22",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
+    "@axe-core/playwright": "^4.10.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
+    "axe-core": "^4.10.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.25",
     "tailwindcss": "^4.3.3",

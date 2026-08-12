@@ -124,7 +124,7 @@ describe('painel de conversa', () => {
   it('conversa com número desconhecido mostra opção de vincular a paciente', async () => {
     montar({ patientId: null, nomeExibido: '+5511888880002' });
     await waitFor(() => expect(
-      screen.getByRole('button', { name: /Vincular a paciente/ })).toBeVisible());
+      screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
   });
 
   it('botão de template abre seletor', async () => {
