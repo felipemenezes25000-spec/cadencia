@@ -16,9 +16,7 @@ CREATE TABLE clin.document_template (
   CONSTRAINT document_template_clinic_fk
     FOREIGN KEY (tenant_id, clinic_id) REFERENCES app.clinic(tenant_id, id),
   CONSTRAINT document_template_professional_fk
-    FOREIGN KEY (tenant_id, professional_id) REFERENCES app.professional(tenant_id, id),
-  CONSTRAINT document_template_kind_uniq
-    UNIQUE (tenant_id, clinic_id, professional_id, kind)
+    FOREIGN KEY (tenant_id, professional_id) REFERENCES app.professional(tenant_id, id)
 );
 
 ALTER TABLE clin.document_template OWNER TO app_owner;
@@ -45,3 +43,7 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Unique: trata NULL professional_id como igual (coalesce para 0)
+CREATE UNIQUE INDEX document_template_kind_uniq
+  ON clin.document_template (tenant_id, clinic_id, kind, COALESCE(professional_id, '00000000-0000-0000-0000-000000000000'::uuid));

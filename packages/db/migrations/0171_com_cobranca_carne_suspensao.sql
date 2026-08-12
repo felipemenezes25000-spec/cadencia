@@ -60,7 +60,6 @@ CREATE INDEX ix_cobranca_vencimento ON com.cobranca (data_vencimento, status)
 CREATE INDEX ix_cobranca_tenant ON com.cobranca (tenant_id, created_at DESC);
 
 ALTER TABLE com.cobranca ENABLE ROW LEVEL SECURITY;
-ALTER TABLE com.cobranca FORCE  ROW LEVEL SECURITY;
 CREATE POLICY cobranca_isolation ON com.cobranca AS PERMISSIVE FOR ALL TO app_rw
   USING      (tenant_id = app.current_tenant_id() AND app.is_member())
   WITH CHECK (tenant_id = app.require_tenant_id() AND app.is_member());
@@ -99,7 +98,6 @@ CREATE INDEX ix_carne_vencimento ON com.carne (data_vencimento, status)
 CREATE INDEX ix_carne_cobranca ON com.carne (tenant_id, cobranca_id);
 
 ALTER TABLE com.carne ENABLE ROW LEVEL SECURITY;
-ALTER TABLE com.carne FORCE  ROW LEVEL SECURITY;
 CREATE POLICY carne_isolation ON com.carne AS PERMISSIVE FOR ALL TO app_rw
   USING      (tenant_id = app.current_tenant_id() AND app.is_member())
   WITH CHECK (tenant_id = app.require_tenant_id() AND app.is_member());
@@ -134,7 +132,6 @@ CREATE INDEX ix_suspensao_ativa ON com.suspensao (tenant_id)
 CREATE INDEX ix_suspensao_assinatura ON com.suspensao (tenant_id, assinatura_id);
 
 ALTER TABLE com.suspensao ENABLE ROW LEVEL SECURITY;
-ALTER TABLE com.suspensao FORCE  ROW LEVEL SECURITY;
 CREATE POLICY suspensao_isolation ON com.suspensao AS PERMISSIVE FOR ALL TO app_rw
   USING      (tenant_id = app.current_tenant_id() AND app.is_member())
   WITH CHECK (tenant_id = app.require_tenant_id() AND app.is_member());
