@@ -18,10 +18,14 @@ export interface PainelLateralProps {
   readonly aoFechar?: () => void;
   /** Título do painel (renderizado no cabeçalho) */
   readonly titulo?: string;
+  /** Descricao acessivel e contexto curto abaixo do titulo */
+  readonly descricao?: string;
   /** Largura do painel */
   readonly largura?: Largura;
   /** Conteúdo do painel */
   readonly children: ReactNode;
+  /** Acoes persistentes no rodape */
+  readonly rodape?: ReactNode;
   /** Classes adicionais */
   readonly className?: string;
 }
@@ -37,8 +41,10 @@ export function PainelLateral({
   onFechar,
   aoFechar,
   titulo,
+  descricao,
   largura = 'md',
   children,
+  rodape,
   className,
 }: PainelLateralProps) {
   const fechar = onFechar ?? aoFechar ?? (() => {});
@@ -48,10 +54,9 @@ export function PainelLateral({
       <AnimatePresence>
         {aberto && (
           <Dialog.Portal forceMount>
-            {/* Overlay com blur */}
             <Dialog.Overlay asChild>
               <motion.div
-                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                className="fixed inset-0 z-40 bg-text/25"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -59,7 +64,6 @@ export function PainelLateral({
               />
             </Dialog.Overlay>
 
-            {/* Painel */}
             <Dialog.Content
               asChild
               aria-label={titulo ? undefined : 'Painel lateral'}
@@ -67,23 +71,28 @@ export function PainelLateral({
               <motion.div
                 className={cn(
                   'fixed right-0 top-0 z-50 flex h-full flex-col',
-                  'bg-surface/95 backdrop-blur-xl border-l border-line shadow-elev-3',
-                  'max-md:w-full',
+                  'border-l border-line bg-surface shadow-elev-3',
+                  'max-md:w-[calc(100%-16px)]',
                   larguraClasses[largura],
                   className,
                 )}
                 initial={{ x: '100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                {/* Cabeçalho */}
-                <div className="flex items-center justify-between border-b border-line px-[var(--s-6)] py-[var(--s-4)]">
-                  {titulo && (
-                    <Dialog.Title className="text-[length:var(--fs-18)] font-[number:var(--fw-semibold)] text-text">
-                      {titulo}
-                    </Dialog.Title>
-                  )}
+                <div className="flex min-h-16 items-start justify-between gap-4 border-b border-line px-5 py-4">
+                  <div className="min-w-0">
+                    {titulo && (
+                      <Dialog.Title className="text-lg font-bold tracking-tight text-text">
+                        {titulo}
+                      </Dialog.Title>
+                    )}
+                    <Dialog.Description className={descricao ? 'mt-0.5 text-sm text-text-muted' : 'sr-only'}>
+                      {descricao ?? `Painel lateral: ${titulo ?? 'detalhes'}`}
+                    </Dialog.Description>
+                  </div>
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
                   <Dialog.Close asChild>
                     <button
                       type="button"
@@ -100,10 +109,11 @@ export function PainelLateral({
                   </Dialog.Close>
                 </div>
 
-                {/* Conteúdo com scroll */}
-                <div className="flex-1 overflow-y-auto p-[var(--s-6)]">
+                <div className="min-h-0 flex-1 overflow-y-auto p-5 scrollbar-thin">
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
                   {children}
                 </div>
+                {rodape ? <footer className="shrink-0 border-t border-line bg-surface px-5 py-4">{rodape}</footer> : null}
               </motion.div>
             </Dialog.Content>
           </Dialog.Portal>

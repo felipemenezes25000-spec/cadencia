@@ -2,12 +2,14 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
-import { SortAscending, SortDescending, Receipt } from '@phosphor-icons/react';
+import { SortAscending, SortDescending, Receipt, WarningCircle } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
 import { Icone } from '../ui/Icone';
 import { Skeleton } from '../ui/Skeleton';
+import { PainelLateral } from '../ui/PainelLateral';
+import { EstadoVazio as EstadoVazioCompartilhado } from '../ui/EstadoVazio';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -124,11 +126,11 @@ function ThSortavel({
 
 const STATUS_CONFIG: Record<
   StatusFinanceiro,
-  { readonly rotulo: string; readonly classes: string }
+  { readonly rotulo: string; readonly glifo: string; readonly classes: string }
 > = {
-  pendente: { rotulo: 'Pendente', classes: 'bg-warn-soft text-warn' },
-  vencido: { rotulo: 'Vencido', classes: 'bg-danger-soft text-danger' },
-  pago: { rotulo: 'Pago', classes: 'bg-ok-soft text-ok' },
+  pendente: { rotulo: 'A vencer', glifo: '◷', classes: 'bg-info-soft text-info' },
+  vencido: { rotulo: 'Vencido', glifo: '!', classes: 'bg-danger-soft text-danger' },
+  pago: { rotulo: 'Pago', glifo: '✓', classes: 'bg-ok-soft text-ok' },
 };
 
 function ChipDeStatusFinanceiro({ status }: { readonly status: StatusFinanceiro }) {
@@ -136,11 +138,11 @@ function ChipDeStatusFinanceiro({ status }: { readonly status: StatusFinanceiro 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
         c.classes,
       )}
     >
-      {c.rotulo}
+      <span aria-hidden="true">{c.glifo}</span>{c.rotulo}
     </span>
   );
 }
@@ -171,7 +173,7 @@ function AReceberSkeleton() {
 
 // ── Estado vazio ──────────────────────────────────────────────────────────
 
-function EstadoVazio() {
+function EstadoVazioDaTabela() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Icone icon={Receipt} size="xl" className="text-text-muted mb-3" />
@@ -179,7 +181,7 @@ function EstadoVazio() {
         Nenhum lançamento encontrado
       </p>
       <p className="mt-1 text-sm text-text-muted">
-        Ajuste os filtros ou adicione um novo lançamento
+        Ajuste os filtros ou registre um novo recebível para este período.
       </p>
     </div>
   );
@@ -195,15 +197,25 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
   const [dataFim, setDataFim] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
+  const [busca, setBusca] = useState('');
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
+  const [selecionada, setSelecionada] = useState<EntradaPendenteReceber | null>(null);
+  const [recarga, setRecarga] = useState(0);
+  const [erro, setErro] = useState<string | null>(null);
+  const [processando, setProcessando] = useState(false);
+  const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
 
   useEffect(() => {
     setCarregando(true);
-    void p.carregarDados().then((d) => {
-      setDados(d);
-      setCarregando(false);
-    });
-  }, [p]);
+    setErroCarregamento(null);
+    void p.carregarDados()
+      .then((d) => setDados(d))
+      .catch(() => {
+        setDados(null);
+        setErroCarregamento('A listagem não foi carregada. Nenhuma alteração foi realizada.');
+      })
+      .finally(() => setCarregando(false));
+  }, [p.carregarDados, recarga]);
 
   const categoriasDisponiveis = useMemo(() => {
     if (!dados) return [];
@@ -218,6 +230,12 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
   const entradasFiltradas = useMemo(() => {
     if (!dados) return [];
     let resultado = [...dados.entradas];
+
+    if (busca.trim() !== '') {
+      const termo = busca.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+      resultado = resultado.filter((entrada) => `${entrada.patientName} ${entrada.description}`
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').includes(termo));
+    }
 
     if (dataInicio !== '') {
       resultado = resultado.filter((e) => e.dueDate >= dataInicio);
@@ -256,13 +274,37 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
     }
 
     return resultado;
-  }, [dados, dataInicio, dataFim, categoriaFiltro, statusFiltro, ordenacao]);
+  }, [dados, busca, dataInicio, dataFim, categoriaFiltro, statusFiltro, ordenacao]);
+
+  async function executar(acao: (entryId: string) => Promise<void>): Promise<void> {
+    if (!selecionada) return;
+    setProcessando(true);
+    setErro(null);
+    try {
+      await acao(selecionada.id);
+      setSelecionada(null);
+      setRecarga((valor) => valor + 1);
+    } catch {
+      setErro('Não foi possível concluir a operação. Nenhuma alteração foi registrada.');
+    } finally {
+      setProcessando(false);
+    }
+  }
 
   if (carregando) {
     return <AReceberSkeleton />;
   }
 
-  if (!dados) return null;
+  if (!dados) {
+    return (
+      <EstadoVazioCompartilhado
+        icone={WarningCircle}
+        titulo="Não foi possível carregar as contas a receber"
+        descricao={erroCarregamento ?? 'Tente novamente para consultar os recebíveis da unidade.'}
+        acao={<Botao variante="secundario" onClick={() => setRecarga((valor) => valor + 1)}>Tentar novamente</Botao>}
+      />
+    );
+  }
 
   const selectClasses =
     'h-8 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none';
@@ -282,6 +324,14 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
 
       {/* Filtros */}
       <div className="flex flex-wrap items-end gap-4">
+        <Campo
+          rotulo="Buscar paciente"
+          placeholder="Nome ou descrição"
+          denso
+          value={busca}
+          onChange={(event) => setBusca(event.target.value)}
+          className="min-w-[220px] flex-1"
+        />
         <div className="flex items-end gap-2">
           <Campo
             rotulo="De"
@@ -348,7 +398,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
 
       {/* Tabela ou estado vazio */}
       {vazio ? (
-        <EstadoVazio />
+        <EstadoVazioDaTabela />
       ) : (
         <section aria-label="Lançamentos a receber">
           <div className="rounded-lg border border-line overflow-hidden">
@@ -389,9 +439,12 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
                         key={e.id}
                         data-aging={aging}
                         className={cn(
-                          'hover:bg-surface-hover transition-colors-fast',
-                          status === 'vencido' && 'bg-danger-soft',
+                          'cursor-pointer hover:bg-surface-hover transition-colors-fast focus-within:bg-surface-subtle',
+                          status === 'vencido' && 'bg-danger-soft/20',
                         )}
+                        tabIndex={0}
+                        onClick={() => setSelecionada(e)}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelecionada(e); } }}
                       >
                         <td className="px-4 py-3 whitespace-nowrap font-mono text-xs tabular-nums text-text-muted">
                           {formatarData(e.dueDate)}
@@ -420,31 +473,11 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-2">
                             <Botao
-                              variante="fantasma"
+                              variante="secundario"
                               tamanho="sm"
-                              onClick={() => {
-                                void p.aoCobrar(e.id);
-                              }}
+                              onClick={(event) => { event.stopPropagation(); setSelecionada(e); }}
                             >
-                              Cobrar
-                            </Botao>
-                            <Botao
-                              variante="fantasma"
-                              tamanho="sm"
-                              onClick={() => {
-                                void p.aoMarcarPago(e.id);
-                              }}
-                            >
-                              Marcar pago
-                            </Botao>
-                            <Botao
-                              variante="fantasma"
-                              tamanho="sm"
-                              onClick={() => {
-                                void p.aoEnviarLink(e.id);
-                              }}
-                            >
-                              Enviar link
+                              Ver detalhes
                             </Botao>
                           </div>
                         </td>
@@ -457,6 +490,39 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
           </div>
         </section>
       )}
+
+      <PainelLateral
+        aberto={selecionada !== null}
+        onFechar={() => { setSelecionada(null); setErro(null); }}
+        titulo="Título a receber"
+        descricao={selecionada ? `${selecionada.patientName} · ${selecionada.description}` : 'Detalhes do recebível'}
+        largura="md"
+        rodape={selecionada ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Botao variante="secundario" carregando={processando} onClick={() => { void executar(p.aoEnviarLink); }}>Enviar cobrança</Botao>
+            <Botao carregando={processando} onClick={() => { void executar(p.aoMarcarPago); }}>Registrar pagamento</Botao>
+          </div>
+        ) : undefined}
+      >
+        {selecionada ? (
+          <div className="space-y-5">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
+              <div className="col-span-2"><dt className="text-xs text-text-faint">Paciente</dt><dd className="mt-1 font-semibold text-text">{selecionada.patientName}</dd></div>
+              <div><dt className="text-xs text-text-faint">Vencimento</dt><dd className="mt-1 font-medium text-text tabular-nums">{formatarData(selecionada.dueDate)}</dd></div>
+              <div><dt className="text-xs text-text-faint">Valor</dt><dd className="mt-1 font-semibold text-text tabular-nums">{centavosParaReais(selecionada.amountCents)}</dd></div>
+              <div><dt className="text-xs text-text-faint">Status</dt><dd className="mt-1"><ChipDeStatusFinanceiro status={derivarStatus(selecionada)} /></dd></div>
+              <div><dt className="text-xs text-text-faint">Atraso</dt><dd className="mt-1 font-medium text-text">{selecionada.daysPastDue > 0 ? `${selecionada.daysPastDue} dias` : 'Dentro do prazo'}</dd></div>
+            </dl>
+            <section className="border-t border-line pt-4">
+              <h3 className="text-sm font-semibold text-text">Descrição</h3>
+              <p className="mt-2 text-sm text-text-muted">{selecionada.description}</p>
+              {selecionada.categoryName ? <p className="mt-1 text-xs text-text-faint">Categoria: {selecionada.categoryName}</p> : null}
+            </section>
+            {erro ? <p role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger">{erro}</p> : null}
+            <Botao variante="fantasma" fullWidth onClick={() => { void executar(p.aoCobrar); }}>Gerar novo link de cobrança</Botao>
+          </div>
+        ) : null}
+      </PainelLateral>
     </div>
   );
 }

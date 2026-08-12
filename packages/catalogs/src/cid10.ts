@@ -54,13 +54,31 @@ export function parseCid10Csv(
   csv: string,
 ): Array<{ codigo: string; descricao: string; capitulo: number | null }> {
   const linhas = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  return linhas.slice(1).map((linha) => {
-    const [codigo, descricao, capitulo] = linha.split(';');
-    return {
-      codigo: (codigo ?? '').trim(),
-      descricao: (descricao ?? '').trim(),
-      capitulo: capitulo && capitulo.trim().length > 0 ? Number(capitulo.trim()) : null,
-    };
+  if (linhas.length === 0) return [];
+
+  const limpar = (valor: string | undefined): string =>
+    (valor ?? '').replace(/^\uFEFF/, '').replace(/^"|"$/g, '').trim();
+  const cabecalho = linhas[0]!.split(';').map((campo) => limpar(campo).toUpperCase());
+  const indiceCodigo = cabecalho.findIndex((campo) => campo === 'CODIGO' || campo === 'SUBCAT');
+  const indiceDescricao = cabecalho.findIndex((campo) => campo === 'DESCRICAO');
+  const indiceCapitulo = cabecalho.findIndex((campo) => campo === 'CAPITULO');
+  if (indiceCodigo < 0 || indiceDescricao < 0) {
+    throw new Error('CSV da CID-10 sem as colunas CODIGO/SUBCAT e DESCRICAO');
+  }
+
+  return linhas.slice(1).flatMap((linha) => {
+    const campos = linha.split(';');
+    const codigoBruto = limpar(campos[indiceCodigo]).toUpperCase();
+    const semPontuacao = codigoBruto.replace(/[^A-Z0-9]/g, '');
+    const codigo = semPontuacao.length === 4
+      ? `${semPontuacao.slice(0, 3)}.${semPontuacao.slice(3)}`
+      : semPontuacao;
+    const descricao = limpar(campos[indiceDescricao]);
+    if (codigo === '' || descricao === '') return [];
+
+    const capituloBruto = indiceCapitulo >= 0 ? limpar(campos[indiceCapitulo]) : '';
+    const capitulo = /^\d+$/.test(capituloBruto) ? Number(capituloBruto) : null;
+    return [{ codigo, descricao, capitulo }];
   });
 }
 

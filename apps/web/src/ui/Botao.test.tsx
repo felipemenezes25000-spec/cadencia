@@ -38,10 +38,10 @@ describe('Botao', () => {
 
   it('renderiza nos 3 tamanhos', () => {
     const { rerender } = render(<Botao tamanho="sm">A</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-7/);
+    expect(screen.getByRole('button').className).toMatch(/h-8/);
 
     rerender(<Botao tamanho="md">B</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-8/);
+    expect(screen.getByRole('button').className).toMatch(/h-9/);
 
     rerender(<Botao tamanho="lg">C</Botao>);
     expect(screen.getByRole('button').className).toMatch(/h-10/);
@@ -49,10 +49,10 @@ describe('Botao', () => {
 
   it('suporta prop altura legada para compatibilidade', () => {
     const { rerender } = render(<Botao altura={28}>A</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-7/);
+    expect(screen.getByRole('button').className).toMatch(/h-8/);
 
     rerender(<Botao altura={32}>B</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-8/);
+    expect(screen.getByRole('button').className).toMatch(/h-9/);
 
     rerender(<Botao altura={40}>C</Botao>);
     expect(screen.getByRole('button').className).toMatch(/h-10/);

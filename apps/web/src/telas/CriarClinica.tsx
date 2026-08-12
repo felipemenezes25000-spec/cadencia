@@ -72,7 +72,7 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
   if (!aberto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-text/25"
       role="dialog" aria-modal="true" aria-label="Criar unidade">
       <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-lg">
         <div className="mb-4 flex items-center justify-between">

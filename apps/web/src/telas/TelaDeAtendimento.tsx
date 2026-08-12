@@ -25,6 +25,8 @@ import {
 } from '../ui/PainelDeSadt';
 import { PainelDeTranscricao, type SugestaoDaIA } from '../ui/PainelDeTranscricao';
 import { Botao } from '../ui/Botao';
+import { BotaoIcone } from '../ui/BotaoIcone';
+import { ChipDeStatus } from '../ui/ChipDeStatus';
 import { Icone } from '../ui/Icone';
 import { cn } from '../lib/cn';
 import { useKeyboardShortcut } from '../lib/hooks';
@@ -322,6 +324,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   const [sadtAberto, setSadtAberto] = useState(false);
   const [transcricaoAberta, setTranscricaoAberta] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
+  const [finalizandoVisual, setFinalizandoVisual] = useState(false);
   const [erroAoFinalizar, setErroAoFinalizar] = useState<string | null>(null);
 
   const inicio = p.inicio ?? new Date();
@@ -359,6 +362,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   async function finalizar() {
     if (finalizando.current || finalizado) return;
     finalizando.current = true;
+    setFinalizandoVisual(true);
     setErroAoFinalizar(null);
     try {
       if (descarregarEditor.current !== null
@@ -379,6 +383,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
         + 'o conteúdo continua salvo como rascunho. Tente de novo.');
     } finally {
       finalizando.current = false;
+      setFinalizandoVisual(false);
     }
   }
 
@@ -409,30 +414,36 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   const pacienteDados: DadosDoPaciente = p.paciente ?? { nome: p.pacienteNome };
 
   return (
-    <div className="flex h-[calc(100vh-var(--nav-height,0px))] flex-col bg-surface-sunken/45">
+    <div className="flex min-h-[calc(100dvh-68px)] flex-col bg-canvas lg:h-[calc(100dvh-68px)]">
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="cadencia-glass flex min-h-[72px] items-center justify-between border-b border-line px-6 py-3 max-sm:px-4">
-        <div className="flex items-center gap-3">
+      <header className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           {p.aoVoltar && (
-            <Botao variante="fantasma" iconeEsquerda={ArrowLeft} onClick={p.aoVoltar}>
-              Voltar
-            </Botao>
+            <BotaoIcone icone={ArrowLeft} rotulo="Voltar" onClick={p.aoVoltar} />
           )}
-          <div>
-            <h1 className="text-base font-semibold text-text">
-              {p.pacienteNome}
-            </h1>
-            {p.procedimentoNome && (
-              <p className="text-xs text-text-muted">{p.procedimentoNome}</p>
-            )}
+          <div className="min-w-0">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="hidden text-xs font-semibold uppercase tracking-[.08em] text-text-faint sm:inline">Atendimento</span>
+              <ChipDeStatus status="atendendo" />
+            </div>
+            <h1 className="truncate text-base font-bold text-text">{p.pacienteNome}</h1>
+            <p className="truncate text-xs text-text-muted">
+              {[
+                p.procedimentoNome,
+                pacienteDados.nascimento ? calcularIdade(pacienteDados.nascimento) : null,
+                pacienteDados.sexo,
+                pacienteDados.convenio ?? 'Particular',
+              ].filter(Boolean).join(' · ')}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Timer de duração */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Timer de duracao */}
           <div
-            className="flex items-center gap-2 text-sm text-text-muted"
+            className="hidden items-center gap-2 text-sm text-text-muted md:flex"
             aria-label="Duração do atendimento"
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
             role="timer"
           >
             <Icone icon={Timer} size="sm" />
@@ -452,13 +463,23 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
               Cobrar
             </Botao>
           )}
+          {!finalizado ? (
+            <Botao
+              variante="primario"
+              iconeEsquerda={Check}
+              carregando={finalizandoVisual}
+              onClick={() => { void finalizar(); }}
+            >
+              Finalizar atendimento
+            </Botao>
+          ) : null}
         </div>
       </header>
 
       {/* ── Main content: editor + sidebar ─────────────────────────── */}
-      <div className="flex flex-1 gap-3 overflow-hidden p-3 max-md:flex-col max-md:gap-2 max-md:p-2">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:overflow-hidden">
         {/* Editor */}
-        <div role="article" className="min-w-0 flex-[3] overflow-y-auto rounded-xl">
+        <div role="article" className="min-w-0 overflow-y-visible rounded-xl lg:overflow-y-auto">
           <EditorClinico
             encounterId={p.encounterId}
             buscarCodigo={p.buscarCodigo}
@@ -482,7 +503,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             && p.aoMudarFicha !== undefined && (
             <section
               aria-label="Ficha do atendimento"
-              className="mt-3 rounded-xl border border-line bg-surface p-4 shadow-elev-1"
+              className="mt-3 rounded-xl border border-line bg-surface p-4"
             >
               <FichaClinica
                 secoes={p.secoesDaFicha}
@@ -496,7 +517,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
 
         {/* Patient sidebar */}
         <aside
-          className="flex-[2] overflow-y-auto rounded-xl border border-line bg-surface shadow-elev-1 max-md:max-h-[40vh]"
+          className="overflow-hidden rounded-xl border border-line bg-surface lg:overflow-y-auto"
           aria-label="Dados do paciente"
         >
           <SidebarPaciente paciente={pacienteDados} />
@@ -526,7 +547,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
 
       {/* ── Bottom action bar ──────────────────────────────────────── */}
       {!finalizado && (
-        <div className="cadencia-glass flex items-center justify-between border-t border-line px-6 py-3 max-sm:px-3">
+        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 py-3 sm:px-6">
           {/* Keyboard shortcut hints (hidden on mobile) */}
           <div className="flex items-center gap-4 max-sm:hidden">
             <KbdHint atalho="Ctrl+P" rotulo="Prescrever" />
@@ -536,8 +557,9 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
 
           {/* Action buttons */}
           <nav
-            className="flex items-center gap-2 max-sm:w-full max-sm:flex-col"
-            aria-label="Ações do atendimento"
+            className="flex min-w-0 items-center gap-2 overflow-x-auto max-sm:w-full"
+            aria-label="Acoes do atendimento"
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
           >
             <Botao variante="secundario" iconeEsquerda={Pill} onClick={prescrever}>
               Prescrever
@@ -568,15 +590,8 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
                 Exames
               </Botao>
             )}
-            <Botao
-              variante="primario"
-              iconeEsquerda={Check}
-              onClick={() => { void finalizar(); }}
-            >
-              Finalizar
-            </Botao>
           </nav>
-        </div>
+        </footer>
       )}
 
       {/* ── Painéis laterais ───────────────────────────────────────── */}

@@ -7,11 +7,10 @@
     do produto. Geometria pura de proposito: aos 16px de uma aba, qualquer
     detalhe fino vira borrao, entao a marca precisa funcionar como silhueta.
 
-    A cor e o `--royal-600` dos tokens (oklch(53% 0.215 264)), fixada aqui em
-    hexadecimal porque favicon e renderizado fora do documento e nao enxerga as
-    variaveis CSS da pagina.
+    A cor e o brand petrol do Cadencia, fixada aqui em hexadecimal porque o
+    favicon e renderizado fora do documento e nao enxerga as variaveis CSS.
   -->
-  <rect width="32" height="32" rx="8" fill="#3a57e8"/>
+  <rect width="32" height="32" rx="8" fill="#075985"/>
   <g fill="#ffffff">
     <rect x="8"  y="16" width="4" height="9"  rx="2"/>
     <rect x="14" y="9"  width="4" height="16" rx="2"/>

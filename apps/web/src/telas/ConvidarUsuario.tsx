@@ -103,8 +103,8 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
   if (!aberto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      role="dialog" aria-modal="true" aria-label="Convidar usuário">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-text/25"
+      role="dialog" aria-modal="true" aria-label="Convidar usuario">
       <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-lg">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Convidar usuário</h2>

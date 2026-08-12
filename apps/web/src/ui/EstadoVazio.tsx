@@ -28,17 +28,17 @@ export function EstadoVazio({
 }: EstadoVazioProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface/60 text-center",
-      compacto ? "px-4 py-8" : "px-6 py-16",
+      "flex flex-col items-center justify-center rounded-xl border border-dashed border-line bg-surface-subtle/70 text-center",
+      compacto ? "px-4 py-7" : "px-6 py-12",
       className
     )}>
       <div className={cn(
-        "mb-4 rounded-2xl border border-line bg-surface-raised shadow-elev-1",
-        compacto ? "p-2.5" : "p-4"
+        "mb-4 grid place-items-center rounded-xl bg-surface text-text-muted ring-1 ring-inset ring-line",
+        compacto ? "size-10" : "size-12"
       )}>
         <Icone
           icon={icone}
-          size={compacto ? "lg" : "xl"}
+          size={compacto ? "md" : "lg"}
           className="text-text-muted"
         />
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FichaDoPaciente, type AtendimentoResumo, type LancamentoResumo,
   type MensagemResumo, type PapelNaTela,
@@ -57,6 +58,7 @@ export default function PaginaFichaDoPaciente(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = use(params);
+  const router = useRouter();
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
 
   const [paciente, setPaciente] = useState<PacienteDaApi | null>(null);
@@ -219,6 +221,8 @@ export default function PaginaFichaDoPaciente(
         setPaciente(p);
       }}
       papel={vinculoAtivo.role as PapelNaTela}
+      aoMensagem={() => router.push(`/conversas?patientId=${id}`)}
+      aoNovoAtendimento={() => router.push(`/agenda?novo=1&patientId=${id}`)}
       acoesExtras={(
         <>
           <Botao

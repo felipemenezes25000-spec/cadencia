@@ -168,7 +168,7 @@ describe('TelaDeAtendimento', () => {
 
   it('renderiza procedimento no cabeçalho', () => {
     renderTela({ procedimentoNome: 'Retorno cardiologia' });
-    expect(screen.getByText('Retorno cardiologia')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toHaveTextContent('Retorno cardiologia');
   });
 
   it('renderiza timer de duração', () => {
@@ -240,21 +240,22 @@ describe('TelaDeAtendimento', () => {
     expect(barraAcoes).toBeInTheDocument();
     // Verifica os botões dentro da barra de ações (using within)
     const botoes = barraAcoes.querySelectorAll('button');
-    expect(botoes.length).toBe(4);
+    expect(botoes.length).toBe(3);
     const textos = Array.from(botoes).map((b) => b.textContent?.trim());
     expect(textos).toContain('Prescrever');
     expect(textos).toContain('Pedir exame');
     expect(textos).toContain('Emitir documento');
-    expect(textos).toContain('Finalizar');
+    expect(screen.getByRole('button', { name: 'Finalizar atendimento' })).toBeVisible();
   });
 
   it('botão Finalizar chama callback', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
 
-    // Seleciona o botão Finalizar da barra de ações (não o mock do editor)
+    // A finalizacao e a unica CTA primaria e vive no cabecalho do workspace.
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
-    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {
       fireEvent.click(botaoFinalizar);
     });
@@ -272,7 +273,7 @@ describe('TelaDeAtendimento', () => {
     renderTela({ aoFinalizar });
 
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
-    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => { fireEvent.click(botaoFinalizar); });
 
     // O botão do cabeçalho não passa pelo editor. Sem descarga explícita, o que
@@ -287,7 +288,7 @@ describe('TelaDeAtendimento', () => {
     renderTela({ aoFinalizar });
 
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
-    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {
       fireEvent.click(botaoFinalizar);
       fireEvent.click(botaoFinalizar);
@@ -379,9 +380,10 @@ describe('TelaDeAtendimento', () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
 
-    // Seleciona o botão Finalizar da barra de ações (não o mock do editor)
+    // Seleciona a CTA de finalizacao do cabecalho (nao o mock do editor)
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
-    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar')!;
+    const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {
       fireEvent.click(botaoFinalizar);
     });

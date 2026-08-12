@@ -137,7 +137,7 @@ export function Exportar(p: ExportarProps) {
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               className={cn(
-                'rounded-lg border border-line bg-surface px-2.5 py-2 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)]',
+                'rounded-lg border border-line bg-surface px-2.5 py-2',
                 'text-[var(--fs-14)] text-text',
                 'transition-colors-fast',
                 'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',
@@ -157,7 +157,7 @@ export function Exportar(p: ExportarProps) {
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               className={cn(
-                'rounded-lg border border-line bg-surface px-2.5 py-2 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)]',
+                'rounded-lg border border-line bg-surface px-2.5 py-2',
                 'text-[var(--fs-14)] text-text',
                 'transition-colors-fast',
                 'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',

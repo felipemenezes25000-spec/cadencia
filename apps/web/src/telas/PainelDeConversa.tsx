@@ -220,9 +220,10 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
 
   return (
     <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden bg-surface md:grid-cols-[1fr_320px]">
-      {/* Cabeçalho */}
-      <header className="col-span-full flex min-h-[64px] items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur">
-        {/* Botão voltar (mobile) */}
+      {/* Cabecalho */}
+      <header className="col-span-full flex min-h-[64px] items-center gap-3 border-b border-line bg-surface px-4 py-3">
+        {/* Botao voltar (mobile) */}
+>>>>>>> 08560e763dda16a3c018e8588e837f37a33dda40
         {p.aoVoltar != null && (
           <button
             type="button"
@@ -346,7 +347,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
       </aside>
 
       {/* Input de mensagem */}
-      <div className="col-start-1 flex items-end gap-2 border-t border-line bg-surface/95 p-3 backdrop-blur">
+      <div className="col-start-1 flex items-end gap-2 border-t border-line bg-surface p-3">
         <button
           type="button"
           aria-label="Template"

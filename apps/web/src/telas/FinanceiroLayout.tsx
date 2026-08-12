@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "../lib/cn";
 import { PageHeader } from "../ui/PageHeader";
 import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
+import { Botao } from "../ui/Botao";
+import { Plus } from "@phosphor-icons/react";
 
 /* ── Tipos exportados ──────────────────────────────────────────────── */
 
@@ -25,9 +27,9 @@ export interface AbaConfig {
 }
 
 export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
-  { value: "visao", rotulo: "Visão geral", href: "/financeiro" },
+  { value: "visao", rotulo: "Resumo", href: "/financeiro" },
   { value: "caixa", rotulo: "Caixa", href: "/financeiro/caixa" },
-  { value: "a-receber", rotulo: "A receber", href: "/financeiro/a-receber" },
+  { value: "a-receber", rotulo: "Contas a receber", href: "/financeiro/a-receber" },
   { value: "a-pagar", rotulo: "A pagar", href: "/financeiro/a-pagar" },
   {
     value: "recebimentos",
@@ -75,7 +77,12 @@ export function FinanceiroLayout({
 
   return (
     <div className="cadencia-page space-y-6 max-sm:p-4">
-      <PageHeader titulo="Financeiro" semBreadcrumb />
+      <PageHeader
+        titulo="Financeiro"
+        subtitulo="Gestão financeira da unidade"
+        semBreadcrumb
+        acoes={<Botao iconeEsquerda={Plus} onClick={() => router.push('/financeiro/recebimentos?novo=1')}>Novo recebimento</Botao>}
+      />
 
       <Tabs
         value={abaAtiva}

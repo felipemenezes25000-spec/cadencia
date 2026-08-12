@@ -22,17 +22,17 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn("space-y-3 pb-7", className)}>
+    <header className={cn("space-y-2", className)}>
       {!semBreadcrumb &&
         (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
 
-      <div className="flex items-end justify-between gap-5 max-sm:flex-col max-sm:items-stretch">
-        <div className="min-w-0 space-y-1.5">
-          <h1 className="m-0 text-[clamp(1.55rem,2.4vw,2rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-text">
+      <div className="flex min-w-0 items-start justify-between gap-5 max-sm:flex-col max-sm:items-stretch">
+        <div className="min-w-0">
+          <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.03em] text-text">
             {titulo}
           </h1>
           {subtitulo && (
-            <p className="m-0 max-w-2xl text-[13px] leading-relaxed text-text-muted sm:text-sm">
+            <p className="m-0 mt-1 max-w-2xl text-sm leading-relaxed text-text-muted">
               {subtitulo}
             </p>
           )}
@@ -44,6 +44,6 @@ export function PageHeader({
           </div>
         )}
       </div>
-    </div>
+    </header>
   );
 }

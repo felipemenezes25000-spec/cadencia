@@ -38,6 +38,7 @@ const EXCECOES: Record<string, string> = {
   '/entrar': 'Login — rota publica, fora da navegacao interna',
   '/agendar/[clinicId]': 'Agendamento online — rota publica para pacientes',
   '/atendimento/[id]': 'Destino parametrico, alcancado a partir da fila do dia',
+  '/atendimentos/[id]': 'Workspace clinico parametrico do novo AppShell',
   '/pacientes/[id]': 'Destino parametrico, alcancado a partir da lista de pacientes',
   '/convenios/guias/[id]': 'Destino parametrico, alcancado a partir da lista de guias',
   '/convenios/retornos/[id]': 'Destino parametrico, alcancado a partir da lista de retornos',

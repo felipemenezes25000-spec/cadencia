@@ -41,14 +41,14 @@ export interface SelectProps {
 }
 
 const triggerBase = [
-  'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3 shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.45)]',
+  'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3',
   'text-sm text-text',
   'transition-colors-fast',
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
 const triggerFocus =
-  'focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none';
+  'focus:border-accent focus:ring-2 focus:ring-accent/10 focus:outline-none';
 
 const triggerError =
   'border-danger focus:border-danger focus:ring-danger';

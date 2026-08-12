@@ -64,6 +64,19 @@ function DisparadorMultiplo({ quantidade }: { quantidade: number }) {
   );
 }
 
+function DisparadorComAcao({ aoDesfazer }: { aoDesfazer: () => void }) {
+  const { toast } = useToast();
+  return (
+    <button onClick={() => toast({
+      tipo: 'sucesso',
+      mensagem: 'Check-in realizado.',
+      acao: { rotulo: 'Desfazer', aoClicar: aoDesfazer },
+    })}>
+      disparar-com-acao
+    </button>
+  );
+}
+
 function renderComProvider(ui: React.ReactElement) {
   return render(<ToastProvider>{ui}</ToastProvider>);
 }
@@ -172,6 +185,15 @@ describe("Toast", () => {
     expect(screen.getByText("Mensagem 1")).toBeInTheDocument();
     expect(screen.getByText("Mensagem 2")).toBeInTheDocument();
     expect(screen.getByText("Mensagem 3")).toBeInTheDocument();
+  });
+
+  it('executa uma acao contextual sem esconder a mensagem', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const aoDesfazer = vi.fn();
+    renderComProvider(<DisparadorComAcao aoDesfazer={aoDesfazer} />);
+    await user.click(screen.getByText('disparar-com-acao'));
+    await user.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(aoDesfazer).toHaveBeenCalledOnce();
   });
 
   it("limita a 5 toasts visiveis", async () => {

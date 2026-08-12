@@ -6,6 +6,7 @@ import { BuscaDeCatalogo, type ColunaCatalogo } from '../../../src/telas/BuscaDe
 import { apiFetch } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 import { diaNaClinica } from '../../../src/lib/fuso';
+import { CatalogReferenceDate } from '../../../src/components/catalogs/CatalogReferenceDate';
 
 interface ItemTuss {
   tabela: number;
@@ -30,15 +31,16 @@ const TABELAS = [
 export default function PaginaTuss() {
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
   const [tabela, setTabela] = useState('22');
+  const [dataReferencia, setDataReferencia] = useState(() =>
+    diaNaClinica(new Date().toISOString(), vinculoAtivo.timezone));
 
   const buscar = useCallback(async (termo: string) => {
-    const hoje = diaNaClinica(new Date().toISOString(), vinculoAtivo.timezone);
     const res = await apiFetch<{ itens: ItemTuss[] }>(
-      `/v1/catalogos/tuss?tabela=${tabela}&termo=${encodeURIComponent(termo)}&data=${hoje}`,
+      `/v1/catalogos/tuss?tabela=${tabela}&termo=${encodeURIComponent(termo)}&data=${dataReferencia}`,
       { clinicId, csrfToken },
     );
     return res.itens;
-  }, [clinicId, csrfToken, vinculoAtivo.timezone, tabela]);
+  }, [clinicId, csrfToken, tabela, dataReferencia]);
 
   return (
     <div className="cadencia-page grid gap-8">
@@ -50,12 +52,17 @@ export default function PaginaTuss() {
           { rotulo: 'TUSS' },
         ]}
       />
-      <div className="max-w-xs">
+      <div className="grid gap-4 md:grid-cols-2">
         <Select
           rotulo="Tabela TUSS"
           opcoes={TABELAS}
           value={tabela}
           onChange={setTabela}
+        />
+        <CatalogReferenceDate
+          value={dataReferencia}
+          onChange={setDataReferencia}
+          ajuda="A busca mostra os termos TUSS vigentes na data informada."
         />
       </div>
       <BuscaDeCatalogo<ItemTuss>

@@ -32,17 +32,16 @@ export function Tooltip({
           side={lado}
           sideOffset={4}
           className={cn(
-            "z-50 rounded-lg border border-white/10 px-2.5 py-1.5",
+            "z-50 rounded-lg px-2.5 py-1.5",
             "text-[length:var(--fs-12)] leading-[var(--lh-ui)]",
-            "bg-[oklch(20%_0.035_264)] text-white",
-            "shadow-elev-2",
+            "border border-border bg-surface text-text-primary shadow-elev-2",
             "animate-[scaleIn_150ms_ease]",
             "select-none",
             className,
           )}
         >
           {conteudo}
-          <RadixTooltip.Arrow className="fill-[oklch(20%_0.035_264)]" />
+          <RadixTooltip.Arrow className="fill-surface" />
         </RadixTooltip.Content>
       </RadixTooltip.Portal>
     </RadixTooltip.Root>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Agenda } from '../../src/telas/Agenda';
 import {
@@ -9,11 +10,13 @@ import {
 import type { LinhaDaFila } from '../../src/telas/Hoje';
 import type { Visao } from '../../src/telas/grade';
 import type { PacienteHit } from '../../src/ui/ComboboxDePaciente';
+import type { PatientQuickSummary } from '../../src/components/patients/PatientQuickView';
 import { PainelDeBloqueios, type Bloqueio } from '../../src/ui/PainelDeBloqueios';
 import { Botao } from '../../src/ui/Botao';
-import { Prohibit } from '@phosphor-icons/react';
+import { ListBullets, Printer, Prohibit } from '@phosphor-icons/react';
 import { apiFetch } from '../../src/api';
 import { useSessao } from '../../src/sessao';
+import { diaNaClinica } from '../../src/lib/fuso';
 
 const CHAVES_VISAO = ['dia', 'semana', 'mes', 'profissional', 'sala'] as const;
 
@@ -24,7 +27,18 @@ interface ProcedimentoDaApi {
   maisFrequente: boolean;
 }
 
-/** Hora de parede do dia selecionado, sem fuso. É o que o compositor exibe. */
+interface PacienteDaApi {
+  readonly patientId: string;
+  readonly displayName: string;
+  readonly legalName: string;
+  readonly hasSocialName: boolean;
+  readonly birthDate: string | null;
+  readonly phonePrimary: string | null;
+  readonly email: string | null;
+  readonly cadastroStatus: 'completo' | 'preliminar';
+}
+
+/** Hora de parede do dia selecionado, sem fuso. E o que o compositor exibe. */
 function paredeDe(dia: string, minutoDoDia: number): string {
   const h = String(Math.floor(minutoDoDia / 60)).padStart(2, '0');
   const m = String(minutoDoDia % 60).padStart(2, '0');
@@ -62,11 +76,13 @@ function minutoDoDia(parede: string): number {
 }
 
 function AgendaInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
   const [visao, setVisao] = useQueryState('visao',
-    parseAsStringLiteral(CHAVES_VISAO).withDefault('dia'));
+    parseAsStringLiteral(CHAVES_VISAO).withDefault('semana'));
   const [dia, setDia] = useQueryState('dia',
-    { defaultValue: new Date().toISOString().slice(0, 10) });
+    { defaultValue: diaNaClinica(new Date().toISOString(), vinculoAtivo.timezone) });
 
   const [procedimentos, setProcedimentos] = useState<readonly ProcedimentoOpcao[]>([]);
   const [convenios, setConvenios] = useState<readonly ConvenioOpcao[]>([]);
@@ -76,11 +92,41 @@ function AgendaInner() {
   const [recarga, setRecarga] = useState(0);
   const [bloqueando, setBloqueando] = useState(false);
   const [bloqueios, setBloqueios] = useState<readonly Bloqueio[]>([]);
+  const [pacienteInicial, setPacienteInicial] = useState<PacienteHit | null>(null);
 
   // O fuso vem da UNIDADE ATIVA, não de uma constante: uma rede com clínica em
   // Manaus e outra em São Paulo tem duas agendas com relógios diferentes, e
   // quem está olhando pode não estar em nenhuma das duas cidades.
   const FUSO = vinculoAtivo.timezone;
+
+  useEffect(() => {
+    const novo = searchParams.get('novo') === '1';
+    const patientId = searchParams.get('patientId');
+    if (!novo && !patientId) return;
+
+    const partes = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: FUSO, hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date()).split(':').map(Number);
+    const minutoAtual = (partes[0] ?? 8) * 60 + (partes[1] ?? 0);
+    setCompositorEm(Math.min(19 * 60 + 45, Math.max(7 * 60, Math.ceil(minutoAtual / 15) * 15)));
+
+    if (!patientId) return;
+    let vivo = true;
+    void apiFetch<PacienteHit>(`/v1/pacientes/${patientId}`, { clinicId, csrfToken })
+      .then((paciente) => { if (vivo) setPacienteInicial(paciente); })
+      .catch(() => { if (vivo) setPacienteInicial(null); });
+    return () => { vivo = false; };
+  }, [FUSO, clinicId, csrfToken, searchParams]);
+
+  function fecharCompositor(): void {
+    setCompositorEm(null);
+    setPacienteInicial(null);
+    const proxima = new URLSearchParams(searchParams.toString());
+    proxima.delete('novo');
+    proxima.delete('patientId');
+    const query = proxima.toString();
+    router.replace(query ? `/agenda?${query}` : '/agenda', { scroll: false });
+  }
 
   const recarregarBloqueios = useCallback(async () => {
     const r = await apiFetch<{ itens: Bloqueio[] }>(
@@ -142,16 +188,11 @@ function AgendaInner() {
         // /v1/agenda/dia devolve { contadores, fila }; a grade quer só a fila.
         // Passar o envelope inteiro rebenta em `itensColuna.map is not a function`.
         carregar={carregarDia}
-        acoesExtras={
-          <Botao
-            variante="secundario"
-            tamanho="sm"
-            iconeEsquerda={Prohibit}
-            onClick={() => setBloqueando(true)}
-          >
-            Bloquear
-          </Botao>
-        }
+        acoesExtras={<>
+          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={ListBullets} onClick={() => router.push('/agenda/lista-espera')}>Lista de espera</Botao>
+          <Botao variante="fantasma" tamanho="sm" iconeEsquerda={Printer} onClick={() => router.push(`/agenda/imprimir?dia=${dia}`)}>Imprimir</Botao>
+          <Botao variante="secundario" tamanho="sm" iconeEsquerda={Prohibit} onClick={() => setBloqueando(true)}>Bloquear</Botao>
+        </>}
         aoAbrirCompositor={(inicioMin) => setCompositorEm(inicioMin)}
         aoMover={async (appointmentId, diaDoSlot, minuto) => {
           // A grade entrega dia + minuto de parede; o instante é montado aqui,
@@ -167,13 +208,28 @@ function AgendaInner() {
             method: 'POST', body: { status: 'confirmado' }, clinicId, csrfToken });
           setRecarga((n) => n + 1);
         }}
-        aoCobrar={() => {}}
+        carregarResumoPaciente={async (patientId) => {
+          const [paciente, pendencias] = await Promise.all([
+            apiFetch<PacienteDaApi>(`/v1/pacientes/${patientId}`, { clinicId, csrfToken }),
+            apiFetch<{ pendentes: string[] }>(`/v1/pacientes/${patientId}/pendencias`, { clinicId, csrfToken })
+              .catch(() => ({ pendentes: [] as string[] })),
+          ]);
+          return { ...paciente, pendentes: pendencias.pendentes } satisfies PatientQuickSummary;
+        }}
+        aoAbrirPaciente={(patientId) => router.push(`/pacientes/${patientId}`)}
+        aoAbrirAtendimento={(item) => {
+          if (item.encounterId) router.push(`/atendimentos/${item.encounterId}`);
+        }}
+        aoCobrar={(item) => {
+          router.push(`/financeiro/a-receber?patientId=${item.patientId}`);
+        }}
       />
 
       {compositorEm !== null && (
         <CompositorInline
           aberto
           inicioIso={paredeDe(dia, compositorEm)}
+          {...(pacienteInicial ? { pacienteInicial } : {})}
           procedimentos={procedimentos}
           convenios={convenios}
           buscarPacientes={(termo) => apiFetch<{ itens: PacienteHit[] }>(
@@ -213,11 +269,11 @@ function AgendaInner() {
                 },
                 clinicId, csrfToken,
               });
-            setCompositorEm(null);
+            fecharCompositor();
             setRecarga((n) => n + 1);
             return { appointmentId: r.appointmentId };
           }}
-          aoFechar={() => setCompositorEm(null)}
+          aoFechar={fecharCompositor}
         />
       )}
 

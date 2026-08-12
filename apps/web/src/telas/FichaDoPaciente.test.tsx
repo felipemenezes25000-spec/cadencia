@@ -74,7 +74,7 @@ function montar(over = {}) {
     paciente: PACIENTE,
     papel: 'profissional' as const,
     pendentes: [] as string[],
-    carregarProntuario: vi.fn(async () => [] as unknown[]),
+    carregarProntuario: vi.fn(async () => []),
     prontuarioAcessivel: true,
     existeMasSemAcesso: false,
     aoSolicitarAcesso: vi.fn(),
@@ -83,6 +83,8 @@ function montar(over = {}) {
     carregarFinanceiro: vi.fn(async () => LANCAMENTOS),
     podeVerFinanceiro: false,
     atendimentos: ATENDIMENTOS,
+    aoMensagem: vi.fn(),
+    aoNovoAtendimento: vi.fn(),
     ...over,
   };
   render(<FichaDoPaciente {...props} />);
@@ -126,10 +128,11 @@ describe('FichaDoPaciente', () => {
   it('renderiza tabs', () => {
     montar();
     expect(screen.getByRole('tab', { name: 'Resumo' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Prontuário' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Documentos' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Convênios' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Financeiro' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Comunicações' })).toBeVisible();
   });
 
   it('muda conteúdo ao clicar em tab', async () => {
@@ -137,7 +140,7 @@ describe('FichaDoPaciente', () => {
     // Tab Resumo ativo por padrão - mostra seção de contato
     expect(screen.getByText('Contato')).toBeVisible();
 
-    // Clicar em Histórico mostra timeline
+    // Clicar em Historico mostra timeline
     await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
     await waitFor(() => {
       expect(screen.getByText('Consulta')).toBeVisible();
@@ -147,7 +150,7 @@ describe('FichaDoPaciente', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Documentos' }));
     await waitFor(() => {
       expect(
-        screen.getByText('Nenhum documento cadastrado.'),
+        screen.getByText('Nenhum documento cadastrado'),
       ).toBeVisible();
     });
   });

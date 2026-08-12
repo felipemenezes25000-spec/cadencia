@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { BuscaDeCatalogo } from './BuscaDeCatalogo';
+import { ApiError } from '../api';
 
 describe('BuscaDeCatalogo', () => {
   const buscar = vi.fn().mockResolvedValue([{ codigo: 'J45', descricao: 'Asma' }]);
@@ -11,7 +12,10 @@ describe('BuscaDeCatalogo', () => {
     { chave: 'descricao' as const, rotulo: 'Descricao' },
   ];
 
-  beforeEach(() => { buscar.mockClear(); });
+  beforeEach(() => {
+    buscar.mockReset();
+    buscar.mockResolvedValue([{ codigo: 'J45', descricao: 'Asma' }]);
+  });
 
   it('mostra estado vazio antes da busca', () => {
     render(<BuscaDeCatalogo titulo="CID-10" placeholder="Buscar" colunas={colunas} buscar={buscar} />);
@@ -32,6 +36,20 @@ describe('BuscaDeCatalogo', () => {
     await user.type(screen.getByRole('searchbox'), 'J');
     await new Promise((r) => setTimeout(r, 500));
     expect(buscar).not.toHaveBeenCalled();
+  });
+
+  it('explica quando o catálogo ainda não foi carregado e permite tentar novamente', async () => {
+    buscar.mockRejectedValueOnce(new ApiError('catalogo_nao_carregado', 503));
+    const user = userEvent.setup();
+    render(<BuscaDeCatalogo titulo="CID-10" placeholder="Buscar" colunas={colunas} buscar={buscar} />);
+
+    await user.type(screen.getByRole('searchbox'), 'J45');
+    const alerta = await screen.findByRole('alert');
+    expect(alerta).toHaveTextContent(/ainda não foi carregado/i);
+
+    buscar.mockResolvedValueOnce([{ codigo: 'J45', descricao: 'Asma' }]);
+    await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
+    expect(await screen.findByText('Asma')).toBeInTheDocument();
   });
 
   it('passa a11y', async () => {

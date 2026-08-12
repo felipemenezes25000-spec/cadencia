@@ -50,10 +50,10 @@ describe("EstadoVazio", () => {
         compacto
       />,
     );
-    // Compacto usa py-8 em vez de py-16
+    // Compacto usa py-7 e preserva um touch target confortavel.
     const wrapper = container.firstElementChild as HTMLElement;
-    expect(wrapper.classList.contains("py-8")).toBe(true);
-    expect(wrapper.classList.contains("py-16")).toBe(false);
+    expect(wrapper.classList.contains("py-7")).toBe(true);
+    expect(wrapper.classList.contains("py-12")).toBe(false);
   });
 
   it("não renderiza descrição quando omitida", () => {

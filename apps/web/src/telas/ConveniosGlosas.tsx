@@ -155,7 +155,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
             aria-label="Status"
-            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
@@ -173,7 +173,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
             value={operadoraFiltro}
             onChange={(e) => setOperadoraFiltro(e.target.value)}
             aria-label="Operadora"
-            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text shadow-[inset_0_1px_0_color-mix(in_oklch,var(--surface),white_30%)] transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
+            className="h-10 rounded-lg border border-line bg-surface px-3 text-sm text-text transition-all-fast hover:border-line-strong focus:border-accent focus:ring-[3px] focus:ring-accent/10 focus:outline-none"
           >
             <option value="">Todas</option>
             {dados.operadoras.map((op) => (

@@ -115,7 +115,8 @@ export function PainelDePrescricao(p: PainelDePrescricaoProps) {
       // O token vai em `data-token`, jamais na URL: query string aparece em log
       // de servidor, em cabeçalho Referer e no histórico do navegador.
       s.dataset['token'] = sessao.token;
-      s.dataset['color'] = '#2f6f6a';
+      s.dataset['color'] = getComputedStyle(document.documentElement)
+        .getPropertyValue('--brand').trim();
       s.async = true;
       s.onload = conferir;
       s.onerror = () => setErro('Não foi possível carregar a prescrição.');

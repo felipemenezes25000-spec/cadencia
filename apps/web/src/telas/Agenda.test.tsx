@@ -138,7 +138,20 @@ describe('tela Agenda', () => {
     expect(within(mobileList).getByText('Maria Souza Lima')).toBeInTheDocument();
   });
 
-  /* ── Testes de lógica de negócio preservados ────────────── */
+  it('abre contexto do paciente sem sair da agenda', async () => {
+    const carregarResumoPaciente = vi.fn(async () => ({
+      patientId: 'p1', displayName: 'Maria Souza Lima', legalName: 'Maria Souza Lima',
+      birthDate: '1988-03-14', phonePrimary: '11999999999', email: 'maria@exemplo.com',
+      cadastroStatus: 'completo' as const, pendentes: [] as string[],
+    }));
+    montar({ carregarResumoPaciente, aoAbrirPaciente: vi.fn() });
+    const grid = await escopoDesktop();
+    await userEvent.click(grid.getByRole('button', { name: 'Abrir detalhes de Maria Souza Lima' }));
+    expect(await screen.findByRole('dialog', { name: 'Visão rápida do paciente' })).toBeVisible();
+    expect(carregarResumoPaciente).toHaveBeenCalledWith('p1');
+  });
+
+  /* ── Testes de logica de negocio preservados ────────────── */
 
   it('as teclas 1..5 trocam a visão — atalho fora de campo de texto', async () => {
     const { aoMudarVisao } = montar();
@@ -193,7 +206,7 @@ describe('tela Agenda', () => {
     const botao = grid.getByRole('button', { name: /Cobrar Maria Souza Lima/ });
     expect(botao).toBeVisible();
     await userEvent.click(botao);
-    expect(aoCobrar).toHaveBeenCalledWith('a1');
+    expect(aoCobrar).toHaveBeenCalledWith(FILA[0]);
   });
 
   it('Cobrar NÃO aparece quando pagamentoPendente é false', async () => {

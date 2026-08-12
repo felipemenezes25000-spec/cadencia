@@ -1,13 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { oklchParaSrgb, luminanciaRelativa, razaoDeContraste, lerToken } from './contrast';
+import { oklchParaSrgb, luminanciaRelativa, razaoDeContraste } from './contrast';
 
 const CSS = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
 
-describe('contraste dos tokens — MEDIDO, nunca inferido', () => {
-  it('o ambar corrigido esta no arquivo: L=52%, nao 72%', () => {
-    expect(lerToken(CSS, '--ambar-500')).toBe('oklch(52% 0.140 75)');
+describe('contraste e contrato dos tokens claros', () => {
+  it('declara os tokens oficiais do novo sistema claro', () => {
+    expect(CSS).toContain('--canvas: #f6f8fb');
+    expect(CSS).toContain('--surface: #ffffff');
+    expect(CSS).toContain('--border: #dde5ee');
+    expect(CSS).toContain('--text-primary: #13233a');
+    expect(CSS).toContain('--brand: #075985');
   });
 
   it('--warn sobre --surface passa em AA no tema claro', () => {
@@ -39,14 +43,14 @@ describe('contraste dos tokens — MEDIDO, nunca inferido', () => {
     }
   });
 
-  it('o CSS declara os dois temas e o seletor manual data-theme', () => {
-    expect(CSS).toContain('@media (prefers-color-scheme: dark)');
-    expect(CSS).toContain(':root[data-theme="dark"]');
-    expect(CSS).toContain(':root[data-theme="light"]');
+  it('o produto tem um unico tema claro e nao reintroduz dark mode', () => {
+    expect(CSS).toContain('color-scheme: light');
+    expect(CSS).not.toContain('@media (prefers-color-scheme: dark)');
+    expect(CSS).not.toContain(':root[data-theme="dark"]');
   });
 
-  it('prefers-reduced-motion zera as duracoes', () => {
+  it('prefers-reduced-motion reduz animacoes e transicoes', () => {
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
-    expect(CSS).toContain('--dur-1: 1ms');
+    expect(CSS).toContain('transition-duration: 1ms !important');
   });
 });
