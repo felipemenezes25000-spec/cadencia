@@ -1,5 +1,5 @@
 {
-  "checksum": "f87de1ff7f4b297dcaa4605015d8add8ca6f4b1ce72715907b1e8875a5c72c78",
+  "checksum": "8a38d41e68a0962019f82ce9e0ab27f5ce8b5433bd965036c4da6c7dd980a738",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -195,7 +195,9 @@
       "key": "document_template.delete",
       "description": "Excluir modelo de documento",
       "roles": [
-        "admin_clinico"
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
       ],
       "requiresMfa": false
     },
