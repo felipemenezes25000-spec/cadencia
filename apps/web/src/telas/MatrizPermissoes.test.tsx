@@ -1,7 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { MatrizPermissoes } from './MatrizPermissoes';
+
+// Mock do hook useSessao
+vi.mock('../sessao', () => ({
+  useSessao: () => ({
+    clinicId: '00000000-0000-0000-0000-000000000001',
+    csrfToken: 'fake-csrf-token',
+    vinculoAtivo: {
+      clinicId: '00000000-0000-0000-0000-000000000001',
+      userId: '00000000-0000-0000-0000-000000000002',
+      role: 'admin_clinico',
+      clinicNome: 'Clínica Demo',
+      tenantNome: 'Tenant Demo',
+      ativo: true,
+    },
+  }),
+}));
 
 describe('MatrizPermissoes', () => {
   it('renderiza todas as colunas de roles', () => {
