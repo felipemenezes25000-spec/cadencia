@@ -85,8 +85,8 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
          FROM ref.cid10_term
         WHERE vigencia @> $2::date
           AND (codigo ILIKE $1 || '%' OR descricao ILIKE '%' || $1 || '%')
-        -- Casamento pelo codigo vem primeiro: quem digita "J45" quer o J45, nao
-        -- as dezenas de descricoes que por acaso contem "J45" no meio.
+        -- Casamento pelo código vem primeiro: quem digita "J45" quer o J45, não
+        -- as dezenas de descrições que por acaso contêm "J45" no meio.
         ORDER BY (codigo ILIKE $1 || '%') DESC, codigo
         LIMIT $3`,
       [q.termo, q.data, q.limit ?? LIMITE_PADRAO]);

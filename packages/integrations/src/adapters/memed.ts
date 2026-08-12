@@ -18,8 +18,8 @@ import type {
  * aquele medico a abrir o modulo, e (b) buscar do lado servidor a VERDADE sobre
  * a prescricao que o browser apenas disse existir.
  *
- * Contratos verificados na documentacao oficial (doc.memed.com.br), nao de
- * memoria. `baseUrl` JA INCLUI o /v1 — e assim que a Memed publica os dois
+ * Contratos verificados na documentação oficial (doc.memed.com.br), não de
+ * memória. `baseUrl` JÁ INCLUI o /v1 — e assim que a Memed publica os dois
  * ambientes (integrations.api.memed.com.br/v1 e api.memed.com.br/v1):
  *   GET  {base}/sinapse-prescricao/check-key?api-key&secret-key
  *   GET  {base}/sinapse-prescricao/usuarios/{cpf}?api-key&secret-key -> token atual
@@ -32,7 +32,7 @@ import type {
  *
  * DELETE existe nas duas familias e NAO e usado aqui, em nenhuma hipotese: a
  * propria Memed documenta que apagar o prescritor leva junto o historico dele.
- * Um adaptador que nunca chama DELETE nao apaga acervo clinico por engano.
+ * Um adaptador que nunca chama DELETE não apaga acervo clínico por engano.
  */
 
 export interface MemedConfig {

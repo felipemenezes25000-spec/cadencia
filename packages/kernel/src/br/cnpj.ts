@@ -50,10 +50,10 @@ export function parseCnpj(input: string): Result<Cnpj, ValidationError> {
   }
   if (ALL_EQUAL.test(normalized)) {
     // 00000000000000 passa no módulo 11: só esta regra o elimina.
-    return err(new ValidationError('cnpj.caracteres_repetidos', 'CNPJ com todos os caracteres iguais nao existe'));
+    return err(new ValidationError('cnpj.caracteres_repetidos', 'CNPJ com todos os caracteres iguais não existe'));
   }
   if (checkDigits(normalized.slice(0, 12)) !== normalized.slice(12)) {
-    return err(new ValidationError('cnpj.digito_verificador_invalido', 'digito verificador do CNPJ nao confere'));
+    return err(new ValidationError('cnpj.digito_verificador_invalido', 'digito verificador do CNPJ não confere'));
   }
 
   return ok(normalized as Cnpj);

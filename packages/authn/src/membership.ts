@@ -1,10 +1,10 @@
 import type { Queryable } from './session';
 
 /**
- * Declarado aqui, e nao importado de @cadencia/authz: authn e authz sao irmaos
- * em L0 e import entre irmaos e proibido sem excecao (§2.2 regra 2). O teste
+ * Declarado aqui, e não importado de @cadencia/authz: authn e authz são irmãos
+ * em L0 e import entre irmãos é proibido sem exceção (§2.2 regra 2). O teste
  * `membership.int.test.ts` compara esta lista com o CHECK de app.membership,
- * que e o que impede as duas divergirem em silencio.
+ * que é o que impede as duas divergirem em silêncio.
  */
 export const MEMBERSHIP_ROLES = [
   'admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro',
@@ -20,7 +20,7 @@ export interface MembershipRow {
 /**
  * Le os vinculos VIGENTES do usuario. Precisa rodar dentro de withTenantTx: a
  * policy de app.membership ja filtra por tenant e por dono do vinculo, e o
- * parametro `tenantId` serve so para o chamador estreitar ainda mais.
+ * parâmetro `tenantId` serve só para o chamador estreitar ainda mais.
  */
 export async function resolveMemberships(
   db: Queryable, userId: string, tenantId?: string,

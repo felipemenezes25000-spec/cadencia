@@ -22,10 +22,10 @@ import { rota } from '../guard';
 /**
  * Os seis fatores aditivos, na ORDEM em que a tela empilha o waterfall.
  *
- * A lista espelha `VALID_FACTORS` de `packages/reports` — nao por acaso: a
- * funcao de dominio recusa qualquer nome fora dela, e os campos de
- * `VariationFactors` sao exatamente estes com sufixo `_cents`, o que deixa o
- * acesso por template (`f[`${nome}_cents`]`) verificavel pelo TypeScript.
+ * A lista espelha `VALID_FACTORS` de `packages/reports` — não por acaso: a
+ * função de domínio recusa qualquer nome fora dela, e os campos de
+ * `VariationFactors` são exatamente estes com sufixo `_cents`, o que deixa o
+ * acesso por template (`f[`${nome}_cents`]`) verificável pelo TypeScript.
  */
 const FATORES = [
   'volume', 'mix_procedimento', 'mix_convenio', 'ticket', 'faltas', 'glosas',
@@ -413,15 +413,15 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
   // receita e despesa do periodo. Esta responde outra pergunta — POR QUE a
   // receita mudou — decompondo o delta em fatores que somam exatamente o total.
   //
-  // A funcao de dominio (`computeVariation`) existia e era testada desde a Fase
+  // A função de domínio (`computeVariation`) existia e era testada desde a Fase
   // 3, mas nunca chegou a ter rota: o teste `variation.int.test.ts` chama o
-  // dominio dentro de uma transacao e diz, no proprio comentario, que montar o
-  // HTTP era "responsabilidade de outro bloco". Esse bloco nao veio, e a tela de
-  // Desempenho chamava um caminho que nao existia.
+  // domínio dentro de uma transação e diz, no próprio comentário, que montar o
+  // HTTP era "responsabilidade de outro bloco". Esse bloco não veio, e a tela de
+  // Desempenho chamava um caminho que não existia.
   //
-  // `clinic_id` chega na query porque o front o envia, e e IGNORADO de
-  // proposito: a clinica vem de `ctx.actor`, que saiu da sessao. Aceitar o id do
-  // cliente aqui seria deixar o navegador escolher de qual clinica ler.
+  // `clinic_id` chega na query porque o front o envia, e é IGNORADO de
+  // propósito: a clínica vem de `ctx.actor`, que saiu da sessão. Aceitar o id do
+  // cliente aqui seria deixar o navegador escolher de qual clínica ler.
   r.get('/v1/reports/variation/factors', {
     schema: {
       querystring: PeriodosSchema,

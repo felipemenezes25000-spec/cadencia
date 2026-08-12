@@ -6,10 +6,10 @@ import { rota } from '../guard';
 /**
  * Os procedimentos que o compositor da agenda oferece.
  *
- * `maisFrequente` sai do USO recente, nao de uma flag configurada nem da ordem
- * alfabetica. A recepcao agenda o mesmo punhado de procedimentos o dia inteiro;
- * o atalho so e atalho se refletir o que ela de fato faz. Uma flag manual
- * envelhece na primeira mudanca de rotina da clinica e ninguem lembra de mexer.
+ * `maisFrequente` sai do USO recente, não de uma flag configurada nem da ordem
+ * alfabética. A recepção agenda o mesmo punhado de procedimentos o dia inteiro;
+ * o atalho só é atalho se refletir o que ela de fato faz. Uma flag manual
+ * envelhece na primeira mudança de rotina da clínica e ninguém lembra de mexer.
  */
 export async function procedimentoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -74,10 +74,10 @@ export async function procedimentoRoutes(app: FastifyInstance): Promise<void> {
   /**
    * Quem atende nesta unidade.
    *
-   * Sob `appointment.read`, e nao sob `membership.read`: a recepcao precisa da
-   * lista para agendar e nao tem — nem deveria ter — permissao de ler vinculos.
-   * O que sai daqui e o minimo para escolher com quem marcar: nome e registro.
-   * Nao sai e-mail, CPF nem papel.
+   * Sob `appointment.read`, e não sob `membership.read`: a recepção precisa da
+   * lista para agendar e não tem — nem deveria ter — permissão de ler vínculos.
+   * O que sai daqui é o mínimo para escolher com quem marcar: nome e registro.
+   * Não sai e-mail, CPF nem papel.
    */
   r.get('/v1/profissionais', {
     schema: {

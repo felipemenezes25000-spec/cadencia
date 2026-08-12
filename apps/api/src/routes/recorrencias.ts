@@ -12,16 +12,16 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 const DATA = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'data no formato AAAA-MM-DD');
 
 /**
- * Agendamento recorrente — fisioterapia toda terca, retorno mensal.
+ * Agendamento recorrente — fisioterapia toda terça, retorno mensal.
  *
  * `sched.recurrence` existia no banco desde a Fase 1, com FK vinda de
  * `sched.appointment.recurrence_id`, e nunca teve uma linha: a tabela foi criada
- * e o recurso nao foi construido. Na pratica a recepcao marcava as doze sessoes
- * uma a uma, e quando o paciente mudava de horario refazia as doze.
+ * e o recurso não foi construído. Na prática a recepção marcava as doze sessões
+ * uma a uma, e quando o paciente mudava de horário refazia as doze.
  *
- * A data e a hora chegam SEPARADAS e em hora de parede, nao como instante:
- * "toda terca as 14h" e um compromisso com o relogio da clinica. Receber
- * timestamptz obrigaria o cliente a fazer a conversao de fuso — e o cliente e um
+ * A data e a hora chegam SEPARADAS e em hora de parede, não como instante:
+ * "toda terça às 14h" é um compromisso com o relógio da clínica. Receber
+ * timestamptz obrigaria o cliente a fazer a conversão de fuso — e o cliente é um
  * navegador que pode estar em outro estado.
  */
 export async function recorrenciaRoutes(app: FastifyInstance): Promise<void> {
@@ -94,7 +94,7 @@ export async function recorrenciaRoutes(app: FastifyInstance): Promise<void> {
             freq: z.string(),
             intervalo: z.number().int(),
             horizonteAte: z.string(),
-            /** So o que ainda vem: passado nao se cancela nem se remarca. */
+            /** Só o que ainda vem: passado não se cancela nem se remarca. */
             futurasAtivas: z.number().int(),
           })),
         }),

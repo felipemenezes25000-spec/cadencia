@@ -147,9 +147,9 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
          $12, $13,
          $14, $15, $16::date, $17,
          $18,
-         -- Solicitante e executante sao o MESMO prestador quando a clinica faz o
-         -- proprio exame, que e o caso comum. Quando o exame for terceirizado, o
-         -- executante muda — e ai a guia sai do laboratorio, nao daqui.
+         -- Solicitante e executante são o MESMO prestador quando a clínica faz o
+         -- próprio exame, que é o caso comum. Quando o exame for terceirizado, o
+         -- executante muda — e aí a guia sai do laboratório, não daqui.
          $9, $10,
          $11, $19, $20, $21,
          $22, $23, app.current_user_id())`,

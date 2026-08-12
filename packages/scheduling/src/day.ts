@@ -86,8 +86,8 @@ export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {
             to_char(a.starts_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS starts,
             to_char(a.ends_at   AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS ends,
             a.patient_id, p.display_name, a.professional_id,
-            -- O nome vem de id."user" porque a identidade e GLOBAL (§10 item 2):
-            -- app.professional carrega o vinculo e o conselho, nao o nome.
+            -- O nome vem de id."user" porque a identidade é GLOBAL (§10 item 2):
+            -- app.professional carrega o vínculo e o conselho, não o nome.
             coalesce(u.full_name, '') AS professional_nome,
             pr.nome AS proc_nome, pr.cor AS proc_cor, a.operadora_nome,
             a.status::text AS status, a.encaixe, a.teleconsulta, a.primeira_vez,

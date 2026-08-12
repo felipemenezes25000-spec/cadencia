@@ -17,7 +17,7 @@ async function relationExists(db: Queryable, relation: string): Promise<boolean>
  */
 export async function auditAliveViolations(db: Queryable, opts: AuditAliveOptions = {}): Promise<string[]> {
   if (!(await relationExists(db, 'audit.event'))) {
-    return ['audit.event nao existe — a trilha nao e opcional'];
+    return ['audit.event não existe — a trilha não é opcional'];
   }
 
   const { rows } = await db.query<{ total: string; lag_minutes: string | null }>(
@@ -27,7 +27,7 @@ export async function auditAliveViolations(db: Queryable, opts: AuditAliveOption
   );
   const total = Number(rows[0]?.total ?? '0');
   if (total === 0) {
-    return ['audit.event vazio — a trilha existe e ninguem escreve nela'];
+    return ['audit.event vazio — a trilha existe e ninguém escreve nela'];
   }
 
   const limite = opts.maxLagMinutes;

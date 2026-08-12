@@ -43,8 +43,8 @@ export async function documentoPdfRoutes(app: FastifyInstance): Promise<void> {
     }>(
       `SELECT d.kind::text AS kind, d.payload,
               to_char(d.issued_date, 'DD/MM/YYYY') AS emitido_em,
-              -- CNES nulo e clinica que ainda nao se cadastrou no CNES, o que e
-              -- legitimo. O cabecalho sai sem o numero em vez de a impressao
+              -- CNES nulo é clínica que ainda não se cadastrou no CNES, o que é
+              -- legítimo. O cabeçalho sai sem o número em vez de a impressão
               -- inteira falhar por causa de um campo administrativo.
               c.nome AS clinica_nome,
               coalesce(c.cnpj, '') AS clinica_cnpj,

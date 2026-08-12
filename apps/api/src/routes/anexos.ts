@@ -134,8 +134,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
               to_char(a.created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF:00') AS criado_em
          FROM clin.attachment a
         WHERE a.patient_id = $1
-          -- Anexo purgado pela LGPD some da lista. A linha continua para a
-          -- auditoria saber que existiu; o conteudo e que nao existe mais.
+          -- Anexo purgado pela LGPD suma da lista. A linha continua para a
+          -- auditoria saber que existiu; o conteúdo é que não existe mais.
           AND a.purged_at IS NULL
         ORDER BY a.created_at DESC`,
       [p.id]);

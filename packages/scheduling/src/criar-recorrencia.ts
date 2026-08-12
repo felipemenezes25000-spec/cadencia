@@ -159,24 +159,24 @@ export async function cancelarRecorrenciaFutura(
   const { rows } = await tx.query<{ n: string }>(
     `WITH alvo AS (
        UPDATE sched.appointment a
-          -- cancelled_at anda JUNTO do status: existe um CHECK ligando os dois
-          -- para que nao haja agendamento cancelado sem hora de cancelamento.
-          -- Sem ela ninguem responde "quando isso foi desmarcado" numa
-          -- reclamacao de paciente.
+          -- cancelado_at anda JUNTO do status: existe um CHECK ligando os dois
+          -- para que não haja agendamento cancelado sem hora de cancelamento.
+          -- Sem ela ninguém responde "quando isso foi desmarcado" numa
+          -- reclamação de paciente.
           SET status = 'cancelado', cancelled_at = clock_timestamp()
          FROM sched.recurrence r, app.clinic c
         WHERE a.recurrence_id = r.id
           AND r.id = $1
           AND c.id = r.clinic_id
-          -- Compara INSTANTE, nao data.
+          -- Compara INSTANTE, não data.
           --
           -- Era appointment_date > local_date(...), que joga o dia de hoje
-          -- inteiro no passado: a recepcao cancelava a serie de manha e a
-          -- consulta de hoje as 16h continuava marcada — o paciente aparecia.
+          -- inteiro no passado: a recepção cancelava a série de manhã e a
+          -- consulta de hoje às 16h continuava marcada — o paciente aparecia.
           -- Trocar para >= inverteria o erro e cancelaria a consulta das 8h
-          -- que ja tinha acontecido, que e justamente o que o comentario acima
-          -- proibe. Por instante, "futura" quer dizer futura de verdade, e a
-          -- fronteira e o horario da consulta, nao a meia-noite da clinica.
+          -- que já tinha acontecido, que é justamente o que o comentário acima
+          -- probe. Por instante, "futura" quer dizer futura de verdade, e a
+          -- fronteira é o horário da consulta, não a meia-noite da clínica.
           AND a.starts_at > clock_timestamp()
           AND a.status IN ('agendado', 'confirmado')
         RETURNING a.id)

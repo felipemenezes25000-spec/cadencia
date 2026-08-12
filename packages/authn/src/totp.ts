@@ -10,11 +10,11 @@ export const TOTP_WINDOW = 1;
 const ISSUER = 'Cadencia';
 
 /**
- * Relogio injetado. Declarado aqui e nao importado de @cadencia/kernel porque
- * `authn` e `kernel` sao irmaos em L0 (§2.2 regra 2). NAO existe valor padrao:
- * construir um Date do relogio do sistema aqui seria reprovado pelo guarda
- * tools/repo/time-source.ts, cuja regra e explicita — a correcao nunca e
- * acrescentar o arquivo a allowlist. Quem escolhe o relogio e L3.
+ * Relógio injetado. Declarado aqui e não importado de @cadencia/kernel porque
+ * `authn` e `kernel` são irmãos em L0 (§2.2 regra 2). NÃO existe valor padrão:
+ * construir um Date do relógio do sistema aqui seria reprovado pelo guarda
+ * tools/repo/time-source.ts, cuja regra é explícita — a correção nunca é
+ * acrescentar o arquivo a allowlist. Quem escolhe o relógio é L3.
  */
 export interface Clock {
   now(): Date;

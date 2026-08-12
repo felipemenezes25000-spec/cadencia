@@ -55,7 +55,7 @@ export function isUuidV7(value: string): value is UuidV7 {
 
 export function timestampMsFromUuidV7(value: string): number {
   if (!isUuidV7(value)) {
-    throw new ValidationError('uuid.v7.invalido', 'identificador nao e um UUIDv7', { length: value.length });
+    throw new ValidationError('uuid.v7.invalido', 'identificador não é um UUIDv7', { length: value.length });
   }
   return Number.parseInt(value.replace(/-/g, '').slice(0, 12), 16);
 }

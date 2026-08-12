@@ -4,7 +4,7 @@ import { businessPool } from './pool';
 /**
  * §3.2 — Ator da transacao.
  *
- * Papel e profissional NAO estao aqui de proposito: sao DERIVADOS do vinculo
+ * Papel e profissional não estao aqui de proposito: são DERIVADOS do vinculo
  * dentro do banco (app.membership / app.professional). Papel escalar vindo do
  * cliente da acesso total ou nenhum ao medico que e admin em uma unidade e
  * assistente em outra — que e a norma no Brasil.
@@ -14,7 +14,7 @@ export type Actor =
   | { kind: 'system'; tenantId: string; reason: string; requestId: string } // worker/outbox
   | { kind: 'anon'; tenantId: string; requestId: string }; // agendamento online
 
-/** Superficie de consulta entregue ao callback. Nao expoe BEGIN/COMMIT/ROLLBACK. */
+/** Superficie de consulta entregue ao callback. não expoe BEGIN/COMMIT/ROLLBACK. */
 export interface TxClient {
   query<R extends QueryResultRow = QueryResultRow>(
     sql: string,
@@ -31,7 +31,7 @@ export interface TxClient {
  *         requisicao seguinte. A RLS filtra certo, pelo tenant errado.
  *
  * Todo GUC e gravado como texto e nunca como NULL: ausencia vira string vazia,
- * e o banco le com nullif(..., ''). O ator de sistema e o anonimo nao tem
+ * e o banco le com nullif(..., ''). O ator de sistema e o anonimo não tem
  * user_id, e ''::uuid levantaria 22P02 abortando a transacao inteira.
  */
 const PREAMBLE = `SELECT
@@ -67,11 +67,11 @@ function wrap(client: PoolClient): TxClient {
 /**
  * O UNICO lugar do sistema que abre transacao de negocio.
  *
- * O papel `jobs` (unico com BYPASSRLS) NAO usa esta funcao: o SET LOCAL ROLE
+ * O papel `jobs` (unico com BYPASSRLS) não usa esta funcao: o SET LOCAL ROLE
  * abaixo o faria perder o BYPASSRLS e voltar a enxergar zero linhas.
  *
  * O erro do PostgreSQL sobe CRU, com o SQLSTATE intacto. Traduzir aqui exigiria
- * importar packages/kernel, e irmao nao importa irmao (§2.2): a traducao por
+ * importar packages/kernel, e irmão não importa irmão (§2.2): a tradução por
  * domainErrorFromSqlState acontece na borda HTTP, em L3.
  */
 export async function withTenantTx<T>(
@@ -89,7 +89,7 @@ export async function withTenantTx<T>(
   try {
     await client.query('BEGIN');
     // `api` foi criado NOINHERIT: sem esta linha toda query retorna 42501.
-    // E uma trava a mais — codigo que nao passa por aqui nao le nada.
+    // E uma trava a mais — codigo que não passa por aqui não le nada.
     await client.query('SET LOCAL ROLE app_rw');
     await client.query(PREAMBLE, [...preambleParams(actor)]);
 

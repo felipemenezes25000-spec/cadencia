@@ -3,7 +3,7 @@ import type { Provider } from './contracts/common';
 export function assertSafetyDeclared(p: Provider, metodos: readonly string[]): boolean {
   for (const m of metodos) {
     if (p.safety[m] === undefined) {
-      throw new Error(`${p.id}: safety nao declarada para ${m}`);
+      throw new Error(`${p.id}: safety não declarada para ${m}`);
     }
   }
   return true;

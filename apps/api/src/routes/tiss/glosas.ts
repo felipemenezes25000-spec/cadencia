@@ -105,8 +105,8 @@ export async function glosaRoutes(app: FastifyInstance): Promise<void> {
            ON d.tenant_id = di.tenant_id AND d.id = di.demonstrativo_id
          JOIN tiss.operadora o
            ON o.tenant_id = d.tenant_id AND o.id = d.operadora_id
-         -- LEFT: glosa de guia que ainda nao amarrou o atendimento continua
-         -- aparecendo na lista. Some-la esconderia dinheiro a recuperar.
+         -- LEFT: glosa de guia que ainda não amarrou o atendimento continua
+         -- aparecendo na lista. Sumir a linha esconderia dinheiro a recuperar.
          LEFT JOIN clin.encounter_version ev
            ON (ev.tenant_id, ev.id) = (g.tenant_id, g.encounter_version_id)
          LEFT JOIN clin.encounter enc

@@ -7,7 +7,7 @@ import {
   type Queryable, type ResolvedSession,
 } from '../session';
 
-/** Prefixo __Host-: o navegador so aceita com Secure, Path=/ e sem Domain. */
+/** Prefixo __Host-: o navegador só aceita com Secure, Path=/ e sem Domain. */
 export const SESSION_COOKIE = '__Host-cadencia_sid';
 export const CSRF_COOKIE = '__Host-cadencia_csrf';
 export const CSRF_HEADER = 'x-csrf-token';
@@ -15,9 +15,9 @@ export const CSRF_HEADER = 'x-csrf-token';
 const METODOS_INSEGUROS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
- * Forma do evento de seguranca entregue ao canal B. Declarada aqui porque
- * `authn` nao importa `@cadencia/audit` (irmaos em L0, §2.2 regra 2): quem liga
- * as duas pontas e `apps/api`, passando `onSecurityEvent`.
+ * Forma do evento de segurança entregue ao canal B. Declarada aqui porque
+ * `authn` não importa `@cadencia/audit` (irmãos em L0, §2.2 regra 2): quem liga
+ * as duas pontas é `apps/api`, passando `onSecurityEvent`.
  */
 export interface SecurityEventInput {
   readonly eventType: string;
@@ -33,9 +33,9 @@ export interface SecurityEventInput {
 export interface SessionPluginOptions {
   /** Pool que ja assume app_rw (appPool de @cadencia/db). */
   readonly db: Queryable;
-  /** Gerador de id de requisicao (uuidv7 mora no kernel, que authn nao importa). */
+  /** Gerador de id de requisição (uuidv7 mora no kernel, que authn não importa). */
   readonly newRequestId: () => string;
-  /** Canal B da auditoria. Opcional para nao travar teste de rota isolada. */
+  /** Canal B da auditoria. Opcional para não travar teste de rota isolada. */
   readonly onSecurityEvent?: (event: SecurityEventInput) => Promise<void>;
 }
 

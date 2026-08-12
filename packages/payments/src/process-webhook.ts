@@ -31,7 +31,7 @@ export async function processPaymentWebhook(
 
   if (rows.length === 0) {
     return err(new NotFoundError('webhook.link_nao_encontrado',
-      `link de pagamento nao encontrado para provider_link_id: ${payload.providerPaymentId}`));
+      `link de pagamento não encontrado para provider_link_id: ${payload.providerPaymentId}`));
   }
 
   const link = rows[0]!;

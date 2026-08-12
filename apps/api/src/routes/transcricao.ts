@@ -14,18 +14,18 @@ function erroDominio(kind: string, status: number): never {
 const LIMITE_AUDIO = 25 * 1024 * 1024;
 
 /**
- * Transcricao da consulta por IA.
+ * Transcrição da consulta por IA.
  *
- * A rota devolve SUGESTAO e nao escreve nada no prontuario. O rascunho continua
- * como estava; quem digita — ou aceita — e o medico. Preencher sozinho poria no
- * acervo clinico texto que ninguem leu, e o acervo e assinado por uma pessoa.
+ * A rota devolve SUGESTÃO e não escreve nada no prontuário. O rascunho continua
+ * como estava; quem digita — ou aceita — é o médico. Preencher sozinho poria no
+ * acervo clínico texto que ninguém leu, e o acervo é assinado por uma pessoa.
  *
- * Tres coisas acontecem antes de qualquer byte sair daqui:
- *   1. o paciente nao pode ter recusado IA;
+ * Três coisas acontecem antes de qualquer byte sair daqui:
+ *   1. o paciente não pode ter recusado IA;
  *   2. quem chama tem que estar atendendo (`ai.transcribe`);
- *   3. a residencia do provedor e registrada, porque dado de saude processado
- *      fora do Brasil e transferencia internacional sob a LGPD e a clinica
- *      precisa conseguir dizer para onde o audio foi.
+ *   3. a residência do provedor é registrada, porque dado de saúde processado
+ *      fora do Brasil é transferência internacional sob a LGPD e a clínica
+ *      precisa conseguir dizer para onde o áudio foi.
  */
 export async function transcricaoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();

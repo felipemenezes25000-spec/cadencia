@@ -122,7 +122,7 @@ function sortDeep(mapa: GrantMap): GrantMap {
 export function readDeclaredGrants(): GrantMap {
   if (!existsSync(PRIVILEGES_FILE)) {
     throw new Error(
-      `${PRIVILEGES_FILE} nao existe: rode \`pnpm db:privileges\` e revise o arquivo gerado antes de commitar`,
+      `${PRIVILEGES_FILE} não existe: rode \`pnpm db:privileges\` e revise o arquivo gerado antes de commitar`,
     );
   }
   return JSON.parse(readFileSync(PRIVILEGES_FILE, 'utf8')) as GrantMap;
@@ -138,7 +138,7 @@ export function diffDeclaredGrants(atual: GrantMap, declarado: GrantMap): string
   for (const relacao of Object.keys(atual)) {
     const esperado = declarado[relacao];
     if (esperado === undefined) {
-      out.push(`${relacao}: relacao existe no banco e nao esta declarada em packages/db/privileges.json`);
+      out.push(`${relacao}: relação existe no banco e não está declarada em packages/db/privileges.json`);
       continue;
     }
     const a = JSON.stringify(atual[relacao]);

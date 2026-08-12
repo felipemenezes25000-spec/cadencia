@@ -27,7 +27,7 @@ export function parseCns(input: string): Result<Cns, ValidationError> {
   let sum = 0;
   for (let i = 0; i < 15; i += 1) sum += Number(digits[i] ?? '0') * (15 - i);
   if (sum % 11 !== 0) {
-    return err(new ValidationError('cns.digito_verificador_invalido', 'digito verificador do CNS nao confere'));
+    return err(new ValidationError('cns.digito_verificador_invalido', 'digito verificador do CNS não confere'));
   }
 
   return ok(digits as Cns);

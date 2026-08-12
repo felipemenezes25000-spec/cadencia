@@ -182,14 +182,14 @@ export function validateCustomViewInput(
   if (input.name.trim().length === 0) {
     return err(new ValidationError(
       'report.view.nome_vazio',
-      'o nome da visao nao pode ser vazio',
+      'o nome da visão não pode ser vazio',
     ));
   }
 
   if (!ALLOWED_VIEWS.has(input.view)) {
     return err(new ValidationError(
       'report.view.view_invalida',
-      'a view informada nao e permitida',
+      'a view informada não é permitida',
       { view: input.view },
     ));
   }
@@ -198,7 +198,7 @@ export function validateCustomViewInput(
     if (!COLUMN_RE.test(col)) {
       return err(new ValidationError(
         'report.view.coluna_invalida',
-        'nome de coluna invalido na definicao da visao',
+        'nome de coluna inválido na definição da visão',
         { column: col },
       ));
     }

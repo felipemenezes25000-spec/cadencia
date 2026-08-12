@@ -5,30 +5,30 @@ import type {
 } from '../contracts/transcription';
 
 /**
- * Transcricao clinica pela OpenAI.
+ * Transcrição clínica pela OpenAI.
  *
- * DOIS modelos, de proposito:
+ * DOIS modelos, de propósito:
  *
- *   `gpt-4o-transcribe-diarize` para o audio. A diarizacao — separar quem falou
- *   o que — nao e refinamento: sem ela, "estou com dor" pode acabar atribuido ao
- *   medico. Prontuario que troca a fala do paciente pela do medico e prontuario
+ *   `gpt-4o-transcribe-diarize` para o áudio. A diarização — separar quem falou
+ *   o quê — não é refinamento: sem ela, "estou com dor" pode acabar atribuído ao
+ *   médico. Prontuário que troca a fala do paciente pela do médico é prontuário
  *   que conta outra consulta.
  *
  *   `gpt-5.4-mini` para estruturar. Medido contra `gpt-5.4` e `gpt-5.5` na
- *   propria tarefa: com a instrucao anti-inferencia, os tres devolvem o MESMO
- *   codigo (R51) de forma estavel, e o mini responde em ~1/3 do tempo. Pagar
- *   pelo maior compraria latencia, nao acerto.
+ *   própria tarefa: com a instrução anti-inferência, os três devolvem o MESMO
+ *   código (R51) de forma estável, e o mini responde em ~1/3 do tempo. Pagar
+ *   pelo maior compraria latência, não acerto.
  */
 
 const INSTRUCAO_ANTI_INFERENCIA = `
-Voce transcreve consulta medica para SUGERIR preenchimento de prontuario.
+Você transcreve consulta médica para SUGERIR preenchimento de prontuário.
 
 REGRAS ABSOLUTAS:
-1. NUNCA proponha diagnostico que o medico nao tenha dito. Se o paciente descreve
-   sintoma, o codigo e do SINTOMA, nao da doenca que o sintoma sugere.
-2. NUNCA invente numero. Peso, altura e pressao so entram se foram DITOS.
-3. Campo sem informacao na transcricao volta null.
-4. A evolucao e prosa clinica do que foi dito, sem conclusao que ninguem tirou.
+1. NUNCA proponha diagnóstico que o médico não tenha dito. Se o paciente descreve
+   sintoma, o código é do SINTOMA, não da doença que o sintoma sugere.
+2. NUNCA invente número. Peso, altura e pressão só entram se foram DITOS.
+3. Campo sem informação na transcrição volta null.
+4. A evolução é prosa clínica do que foi dito, sem conclusão que ninguém tirou.
 
 Devolva SOMENTE JSON:
 {"evolucao":string,"alergias":string|null,"pesoKg":string|null,
@@ -46,7 +46,7 @@ export interface OpenAiTranscricaoConfig {
 }
 
 function extrairJson(texto: string): unknown {
-  // O modelo as vezes cerca o JSON com crase tripla mesmo instruido a nao fazer.
+  // O modelo às vezes cerca o JSON com crase tripla mesmo instruído a não fazer.
   const limpo = texto.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
   try { return JSON.parse(limpo); } catch { return null; }
 }
@@ -125,9 +125,9 @@ export function createOpenAiTranscriptionProvider(
       };
 
       const falas: FalaTranscrita[] = (j.segments ?? []).map((sgm) => ({
-        // Sem rotulo de locutor, `desconhecido` — e nao "MEDICO" por padrao.
-        // Chutar quem falou e o erro que troca a queixa do paciente pela
-        // conduta do medico.
+        // Sem rótilo de locutor, `desconhecido` — e não "MÉDICO" por padrão.
+        // Chutar quem falou é o erro que troca a queixa do paciente pela
+        // conduta do médico.
         locutor: sgm.speaker ?? 'desconhecido',
         texto: sgm.text ?? '',
         inicioMs: Math.round((sgm.start ?? 0) * 1000),

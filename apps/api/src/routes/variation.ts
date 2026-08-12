@@ -34,9 +34,9 @@ export async function variationRoutes(app: FastifyInstance): Promise<void> {
   /**
    * GET /v1/variation
    *
-   * Retorna a decomposicao de variacao de receita entre dois periodos.
-   * Tenta ler do snapshot persistido. Se nao existir ou force_recompute=true,
-   * computa ao vivo e retorna sem persistir (persistencia e responsabilidade
+   * Retorna a decomposição de variação de receita entre dois períodos.
+   * Tenta ler do snapshot persistido. Se não existir ou force_recompute=true,
+   * computa ao vivo e retorna sem persistir (persistência é responsabilidade
    * do worker/job).
    */
   r.get('/v1/variation', {

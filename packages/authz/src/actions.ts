@@ -1,10 +1,10 @@
 /**
- * FONTE UNICA do catalogo de acoes. Este arquivo e o unico lugar onde uma acao
+ * FONTE ÚNICA do catálogo de ações. Este arquivo é o único lugar onde uma ação
  * nasce. O comando `pnpm authz:seed` regenera a tabela ref.action e o arquivo
- * packages/authz/actions.lock.json a partir daqui -- nunca o contrario.
+ * packages/authz/actions.lock.json a partir daqui -- nunca o contrário.
  *
- * O que este catalogo NAO faz: filtrar linha. Isso e do RLS (§3.3). Aqui so se
- * decide o que a ROTA permite, olhando papel no vinculo.
+ * O que este catálogo NÃO faz: filtrar linha. Isso é do RLS (§3.3). Aqui só se
+ * decide o que a ROTA permite, olhando papel no vínculo.
  */
 export const ROLES = [
   'admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro',
@@ -74,22 +74,22 @@ export const ACTIONS = [
   // ── Fase 1 · Documentos e prescricao ─────────────────────────────────────
   { key: 'document.issue', description: 'Emitir atestado, pedido, relatorio ou declaracao',
     roles: ['diretor_tecnico', 'profissional'] },
-  // Ler e imprimir e mais amplo que emitir: a recepcao reimprime o atestado que
-  // o paciente perdeu, e admin auditando documento emitido nao precisa poder
-  // emitir um novo em nome do medico.
+  // Ler e imprimir é mais amplo que emitir: a recepção reimprime o atestado que
+  // o paciente perdeu, e admin auditando documento emitido não precisa poder
+  // emitir um novo em nome do médico.
   { key: 'document.read', description: 'Ler e imprimir documento emitido',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
   { key: 'prescription.write', description: 'Prescrever',
     roles: ['diretor_tecnico', 'profissional'] },
-  // Anexo e resultado de exame, laudo, foto de lesao: dado clinico. A recepcao
-  // recebe o papel do paciente no balcao, entao PODE anexar — mas nao pode
-  // abrir o que ja esta la.
+  // Anexo é resultado de exame, laudo, foto de lesão: dado clínico. A recepção
+  // recebe o papel do paciente no balcão, então PODE anexar — mas não pode
+  // abrir o que já está lá.
   { key: 'attachment.write', description: 'Anexar arquivo ao prontuario',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
   { key: 'attachment.read', description: 'Ler anexo do prontuario',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
-  // So quem ATENDE transcreve: o audio e a consulta inteira, e quem nao esta na
-  // sala nao tem por que ouvi-la.
+  // Só quem ATENDE transcreve: o áudio é a consulta inteira, e quem não está na
+  // sala não tem por que ouvi-la.
   { key: 'ai.transcribe', description: 'Transcrever consulta com assistencia de IA',
     roles: ['diretor_tecnico', 'profissional'] },
   // ── Fase 2 · Mensageria ──────────────────────────────────────────────────
@@ -161,10 +161,10 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
   { key: 'tiss.guia.adjust', description: 'Ajustar codigo de procedimento na guia para faturamento',
     roles: ['admin_clinico', 'financeiro'] },
-  // Emitir SP/SADT e ato CLINICO: quem pede exame e quem atende. A recepcao
-  // nao entra — pedido de exame em nome de um medico que nao pediu e o comeco
-  // de uma glosa por procedimento nao justificado, quando nao de coisa pior.
-  // O financeiro tambem nao: ele fatura o que foi pedido, nao pede.
+  // Emitir SP/SADT é ato CLÍNICO: quem pede exame é quem atende. A recepção
+  // não entra — pedido de exame em nome de um médico que não pediu é o começo
+  // de uma glosa por procedimento não justificado, quando não de coisa pior.
+  // O financeiro também não: ele fatura o que foi pedido, não pede.
   { key: 'tiss.guia.write', description: 'Emitir guia SP/SADT a partir do atendimento',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   { key: 'tiss.lote.manage', description: 'Criar, montar e cancelar lotes TISS',

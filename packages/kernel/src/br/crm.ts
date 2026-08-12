@@ -37,7 +37,7 @@ export function parseCrm(input: string): Result<Crm, ValidationError> {
   const numero = (match[2] ?? match[3] ?? '').replace(/^0+(?=\d)/, '');
 
   if (!UFS.includes(uf)) {
-    return err(new ValidationError('crm.uf_invalida', 'UF do conselho nao existe', { uf }));
+    return err(new ValidationError('crm.uf_invalida', 'UF do conselho não existe', { uf }));
   }
 
   return ok({ numero, uf });

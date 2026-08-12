@@ -82,7 +82,7 @@ export function createFakePaymentProvider(
       const snap = pagamentos.get(i.providerPaymentId);
       if (!snap) {
         return failure({ kind: 'rejected', retrySafe: false,
-          code: 'NOT_FOUND', detail: `pagamento ${i.providerPaymentId} nao encontrado` });
+          code: 'NOT_FOUND', detail: `pagamento ${i.providerPaymentId} não encontrado` });
       }
       return success(snap, i.providerPaymentId);
     },
@@ -94,7 +94,7 @@ export function createFakePaymentProvider(
       const snap = pagamentos.get(i.providerPaymentId);
       if (!snap) {
         return failure({ kind: 'rejected', retrySafe: false,
-          code: 'NOT_FOUND', detail: `pagamento ${i.providerPaymentId} nao encontrado` });
+          code: 'NOT_FOUND', detail: `pagamento ${i.providerPaymentId} não encontrado` });
       }
 
       const refundId = `fake-refund-${ctx.idempotencyKey}`;

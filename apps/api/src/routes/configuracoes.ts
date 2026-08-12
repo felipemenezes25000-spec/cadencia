@@ -51,7 +51,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       [ctx.actor.clinicId]);
 
     const c = rows[0];
-    if (c === undefined) throw new Error('clinica do contexto nao encontrada');
+    if (c === undefined) throw new Error('clínica do contexto não encontrada');
 
     return {
       clinicId: c.id, nome: c.nome, cnpj: c.cnpj, cnes: c.cnes,
@@ -98,7 +98,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       [ctx.actor.clinicId, b.nome, b.timezone, b.cnes ?? null, b.cnpj ?? null]);
 
     const c = rows[0];
-    if (c === undefined) throw new Error('clinica do contexto nao encontrada');
+    if (c === undefined) throw new Error('clínica do contexto não encontrada');
 
     const { rows: t } = await tx.query<{ razao_social: string }>(
       `SELECT razao_social FROM app.tenant WHERE id = app.current_tenant_id()`);

@@ -4,11 +4,11 @@ import type {
 } from '../contracts/transcription';
 
 /**
- * Transcricao simulada, deterministica.
+ * Transcrição simulada, deterministica.
  *
- * Existe pelo mesmo motivo dos outros fakes: a suite nao pode chamar um provedor
+ * Existe pelo mesmo motivo dos outros fakes: a suíte não pode chamar um provedor
  * de verdade. Aqui isso e mais serio que custo — o audio de uma consulta e dado
- * de saude, e um teste que o enviasse para fora estaria fazendo transferencia
+ * de saúde, e um teste que o enviasse para fora estaria fazendo transferencia
  * internacional de dado sensivel toda vez que alguem rodasse `pnpm test`.
  */
 export interface FakeTranscriptionOptions {
@@ -20,8 +20,8 @@ export function createFakeTranscriptionProvider(
 ): TranscriptionProvider {
   return {
     id: 'transcription-fake',
-    // Declara `local`: nada sai da maquina. E a resposta honesta para "para onde
-    // foi o audio" quando ele nao foi a lugar nenhum.
+    // Declara `local`: nada sai da máquina. E a resposta honesta para "para onde
+    // foi o áudio" quando ele não foi a lugar nenhum.
     residency: 'local',
     modelId: 'fake-transcribe',
     modelVersion: '0',

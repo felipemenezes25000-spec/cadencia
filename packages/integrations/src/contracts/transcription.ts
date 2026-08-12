@@ -1,17 +1,17 @@
 import type { Provider, ProviderCtx, ProviderResult } from './common';
 
 /**
- * §6 — ASSISTENCIA POR IA na consulta.
+ * §6 — ASSISTÊNCIA POR IA na consulta.
  *
- * O contrato devolve SUGESTAO, nunca registro. Quem escreve no prontuario e o
- * medico: `clin.ai_assistance.clinician_decision` nasce `nao_avaliado` e so sai
- * disso por ato humano. Um modelo que preenchesse a evolucao sozinho colocaria
- * no acervo clinico texto que ninguem leu — e o acervo e assinado pelo medico.
+ * O contrato devolve SUGESTÃO, nunca registro. Quem escreve no prontuário é o
+ * médico: `clin.ai_assistance.clinician_decision` nasce `nao_avaliado` e só sai
+ * disso por ato humano. Um modelo que preenchesse a evolução sozinho colocaria
+ * no acervo clínico texto que ninguém leu — e o acervo é assinado pelo médico.
  *
- * `residency` nao e metadado decorativo: dado de saude enviado a um provedor
- * fora do Brasil e transferencia internacional sob a LGPD, e a clinica precisa
- * conseguir responder para onde o audio da consulta foi. Por isso o provedor e
- * obrigado a declarar, e a declaracao vai para a linha de auditoria.
+ * `residency` não é metadado decorativo: dado de saúde enviado a um provedor
+ * fora do Brasil é transferência internacional sob a LGPD, e a clínica precisa
+ * conseguir responder para onde o áudio da consulta foi. Por isso o provedor é
+ * obrigado a declarar, e a declaração vai para a linha de auditoria.
  */
 
 export interface FalaTranscrita {

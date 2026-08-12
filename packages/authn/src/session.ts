@@ -26,11 +26,11 @@ export function hashSessionToken(token: string): Buffer {
 }
 
 /**
- * O id da sessao e gerado pelo PostgreSQL 18 (`uuidv7()` nativo, DEFAULT da
- * coluna) e nao pelo Node: `authn` nao pode importar o gerador do kernel
- * (§2.2 regra 2) e duplicar o algoritmo seria pior. O efeito colateral e
- * desejavel — o componente temporal do id vem do mesmo relogio que carimba
- * created_at, que e a fonte de tempo persistido do sistema (§3).
+ * O id da sessão é gerado pelo PostgreSQL 18 (`uuidv7()` nativo, DEFAULT da
+ * coluna) e não pelo Node: `authn` não pode importar o gerador do kernel
+ * (§2.2 regra 2) e duplicar o algoritmo seria pior. O efeito colateral é
+ * desejável — o componente temporal do id vem do mesmo relógio que carimba
+ * created_at, que é a fonte de tempo persistido do sistema (§3).
  */
 export async function createSession(
   db: Queryable,

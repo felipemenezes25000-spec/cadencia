@@ -72,12 +72,12 @@ export function rlsViolations(relations: readonly RelationRls[]): string[] {
 
     if (rel.relkind === 'm') {
       out.push(
-        `${nome}: matview em schema multi-tenant — matview nao suporta RLS; ela mora em rpt e e exposta por view security_barrier`,
+        `${nome}: matview em schema multi-tenant — matview não suporta RLS; ela mora em rpt e é exposta por view security_barrier`,
       );
       continue;
     }
     if (rel.relkind === 'f') {
-      out.push(`${nome}: foreign table em schema multi-tenant — RLS nao se aplica a tabela estrangeira`);
+      out.push(`${nome}: foreign table em schema multi-tenant — RLS não se aplica a tabela estrangeira`);
       continue;
     }
     if (rel.relkind === 'v') {
@@ -90,8 +90,8 @@ export function rlsViolations(relations: readonly RelationRls[]): string[] {
     }
 
     if (!rel.hasDiscriminator) out.push(`${nome}: sem coluna tenant_id`);
-    if (!rel.rlsEnabled) out.push(`${nome}: RLS nao habilitada`);
-    if (!rel.rlsForced) out.push(`${nome}: RLS nao forcada — o dono da tabela escapa da policy`);
+    if (!rel.rlsEnabled) out.push(`${nome}: RLS não habilitada`);
+    if (!rel.rlsForced) out.push(`${nome}: RLS não forçada — o dono da tabela escapa da policy`);
     if (rel.policies === 0) out.push(`${nome}: nenhuma policy`);
   }
 

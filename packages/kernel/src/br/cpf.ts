@@ -34,13 +34,13 @@ export function parseCpf(input: string): Result<Cpf, ValidationError> {
   }
   if (ALL_EQUAL.test(digits)) {
     // 000.000.000-00 e 111.111.111-11 passam no módulo 11. Só esta regra os pega.
-    return err(new ValidationError('cpf.digitos_repetidos', 'CPF com todos os digitos iguais nao existe'));
+    return err(new ValidationError('cpf.digitos_repetidos', 'CPF com todos os digitos iguais não existe'));
   }
 
   const numbers = [...digits].map(Number);
   const [first, second] = checkDigits(numbers);
   if (numbers[9] !== first || numbers[10] !== second) {
-    return err(new ValidationError('cpf.digito_verificador_invalido', 'digito verificador do CPF nao confere'));
+    return err(new ValidationError('cpf.digito_verificador_invalido', 'digito verificador do CPF não confere'));
   }
 
   return ok(digits as Cpf);

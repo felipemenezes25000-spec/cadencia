@@ -1,34 +1,34 @@
 /**
- * ss5.5 fluxo (c) — Engine de atribuicao de variacao de receita.
+ * §5.5 fluxo (c) — Engine de atribuição de variação de receita.
  *
- * Cada fator e um valor em CENTAVOS (inteiro). A soma dos fatores e
- * EXATAMENTE igual ao delta total: propriedade matematica, nao aproximacao.
+ * Cada fator é um valor em CENTAVOS (inteiro). A soma dos fatores é
+ * EXATAMENTE igual ao delta total: propriedade matemática, não aproximação.
  */
 
-/** Periodo definido por [start, end] inclusive. */
+/** Período definido por [start, end] inclusive. */
 export interface Period {
   readonly start: string; // 'YYYY-MM-DD'
   readonly end: string;   // 'YYYY-MM-DD'
 }
 
 /**
- * Fatores aditivos que decompoem o delta de receita entre dois periodos.
- * Todos os valores sao em centavos. Positivo = contribuiu para aumento.
- * Negativo = contribuiu para queda. A soma de TODOS os fatores e
+ * Fatores aditivos que decompõem o delta de receita entre dois períodos.
+ * Todos os valores são em centavos. Positivo = contribuiu para aumento.
+ * Negativo = contribuiu para queda. A soma de TODOS os fatores é
  * exatamente igual a delta_total_cents.
  */
 export interface VariationFactors {
   /** Efeito volume: mais ou menos atendimentos realizados. */
   readonly volume_cents: number;
-  /** Efeito mix de procedimento: mudanca de proporcao entre procedimentos. */
+  /** Efeito mix de procedimento: mudança de proporção entre procedimentos. */
   readonly mix_procedimento_cents: number;
-  /** Efeito mix de convenio: mudanca particular vs convenio. */
+  /** Efeito mix de convênio: mudança particular vs convênio. */
   readonly mix_convenio_cents: number;
-  /** Efeito ticket medio: mudanca de valor medio por atendimento. */
+  /** Efeito ticket médio: mudança de valor médio por atendimento. */
   readonly ticket_cents: number;
   /** Receita perdida por faltas e cancelamentos. */
   readonly faltas_cents: number;
-  /** Glosas nao recuperadas (zero enquanto TISS nao existir). */
+  /** Glosas não recuperadas (zero enquanto TISS não existir). */
   readonly glosas_cents: number;
   /** Receita total do periodo A em centavos. */
   readonly total_a_cents: number;

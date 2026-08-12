@@ -10,7 +10,7 @@ export interface CheckResult {
 }
 
 export interface VerifyRestoreOptions {
-  /** Orcamento de RPO em minutos. Ausente = nao mede defasagem (uso local). */
+  /** Orçamento de RPO em minutos. Ausente = não mede defasagem (uso local). */
   rpoMinutes?: number;
 }
 
@@ -39,12 +39,12 @@ async function schemasPresent(db: Queryable): Promise<CheckResult> {
 
 async function trailNotEmpty(db: Queryable): Promise<CheckResult> {
   if (!(await relationExists(db, 'audit.event'))) {
-    return { name: 'trilha-nao-vazia', ok: false, skipped: true, detail: 'audit.event ausente nesta fase' };
+    return { name: 'trilha-não-vazia', ok: false, skipped: true, detail: 'audit.event ausente nesta fase' };
   }
   const { rows } = await db.query<{ total: string }>('SELECT count(*)::text AS total FROM audit.event');
   const total = Number(rows[0]?.total ?? '0');
   return {
-    name: 'trilha-nao-vazia',
+    name: 'trilha-não-vazia',
     ok: total > 0,
     skipped: false,
     detail: `${total} evento(s) em audit.event`,
@@ -129,9 +129,9 @@ async function rpoWithinBudget(db: Queryable, rpoMinutes: number | undefined): P
 }
 
 /**
- * Restauracao so vale se for verificada. Cada check diz tres coisas: passou, foi
- * pulado (o objeto ainda nao existe nesta fase) e por que — check pulado em silencio
- * e o modo de falha que faz um ensaio inteiro passar sem verificar nada.
+ * Restauração só vale se for verificada. Cada check diz três coisas: passou, foi
+ * pulado (o objeto ainda não existe nesta fase) e por que — check pulado em silêncio
+ * é o modo de falha que faz um ensaio inteiro passar sem verificar nada.
  */
 export async function verifyRestore(db: Queryable, opts: VerifyRestoreOptions = {}): Promise<CheckResult[]> {
   return [

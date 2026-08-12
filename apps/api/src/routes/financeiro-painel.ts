@@ -15,7 +15,7 @@ import { rota } from '../guard';
  *
  * Toda derivacao de DATA usa o fuso da clinica via app.local_date(), nunca
  * `timestamptz::date` (§10 item 10): um recebimento das 22h em Manaus cairia no
- * dia seguinte e o fechamento do dia nao bateria com o extrato.
+ * dia seguinte e o fechamento do dia não bateria com o extrato.
  */
 
 const Data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -88,7 +88,7 @@ export async function financeiroPainelRoutes(app: FastifyInstance): Promise<void
      * Os totais somam no BANCO, sobre o periodo inteiro.
      *
      * A consulta de cima tem `LIMIT 500` — necessario, a lista e paginada na
-     * tela. Somar `lancamentos` em JS somava so essas 500 linhas: a partir da
+     * tela. Somar `lançamentos` em JS somava só essas 500 linhas: a partir da
      * 501a, o saldo do caixa passava a mostrar menos dinheiro do que existe, e
      * nada na tela indicava recorte. Numa clinica movimentada isso acontece
      * dentro de um mes, e o erro cresce em silencio conforme o volume.
@@ -254,11 +254,11 @@ export async function financeiroPainelRoutes(app: FastifyInstance): Promise<void
          FROM fin.entry e
          JOIN app.clinic cl ON (cl.tenant_id, cl.id) = (e.tenant_id, e.clinic_id)
         WHERE e.clinic_id = $1
-          -- Janela movel de 30 dias, e nao mes de calendario. Mes corrente daria
-          -- um saldo que despenca todo dia 1o e se recupera ao longo do mes,
-          -- porque aluguel e folha entram inteiros no comeco e a receita entra
-          -- diluida: no dia 5 a clinica "esta no vermelho" todo mes, e o numero
-          -- deixa de informar. A janela movel compara sempre 30 dias com 30.
+          -- Janela móvel de 30 dias, e não mês de calendário. Mês corrente daria
+          -- um saldo que despenca todo dia 1º e se recupera ao longo do mês,
+          -- porque aluguel e folha entram inteiros no começo e a receita entra
+          -- diluída: no dia 5 a clínica "está no vermelho" todo mês, e o número
+          -- deixa de informar. A janela móvel compara sempre 30 dias com 30.
           AND (e.paid_at IS NULL
                OR e.paid_at >= clock_timestamp() - interval '30 days')`,
       [clinicId]);

@@ -38,7 +38,7 @@ export async function createPaymentLink(
   );
   if (entryRows.length === 0) {
     return err(new NotFoundError('payment_link.entry_nao_encontrado',
-      'lancamento financeiro nao encontrado'));
+      'lançamento financeiro não encontrado'));
   }
 
   // Verificar se já existe link pendente para este entry

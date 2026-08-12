@@ -89,7 +89,7 @@ export async function materializeRecurringEntries(
             recurring_template_id, created_by)
          SELECT $1, $2, $3::fin.entry_kind, $4,
                 -- professional_id: usa o created_by do template como fallback.
-                -- O job nao tem profissional; usa o primeiro profissional da clinica.
+                -- O job não tem profissional; usa o primeiro profissional da clínica.
                 (SELECT p.id FROM app.professional p
                   WHERE p.tenant_id = $1
                   LIMIT 1),

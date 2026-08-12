@@ -143,7 +143,7 @@ export function createTissSoapTransport(
     return err({
       kind: 'soap_not_configured' as const,
       detail:
-        'Credenciais SOAP ausentes no contrato: endpoint, username ou password nao configurados',
+        'Credenciais SOAP ausentes no contrato: endpoint, username ou password não configurados',
     });
   }
 
@@ -252,7 +252,7 @@ export function createTissSoapTransport(
           kind: 'rejected',
           retrySafe: false,
           code: 'PROTOCOLO_AUSENTE',
-          detail: 'Resposta SOAP nao contem <protocolo>',
+          detail: 'Resposta SOAP não contém <protocolo>',
         });
       }
 
@@ -287,7 +287,7 @@ export function createTissSoapTransport(
           kind: 'rejected',
           retrySafe: false,
           code: 'DEMONSTRATIVO_AUSENTE',
-          detail: 'Resposta SOAP nao contem <demonstrativoXml>',
+          detail: 'Resposta SOAP não contém <demonstrativoXml>',
         });
       }
 
@@ -319,7 +319,7 @@ export function createTissSoapTransport(
           kind: 'rejected',
           retrySafe: false,
           code: 'PROTOCOLO_AUSENTE',
-          detail: 'Resposta SOAP nao contem <protocolo> para recurso de glosa',
+          detail: 'Resposta SOAP não contém <protocolo> para recurso de glosa',
         });
       }
 

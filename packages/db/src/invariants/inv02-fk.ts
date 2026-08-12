@@ -107,10 +107,10 @@ export function fkViolations(fks: readonly ForeignKey[]): string[] {
 
     if (fk.columns.length < 2) {
       out.push(
-        `${onde}: FK de coluna unica (${cols}) para ${alvo}, que e multi-tenant — precisa ser composta com tenant_id`,
+        `${onde}: FK de coluna única (${cols}) para ${alvo}, que é multi-tenant — precisa ser composta com tenant_id`,
       );
     } else if (!fk.columns.includes('tenant_id')) {
-      out.push(`${onde}: FK (${cols}) para ${alvo} nao inclui tenant_id`);
+      out.push(`${onde}: FK (${cols}) para ${alvo} não inclui tenant_id`);
     }
   }
 

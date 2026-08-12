@@ -21,8 +21,8 @@ export const ARGON2ID_PARAMS = {
 const PREFIXO_ATUAL = '$argon2id$v=19$m=19456,t=2,p=1$';
 
 /**
- * Unifica a forma Unicode: NFC no cadastro e no login. Sem isto, "Recepcao@2026"
- * com acento digitado no Windows e no macOS sao dois strings diferentes.
+ * Unifica a forma Unicode: NFC no cadastro e no login. Sem isto, "Recepção@2026"
+ * com acento digitado no Windows e no macOS são dois strings diferentes.
  */
 function normalizar(plain: string): string {
   return plain.normalize('NFC');

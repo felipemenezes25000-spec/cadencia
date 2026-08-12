@@ -12,7 +12,7 @@ function assertValidColumn(name: string): void {
   if (!COLUMN_RE.test(name)) {
     throw new ValidationError(
       'report.nome_de_coluna_invalido',
-      'nome de coluna invalido: so letras minusculas, numeros e underscore',
+      'nome de coluna inválido: só letras minúsculas, números e underscore',
       { column: name },
     );
   }
@@ -94,7 +94,7 @@ export function buildQuery(query: ReportQuery): BuiltQuery {
   if (!ALLOWED_VIEWS.has(query.view)) {
     throw new ValidationError(
       'report.view_invalida',
-      'view invalida: nao pertence ao conjunto permitido',
+      'view invalida: não pertence ao conjunto permitido',
       { view: query.view },
     );
   }

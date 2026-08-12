@@ -128,7 +128,7 @@ export function parseDemonstrativoXml(xml: Uint8Array): ParsedDemonstrativo {
 
   if (!isAnalise && !isPagamento) {
     throw new Error(
-      'XML nao contem demonstrativoAnaliseConta nem demonstrativoPagamento',
+      'XML não contém demonstrativoAnaliseConta nem demonstrativoPagamento',
     );
   }
 
@@ -140,7 +140,7 @@ export function parseDemonstrativoXml(xml: Uint8Array): ParsedDemonstrativo {
   // Extrai o bloco do demonstrativo (pode haver apenas 1 por mensagem TISS)
   const demoBlocks = extractAllBlocks(text, demoTag);
   if (demoBlocks.length === 0) {
-    throw new Error(`Bloco <${demoTag}> nao encontrado no XML`);
+    throw new Error(`Bloco <${demoTag}> não encontrado no XML`);
   }
   const demo = demoBlocks[0]!;
 

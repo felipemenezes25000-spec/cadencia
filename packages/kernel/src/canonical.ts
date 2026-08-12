@@ -52,7 +52,7 @@ function serialize(value: JsonValue): string {
   if (typeof value === 'object') {
     const prototype: unknown = Object.getPrototypeOf(value);
     if (prototype !== Object.prototype && prototype !== null) {
-      throw new ValidationError('canonical.tipo_nao_serializavel', 'so objeto simples entra na serializacao canonica');
+      throw new ValidationError('canonical.tipo_nao_serializavel', 'só objeto simples entra na serialização canônica');
     }
     const entries: [string, JsonValue][] = [];
     const seen = new Set<string>();
@@ -72,7 +72,7 @@ function serialize(value: JsonValue): string {
     return `{${entries.map(([key, item]) => `${serializeString(key)}:${serialize(item)}`).join(',')}}`;
   }
 
-  throw new ValidationError('canonical.tipo_nao_serializavel', 'valor nao e representavel em JSON');
+  throw new ValidationError('canonical.tipo_nao_serializavel', 'valor não é representável em JSON');
 }
 
 export function canonicalize(value: JsonValue): string {

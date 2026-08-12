@@ -80,7 +80,7 @@ export function createTissArquivoTransport(
       return failure({
         kind: 'unsupported',
         retrySafe: false,
-        detail: 'fetchDemonstrativo nao disponivel no modo arquivo (Fase 5)',
+        detail: 'fetchDemonstrativo não disponível no modo arquivo (Fase 5)',
       });
     },
 
@@ -88,7 +88,7 @@ export function createTissArquivoTransport(
       return failure({
         kind: 'unsupported',
         retrySafe: false,
-        detail: 'submitRecursoGlosa nao disponivel no modo arquivo (Fase 5)',
+        detail: 'submitRecursoGlosa não disponível no modo arquivo (Fase 5)',
       });
     },
   };

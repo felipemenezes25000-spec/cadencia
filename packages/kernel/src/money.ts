@@ -56,7 +56,7 @@ export function allocate(money: Money, ratios: readonly number[]): Money[] {
     throw new ValidationError('money.rateio.sem_partes', 'rateio precisa de ao menos uma parte');
   }
   if (ratios.some((ratio) => !Number.isFinite(ratio) || ratio < 0)) {
-    throw new ValidationError('money.rateio.parte_invalida', 'parte de rateio precisa ser finita e nao negativa');
+    throw new ValidationError('money.rateio.parte_invalida', 'parte de rateio precisa ser finita e não negativa');
   }
   const totalRatio = ratios.reduce((total, ratio) => total + ratio, 0);
   if (totalRatio <= 0) {

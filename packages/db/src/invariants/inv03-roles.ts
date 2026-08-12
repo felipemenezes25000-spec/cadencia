@@ -143,7 +143,7 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
   const permitidos = new Set(['jobs', 'rpt_owner']);
   const inesperados = bypass.filter((r) => !permitidos.has(r));
   if (inesperados.length > 0) {
-    out.push(`papel inesperado com BYPASSRLS: ${inesperados.join(', ')} — so jobs e rpt_owner podem ter`);
+    out.push(`papel inesperado com BYPASSRLS: ${inesperados.join(', ')} — só jobs e rpt_owner podem ter`);
   }
   if (!bypass.includes('jobs')) {
     out.push('jobs perdeu BYPASSRLS — selo, drift e carga TUSS veriam zero linhas');
@@ -154,14 +154,14 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
 
   const supers = papeis.filter((r) => r.superuser).map((r) => r.name);
   if (supers.length > 0) {
-    out.push(`papel de aplicacao com SUPERUSER: ${supers.join(', ')} — superuser vence REVOKE e RLS`);
+    out.push(`papel de aplicação com SUPERUSER: ${supers.join(', ')} — superuser vence REVOKE e RLS`);
   }
 
   const api = papeis.find((r) => r.name === 'api');
   if (!api) {
-    out.push('papel api nao existe');
+    out.push('papel api não existe');
   } else {
-    if (api.superuser) out.push('api e superuser');
+    if (api.superuser) out.push('api é superuser');
     if (api.bypassRls) out.push('api tem BYPASSRLS');
     if (api.createDb) out.push('api tem CREATEDB');
     if (api.createRole) out.push('api tem CREATEROLE');
@@ -184,14 +184,14 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
       ID_LOGIN_WRITES_SQL);
     for (const w of escritas) {
       out.push(
-        `id_login recebeu ${w.privilege} em ${w.relation} — o papel do bootstrap de login so le`);
+        `id_login recebeu ${w.privilege} em ${w.relation} — o papel do bootstrap de login só lê`);
     }
   }
 
   const { rows } = await db.query<{ object: string }>(OWNED_SQL);
   for (const row of rows) {
     out.push(
-      `api e dona de ${row.object} — dono desliga RLS e derruba policy, o isolamento inteiro vira decoracao`,
+      `api é dona de ${row.object} — dono desliga RLS e derruba policy, o isolamento inteiro vira decoração`,
     );
   }
 
@@ -203,13 +203,13 @@ export async function forbiddenGrantViolations(db: Queryable): Promise<string[]>
 
   const trilha = await db.query<{ object: string; grantee: string; privilege: string }>(AUDIT_GRANTS_SQL);
   for (const row of trilha.rows) {
-    out.push(`${row.object}: GRANT ${row.privilege} para ${row.grantee} — a trilha so se escreve por audit.log`);
+    out.push(`${row.object}: GRANT ${row.privilege} para ${row.grantee} — a trilha só se escreve por audit.log`);
   }
 
   const rpt = await db.query<{ object: string; grantee: string; privilege: string }>(RPT_GRANTS_SQL);
   for (const row of rpt.rows) {
     out.push(
-      `${row.object}: GRANT ${row.privilege} para ${row.grantee} — rpt e exposto so por view security_barrier`,
+      `${row.object}: GRANT ${row.privilege} para ${row.grantee} — rpt é exposto só por view security_barrier`,
     );
   }
 

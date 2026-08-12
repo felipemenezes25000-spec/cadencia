@@ -9,11 +9,11 @@ function erroDominio(kind: string, status: number): never {
 }
 
 /**
- * A configuracao de prontuario do tenant: quais secoes e campos existem.
+ * A configuração de prontuário do tenant: quais seções e campos existem.
  *
- * O tenant nasce VAZIO de proposito. Nao ha template padrao instalado no
- * cadastro porque um prontuario pre-preenchido com campos que a clinica nao usa
- * e pior que um vazio: o medico aprende a ignorar campos, e campo ignorado e
+ * O tenant nasce VAZIO de propósito. Não há template padrão instalado no
+ * cadastro porque um prontuário pré-preenchido com campos que a clínica não usa
+ * é pior que um vazio: o médico aprende a ignorar campos, e campo ignorado é
  * campo que um dia recebe dado errado.
  */
 
@@ -105,9 +105,9 @@ export async function prontuarioConfigRoutes(app: FastifyInstance): Promise<void
          -- da clinica para todo mundo — e o ortopedista veria "antecedentes
          -- ginecologicos" no topo em toda consulta.
          --
-         -- LEFT JOIN e nao INNER: quem nunca mexeu no layout cai na ordem da
-         -- clinica, que e o padrao correto. INNER esconderia o prontuario
-         -- inteiro de quem nunca abriu a configuracao.
+         -- LEFT JOIN e não INNER: quem nunca mexeu no layout cai na ordem da
+         -- clínica, que é o padrão correto. INNER esconderia o prontuário
+         -- inteiro de quem nunca abriu a configuração.
          LEFT JOIN clin.record_layout_item li
                 ON (li.tenant_id, li.section_id) = (s.tenant_id, s.id)
                AND li.professional_id = app.current_professional_id()
@@ -115,7 +115,7 @@ export async function prontuarioConfigRoutes(app: FastifyInstance): Promise<void
                 ON (f.tenant_id, f.section_id) = (s.tenant_id, s.id)
                AND f.archived_at IS NULL
         WHERE s.archived_at IS NULL
-          -- visible=false some da ficha; ausencia de linha nao esconde nada.
+          -- visible=false suma da ficha; ausência de linha não esconde nada.
           AND coalesce(li.visible, true)
         ORDER BY coalesce(li.ordinal, s.ordinal), s.ordinal, f.ordinal`);
 
@@ -173,9 +173,9 @@ export async function prontuarioConfigRoutes(app: FastifyInstance): Promise<void
     const t = tpl[0];
     if (t === undefined) erroDominio('template_desconhecido', 422);
 
-    // Quais codes de secao ja existem VIVOS. O indice unico parcial
+    // Quais codes de seção já existem VIVOS. O índice único parcial
     // ux_record_section_viva impede duplicata, e um 23505 aqui viraria "erro ao
-    // salvar" para quem so clicou duas vezes no mesmo botao.
+    // salvar" para quem só clicou duas vezes no mesmo botão.
     const { rows: existentes } = await tx.query<{ code: string }>(
       `SELECT code FROM clin.record_section WHERE archived_at IS NULL`);
     const jaTem = new Set(existentes.map((x) => x.code));
@@ -216,9 +216,9 @@ export async function prontuarioConfigRoutes(app: FastifyInstance): Promise<void
            i]);
 
         // Componente de campo composto conta a partir de 1 (CHECK ordinal >= 1):
-        // e o que o medico ve como "1a e 2a leitura da pressao", nao indice de
-        // array. O campo em si usa a base 0 do proprio ordinal, e as duas bases
-        // convivem porque uma e de apresentacao e a outra e de ordenacao.
+        // é o que o médico vê como "1ª e 2ª leitura da pressão", não índice de
+        // array. O campo em si usa a base 0 do próprio ordinal, e as duas bases
+        // convivem porque uma é de apresentação e a outra é de ordenação.
         for (const [j, c] of (campo.components ?? []).entries()) {
           await tx.query(
             `INSERT INTO clin.record_field_component
@@ -234,15 +234,15 @@ export async function prontuarioConfigRoutes(app: FastifyInstance): Promise<void
   }));
 
   /**
-   * O layout do prontuario DO PROFISSIONAL que esta pedindo.
+   * O layout do prontuário DO PROFISSIONAL que está pedindo.
    *
-   * A tabela clin.record_layout_item existia no banco desde a Fase 1, com indice e
-   * restricao de unicidade, e nunca teve uma linha: a tabela foi criada e o
-   * recurso nao. Na pratica todo medico via as secoes na ordem da clinica, e o
-   * ortopedista abria "antecedentes ginecologicos" no topo em toda consulta.
+   * A tabela clin.record_layout_item existia no banco desde a Fase 1, com índice e
+   * restrição de unicidade, e nunca teve uma linha: a tabela foi criada e o
+   * recurso não. Na prática todo médico via as seções na ordem da clínica, e o
+   * ortopedista abria "antecedentes ginecológicos" no topo em toda consulta.
    *
-   * Devolve TODAS as secoes, inclusive as ocultas — esta rota configura, nao
-   * renderiza. Quem esconde da ficha e `GET /v1/configuracoes/prontuario`.
+   * Devolve TODAS as seções, inclusive as ocultas — esta rota configura, não
+   * renderiza. Quem esconde da ficha é `GET /v1/configuracoes/prontuario`.
    */
   r.get('/v1/configuracoes/prontuario/layout', {
     schema: {

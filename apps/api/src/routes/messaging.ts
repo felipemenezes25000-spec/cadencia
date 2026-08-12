@@ -129,8 +129,8 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
            ON ci.tenant_id = c.tenant_id AND ci.id = c.channel_identity_id
          LEFT JOIN clin.patient p
            ON (p.tenant_id, p.id) = (c.tenant_id, c.patient_id)
-         -- LATERAL e nao subconsulta correlacionada por campo: a previa precisa
-         -- do texto E da direcao da MESMA mensagem, e duas subconsultas
+         -- LATERAL e não subconsulta correlacionada por campo: a prévia precisa
+         -- do texto E da direção da MESMA mensagem, e duas subconsultas
          -- separadas poderiam trazer linhas diferentes se houvesse empate.
          LEFT JOIN LATERAL (
            SELECT m.body_text, m.direction

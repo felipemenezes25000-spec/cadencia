@@ -20,8 +20,8 @@ const VinculoSchema = z.object({
 });
 
 /**
- * Erro nomeado. O contrato do front e o NOME, nunca o texto: mensagem e coisa
- * de tela e muda com copy; `credenciais_invalidas` nao muda nunca.
+ * Erro nomeado. O contrato do front é o NOME, nunca o texto: mensagem é coisa
+ * de tela e muda com copy; `credenciais_invalidas` não muda nunca.
  */
 const Erro = <const T extends readonly [string, ...string[]]>(...nomes: T) =>
   z.object({ erro: z.enum(nomes) });
@@ -33,47 +33,47 @@ interface LinhaVinculo {
 }
 
 /**
- * O login e a unica rota mutante do sistema que nao passa por `rota()`: nao ha
- * sessao para o guard resolver, e exigir permissao para autenticar seria
- * circular. O que NAO se abre mao e a defesa de CSRF — sem ela, um formulario
- * em site de terceiro loga a vitima numa conta do atacante (login CSRF), e todo
- * dado que ela digitar depois vai parar no prontuario errado.
+ * O login é a única rota mutante do sistema que não passa por `rota()`: não há
+ * sessão para o guard resolver, e exigir permissão para autenticar seria
+ * circular. O que NÃO se abre mão é a defesa de CSRF — sem ela, um formulário
+ * em site de terceiro loga a vítima numa conta do atacante (login CSRF), e todo
+ * dado que ela digitar depois vai parar no prontuário errado.
  */
 function csrfOk(req: FastifyRequest): boolean {
   return csrfMatches(req.cookies[CSRF_COOKIE], req.headers[CSRF_HEADER]);
 }
 
 /**
- * Trava de forca bruta. As colunas `failed_attempts` e `locked_until` existem
+ * Trava de força bruta. As colunas `failed_attempts` e `locked_until` existem
  * em id.user_credential desde a migration 0016 e ficaram sem nenhum escritor —
- * provisionar a coluna nao e implementar a defesa.
+ * provisionar a coluna não é implementar a defesa.
  *
- * A trava vale para a senha CERTA tambem. Travar so o erro nao atrapalha um
- * atacante em nada: ele continua tentando ate acertar, e o unico efeito seria
+ * A trava vale para a senha CERTA também. Travar só o erro não atrapalha um
+ * atacante em nada: ele continua tentando até acertar, e o único efeito seria
  * incomodar o dono da conta depois.
  */
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_MINUTOS = 15;
 
 /**
- * Hash de isca, verificado quando o e-mail nao existe. Sem ele, "usuario
+ * Hash de isca, verificado quando o e-mail não existe. Sem ele, "usuário
  * inexistente" responde em microssegundos e "senha errada" gasta os ~50 ms do
- * Argon2id — e essa diferenca de tempo e um oraculo de enumeracao que anula a
- * resposta identica que a rota tem o cuidado de devolver. A senha de origem e
- * literal e publica de proposito: isto nunca e credencial de ninguem.
+ * Argon2id — e essa diferença de tempo é um oráculo de enumeração que anula a
+ * resposta idêntica que a rota tem o cuidado de devolver. A senha de origem é
+ * literal e pública de propósito: isto nunca é credencial de ninguém.
  */
 const HASH_ISCA =
   '$argon2id$v=19$m=19456,t=2,p=1$HWYd/GB8q4cg8SEFh42XhA$aMtP9PEgWt45JzdlMjLbH9iIKxOhGe9vFoU2ViIXIXw';
 
 /**
- * Chave AES-256-GCM que protege o segredo TOTP em repouso. Em producao vem do
- * Secrets Manager por variavel de ambiente; a leitura e por chamada, e nao no
- * carregamento do modulo, para que rotacionar a chave nao exija redeploy.
+ * Chave AES-256-GCM que protege o segredo TOTP em repouso. Em produção vem do
+ * Secrets Manager por variável de ambiente; a leitura é por chamada, e não no
+ * carregamento do módulo, para que rotacionar a chave não exija redeploy.
  */
 function chaveTotp(): Buffer {
   const b64 = process.env['CADENCIA_TOTP_KEY'];
   if (b64 === undefined || b64 === '') {
-    throw new Error('CADENCIA_TOTP_KEY ausente — o segundo fator nao pode ser verificado');
+    throw new Error('CADENCIA_TOTP_KEY ausente — o segundo fator não pode ser verificado');
   }
   const chave = Buffer.from(b64, 'base64');
   if (chave.length !== 32) {
@@ -83,16 +83,16 @@ function chaveTotp(): Buffer {
 }
 
 /**
- * `authn` declara um `Clock` proprio (`now(): Date`) porque nao pode importar o
- * do kernel — sao irmaos em L0 e import entre irmaos e proibido (§2.2 regra 2).
- * A ponte entre os dois formatos e responsabilidade de L3, e e aqui. Nao ha
- * leitura direta do relogio: o milissegundo vem de `systemClock`, no kernel,
- * que e o unico lugar do repositorio autorizado a ler o relogio do sistema.
+ * `authn` declara um `Clock` próprio (`now(): Date`) porque não pode importar o
+ * do kernel — são irmãos em L0 e import entre irmãos é proibido (§2.2 regra 2).
+ * A ponte entre os dois formatos é responsabilidade de L3, e é aqui. Não há
+ * leitura direta do relógio: o milissegundo vem de `systemClock`, no kernel,
+ * que é o único lugar do repositório autorizado a ler o relógio do sistema.
  *
- * (A frase acima evita de proposito escrever o nome da funcao proibida: o lint
- * de fonte de tempo varre linha a linha e nao distingue comentario de codigo.
+ * (A frase acima evita de propósito escrever o nome da função proibida: o lint
+ * de fonte de tempo varre linha a linha e não distingue comentário de código.
  * Preferi ajustar a prosa a afrouxar a varredura — uma guarda que interpreta o
- * arquivo para decidir o que ignorar e uma guarda que se engana.)
+ * arquivo para decidir o que ignorar é uma guarda que se engana.)
  */
 const relogioTotp = { now: (): Date => new Date(systemClock.nowMs()) };
 
@@ -118,9 +118,9 @@ async function vinculosDe(userId: string): Promise<z.infer<typeof VinculoSchema>
 }
 
 /**
- * A sessao das proprias rotas de sessao. Nao passa por `resolveContext` de
- * proposito: aquele exige `x-clinic-id`, e estas sao exatamente as rotas que
- * existem para o usuario DESCOBRIR qual clinica pode informar.
+ * A sessão das próprias rotas de sessão. Não passa por `resolveContext` de
+ * propósito: aquele exige `x-clinic-id`, e estas são exatamente as rotas que
+ * existem para o usuário DESCOBRIR qual clínica pode informar.
  */
 async function sessaoDaRequisicao(req: FastifyRequest): Promise<ResolvedSession | null> {
   const token = req.cookies[SESSION_COOKIE];
@@ -340,9 +340,9 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     if (!csrfOk(req)) return reply.code(403).send({ erro: 'csrf_invalido' });
 
     const sessao = await sessaoDaRequisicao(req);
-    // Sair de uma sessao que ja morreu e sucesso, nao erro: o efeito desejado
-    // ("nao estou mais logado") ja vale, e devolver 401 aqui so ensina o front
-    // a tratar como falha algo que nao e.
+    // Sair de uma sessão que já morreu é sucesso, não erro: o efeito desejado
+    // ("não estou mais logado") já vale, e devolver 401 aqui só ensina o front
+    // a tratar como falha algo que não é.
     if (sessao !== null) {
       await revokeSession(appPool(), sessao.sessionId, 'logout');
     }

@@ -97,9 +97,9 @@ export async function compartilhamentoRoutes(app: FastifyInstance): Promise<void
          LEFT JOIN id."user" uc ON uc.id = pc.user_id
         WHERE s.patient_id = $1
           AND s.revoked_at IS NULL
-          -- Compartilhamento vencido nao e acesso: some da lista pelo mesmo
-          -- criterio que a policy usa, senao a tela mostra permissao que o
-          -- banco ja nao concede.
+          -- Compartilhamento vencido não é acesso: suma da lista pelo mesmo
+          -- critério que a policy usa, senão a tela mostra permissão que o
+          -- banco já não concede.
           AND (s.expires_at IS NULL OR s.expires_at > clock_timestamp())
         ORDER BY s.granted_at DESC`,
       [p.id]);

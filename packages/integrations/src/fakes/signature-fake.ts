@@ -8,13 +8,13 @@ import type {
 } from '../contracts/signature';
 
 /**
- * §7 — TODO contrato tem um fake. E o que permite o produto inteiro se
- * desenvolver offline e o tenant de demonstracao existir sem PSC contratado.
+ * §7 — TODO contrato tem um fake. É o que permite o produto inteiro se
+ * desenvolver offline e o tenant de demonstração existir sem PSC contratado.
  *
- * O fake nao imita CAdES: ele produz um HMAC deterministico sobre o hash, o que
- * e suficiente para exercitar idempotencia, fila de pendencias e o caminho de
- * verificacao. Nenhum teste deste repositorio afirma conformidade ICP-Brasil a
- * partir do fake — isso e homologacao contra o PSC real (Task 42).
+ * O fake não imita CAdES: ele produz um HMAC determinístico sobre o hash, o que
+ * é suficiente para exercitar idempotência, fila de pendências e o caminho de
+ * verificação. Nenhum teste deste repositório afirma conformidade ICP-Brasil a
+ * partir do fake — isso é homologação contra o PSC real (Task 42).
  */
 const SEGREDO = 'cadencia-fake-signature-do-not-use-in-production';
 

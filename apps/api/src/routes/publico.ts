@@ -9,22 +9,22 @@ function erroDominio(kind: string, status: number): never {
 }
 
 /**
- * AGENDAMENTO ONLINE — as unicas rotas sem sessao do produto.
+ * AGENDAMENTO ONLINE — as únicas rotas sem sessão do produto.
  *
- * Elas nao usam `rota()`, que exige autenticacao por definicao. Usam ator
- * `anon`, e por isso toda a logica mora em `sched.horarios_livres` e
- * `sched.agendar_online`: funcoes SECURITY DEFINER que devolvem exatamente o que
- * pode ser publico. Consultar tabela direto daqui seria abrir a agenda inteira e
- * confiar em cada SELECT futuro nao vazar nada.
+ * Elas não usam `rota()`, que exige autenticação por definição. Usam ator
+ * `anon`, e por isso toda a lógica mora em `sched.horarios_livres` e
+ * `sched.agendar_online`: funções SECURITY DEFINER que devolvem exatamente o que
+ * pode ser público. Consultar tabela direto daqui seria abrir a agenda inteira e
+ * confiar em cada SELECT futuro não vazar nada.
  *
- * O tenant vem da UNIDADE, e nao do cliente: quem chama informa o `clinicId`, e
+ * O tenant vem da UNIDADE, e não do cliente: quem chama informa o `clinicId`, e
  * o banco descobre a qual tenant ele pertence. Aceitar tenant do cliente numa
- * rota aberta seria deixar o publico escolher de quem quer ler.
+ * rota aberta seria deixar o público escolher de quem quer ler.
  */
 export async function publicoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
-  /** Descobre o tenant da unidade. Roda fora de RLS, e por isso so devolve o id. */
+  /** Descobre o tenant da unidade. Roda fora de RLS, e por isso só devolve o id. */
   async function tenantDaUnidade(clinicId: string): Promise<string> {
     const { rows } = await jobsPool().query<{ tenant_id: string }>(
       `SELECT tenant_id FROM app.clinic WHERE id = $1`, [clinicId]);
@@ -44,11 +44,11 @@ export async function publicoRoutes(app: FastifyInstance): Promise<void> {
       response: {
         200: z.object({
           /**
-           * Fuso DA CLINICA. Os horarios saem como instante, e sem isto a
-           * pagina publica so podia formatar no fuso do aparelho de quem abriu
+           * Fuso DA CLÍNICA. Os horários saem como instante, e sem isto a
+           * página pública só podia formatar no fuso do aparelho de quem abriu
            * — o paciente em viagem, ou com o celular em outro fuso, via um
-           * horario que nao existe na agenda e marcava achando que era outro.
-           * Nao e dado sensivel: a pagina ja mostra a agenda desta unidade.
+           * horário que não existe na agenda e marcava achando que era outro.
+           * Não é dado sensível: a página já mostra a agenda desta unidade.
            */
           timezone: z.string(),
           itens: z.array(z.object({

@@ -6,7 +6,7 @@ SELECT n.nspname || '.' || c.relname AS relation,
        has_table_privilege('app_rw', c.oid, 'UPDATE')      AS rw_update,
        has_table_privilege('app_rw', c.oid, 'DELETE')      AS rw_delete,
        has_table_privilege('clin_writer', c.oid, 'UPDATE') AS writer_table_update,
-       -- text[], nao name[]: o driver nao tem parser para name[] e devolveria a string crua
+       -- text[], não name[]: o driver não tem parser para name[] e devolveria a string crua
        coalesce((SELECT array_agg(a.attname::text ORDER BY a.attname)
                    FROM pg_attribute a
                   WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped

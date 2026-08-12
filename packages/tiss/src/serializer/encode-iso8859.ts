@@ -29,7 +29,7 @@ export function encodeIso8859(input: string): EncodeResult {
       output.push(0x3F); // '?'
       const hex = code.toString(16).toUpperCase().padStart(4, '0');
       warnings.push(
-        `Caractere U+${hex} na posicao ${i} nao existe em ISO-8859-1, substituido por '?'`,
+        `Caractere U+${hex} na posição ${i} não existe em ISO-8859-1, substituído por '?'`,
       );
     }
 

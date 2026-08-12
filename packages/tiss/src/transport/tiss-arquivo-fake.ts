@@ -116,7 +116,7 @@ export function createFakeTissArquivoTransport(
     async fetchDemonstrativo(_ctx: ProviderCtx, _i) {
       return failure({
         kind: 'unsupported', retrySafe: false,
-        detail: 'fetchDemonstrativo nao disponivel no fake (Fase 5)',
+        detail: 'fetchDemonstrativo não disponível no fake (Fase 5)',
       });
     },
 
