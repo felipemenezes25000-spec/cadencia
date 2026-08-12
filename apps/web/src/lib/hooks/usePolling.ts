@@ -138,15 +138,15 @@ export function useOptimisticMutation<TData, TError, TVariables>(
 
       // Snapshot para rollback (guarda fora para usar no onError)
       const snapshot = queryKey
-        ? client.getQueryData<TData>(queryKey as import('@tanstack/query-core').QueryKey)
+        ? client.getQueryData<TData>(queryKey)
         : undefined;
 
       // Aplicar optimistic update
       if (queryKey && optimisticUpdate) {
-        const current = client.getQueryData<TData>(queryKey as import('@tanstack/query-core').QueryKey);
+        const current = client.getQueryData<TData>(queryKey);
         if (current) {
           client.setQueryData<TData>(
-            queryKey as import('@tanstack/query-core').QueryKey,
+            queryKey,
             (old) => old ? optimisticUpdate(old, variables) : old,
           );
         }
