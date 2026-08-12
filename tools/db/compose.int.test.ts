@@ -15,7 +15,11 @@ async function scalar(sql: string): Promise<string> {
   return String(result.rows[0]?.v);
 }
 
-describe('cluster local de desenvolvimento', () => {
+// O Actions usa um service container PostgreSQL puro; estas garantias pertencem
+// ao docker-compose local e são cobertas somente quando ele é o alvo do teste.
+const describeCompose = process.env['CI'] ? describe.skip : describe;
+
+describeCompose('cluster local de desenvolvimento', () => {
   it('roda PostgreSQL 18 ou superior', async () => {
     const version = Number(await scalar("SELECT current_setting('server_version_num') AS v"));
     expect(version).toBeGreaterThanOrEqual(180000);
