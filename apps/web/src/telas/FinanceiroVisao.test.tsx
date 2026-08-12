@@ -136,7 +136,7 @@ describe('FinanceiroVisao', () => {
     await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
     await userEvent.click(screen.getByText('Análise do período'));
     expect(screen.getByRole('group', { name: /Seletor de período/i })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Diario' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Diário' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Semanal' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Mensal' })).toBeVisible();
   });

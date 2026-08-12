@@ -182,7 +182,7 @@ describe("ConveniosAFaturar", () => {
     await waitFor(() =>
       expect(screen.getByLabelText(/Período início/i)).toBeVisible(),
     );
-    expect(screen.getByLabelText(/Periodo fim/i)).toBeVisible();
+    expect(screen.getByLabelText(/Período fim/i)).toBeVisible();
   });
 
   it("tem filtro por status (completa/incompleta)", async () => {
