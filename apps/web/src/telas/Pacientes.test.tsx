@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
@@ -32,6 +32,10 @@ function criarBuscarMock(resultados = HITS) {
 describe('tela Pacientes', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('as abas do líder viram FACETAS, que são filtros salvos', () => {
@@ -88,7 +92,7 @@ describe('tela Pacientes', () => {
 
     await waitFor(() => expect(screen.getByText('Álvaro Neto')).toBeVisible());
 
-    const input = screen.getByRole('searchbox');
+    const input = screen.getByRole('textbox', { name: 'Buscar pacientes' });
     await user.type(input, 'ana');
 
     // Avança o debounce
@@ -118,7 +122,7 @@ describe('tela Pacientes', () => {
     // Aguarda a primeira chamada (renderização inicial)
     await waitFor(() => expect(buscar).toHaveBeenCalledTimes(1));
 
-    const input = screen.getByRole('searchbox');
+    const input = screen.getByRole('textbox', { name: 'Buscar pacientes' });
     await user.type(input, 'test');
 
     // Antes do debounce expirar, não deve ter chamado de novo com o termo
@@ -170,15 +174,14 @@ describe('tela Pacientes', () => {
       expect(screen.getByText('Nenhum paciente encontrado')).toBeVisible();
     });
 
-    const input = screen.getByRole('searchbox');
-    await user.type(input, 'xyz');
-
+    const input = screen.getByRole('textbox', { name: 'Buscar pacientes' });
     await act(async () => {
+      await user.type(input, 'xyz');
       vi.advanceTimersByTime(350);
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Nenhum resultado para "xyz"')).toBeVisible();
+      expect(screen.getByText(/Nenhum resultado para “xyz”/)).toBeVisible();
     });
   });
 

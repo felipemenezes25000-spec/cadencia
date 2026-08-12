@@ -46,7 +46,17 @@ vi.mock('next/link', () => ({
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === 'undefined') {
     globalThis.ResizeObserver = class ResizeObserver {
-      observe() {}
+      private cb: ResizeObserverCallback;
+      constructor(cb: ResizeObserverCallback) { this.cb = cb; }
+      observe(target: Element) {
+        this.cb([{
+          target,
+          contentRect: { x: 0, y: 0, width: 390, height: 844, top: 0, left: 0, bottom: 844, right: 390, toJSON: () => '' },
+          borderBoxSize: [{ blockSize: 844, inlineSize: 390 }],
+          contentBoxSize: [{ blockSize: 844, inlineSize: 390 }],
+          devicePixelContentBoxSize: [],
+        } as ResizeObserverEntry], this);
+      }
       unobserve() {}
       disconnect() {}
     } as unknown as typeof globalThis.ResizeObserver;
@@ -303,6 +313,7 @@ describe('Auditoria responsiva', () => {
           aoEnviar={async () => ({ messageId: 'm2' })}
           aoVincularPaciente={vi.fn()}
           aoSelecionarTemplate={vi.fn()}
+          aoVoltar={vi.fn()}
         />,
       );
       await waitFor(() =>
