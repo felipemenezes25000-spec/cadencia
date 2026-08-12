@@ -14,8 +14,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { uuidv7 } from '@cadencia/kernel';
-import { systemClock } from '@cadencia/kernel/src/clock';
+import { uuidv7, systemClock } from '@cadencia/kernel';
 
 export async function tenancyRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
