@@ -52,15 +52,24 @@ export function AppointmentRow({
   onCharge,
 }: AppointmentRowProps) {
   const action = getPrimaryAction(appointment.status);
+  const estadoVivo = appointment.status === 'aguardando' || appointment.status === 'atendendo';
+
   return (
     <li
       className={cn(
-        'grid min-h-[72px] grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-line px-3 py-3 last:border-b-0 sm:px-4',
+        'relative grid min-h-[74px] grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-line px-3 py-3 last:border-b-0 sm:px-4',
         'md:grid-cols-[72px_minmax(220px,1fr)_88px_148px_136px_36px] md:gap-x-4 md:py-2.5',
-        'transition-colors-fast hover:bg-surface-subtle',
+        'transition-colors-fast hover:bg-surface-hover',
         selected && 'bg-accent-soft/45',
       )}
     >
+      {estadoVivo ? (
+        <span className={cn(
+          'absolute inset-y-3 left-0 w-[3px] rounded-r-full',
+          appointment.status === 'atendendo' ? 'bg-accent' : 'bg-warn',
+        )} aria-hidden />
+      ) : null}
+
       <time className="col-start-1 row-span-2 self-start pt-1 font-mono text-xs font-semibold text-text-muted tabular-nums md:row-span-1 md:self-auto md:pt-0">
         {horario}
       </time>
@@ -68,11 +77,13 @@ export function AppointmentRow({
       <button
         type="button"
         onClick={onPatientClick}
-        className="col-start-2 row-start-1 flex min-w-0 items-center gap-3 rounded-md text-left focus-visible:outline-offset-4 md:col-start-auto md:row-start-auto"
+        className="group col-start-2 row-start-1 flex min-w-0 items-center gap-3 rounded-lg text-left focus-visible:outline-offset-4 md:col-start-auto md:row-start-auto"
       >
         <Avatar nome={appointment.displayName} tamanho="sm" />
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-text">{appointment.displayName}</span>
+          <span className="block truncate text-sm font-bold tracking-[-0.01em] text-text transition-colors-fast group-hover:text-accent">
+            {appointment.displayName}
+          </span>
           <span className="block truncate text-xs text-text-muted">
             {[appointment.procedureNome ?? (appointment.teleconsulta ? 'Teleconsulta' : 'Atendimento'), appointment.professionalNome ?? appointment.professionalId].filter(Boolean).join(' · ')}
           </span>
@@ -85,8 +96,11 @@ export function AppointmentRow({
         </span>
       </button>
 
-      <span className="hidden text-xs font-medium text-text-muted md:block">
-        {appointment.status === 'aguardando' ? 'Na fila' : '—'}
+      <span className={cn(
+        'hidden text-xs font-semibold md:block',
+        appointment.status === 'aguardando' ? 'text-warn' : 'text-text-faint',
+      )}>
+        {appointment.status === 'aguardando' ? 'Na fila' : appointment.status === 'atendendo' ? 'Agora' : '—'}
       </span>
 
       <div className="col-start-2 row-start-2 mt-2 md:col-start-auto md:row-start-auto md:mt-0">
@@ -109,13 +123,13 @@ export function AppointmentRow({
           <button
             type="button"
             aria-label={`Mais ações para ${appointment.displayName}`}
-            className="col-start-3 row-start-2 mt-1 grid size-8 justify-self-end place-items-center rounded-lg text-text-faint hover:bg-surface hover:text-text md:col-start-auto md:row-start-auto md:mt-0 md:justify-self-center"
+            className="col-start-3 row-start-2 mt-1 grid size-8 justify-self-end place-items-center rounded-lg text-text-faint hover:bg-surface-subtle hover:text-text md:col-start-auto md:row-start-auto md:mt-0 md:justify-self-center"
           >
             <DotsThree size={18} weight="bold" aria-hidden />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content align="end" sideOffset={5} className="z-[60] min-w-[190px] rounded-xl border border-line bg-surface p-1.5 shadow-elev-2">
+          <DropdownMenu.Content align="end" sideOffset={6} className="z-[60] min-w-[200px] rounded-xl border border-line bg-surface p-1.5 shadow-elev-2">
             <MenuItem icon={User} label="Abrir paciente" onSelect={onOpenPatient} />
             <MenuItem icon={ChatCircle} label={appointment.mensagensNaoLidas > 0 ? `Mensagem (${appointment.mensagensNaoLidas})` : 'Enviar mensagem'} onSelect={onMessage} />
             {appointment.pagamentoPendente ? <MenuItem icon={CurrencyDollar} label="Ver cobrança" onSelect={onCharge} /> : null}

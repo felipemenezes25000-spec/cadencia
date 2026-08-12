@@ -10,21 +10,14 @@ export type TamanhoBotao = 'sm' | 'md' | 'lg';
 export type AlturaBotao = 28 | 32 | 40;
 
 export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
-  /** Variante visual */
   readonly variante?: VarianteBotao;
-  /** Tamanho */
   readonly tamanho?: TamanhoBotao;
   /** @deprecated Use `tamanho` instead. Mantido para compatibilidade. */
   readonly altura?: AlturaBotao;
-  /** Icone a esquerda */
   readonly iconeEsquerda?: PhosphorIcon;
-  /** Icone a direita */
   readonly iconeDireita?: PhosphorIcon;
-  /** Estado de carregamento */
   readonly carregando?: boolean;
-  /** Largura total do container */
   readonly fullWidth?: boolean;
-  /** Conteudo */
   readonly children: ReactNode;
 }
 
@@ -41,10 +34,10 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'border border-accent bg-accent text-accent-on hover:border-accent-hover hover:bg-accent-hover',
-  secundario: 'border border-line bg-surface text-text hover:border-line-strong hover:bg-surface-subtle',
+  primario: 'border border-accent bg-accent text-accent-on shadow-elev-1 hover:border-accent-hover hover:bg-accent-hover',
+  secundario: 'border border-line bg-surface text-text shadow-elev-1 hover:border-line-strong hover:bg-surface-subtle',
   fantasma: 'border border-transparent bg-transparent text-text-muted hover:bg-surface-subtle hover:text-text',
-  perigo: 'border border-danger bg-danger text-white hover:brightness-95',
+  perigo: 'border border-danger bg-danger text-white shadow-elev-1 hover:brightness-95',
 };
 
 const classesTamanho: Record<TamanhoBotao, string> = {
@@ -78,13 +71,14 @@ export function Botao({
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-lg font-semibold',
-        'transition-colors-fast',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.01em]',
+        'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:translate-y-px',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         classesVariante[variante],
         classesTamanho[tamanhoResolvido],
         fullWidth && 'w-full',
-        carregando && 'pointer-events-none opacity-70 cursor-progress',
-        desabilitado && !carregando && 'opacity-50 cursor-not-allowed',
+        carregando && 'pointer-events-none cursor-progress opacity-70',
+        desabilitado && !carregando && 'cursor-not-allowed opacity-50 active:translate-y-0',
         className,
       )}
     >
@@ -115,9 +109,7 @@ export function Botao({
         />
       )}
       {carregando && (
-        <span role="status" className="sr-only">
-          Carregando
-        </span>
+        <span role="status" className="sr-only">Carregando</span>
       )}
     </button>
   );

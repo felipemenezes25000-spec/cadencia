@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 /*
- * CADENCIA CLINICAL UI
- * Tema claro unico. Os aliases legados continuam apontando para os mesmos
- * tokens para que modulos ainda nao migrados nunca voltem ao antigo dark mode.
+ * CADENCIA CLINICAL OS — Design System v5
+ * Tema claro unico, com shell clinico de alto contraste e superficies de trabalho
+ * silenciosas. Cores semanticas sempre acompanham texto/icone — nunca carregam
+ * significado sozinhas.
  */
 @theme {
   --color-canvas: var(--canvas);
   --color-bg: var(--canvas);
   --color-surface: var(--surface);
   --color-surface-subtle: var(--surface-subtle);
-  --color-surface-sunken: var(--surface-subtle);
-  --color-surface-hover: var(--surface-subtle);
-  --color-surface-raised: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
   --color-surface-2: var(--surface-subtle);
   --color-border: var(--border);
   --color-line: var(--border);
@@ -28,11 +29,18 @@
 
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
+  --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
   --color-accent: var(--brand);
   --color-accent-hover: var(--brand-hover);
   --color-accent-soft: var(--brand-soft);
   --color-accent-on: white;
+
+  --color-nav: var(--nav);
+  --color-nav-active: var(--nav-active);
+  --color-nav-text: var(--nav-text);
+  --color-nav-muted: var(--nav-muted);
+  --color-nav-accent: var(--nav-accent);
 
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -66,39 +74,49 @@
   --shadow-elev-3: var(--shadow-dialog);
 
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  --radius-md: 9px;
+  --radius-lg: 11px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
   --radius-full: 999px;
 }
 
 :root {
   color-scheme: light;
 
-  --canvas: #f6f8fb;
+  --canvas: #f3f6f9;
   --surface: #ffffff;
-  --surface-subtle: #f8fafc;
-  --border: #dde5ee;
-  --border-strong: #c7d3e0;
+  --surface-subtle: #f7f9fb;
+  --surface-sunken: #eef3f6;
+  --surface-hover: #f1f6f8;
+  --surface-raised: #ffffff;
+  --border: #dce5e9;
+  --border-strong: #c3d1d8;
 
-  --text-primary: #13233a;
-  --text-secondary: #50627a;
-  --text-tertiary: #718096;
+  --text-primary: #102734;
+  --text-secondary: #526875;
+  --text-tertiary: #7a8d97;
 
-  --brand: #075985;
-  --brand-hover: #0369a1;
-  --brand-soft: #e0f2fe;
-  --success: #166534;
-  --success-soft: #dcfce7;
-  --warning: #92400e;
-  --warning-soft: #fef3c7;
-  --danger: #991b1b;
-  --danger-soft: #fee2e2;
-  --info: #1e40af;
-  --info-soft: #dbeafe;
+  --brand: #0d6878;
+  --brand-hover: #095968;
+  --brand-strong: #073b4c;
+  --brand-soft: #ddf1f3;
 
-  /* Compatibilidade tipografica e espacial dos modulos existentes. */
+  --nav: #102735;
+  --nav-active: #193847;
+  --nav-text: #edf5f7;
+  --nav-muted: #9fb2bc;
+  --nav-accent: #70cad6;
+
+  --success: #24724c;
+  --success-soft: #e4f5eb;
+  --warning: #9a5b13;
+  --warning-soft: #fff1d8;
+  --danger: #a13b43;
+  --danger-soft: #fdebed;
+  --info: #315f9a;
+  --info-soft: #e8f0fb;
+
   --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --fs-11: 11px;
   --fs-12: 12px;
@@ -108,7 +126,7 @@
   --fs-18: 18px;
   --fs-22: 22px;
   --fs-28: 28px;
-  --lh-tight: 1.25;
+  --lh-tight: 1.2;
   --lh-ui: 1.5;
   --lh-read: 1.65;
   --fw-medium: 500;
@@ -123,15 +141,15 @@
   --s-8: 24px;
 
   --r-sm: 6px;
-  --r-md: 8px;
-  --r-lg: 10px;
-  --r-xl: 12px;
-  --r-2xl: 16px;
+  --r-md: 9px;
+  --r-lg: 11px;
+  --r-xl: 14px;
+  --r-2xl: 18px;
   --r-full: 999px;
 
-  --shadow-card: 0 1px 2px rgb(19 35 58 / 0.035);
-  --shadow-menu: 0 10px 30px rgb(19 35 58 / 0.12);
-  --shadow-dialog: 0 24px 64px rgb(19 35 58 / 0.18);
+  --shadow-card: 0 1px 2px rgb(16 39 52 / 0.045), 0 1px 8px rgb(16 39 52 / 0.025);
+  --shadow-menu: 0 14px 38px rgb(16 39 52 / 0.14), 0 2px 8px rgb(16 39 52 / 0.06);
+  --shadow-dialog: 0 30px 80px rgb(16 39 52 / 0.22), 0 8px 24px rgb(16 39 52 / 0.08);
   --elev-1: var(--shadow-card);
   --elev-2: var(--shadow-menu);
   --elev-3: var(--shadow-dialog);
@@ -151,8 +169,8 @@
   --z-toast: 100;
   --nav-width: 240px;
   --nav-height: 0px;
-  --page-gutter: clamp(16px, 2.2vw, 32px);
-  --page-max: 1680px;
+  --page-gutter: clamp(18px, 2.1vw, 34px);
+  --page-max: 1760px;
 }
 
 * { box-sizing: border-box; }
@@ -163,12 +181,12 @@ body {
   background: var(--canvas);
   color: var(--text-primary);
   font: 400 14px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: -.006em;
+  letter-spacing: -.008em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-::selection { background: var(--brand-soft); }
+::selection { background: var(--brand-soft); color: var(--brand-strong); }
 a { color: inherit; text-decoration: none; }
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
@@ -179,49 +197,67 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
   outline-offset: 2px;
 }
 
-.num, td.num, .mono {
-  font-variant-numeric: tabular-nums lining-nums;
-}
+.num, td.num, .mono { font-variant-numeric: tabular-nums lining-nums; }
 .mono { font-family: var(--font-mono); }
 
 .cadencia-page,
 .clinical-page {
   width: min(100%, var(--page-max));
   margin-inline: auto;
-  padding: 24px var(--page-gutter) 48px;
+  padding: 28px var(--page-gutter) 56px;
 }
 
 .cadencia-card,
 .clinical-panel {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--r-xl);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+}
+
+.cadencia-surface {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.cadencia-section-heading {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.cadencia-eyebrow,
+.cadencia-kicker {
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
 
 .cadencia-card-interactive,
 .transition-all-fast {
   transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease,
-    color var(--dur-2) ease;
+    color var(--dur-2) ease, box-shadow var(--dur-2) ease, transform var(--dur-2) var(--ease-out);
 }
-.cadencia-card-interactive:hover { border-color: var(--border-strong); }
-.transition-colors-fast { transition: color var(--dur-2), background-color var(--dur-2), border-color var(--dur-2); }
+.cadencia-card-interactive:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 18px rgb(16 39 52 / .06);
+}
+.transition-colors-fast { transition: color var(--dur-2), background-color var(--dur-2), border-color var(--dur-2), box-shadow var(--dur-2); }
 .transition-transform-fast { transition: transform var(--dur-2) var(--ease-out); }
 
 .cadencia-glass { background: var(--surface); }
-.cadencia-kicker {
-  color: var(--brand);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
 .cadencia-gradient-text { color: var(--brand); }
 .cadencia-panel {
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--r-2xl);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 .cadencia-icon-orb {
   display: grid;
@@ -232,24 +268,43 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 }
 .cadencia-command-key {
   display: inline-grid;
-  min-width: 22px;
-  height: 20px;
+  min-width: 24px;
+  height: 21px;
   place-items: center;
   border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface-subtle);
+  border-bottom-color: var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
   color: var(--text-tertiary);
-  font: 600 10px/1 var(--font-mono);
+  font: 650 10px/1 var(--font-mono);
+  box-shadow: 0 1px 1px rgb(16 39 52 / .05);
+}
+
+.cadencia-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.cadencia-table-shell {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 table { border-collapse: separate; border-spacing: 0; }
 thead th {
   color: var(--text-tertiary);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: .055em;
   text-transform: uppercase;
 }
+tbody tr { transition: background-color var(--dur-1) ease; }
 
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .scrollbar-thin::-webkit-scrollbar { width: 7px; height: 7px; }
@@ -278,7 +333,7 @@ thead th {
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 

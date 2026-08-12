@@ -41,11 +41,7 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      <Sidebar
-        collapsed={collapsed}
-        onToggle={toggle}
-        sessao={session}
-      />
+      <Sidebar collapsed={collapsed} onToggle={toggle} sessao={session} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         <main id="conteudo-principal" className="min-w-0 flex-1">{children}</main>
@@ -64,16 +60,27 @@ function MobileNavigation() {
     { label: 'Mensagens', href: '/conversas', icon: ChatCircle },
     { label: 'Mais', href: '/configuracoes', icon: DotsThree },
   ] as const;
+
   return (
-    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-start justify-around border-t border-border bg-surface px-1 pt-2 md:hidden">
+    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-start justify-around border-t border-white/[.08] bg-nav px-1 pt-2 shadow-elev-2 md:hidden">
       {items.map((item) => {
         const active = pathname === item.href
           || ('activePrefix' in item && pathname.startsWith(item.activePrefix))
           || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (
-          <Link key={item.label} href={item.href} aria-current={active ? 'page' : undefined} className={cn('flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-semibold', active ? 'text-brand' : 'text-text-tertiary')}>
-            <span className={cn('grid size-8 place-items-center rounded-lg', active && 'bg-brand-soft')}><Icon size={20} weight={active ? 'fill' : 'regular'} aria-hidden /></span>
+          <Link
+            key={item.label}
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'flex min-w-[58px] flex-col items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors-fast',
+              active ? 'text-white' : 'text-nav-muted',
+            )}
+          >
+            <span className={cn('grid size-8 place-items-center rounded-lg', active && 'bg-white/[.10] text-nav-accent')}>
+              <Icon size={20} weight={active ? 'fill' : 'regular'} aria-hidden />
+            </span>
             {item.label}
           </Link>
         );

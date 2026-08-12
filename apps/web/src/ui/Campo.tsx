@@ -14,48 +14,36 @@ import { cn } from '../lib/cn';
 
 export interface CampoProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'size'> {
-  /** Rotulo visivel */
   readonly rotulo?: string;
-  /** Texto de ajuda abaixo do campo */
   readonly ajuda?: string;
-  /** @deprecated Use `ajuda` instead. Mantido para compatibilidade. */
+  /** @deprecated Use `ajuda` instead. */
   readonly dica?: string;
-  /** Mensagem de erro (ativa estado de erro) */
   readonly erro?: string | undefined;
-  /** Variante: input padrao ou textarea */
   readonly variante?: 'default' | 'textarea';
-  /** Numero de linhas para textarea */
   readonly linhas?: number;
-  /** Slot de prefixo (icone, simbolo) */
   readonly prefixo?: ReactNode;
-  /** Slot de sufixo (icone, botao) */
   readonly sufixo?: ReactNode;
-  /** @deprecated Use Tailwind sizing. Mantido para compatibilidade. */
+  /** @deprecated Use Tailwind sizing. */
   readonly denso?: boolean;
-  /** Classes adicionais para o container */
   readonly className?: string;
 }
 
 const wrapperBase = [
-  'flex items-center gap-2 rounded-lg border bg-surface px-3',
-  'transition-colors-fast hover:border-line-strong',
+  'flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 shadow-elev-1',
+  'transition-[border-color,box-shadow,background-color] duration-150 hover:border-line-strong',
 ].join(' ');
 
 const wrapperFocus =
-  'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/10';
+  'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/12 focus-within:shadow-none';
 
 const wrapperError =
-  'border-danger focus-within:border-danger focus-within:ring-danger';
+  'border-danger focus-within:border-danger focus-within:ring-danger/12';
 
 const wrapperNormal = 'border-line';
 
 const inputBase =
-  'flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
+  'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
-/**
- * Campo de entrada com suporte a forwardRef para react-hook-form,
- * variante textarea, prefixo/sufixo, e estados de feedback.
- */
 const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
   function Campo(props, ref) {
     const {
@@ -83,9 +71,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
     const descrito = [
       textoAjuda != null ? idAjuda : null,
       erro != null ? idErro : null,
-    ]
-      .filter((x): x is string => x !== null)
-      .join(' ');
+    ].filter((x): x is string => x !== null).join(' ');
 
     const [charCount, setCharCount] = useState(() => {
       const initial = (value ?? defaultValue ?? '') as string;
@@ -95,21 +81,16 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
     function handleChange(
       e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
     ) {
-      if (maxLength != null) {
-        setCharCount(e.target.value.length);
-      }
-      if (onChange) {
-        onChange(e as ChangeEvent<HTMLInputElement>);
-      }
+      if (maxLength != null) setCharCount(e.target.value.length);
+      if (onChange) onChange(e as ChangeEvent<HTMLInputElement>);
     }
 
     const temErro = erro != null && erro !== '';
-
     const wrapperClasses = cn(
       wrapperBase,
       wrapperFocus,
       temErro ? wrapperError : wrapperNormal,
-      denso && 'h-8',
+      denso && 'h-8 shadow-none',
     );
 
     const sharedInputProps = {
@@ -126,28 +107,23 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
     const nearMax = maxLength != null && charCount >= maxLength * 0.9;
 
     return (
-      <div className={cn('flex flex-col gap-1', className)}>
+      <div className={cn('flex flex-col gap-1.5', className)}>
         {rotulo && (
-          <label
-            htmlFor={id}
-            className="text-xs font-semibold text-text-muted"
-          >
+          <label htmlFor={id} className="text-[13px] font-semibold text-text-secondary">
             {rotulo}
           </label>
         )}
 
         <div className={wrapperClasses}>
           {prefixo && (
-            <span className="shrink-0 text-text-muted" data-testid="campo-prefixo">
-              {prefixo}
-            </span>
+            <span className="shrink-0 text-text-tertiary" data-testid="campo-prefixo">{prefixo}</span>
           )}
 
           {variante === 'textarea' ? (
             <textarea
               ref={ref as React.Ref<HTMLTextAreaElement>}
               rows={linhas ?? 3}
-              className={cn(inputBase, 'resize-y')}
+              className={cn(inputBase, 'resize-y leading-relaxed')}
               {...(resto as unknown as TextareaHTMLAttributes<HTMLTextAreaElement>)}
               {...sharedInputProps}
             />
@@ -161,30 +137,28 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
           )}
 
           {sufixo && (
-            <span className="shrink-0 text-text-muted" data-testid="campo-sufixo">
-              {sufixo}
-            </span>
+            <span className="shrink-0 text-text-tertiary" data-testid="campo-sufixo">{sufixo}</span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-h-[18px] items-center gap-2">
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {temErro ? (
                 <motion.p
                   key="erro"
                   id={idErro}
-                  initial={{ x: -4, opacity: 0 }}
+                  initial={{ x: -3, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="text-xs text-danger"
+                  transition={{ duration: 0.14 }}
+                  className="text-xs font-medium text-danger"
                   role="alert"
                 >
                   {erro}
                 </motion.p>
               ) : textoAjuda != null ? (
-                <p key="ajuda" id={idAjuda} className="text-xs text-text-muted">
+                <p key="ajuda" id={idAjuda} className="text-xs leading-relaxed text-text-tertiary">
                   {textoAjuda}
                 </p>
               ) : null}
@@ -193,10 +167,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
 
           {showCounter && (
             <span
-              className={cn(
-                'ml-auto text-xs',
-                nearMax ? 'text-danger' : 'text-text-muted',
-              )}
+              className={cn('ml-auto text-xs tabular-nums', nearMax ? 'text-danger' : 'text-text-tertiary')}
               data-testid="campo-contador"
             >
               {charCount}/{maxLength}

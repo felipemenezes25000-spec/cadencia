@@ -1,10 +1,10 @@
-# Cadencia Clinical UI — Design System v4
+# Cadencia Clinical OS — Design System v5
 
-Este documento é o contrato visual oficial do Cadencia. O produto usa **um único tema claro**. Não existe variante dark, seletor de tema ou adaptação baseada no tema do sistema operacional.
+Este documento é o contrato visual oficial do Cadencia. O produto usa **um único tema claro**, com um shell clínico de alto contraste e superfícies operacionais claras. Não existe dark mode, seletor de tema ou adaptação baseada no tema do sistema.
 
 ## 1. Modelo de produto
 
-Toda superfície operacional segue a sequência:
+Toda superfície operacional segue:
 
 **Paciente → estado atual → contexto → próxima ação**
 
@@ -19,81 +19,103 @@ Princípios:
 5. Densidade alta não significa tipografia minúscula.
 6. Borda, alinhamento e espaço definem hierarquia antes de sombra.
 7. Erro, bloqueio, loading e vazio fazem parte da experiência final.
+8. O shell orienta; a superfície de trabalho domina.
+9. O usuário não navega para obter contexto que cabe em um painel lateral.
+10. Toda tela operacional deve deixar óbvio o que está acontecendo agora e o que acontece depois.
 
-## 2. Tema claro único
+## 2. Identidade: Clinical Precision
+
+O Cadencia não imita dashboards genéricos de SaaS. A identidade vem de:
+
+- shell navy profundo no desktop e dock navy no mobile;
+- canvas claro e frio;
+- superfícies brancas precisas;
+- teal clínico como ação/seleção;
+- estados semânticos discretos;
+- tipografia densa, legível e com forte hierarquia;
+- pouquíssima sombra;
+- movimentos curtos que explicam causa e efeito.
+
+Não usar glassmorphism, gradientes decorativos, glow, sombra forte ou cor sem significado.
+
+## 3. Tokens centrais
 
 Os tokens vivem em `app/globals.css` e são expostos ao Tailwind por `@theme`.
 
 | Token | Valor | Uso |
 |---|---:|---|
-| `--canvas` | `#F6F8FB` | fundo global |
+| `--canvas` | `#F3F6F9` | fundo global |
 | `--surface` | `#FFFFFF` | painéis e controles |
-| `--surface-subtle` | `#F8FAFC` | hover e agrupamento |
-| `--border` | `#DDE5EE` | divisores e bordas |
-| `--text-primary` | `#13233A` | conteúdo principal |
-| `--text-secondary` | `#50627A` | metadados |
-| `--text-tertiary` | `#718096` | micro-hierarquia |
-| `--brand` | `#075985` | ação e seleção |
-| `--brand-hover` | `#0369A1` | interação |
-| `--brand-soft` | `#E0F2FE` | seleção discreta |
-| `--success` | `#166534` | concluído/confirmado |
-| `--warning` | `#92400E` | espera/atenção |
-| `--danger` | `#991B1B` | erro/bloqueio |
-| `--info` | `#1E40AF` | informação operacional |
+| `--surface-subtle` | `#F7F9FB` | agrupamento discreto |
+| `--surface-sunken` | `#EEF3F6` | fundos internos |
+| `--border` | `#DCE5E9` | divisores e bordas |
+| `--text-primary` | `#102734` | conteúdo principal |
+| `--text-secondary` | `#526875` | metadados |
+| `--text-tertiary` | `#7A8D97` | micro-hierarquia |
+| `--brand` | `#0D6878` | ação e seleção |
+| `--brand-hover` | `#095968` | interação |
+| `--brand-strong` | `#073B4C` | ênfase de marca |
+| `--brand-soft` | `#DDF1F3` | seleção discreta |
+| `--nav` | `#102735` | shell desktop/mobile |
+| `--nav-active` | `#193847` | item ativo no shell |
+| `--nav-accent` | `#70CAD6` | sinalização no shell |
+| `--success` | `#24724C` | concluído/confirmado |
+| `--warning` | `#9A5B13` | espera/atenção |
+| `--danger` | `#A13B43` | erro/bloqueio |
+| `--info` | `#315F9A` | informação operacional |
 
-Não introduza cores literais nos componentes. Quando um módulo legado usa `bg-bg`, `text-text`, `accent`, `ok`, `warn` ou `line`, o alias aponta para este mesmo sistema claro.
+Não introduza cores literais em componentes quando existir token semântico equivalente.
 
-## 3. Tipografia e números
+## 4. Tipografia e números
 
 Fonte de interface:
 
 `Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
 
-- Título da página: 28 px / 700.
-- Título de seção: 16–18 px / 650–700.
+- Título de página: 30–32 px / 700.
+- Título de seção: 16–20 px / 650–700.
 - Nome de paciente: 14–15 px / 600–700.
 - Corpo: 14 px.
 - Metadados: 12–13 px.
-- Badge: 11–12 px / 600.
+- Badge: 11–12 px / 600–700.
 - Horários, valores e métricas: numerais tabulares.
 
-Texto abaixo de 11 px fica restrito a labels muito curtas, como dias do calendário e indicadores da navegação.
+Texto abaixo de 11 px fica restrito a indicadores curtos. Evite títulos estruturais em 9–10 px quando 11–12 px couber.
 
-## 4. Geometria
+## 5. Geometria
 
 - Escala espacial: 4, 8, 12, 16, 24, 32 e 48 px.
-- Controles: raio de 8 px.
-- Cards: raio de 12 px.
-- Painéis, drawers e dialogs: raio de 16 px.
-- Badges e avatares: raio total.
+- Controles: raio de 9–10 px.
+- Cards: raio de 14 px.
+- Painéis, drawers e dialogs: raio de 18 px.
+- Badges e avatares: raio total quando semântica pedir.
 - Cards comuns: borda e sombra quase imperceptível.
 - Menus e drawers: elevação suficiente para indicar sobreposição.
+- Workspaces como Agenda e Conversas não devem parecer um “card gigante dentro do app”.
 
-Não use glassmorphism, gradiente decorativo ou sombra forte em conteúdo regular.
-
-## 5. AppShell
+## 6. AppShell
 
 O `AppShell` é compartilhado por todas as rotas privadas.
 
 ### Desktop
 
 - Sidebar: 240 px; recolhida: 72 px.
-- Topbar: 68 px, sticky.
-- Conteúdo: flexível, máximo de 1680 px.
+- Sidebar usa `--nav` e é a principal assinatura visual do produto.
+- Topbar: 68 px, sticky, clara.
+- Conteúdo: flexível, máximo de 1760 px para páginas convencionais.
 - Busca global abre com `Ctrl/⌘ K`.
+- Busca é um comando do sistema, não apenas um campo decorativo.
 
 ### Mobile
 
 - Sidebar sai do fluxo.
 - Topbar mantém busca, notificações e criação.
-- Navegação vira dock inferior: Hoje, Agenda, Pacientes, Mensagens e Mais.
+- Navegação vira dock inferior navy: Hoje, Agenda, Pacientes, Mensagens e Mais.
 - Tabelas operacionais viram cards ou mantêm overflow explicitamente controlado.
 
-## 6. Primitives canônicas
+## 7. Primitives canônicas
 
-Existe uma única família de primitives em `src/ui/`. `src/components/` contém
-composição de domínio (shell, operação, pacientes), nunca uma segunda cópia de
-Button, Drawer, Tabs ou PageHeader.
+Existe uma única família de primitives em `src/ui/`. `src/components/` contém composição de domínio, nunca uma segunda cópia de geometria básica.
 
 Primitives centrais:
 
@@ -103,35 +125,31 @@ Primitives centrais:
 - `Tabs`, `Tooltip` e `PainelLateral`;
 - `Skeleton`, `EstadoVazio` e `Toast`.
 
-Antes de adicionar um arquivo em `src/components`, confirme que ele combina
-primitives e contexto de produto, em vez de duplicar geometria básica.
+Antes de adicionar um componente, confirme se a intenção já existe em uma primitive compartilhada.
 
-## 7. Status e ações
+## 8. Padrões de assinatura
 
-O domínio central está em:
+### Patient Identity
 
-- `src/domain/appointments/types.ts`
-- `src/domain/appointments/states.ts`
-- `src/domain/appointments/actions.ts`
+Nome, avatar, identidade secundária e alertas devem manter anatomia consistente entre fila, diretório, conversa, drawer e prontuário.
 
-`AppointmentStatus` representa exatamente os estados persistidos pela API. A UI
-não inventa etapas como “chamado” ou “finalização” quando elas não existem no
-backend. Componentes não criam regras próprias.
+### Live Clinical State
 
-Exemplos:
+`Agora`, `Próximo`, `Aguardando`, `Em atendimento`, `Atrasado` e pendências são estados operacionais. Texto, ícone e posição devem comunicar o estado antes da cor.
 
-- `confirmado` → ícone + “Confirmado” → **Fazer check-in**
-- `aguardando` → ícone + “Aguardando” → **Iniciar**
-- `atendendo` → ícone + “Em atendimento” → **Continuar**
-- `faltou` → ícone + “Falta” → **Reagendar**
+### Context Rail
 
-Ações secundárias vivem no menu `⋯`.
+Quando a tarefa principal ocupa o centro da tela, contexto curto do paciente pode viver em rail lateral persistente. Conversas é o arquétipo.
 
-## 8. Arquétipos das rotas principais
+### Next Action
+
+Listas operacionais exibem a próxima ação por linha. Ações secundárias ficam em menu ou drawer.
+
+## 9. Arquétipos das rotas principais
 
 ### `/hoje`
 
-Cockpit operacional. KPIs são contexto compacto; atenção necessária vem antes do fluxo. A composição principal combina fluxo do dia, “Agora” e caixa de ações. Não é uma dashboard analítica.
+Cockpit operacional. KPIs são contexto compacto; atenção necessária vem antes do fluxo. A composição combina fluxo do dia, “Agora”, “Próximo” e pendências. Não é uma dashboard analítica.
 
 ### `/agenda`
 
@@ -141,25 +159,45 @@ Superfície temporal. Semana é a visualização padrão. Eventos usam tons sem�
 
 Workspace clínico. O registro domina a página, a navegação clínica é persistente e sinais vitais/ações rápidas formam um rail auxiliar. Autosave sempre informa salvando, salvo ou erro.
 
+### `/pacientes`
+
+Diretório clínico escaneável, não lista de contatos. Busca e facetas precedem uma tabela responsiva que evidencia identidade, nascimento, contato e integridade cadastral.
+
 ### `/pacientes/[id]`
 
 Visão 360°. Alertas críticos aparecem junto da identidade. Resumo, histórico e próximos passos convivem sem esconder o contexto clínico.
 
+### `/conversas`
+
+Workspace edge-to-edge. Lista de conversas à esquerda, thread no centro e contexto clínico à direita no desktop. Mensageria deve parecer parte do prontuário, não um app embutido.
+
 ### `/financeiro`
 
-Gestão de recebíveis. Métricas são compactas e a tabela é a superfície principal. O drawer preserva contexto; cancelamento exige confirmação.
+Gestão de recebíveis. Métricas são compactas e a tabela operacional é a superfície principal. O drawer preserva contexto; cancelamento exige confirmação.
 
-## 9. Progressive disclosure
+### `/convenios`
 
-- Clique no paciente: quick view em drawer.
+Linha de produção do ciclo de receita. Cada estado deve deixar claro valor, risco e próximo bloqueio a resolver.
+
+### `/desempenho`
+
+Narrativa de gestão: **o que mudou → por que mudou → evidência → o que fazer agora**. Waterfall e drill-down servem à decisão, não ao volume de gráficos.
+
+### `/configuracoes`
+
+Navegação local vertical no desktop e horizontal no mobile. Configurações são agrupadas por intenção, não espremidas em uma fileira longa de abas.
+
+## 10. Progressive disclosure
+
+- Clique no paciente: quick view em drawer quando disponível.
 - “Abrir paciente”: página 360°.
 - “Abrir atendimento”: workspace clínico.
 - Evento da agenda: drawer de contexto.
 - Título financeiro: drawer financeiro.
 
-O usuário não perde a posição na fila ou na agenda para consultar informação curta.
+O usuário não perde a posição na fila, agenda, diretório ou conversa para consultar informação curta.
 
-## 10. Estados de interface
+## 11. Estados de interface
 
 - **Loading:** skeleton com geometria próxima do conteúdo final.
 - **Empty:** explica o estado e indica a próxima informação relevante.
@@ -168,7 +206,7 @@ O usuário não perde a posição na fila ou na agenda para consultar informaç�
 - **Success:** transição contextual e toast discreto; operações reversíveis oferecem “Desfazer”.
 - **Restricted:** explica por que o conteúdo não está disponível.
 
-## 11. Acessibilidade
+## 12. Acessibilidade
 
 Meta: WCAG AA.
 
@@ -177,21 +215,25 @@ Meta: WCAG AA.
 - labels reais em inputs e selects;
 - icon buttons com nome acessível;
 - dialogs/drawers Radix com focus trap, Escape e retorno de foco;
-- status com ícone, texto e cor;
+- status com texto e sinal visual;
 - mensagens de erro textuais;
 - alvos de toque confortáveis;
 - `prefers-reduced-motion` reduz animações e transições;
 - conteúdo mobile não depende de hover.
 
-## 12. Regra de evolução
+## 13. Regra de evolução
 
-Antes de criar um componente, confirme:
+Antes de criar ou alterar uma superfície, confirme:
 
 1. A intenção já existe em uma primitive compartilhada?
 2. A ação principal continua óbvia?
-3. O componente funciona a 390 px?
-4. Loading, vazio, erro e bloqueio foram considerados?
-5. Teclado e leitor de tela concluem o fluxo?
-6. A cor carrega significado ou apenas decoração?
+3. O estado atual do paciente/tarefa está visível?
+4. O próximo passo está evidente?
+5. O componente funciona a 390 px?
+6. Loading, vazio, erro e bloqueio foram considerados?
+7. Teclado e leitor de tela concluem o fluxo?
+8. A cor carrega significado ou apenas decoração?
+9. O usuário precisa navegar ou um drawer/rail resolve?
+10. A nova tela ainda parece inequivocamente Cadencia?
 
 Se uma regra de negócio aparecer em mais de uma tela, ela pertence ao domínio, não ao componente.
