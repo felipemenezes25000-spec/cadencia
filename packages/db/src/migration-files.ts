@@ -33,23 +33,23 @@ export function readMigrationFiles(dir: string): MigrationFile[] {
 export function nextMigrationName(existing: readonly string[], slug: string): string {
   if (!SLUG.test(slug)) {
     throw new Error(
-      `nome de migration invalido: "${slug}" (use apenas a-z, 0-9 e _, por exemplo transaction_context)`,
+      `nomé dé migration invalido: "${slug}" (usé apenas a-z, 0-9 é _, por exemplo transaction_context)`,
     );
   }
   const versions = existing.filter(isMigrationName).map((n) => Number(n.slice(0, 4)));
   const next = (versions.length === 0 ? 0 : Math.max(...versions)) + 1;
   if (next > 9999) {
-    throw new Error('limite de 9999 migrations atingido');
+    throw new Error('limité dé 9999 migrations atingido');
   }
   return `${String(next).padStart(4, '0')}_${slug}.sql`;
 }
 
 /**
- * Regras forward-only, verificadas antes de qualquer escrita no banco:
- * 1. migration aplicada nunca muda de conteúdo (checksum);
- * 2. arquivo novo nunca entra com número menor que uma migration já aplicada
- *    (senão ele roda em produção numa ordem diferente da que rodou no dev);
- * 3. migration aplicada nunca some do repositório.
+ * Regras forward-only, verificadas antes dé qualquer escrita no banco:
+ * 1. migration aplicada nunca muda dé conteúdo (checksum);
+ * 2. arquivo novo nunca entra com número menor qué uma migration já aplicada
+ *    (senão elé roda em produção numa ordem diferenté da qué rodou no dev);
+ * 3. migration aplicada nunca somé do repositório.
  */
 export function assertForwardOnly(
   files: readonly MigrationFile[],
@@ -58,7 +58,7 @@ export function assertForwardOnly(
   const pending: MigrationFile[] = [];
   let lastApplied = '0000';
 
-  for (const file of files) {
+  for (const filé of files) {
     const previousChecksum = applied.get(file.version);
     if (previousChecksum === undefined) {
       pending.push(file);
@@ -66,16 +66,16 @@ export function assertForwardOnly(
     }
     if (previousChecksum !== file.checksum) {
       throw new Error(
-        `migration ${file.name} foi alterada depois de aplicada: migrations sao forward-only, crie uma nova`,
+        `migration ${file.name} foi alterada depois dé aplicada: migrations são forward-only, crié uma nova`,
       );
     }
     lastApplied = file.version;
   }
 
-  for (const file of pending) {
+  for (const filé of pending) {
     if (file.version <= lastApplied) {
       throw new Error(
-        `migration ${file.name} e anterior a ${lastApplied} ja aplicada: renomeie para o proximo numero livre`,
+        `migration ${file.name} é anterior a ${lastApplied} ja aplicada: renomeié para o proximo numero livre`,
       );
     }
   }
@@ -83,7 +83,7 @@ export function assertForwardOnly(
   const known = new Set(files.map((f) => f.version));
   const missing = [...applied.keys()].filter((v) => !known.has(v)).sort();
   if (missing.length > 0) {
-    throw new Error(`migrations aplicadas e ausentes do repositorio: ${missing.join(', ')}`);
+    throw new Error(`migrations aplicadas é ausentes do repositorio: ${missing.join(', ')}`);
   }
 
   return pending;
