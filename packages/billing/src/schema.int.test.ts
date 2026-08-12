@@ -323,16 +323,6 @@ describe('com.carne', () => {
 });
 
 describe('com.suspensao', () => {
-  const SUSPENSAO_ASSINATURA_ID = uuidv7();
-
-  beforeAll(async () => {
-    await adminPool.query(`
-      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
-      VALUES ($1, $2, $3, 'trial')
-      ON CONFLICT (id) DO NOTHING
-    `, [SUSPENSAO_ASSINATURA_ID, TENANT_ID, PLANO_BASICO_ID]);
-  });
-
   it('tabela com.suspensao existe', async () => {
     const result = await adminPool.query(`
       SELECT table_name FROM information_schema.tables
@@ -342,12 +332,17 @@ describe('com.suspensao', () => {
   });
 
   it('suspensao pode ser criada por inadimplencia', async () => {
+    const assinaturaId = uuidv7();
     const suspensaoId = uuidv7();
+    await adminPool.query(`
+      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
+      VALUES ($1, $2, $3, 'trial')
+    `, [assinaturaId, TENANT_ID, PLANO_BASICO_ID]);
     const result = await adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo, motivo_detalhe)
       VALUES ($1, $2, $3, 'inadimplencia', '3 mensalidades atrasadas')
       RETURNING id, tenant_id, motivo, motivo_detalhe, data_fim
-    `, [suspensaoId, TENANT_ID, SUSPENSAO_ASSINATURA_ID]);
+    `, [suspensaoId, TENANT_ID, assinaturaId]);
 
     expect(result.rows[0]).toMatchObject({
       id: suspensaoId,
@@ -359,20 +354,30 @@ describe('com.suspensao', () => {
   });
 
   it('suspensao nao permite motivo invalido', async () => {
+    const assinaturaId = uuidv7();
     const id = uuidv7();
+    await adminPool.query(`
+      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
+      VALUES ($1, $2, $3, 'trial')
+    `, [assinaturaId, TENANT_ID, PLANO_BASICO_ID]);
     await expect(adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo)
       VALUES ($1, $2, $3, 'invalido')
-    `, [id, TENANT_ID, SUSPENSAO_ASSINATURA_ID])).rejects.toThrow(/check/i);
+    `, [id, TENANT_ID, assinaturaId])).rejects.toThrow(/check/i);
   });
 
   it('suspensao pode ser marcada como restaurada', async () => {
+    const assinaturaId = uuidv7();
     const suspensaoId = uuidv7();
     const now = new Date();
     await adminPool.query(`
+      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
+      VALUES ($1, $2, $3, 'trial')
+    `, [assinaturaId, TENANT_ID, PLANO_BASICO_ID]);
+    await adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo)
       VALUES ($1, $2, $3, 'inadimplencia')
-    `, [suspensaoId, TENANT_ID, SUSPENSAO_ASSINATURA_ID]);
+    `, [suspensaoId, TENANT_ID, assinaturaId]);
 
     const result = await adminPool.query(`
       UPDATE com.suspensao SET data_fim = $1, restaurada_em = $1
