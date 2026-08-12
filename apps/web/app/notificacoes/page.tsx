@@ -1,7 +1,16 @@
 'use client';
+
 import { useState } from 'react';
-import { Bell, CheckCircle, Clock, Calendar, CreditCard, ChatCircle, Pill, Stethoscope } from '@phosphor-icons/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, CalendarBlank, ChatCircle, CheckCircle, Clock, CreditCard, Pill, Stethoscope } from '@phosphor-icons/react';
+import { apiFetch } from '../../src/api';
+import { useSessao } from '../../src/sessao';
+import { cn } from '../../src/lib/cn';
+import { Botao } from '../../src/ui/Botao';
+import { EstadoVazio } from '../../src/ui/EstadoVazio';
+import { PageHeader } from '../../src/ui/PageHeader';
+import { Skeleton } from '../../src/ui/Skeleton';
+import { useToast } from '../../src/ui/ToastProvider';
 
 interface Notification {
   id: string;
@@ -12,151 +21,158 @@ interface Notification {
   createdAt: string;
 }
 
-function getKindIcon(kind: string) {
-  switch (kind) {
-    case 'appointment_reminder':
-    case 'appointment_created':
-    case 'appointment_confirmed':
-    case 'appointment_cancelled':
-      return <Calendar size={20} className="text-blue-500" />;
-    case 'payment_received':
-    case 'payment_overdue':
-      return <CreditCard size={20} className="text-green-500" />;
-    case 'message_received':
-      return <ChatCircle size={20} className="text-purple-500" />;
-    case 'prescription_ready':
-      return <Pill size={20} className="text-orange-500" />;
-    case 'encounter_completed':
-      return <Stethoscope size={20} className="text-teal-500" />;
-    default:
-      return <Bell size={20} className="text-gray-500" />;
-  }
+interface NotificationResponse {
+  itens: Notification[];
+  nextCursor: string | null;
+  unreadCount: number;
+}
+
+function KindIcon({ kind }: { readonly kind: string }) {
+  const Icon = kind.startsWith('appointment_') ? CalendarBlank
+    : kind.startsWith('payment_') ? CreditCard
+    : kind === 'message_received' ? ChatCircle
+    : kind === 'prescription_ready' ? Pill
+    : kind === 'encounter_completed' ? Stethoscope
+    : Bell;
+  return <Icon size={19} weight="duotone" aria-hidden />;
 }
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const diffMs = Math.max(0, now.getTime() - date.getTime());
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
   if (diffMins < 1) return 'Agora';
   if (diffMins < 60) return `${diffMins} min atrás`;
   if (diffHours < 24) return `${diffHours}h atrás`;
   if (diffDays < 7) return `${diffDays} dia${diffDays > 1 ? 's' : ''} atrás`;
-  return date.toLocaleDateString('pt-BR');
-}
-
-async function fetchNotifications(unreadOnly = false) {
-  const params = new URLSearchParams();
-  if (unreadOnly) params.set('unreadOnly', 'true');
-  const res = await fetch(`/api/v1/notifications?${params}`);
-  return res.json();
-}
-
-async function markAsRead(id: string) {
-  await fetch(`/api/v1/notifications/${id}/read`, { method: 'PUT' });
-}
-
-async function markAllAsRead() {
-  await fetch('/api/v1/notifications/read-all', { method: 'PUT' });
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date);
 }
 
 export default function NotificacoesPage() {
+  const { clinicId, csrfToken } = useSessao();
+  const { toast } = useToast();
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['notifications', showUnreadOnly],
-    queryFn: () => fetchNotifications(showUnreadOnly),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['notifications', clinicId, showUnreadOnly],
+    queryFn: () => apiFetch<NotificationResponse>(
+      `/v1/notifications${showUnreadOnly ? '?unreadOnly=true' : ''}`,
+      { clinicId, csrfToken },
+    ),
+    staleTime: 30_000,
   });
 
   const markRead = useMutation({
-    mutationFn: markAsRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    mutationFn: (id: string) => apiFetch<{ ok: boolean }>(`/v1/notifications/${id}/read`, {
+      method: 'PUT', clinicId, csrfToken,
+    }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const markAll = useMutation({
-    mutationFn: markAllAsRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    mutationFn: () => apiFetch<{ markedCount: number }>('/v1/notifications/read-all', {
+      method: 'PUT', clinicId, csrfToken,
+    }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ tipo: 'sucesso', mensagem: 'Notificações marcadas como lidas.' });
+    },
   });
 
-  if (isLoading) {
-    return <div className="animate-pulse space-y-4"><div className="h-8 bg-gray-200 rounded w-1/4" /></div>;
-  }
-
-  const notifications: Notification[] = data?.itens ?? [];
+  const notifications = data?.itens ?? [];
   const unreadCount = data?.unreadCount ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notificações</h1>
-          <p className="text-gray-500 mt-1">
-            {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Todas lidas'}
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={() => markAll.mutate()}
-            disabled={markAll.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
-          >
-            <CheckCircle size={16} />
+    <div className="cadencia-page space-y-6">
+      <PageHeader
+        titulo="Notificações"
+        eyebrow="Central de atividade"
+        subtitulo={unreadCount > 0 ? `${unreadCount} atualização${unreadCount > 1 ? 'ões' : ''} aguardando sua atenção.` : 'Tudo em dia por aqui.'}
+        semBreadcrumb
+        acoes={unreadCount > 0 ? (
+          <Botao variante="secundario" iconeEsquerda={CheckCircle} carregando={markAll.isPending} onClick={() => markAll.mutate()}>
             Marcar todas como lidas
+          </Botao>
+        ) : undefined}
+      />
+
+      <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-subtle p-1 sm:w-fit" role="group" aria-label="Filtrar notificações">
+        {[
+          { value: false, label: 'Todas' },
+          { value: true, label: 'Não lidas' },
+        ].map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            aria-pressed={showUnreadOnly === option.value}
+            onClick={() => setShowUnreadOnly(option.value)}
+            className={cn(
+              'flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all-fast sm:flex-none',
+              showUnreadOnly === option.value ? 'bg-surface text-accent shadow-elev-1' : 'text-text-muted hover:text-text',
+            )}
+          >
+            {option.label}
           </button>
-        )}
+        ))}
       </div>
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => setShowUnreadOnly(false)}
-          className={`px-4 py-2 text-sm rounded-lg ${!showUnreadOnly ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          Todas
-        </button>
-        <button
-          onClick={() => setShowUnreadOnly(true)}
-          className={`px-4 py-2 text-sm rounded-lg ${showUnreadOnly ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          Não lidas
-        </button>
-      </div>
-
-      {notifications.length === 0 ? (
-        <div className="text-center py-16">
-          <Bell size={48} className="mx-auto text-gray-300" />
-          <p className="mt-4 text-gray-500">
-            {showUnreadOnly ? 'Não há notificações não lidas.' : 'Você não tem notificações ainda.'}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          {notifications.map((n) => (
-            <div
-              key={n.id}
-              className={`flex gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer ${
-                !n.readAt ? 'bg-blue-50/50' : ''
-              }`}
-              onClick={() => !n.readAt && markRead.mutate(n.id)}
-            >
-              <div className="flex-shrink-0 mt-1">{getKindIcon(n.kind)}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className={`font-medium ${!n.readAt ? 'text-gray-900' : 'text-gray-700'}`}>{n.title}</h3>
-                  {!n.readAt && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
-                </div>
-                <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{n.body}</p>
-                <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                  <Clock size={12} />
-                  {formatDate(n.createdAt)}
-                </div>
-              </div>
-            </div>
+      {isLoading ? (
+        <div className="cadencia-panel divide-y divide-line" aria-label="Carregando notificações">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="flex gap-4 p-4 sm:p-5"><Skeleton variant="avatar" /><Skeleton variant="text" lines={2} className="flex-1" /></div>
           ))}
         </div>
-      )}
+      ) : null}
+
+      {isError ? <EstadoVazio icone={Bell} titulo="Não foi possível carregar as notificações" descricao="Tente novamente em instantes." /> : null}
+
+      {!isLoading && !isError && notifications.length === 0 ? (
+        <EstadoVazio
+          icone={Bell}
+          titulo={showUnreadOnly ? 'Nenhuma notificação não lida' : 'Sua central está tranquila'}
+          descricao={showUnreadOnly ? 'Você já revisou tudo que precisava da sua atenção.' : 'Novas atividades importantes aparecerão aqui.'}
+        />
+      ) : null}
+
+      {notifications.length > 0 ? (
+        <section className="cadencia-panel divide-y divide-line" aria-label="Lista de notificações">
+          {notifications.map((notification) => {
+            const unread = notification.readAt === null;
+            return (
+              <button
+                key={notification.id}
+                type="button"
+                disabled={!unread || markRead.isPending}
+                onClick={() => { if (unread) markRead.mutate(notification.id); }}
+                className={cn(
+                  'group flex w-full gap-4 p-4 text-left transition-colors-fast sm:p-5',
+                  unread ? 'bg-accent-soft/35 hover:bg-accent-soft/60' : 'bg-surface hover:bg-surface-subtle',
+                  !unread && 'cursor-default',
+                )}
+                aria-label={`${notification.title}. ${notification.body}${unread ? '. Marcar como lida' : '. Lida'}`}
+              >
+                <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', unread ? 'bg-surface text-accent shadow-elev-1' : 'bg-surface-subtle text-text-muted')}>
+                  <KindIcon kind={notification.kind} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-start justify-between gap-3">
+                    <span className={cn('block text-sm tracking-[-0.01em] text-text', unread ? 'font-bold' : 'font-semibold')}>{notification.title}</span>
+                    {unread ? <span className="mt-1.5 size-2 shrink-0 rounded-full bg-accent shadow-[0_0_0_4px_var(--brand-soft)]" aria-label="Não lida" /> : null}
+                  </span>
+                  <span className="mt-1 block max-w-3xl text-sm leading-relaxed text-text-muted">{notification.body}</span>
+                  <span className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-text-faint">
+                    <Clock size={13} aria-hidden />{formatDate(notification.createdAt)}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      ) : null}
     </div>
   );
 }

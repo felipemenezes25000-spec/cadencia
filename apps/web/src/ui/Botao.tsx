@@ -33,8 +33,8 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'border border-accent bg-accent text-accent-on hover:border-accent-hover hover:bg-accent-hover',
-  secundario: 'border border-line bg-surface text-text hover:border-line-strong hover:bg-surface-subtle',
+  primario: 'border border-accent bg-accent text-accent-on shadow-[0_5px_14px_rgb(8_119_131_/_0.18),inset_0_1px_0_rgb(255_255_255_/_0.16)] hover:border-accent-hover hover:bg-accent-hover hover:shadow-[0_8px_20px_rgb(8_119_131_/_0.22)]',
+  secundario: 'border border-line bg-surface text-text shadow-[inset_0_1px_0_rgb(255_255_255_/_0.85)] hover:border-accent/25 hover:bg-surface-raised hover:shadow-elev-1',
   fantasma: 'border border-transparent bg-transparent text-text-muted hover:bg-surface-subtle hover:text-text',
   perigo: 'border border-danger bg-danger text-white hover:brightness-95',
 };
@@ -69,14 +69,14 @@ export function Botao({
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-lg font-semibold tracking-[-0.008em]',
-        'transition-[background-color,border-color,color,transform] duration-150 ease-out active:translate-y-px',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.008em]',
+        'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.985]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         classesVariante[variante],
         classesTamanho[tamanhoResolvido],
         fullWidth && 'w-full',
         carregando && 'pointer-events-none cursor-progress opacity-70',
-        desabilitado && !carregando && 'cursor-not-allowed opacity-50 active:translate-y-0',
+        desabilitado && !carregando && 'cursor-not-allowed opacity-50 hover:translate-y-0 active:translate-y-0 active:scale-100',
         className,
       )}
     >

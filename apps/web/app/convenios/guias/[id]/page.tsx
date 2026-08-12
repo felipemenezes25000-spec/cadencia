@@ -151,14 +151,14 @@ export default function PaginaDetalheDaGuia(
 
   if (erro !== null) {
     return (
-      <div className="cadencia-page">
+      <div className="py-2">
         <p className="text-sm text-danger">{erro}</p>
       </div>
     );
   }
   if (guia === null) {
     return (
-      <div className="cadencia-page">
+      <div className="py-2">
         <p className="text-sm text-text-muted">Carregando…</p>
       </div>
     );

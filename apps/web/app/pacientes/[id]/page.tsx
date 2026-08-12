@@ -18,6 +18,7 @@ import {
 import { ShareNetwork, ArrowsClockwise, FileArrowDown } from '@phosphor-icons/react';
 import { apiFetch, apiFetchBlobUrl, ApiError } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
+import { useToast } from '../../../src/ui/useToast';
 import { useCallback, useEffect, useState } from 'react';
 
 interface PacienteDaApi extends PacienteHit {
@@ -60,6 +61,7 @@ export default function PaginaFichaDoPaciente(
   const { id } = use(params);
   const router = useRouter();
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
+  const { toast } = useToast();
 
   const [paciente, setPaciente] = useState<PacienteDaApi | null>(null);
   const [pendentes, setPendentes] = useState<readonly string[]>([]);
@@ -100,24 +102,22 @@ export default function PaginaFichaDoPaciente(
     let vivo = true;
     void (async () => {
       try {
-        const p = await apiFetch<PacienteDaApi>(
-          `/v1/pacientes/${id}`, { clinicId, csrfToken });
+        const [p, pend, hist] = await Promise.all([
+          apiFetch<PacienteDaApi>(`/v1/pacientes/${id}`, { clinicId, csrfToken }),
+          apiFetch<{ pendentes: string[] }>(
+            `/v1/pacientes/${id}/pendencias`, { clinicId, csrfToken })
+            .catch(() => ({ pendentes: [] as string[] })),
+          apiFetch<{ itens: EncontroDaApi[] }>(
+            `/v1/pacientes/${id}/prontuario`, { clinicId, csrfToken })
+            .catch((e: unknown) => {
+              if (e instanceof ApiError && e.status === 403 && vivo) setSemAcesso(true);
+              return { itens: [] as EncontroDaApi[] };
+            }),
+        ]);
         if (!vivo) return;
         setPaciente(p);
-
-        const pend = await apiFetch<{ pendentes: string[] }>(
-          `/v1/pacientes/${id}/pendencias`, { clinicId, csrfToken })
-          .catch(() => ({ pendentes: [] as string[] }));
-        if (vivo) setPendentes(pend.pendentes);
-
-        const hist = await apiFetch<{ itens: EncontroDaApi[] }>(
-          `/v1/pacientes/${id}/prontuario`, { clinicId, csrfToken })
-          .catch((e: unknown) => {
-            if (e instanceof ApiError && e.status === 403) setSemAcesso(true);
-            return { itens: [] as EncontroDaApi[] };
-          });
-        if (vivo) {
-          setAtendimentos(hist.itens.map((x) => ({
+        setPendentes(pend.pendentes);
+        setAtendimentos(hist.itens.map((x) => ({
             id: x.encounterId,
             tipo: x.status === 'finalizado' ? 'Atendimento' : 'Rascunho',
             data: x.occurredDate,
@@ -125,7 +125,6 @@ export default function PaginaFichaDoPaciente(
               ? `${x.versionCount} versões` : 'Registro finalizado',
             profissional: x.profissionalNome,
           })));
-        }
       } finally {
         if (vivo) setCarregando(false);
       }
@@ -171,7 +170,7 @@ export default function PaginaFichaDoPaciente(
     } catch {
       // Falhar em silêncio num pedido de LGPD é o pior desfecho: o paciente
       // fica esperando um documento que ninguém sabe que não saiu.
-      window.alert('Não foi possível gerar a exportação. Tente de novo.');
+      toast({ tipo: 'erro', mensagem: 'Não foi possível gerar a exportação. Tente de novo.' });
     } finally {
       setExportando(false);
     }

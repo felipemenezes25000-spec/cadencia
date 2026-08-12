@@ -1,4 +1,4 @@
-# Cadencia Clinical OS — Design System v5
+# Cadencia Clinical OS — Design System v7
 
 Este documento é o contrato visual oficial do Cadencia. O produto usa **um único tema claro**, com um shell clínico de alto contraste e superfícies operacionais claras. Não existe dark mode, seletor de tema ou adaptação baseada no tema do sistema.
 
@@ -23,20 +23,20 @@ Princípios:
 9. O usuário não navega para obter contexto que cabe em um painel lateral.
 10. Toda tela operacional deve deixar óbvio o que está acontecendo agora e o que acontece depois.
 
-## 2. Identidade: Clinical Precision
+## 2. Identidade: Clinical Intelligence
 
-O Cadencia não imita dashboards genéricos de SaaS. A identidade vem de:
+O Cadencia deve parecer um sistema operacional clínico premium, e não um dashboard SaaS genérico. A assinatura vem do contraste entre um **chrome tecnológico** e uma **superfície clínica extremamente legível**:
 
-- shell navy profundo no desktop e dock navy no mobile;
-- canvas claro e frio;
-- superfícies brancas precisas;
-- teal clínico como ação/seleção;
-- estados semânticos discretos;
-- tipografia densa, legível e com forte hierarquia;
-- pouquíssima sombra;
-- movimentos curtos que explicam causa e efeito.
+- shell midnight/navy no desktop e dock translúcido no mobile;
+- canvas claro e frio com textura geométrica quase imperceptível;
+- superfícies clínicas brancas e semanticamente previsíveis;
+- teal elétrico controlado como ação, seleção e foco;
+- profundidade progressiva por borda, blur e sombra curta;
+- tipografia densa, legível e com hierarquia forte;
+- microinterações rápidas que explicam causa e efeito;
+- overlays e command surfaces podem usar translucidez e glow contido.
 
-Não usar glassmorphism, gradientes decorativos, glow, sombra forte ou cor sem significado.
+Gradiente, blur e glow são recursos de **chrome**, não conteúdo. Nunca ficam atrás de texto clínico denso, tabelas, prontuário ou valores financeiros. O efeito deve desaparecer antes da informação.
 
 ## 3. Tokens centrais
 
@@ -44,18 +44,18 @@ Os tokens vivem em `app/globals.css` e são expostos ao Tailwind por `@theme`.
 
 | Token | Valor | Uso |
 |---|---:|---|
-| `--canvas` | `#F3F6F9` | fundo global |
+| `--canvas` | `#F3F6F7` | fundo global |
 | `--surface` | `#FFFFFF` | painéis e controles |
-| `--surface-subtle` | `#F7F9FB` | agrupamento discreto |
+| `--surface-subtle` | `#F7FAFB` | agrupamento discreto |
 | `--surface-sunken` | `#EEF3F6` | fundos internos |
 | `--border` | `#DCE5E9` | divisores e bordas |
-| `--text-primary` | `#102734` | conteúdo principal |
-| `--text-secondary` | `#526875` | metadados |
-| `--text-tertiary` | `#7A8D97` | micro-hierarquia |
-| `--brand` | `#0D6878` | ação e seleção |
-| `--brand-hover` | `#095968` | interação |
-| `--brand-strong` | `#073B4C` | ênfase de marca |
-| `--brand-soft` | `#DDF1F3` | seleção discreta |
+| `--text-primary` | `#17313B` | conteúdo principal |
+| `--text-secondary` | `#5B707A` | metadados |
+| `--text-tertiary` | `#657983` | micro-hierarquia AA |
+| `--brand` | `#087783` | ação e seleção |
+| `--brand-hover` | `#056873` | interação |
+| `--brand-strong` | `#064C55` | ênfase de marca |
+| `--brand-soft` | `#DFF3F4` | seleção discreta |
 | `--nav` | `#102735` | shell desktop/mobile |
 | `--nav-active` | `#193847` | item ativo no shell |
 | `--nav-accent` | `#70CAD6` | sinalização no shell |
@@ -89,8 +89,8 @@ Texto abaixo de 11 px fica restrito a indicadores curtos. Evite títulos estrutu
 - Cards: raio de 14 px.
 - Painéis, drawers e dialogs: raio de 18 px.
 - Badges e avatares: raio total quando semântica pedir.
-- Cards comuns: borda e sombra quase imperceptível.
-- Menus e drawers: elevação suficiente para indicar sobreposição.
+- Cards comuns: borda precisa e elevação curta; cards interativos podem subir até 2 px no hover.
+- Menus, command surfaces e drawers: blur/elevação suficientes para indicar sobreposição sem perder contraste.
 - Workspaces como Agenda e Conversas não devem parecer um “card gigante dentro do app”.
 
 ## 6. AppShell
@@ -101,7 +101,7 @@ O `AppShell` é compartilhado por todas as rotas privadas.
 
 - Sidebar: 240 px; recolhida: 72 px.
 - Sidebar usa `--nav` e é a principal assinatura visual do produto.
-- Topbar: 68 px, sticky, clara.
+- Topbar: 68 px, sticky e translúcida, com blur controlado sobre o workspace.
 - Conteúdo: flexível, máximo de 1760 px para páginas convencionais.
 - Busca global abre com `Ctrl/⌘ K`.
 - Busca é um comando do sistema, não apenas um campo decorativo.
@@ -110,7 +110,7 @@ O `AppShell` é compartilhado por todas as rotas privadas.
 
 - Sidebar sai do fluxo.
 - Topbar mantém busca, notificações e criação.
-- Navegação vira dock inferior navy: Hoje, Agenda, Pacientes, Mensagens e Mais.
+- Navegação vira dock inferior translúcido: Hoje, Agenda, Pacientes, Mensagens e Mais.
 - Tabelas operacionais viram cards ou mantêm overflow explicitamente controlado.
 
 ## 7. Primitives canônicas
@@ -126,6 +126,19 @@ Primitives centrais:
 - `Skeleton`, `EstadoVazio` e `Toast`.
 
 Antes de adicionar um componente, confirme se a intenção já existe em uma primitive compartilhada.
+
+## 7.1 Motion e profundidade
+
+A animação é funcional e curta. O padrão de entrada usa 140–220 ms; hover/press usa 100–160 ms. Evite loops decorativos contínuos. Toda animação deve respeitar `prefers-reduced-motion`.
+
+Níveis de profundidade:
+
+1. **Canvas:** textura e luz ambiente, sem competir com dados.
+2. **Surface:** cards, tabelas e controles clínicos.
+3. **Raised:** hover, menus e estados selecionados.
+4. **Overlay:** dialogs, drawers e Command Palette, onde blur e glow contido são permitidos.
+
+O usuário deve perceber tecnologia pelo acabamento e pela resposta da interface, não por ruído visual.
 
 ## 8. Padrões de assinatura
 

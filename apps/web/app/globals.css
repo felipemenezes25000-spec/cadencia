@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 /*
- * CADENCIA CLINICAL UI — Design System v6
- * Uma linguagem visual só: clara, precisa, clínica e silenciosa.
- * Hierarquia vem de tipografia, alinhamento, espaço e estado — não de decoração.
+ * CADENCIA CLINICAL UI — Design System v7
+ * Clinical Operating System: clareza clínica no workspace, tecnologia no chrome.
+ * Profundidade, luz e movimento são usados para orientar — nunca para competir com o dado.
  */
 @theme {
   --color-canvas: var(--canvas);
@@ -83,9 +83,9 @@
 :root {
   color-scheme: light;
 
-  --canvas: #f5f7f8;
+  --canvas: #f3f6f7;
   --surface: #ffffff;
-  --surface-subtle: #f8fafb;
+  --surface-subtle: #f7fafb;
   --surface-sunken: #f0f3f4;
   --surface-hover: #f3f7f7;
   --surface-raised: #ffffff;
@@ -94,12 +94,12 @@
 
   --text-primary: #17313b;
   --text-secondary: #5b707a;
-  --text-tertiary: #84939a;
+  --text-tertiary: #657983;
 
-  --brand: #0b6b76;
-  --brand-hover: #075b65;
-  --brand-strong: #06444c;
-  --brand-soft: #e2f1f2;
+  --brand: #087783;
+  --brand-hover: #056873;
+  --brand-strong: #064c55;
+  --brand-soft: #dff3f4;
 
   /* nav usa a mesma família clara do produto; não existe mais um segundo tema */
   --nav: #ffffff;
@@ -147,9 +147,9 @@
   --r-2xl: 14px;
   --r-full: 999px;
 
-  --shadow-card: 0 1px 2px rgb(23 49 59 / .035);
-  --shadow-menu: 0 16px 42px rgb(23 49 59 / .13), 0 2px 8px rgb(23 49 59 / .05);
-  --shadow-dialog: 0 30px 80px rgb(23 49 59 / .20), 0 8px 24px rgb(23 49 59 / .07);
+  --shadow-card: 0 1px 2px rgb(9 35 44 / .035), 0 8px 24px rgb(9 35 44 / .025);
+  --shadow-menu: 0 20px 50px rgb(7 31 39 / .14), 0 3px 10px rgb(7 31 39 / .05);
+  --shadow-dialog: 0 36px 100px rgb(5 27 34 / .26), 0 10px 30px rgb(5 27 34 / .10);
   --elev-1: var(--shadow-card);
   --elev-2: var(--shadow-menu);
   --elev-3: var(--shadow-dialog);
@@ -178,7 +178,9 @@ html { min-width: 320px; background: var(--canvas); }
 body {
   min-height: 100vh;
   margin: 0;
-  background: var(--canvas);
+  background:
+    radial-gradient(circle at 72% -12%, rgb(8 119 131 / .07), transparent 31rem),
+    var(--canvas);
   color: var(--text-primary);
   font: 400 14px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: -.006em;
@@ -225,6 +227,21 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 .cadencia-panel,
 .cadencia-table-shell { overflow: hidden; }
 
+.cadencia-page-header {
+  position: relative;
+}
+.cadencia-page-header::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 5px;
+  width: 3px;
+  height: 34px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--brand), color-mix(in srgb, var(--brand) 28%, transparent));
+  box-shadow: 0 0 18px rgb(8 119 131 / .18);
+}
+
 .cadencia-section-heading {
   color: var(--text-primary);
   font-size: 16px;
@@ -247,9 +264,10 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
     color var(--dur-2) ease, box-shadow var(--dur-2) ease, transform var(--dur-2) var(--ease-out);
 }
 .cadencia-card-interactive:hover {
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--brand) 18%, var(--border));
   background: var(--surface);
-  box-shadow: 0 2px 10px rgb(23 49 59 / .05);
+  box-shadow: 0 12px 30px rgb(7 31 39 / .07);
+  transform: translateY(-2px);
 }
 .transition-colors-fast { transition: color var(--dur-2), background-color var(--dur-2), border-color var(--dur-2), box-shadow var(--dur-2); }
 .transition-transform-fast { transition: transform var(--dur-2) var(--ease-out); }
@@ -355,6 +373,97 @@ tbody tr { transition: background-color var(--dur-1) ease; }
 @media print {
   nav, [role="toolbar"], .print\:hidden { display: none !important; }
   body { background: white; }
+}
+
+
+
+/* ── DESIGN SYSTEM v7 — premium clinical chrome ─────────────── */
+.cadencia-shell-bg {
+  isolation: isolate;
+  background: var(--canvas);
+}
+
+.cadencia-workspace {
+  position: relative;
+}
+.cadencia-workspace::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 68px 0 0 var(--nav-width);
+  z-index: -1;
+  opacity: .34;
+  background-image:
+    linear-gradient(rgb(8 119 131 / .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(8 119 131 / .025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 48%);
+}
+
+.cadencia-topbar {
+  background: rgb(255 255 255 / .78);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .75) inset;
+}
+
+.cadencia-sidebar {
+  --surface: #081f27;
+  --surface-subtle: #0d2a33;
+  --surface-sunken: #06191f;
+  --surface-hover: #12343d;
+  --surface-raised: #12343d;
+  --border: #183943;
+  --border-strong: #28505a;
+  --text-primary: #f2fbfb;
+  --text-secondary: #b6cbd0;
+  --text-tertiary: #718e96;
+  --brand: #50d6d7;
+  --brand-hover: #6be3e3;
+  --brand-strong: #b8ffff;
+  --brand-soft: rgb(80 214 215 / .12);
+  background:
+    radial-gradient(circle at 20% 2%, rgb(80 214 215 / .13), transparent 16rem),
+    linear-gradient(180deg, #0a222a 0%, #071b22 58%, #06181e 100%);
+  box-shadow: 10px 0 34px rgb(3 19 24 / .07);
+}
+
+.cadencia-brand-mark {
+  position: relative;
+  box-shadow: 0 8px 26px rgb(80 214 215 / .22), inset 0 1px 0 rgb(255 255 255 / .25);
+}
+.cadencia-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 14px;
+  border: 1px solid rgb(80 214 215 / .12);
+}
+
+.cadencia-hero-panel {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--brand) 16%, var(--border));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 8%, rgb(8 119 131 / .11), transparent 20rem),
+    linear-gradient(135deg, rgb(255 255 255 / .98), rgb(247 251 251 / .94));
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / .9);
+}
+.cadencia-hero-panel::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: .22;
+  background-image: radial-gradient(rgb(8 119 131 / .28) .55px, transparent .55px);
+  background-size: 12px 12px;
+  mask-image: linear-gradient(90deg, transparent 42%, black);
+}
+
+@keyframes commandIn {
+  from { opacity: 0; transform: translate(-50%, -8px) scale(.985); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
 /* ── MOBILE TOUCH UTILITIES ──────────────────────────────────── */

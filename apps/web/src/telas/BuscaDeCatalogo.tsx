@@ -43,6 +43,11 @@ export function BuscaDeCatalogo<T extends object>({
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const geracaoRef = useRef(0);
 
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q')?.trim();
+    if (q) setTermo(q);
+  }, []);
+
   const executarBusca = useCallback(async (t: string) => {
     const geracao = ++geracaoRef.current;
     if (t.trim().length < 2) {

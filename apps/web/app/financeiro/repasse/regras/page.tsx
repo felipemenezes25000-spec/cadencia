@@ -3,18 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RegrasDeRepasse, type RegraDeRepasse } from '../../../../src/ui/RegrasDeRepasse';
-import { PageHeader } from '../../../../src/ui/PageHeader';
 import { apiFetch } from '../../../../src/api';
 import { useSessao } from '../../../../src/sessao';
 
-/**
- * Cadastro das regras de repasse.
- *
- * Página IRMÃ de `/financeiro/repasse`, não aba dentro dela: aquela tela mostra
- * o RESULTADO do rateio e é consultada toda semana; esta define a conta e é
- * mexida raramente. Misturar as duas poria um formulário de configuração na
- * frente de quem só quer conferir quanto recebeu.
- */
 export default function PaginaRegrasDeRepasse() {
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
   const [regras, setRegras] = useState<readonly RegraDeRepasse[]>([]);
@@ -22,8 +13,6 @@ export default function PaginaRegrasDeRepasse() {
     readonly { professionalId: string; nome: string }[]>([]);
   const [erro, setErro] = useState<string | null>(null);
 
-  // `finance.settings` é permissão de quem define a conta, não de quem a lê. O
-  // profissional vê o próprio repasse e não muda o percentual dele.
   const podeEditar = vinculoAtivo.role === 'admin_clinico'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'financeiro';
@@ -46,9 +35,9 @@ export default function PaginaRegrasDeRepasse() {
 
   if (!podeEditar) {
     return (
-      <div className="cadencia-page grid min-h-[50vh] place-items-center">
+      <div className="grid min-h-[40vh] place-items-center">
         <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold text-text">Regras são da gestão</h1>
+          <h2 className="text-lg font-semibold text-text">Regras são da gestão</h2>
           <p className="mt-2 text-sm text-text-muted">
             Seu perfil vê o próprio repasse, mas não define o percentual dele.
             Peça a quem administra a clínica.
@@ -59,17 +48,16 @@ export default function PaginaRegrasDeRepasse() {
   }
 
   return (
-    <div className="cadencia-page grid gap-5">
-      <PageHeader
-        titulo="Regras de repasse"
-        subtitulo="A conta que gera o rateio. Quando duas regras casam com o mesmo atendimento, vence a de menor prioridade."
-        acoes={
-          <Link href="/financeiro/repasse"
-            className="text-sm text-accent underline-offset-4 hover:underline">
-            Ver os repasses calculados →
-          </Link>
-        }
-      />
+    <section className="grid gap-5" aria-labelledby="titulo-regras-repasse">
+      <div className="flex flex-col gap-3 border-b border-line pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 id="titulo-regras-repasse" className="text-lg font-semibold tracking-[-0.02em] text-text">Regras de repasse</h2>
+          <p className="mt-1 max-w-3xl text-sm text-text-muted">A conta que gera o rateio. Quando duas regras casam com o mesmo atendimento, vence a de menor prioridade.</p>
+        </div>
+        <Link href="/financeiro/repasse" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">
+          Ver os repasses calculados →
+        </Link>
+      </div>
       {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
       <RegrasDeRepasse
         regras={regras}
@@ -80,6 +68,6 @@ export default function PaginaRegrasDeRepasse() {
           await carregar();
         }}
       />
-    </div>
+    </section>
   );
 }

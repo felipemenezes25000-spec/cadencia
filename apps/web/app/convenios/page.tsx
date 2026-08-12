@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { ConveniosAFaturar, type AFaturarDados } from '../../src/telas/ConveniosAFaturar';
-import { PageHeader } from '../../src/ui/PageHeader';
 import { apiFetch } from '../../src/api';
 import { useSessao } from '../../src/sessao';
 
@@ -31,13 +30,6 @@ export default function PaginaAFaturar() {
   const router = useRouter();
 
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Convênios"
-        eyebrow="Ciclo de receita"
-        subtitulo="Transforme atendimentos em lotes faturáveis e resolva inconsistências antes do envio."
-        semBreadcrumb
-      />
       <ConveniosAFaturar
         carregarDados={async (f) => {
           const q = new URLSearchParams();
@@ -82,6 +74,5 @@ export default function PaginaAFaturar() {
         }}
         aoAbrirGuia={(guiaId) => { router.push(`/convenios/guias/${guiaId}`); }}
       />
-    </div>
   );
 }

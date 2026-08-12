@@ -144,11 +144,11 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
   return (
     <RadixTooltip.Provider delayDuration={250}>
       <aside className={cn(
-        'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-line bg-surface transition-[width] duration-200 md:flex',
+        'cadencia-sidebar sticky top-0 hidden h-screen shrink-0 flex-col border-r border-line bg-surface transition-[width] duration-200 md:flex',
         collapsed ? 'w-[72px]' : 'w-[232px]',
       )}>
         <div className={cn('flex h-[68px] shrink-0 items-center border-b border-line', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
-          <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent text-white">
+          <span className="grid size-9 shrink-0 place-items-center cadencia-brand-mark rounded-[10px] bg-accent text-[#052329]">
             <Pulse size={20} weight="bold" aria-hidden />
           </span>
           {!collapsed ? (

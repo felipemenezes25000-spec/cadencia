@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useQueryState } from 'nuqs';
-import { PageHeader } from '../../../src/ui/PageHeader';
 import { apiFetch, ApiError } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 
@@ -71,11 +70,11 @@ function AuditoriaInner() {
   }, [de, ate, tipo, outcome, clinicId, csrfToken]);
 
   return (
-    <div className="cadencia-page grid gap-5">
-      <PageHeader
-        titulo="Trilha de auditoria"
-        subtitulo="Quem fez o que, quando e com que resultado. A trilha é append-only: nenhuma linha aqui pode ser alterada ou apagada, nem por quem administra."
-      />
+    <section className="grid gap-5" aria-labelledby="titulo-trilha-auditoria">
+      <div>
+        <h2 id="titulo-trilha-auditoria" className="text-lg font-semibold tracking-[-0.02em] text-text">Trilha de auditoria</h2>
+        <p className="mt-1 max-w-3xl text-sm text-text-muted">Quem fez o que, quando e com que resultado. A trilha é append-only: nenhuma linha aqui pode ser alterada ou apagada, nem por quem administra.</p>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
         <label className="grid gap-1.5 text-sm">
@@ -173,7 +172,7 @@ function AuditoriaInner() {
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
