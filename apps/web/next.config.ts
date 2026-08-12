@@ -15,18 +15,20 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 const RAIZ_DO_WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
- * A API atende em outra porta, mas o navegador precisa ver UMA origem so.
+ * A API atende em outro lugar, mas o navegador precisa ver UMA origem so.
  *
  * O cookie de sessao usa o prefixo `__Host-`, que o navegador so aceita com
  * Secure, Path=/ e SEM Domain — ou seja, ele e cravado na origem exata. Servir
  * front e API em origens diferentes exigiria CORS com credenciais e ainda
  * assim deixaria o cookie fora do alcance em produção. O rewrite resolve na
  * raiz: para o navegador, /v1/* e a mesma origem do app.
+ *
+ * A URL real da API mora em `API_ORIGIN`, e NAO e exposta ao navegador
+ * (`NEXT_PUBLIC_*`). E a chave da defesa contra Mixed Content: o rewrite
+ * roda no servidor do Vercel e conversa HTTPS com HTTPS na API, enquanto o
+ * navegador so ve o proprio Vercel.
  */
-const ALVO_API = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://127.0.0.1:3001';
-// Em produção, a API está no mesmo domínio via rewrite do Vercel
-// Para desenvolvimento local, usa localhost:3001
-// A variável de ambiente NEXT_PUBLIC_API_URL é configurada no Vercel
+const ALVO_API = process.env['API_ORIGIN'] ?? 'http://127.0.0.1:3001';
 
 const config: NextConfig = {
   reactStrictMode: true,

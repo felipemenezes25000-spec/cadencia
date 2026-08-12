@@ -17,6 +17,21 @@ export interface ApiOptions {
   readonly signal?: AbortSignal;
 }
 
+/**
+ * URL base da API. Vazia significa mesma origem — e é a unica forma que funciona:
+ *
+ * - O navegador so aceita cookie `__Host-` quando ele vem da MESMA origem da
+ *   pagina, e o `__Host-cadencia_csrf` e parte da defesa contra login CSRF.
+ *   Apontar a API para outro host quebraria o prefixo `__Host-` por design do
+ *   navegador, e o login deixa de funcionar.
+ * - HTTPS do Vercel NAO conversa com HTTP da API por causa do Mixed Content.
+ *   A unica saida e o navegador chamar `/v1/*` no proprio Vercel e o rewrite
+ *   do `next.config.ts` repassar para a API real.
+ *
+ * Configurar `NEXT_PUBLIC_API_URL` so faz sentido em desenvolvimento, quando
+ * Next e API estao em portas diferentes na mesma maquina — e mesmo assim so
+ * se o dev tiver HTTPS local configurado. Em producao, manter VAZIO.
+ */
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const MUTANTES = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
