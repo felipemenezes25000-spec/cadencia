@@ -182,6 +182,19 @@ describe('com.cobranca', () => {
   const FATURA_ID   = uuidv7();
   const ASSINATURA_ID = uuidv7();
 
+  beforeAll(async () => {
+    await adminPool.query(`
+      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
+      VALUES ($1, $2, $3, 'trial')
+      ON CONFLICT (id) DO NOTHING
+    `, [ASSINATURA_ID, TENANT_ID, PLANO_BASICO_ID]);
+    await adminPool.query(`
+      INSERT INTO com.fatura (id, tenant_id, valor_cents, data_vencimento, status)
+      VALUES ($1, $2, 14900, CURRENT_DATE + INTERVAL '7 days', 'pendente')
+      ON CONFLICT (id) DO NOTHING
+    `, [FATURA_ID, TENANT_ID]);
+  });
+
   it('tabela com.cobranca existe', async () => {
     const result = await adminPool.query(`
       SELECT table_name FROM information_schema.tables
@@ -191,12 +204,6 @@ describe('com.cobranca', () => {
   });
 
   it('cobranca pode ser criada com FK valida', async () => {
-    // Cria fatura primeiro
-    await adminPool.query(`
-      INSERT INTO com.fatura (id, tenant_id, valor_cents, data_vencimento, status)
-      VALUES ($1, $2, 14900, CURRENT_DATE + INTERVAL '7 days', 'pendente')
-    `, [FATURA_ID, TENANT_ID]);
-
     const cobrancaId = uuidv7();
     const result = await adminPool.query(`
       INSERT INTO com.cobranca (id, tenant_id, assinatura_id, fatura_id, valor_original_cents, data_vencimento)
@@ -316,6 +323,16 @@ describe('com.carne', () => {
 });
 
 describe('com.suspensao', () => {
+  const SUSPENSAO_ASSINATURA_ID = uuidv7();
+
+  beforeAll(async () => {
+    await adminPool.query(`
+      INSERT INTO com.assinatura (id, tenant_id, plano_id, status)
+      VALUES ($1, $2, $3, 'trial')
+      ON CONFLICT (id) DO NOTHING
+    `, [SUSPENSAO_ASSINATURA_ID, TENANT_ID, PLANO_BASICO_ID]);
+  });
+
   it('tabela com.suspensao existe', async () => {
     const result = await adminPool.query(`
       SELECT table_name FROM information_schema.tables
@@ -328,9 +345,9 @@ describe('com.suspensao', () => {
     const suspensaoId = uuidv7();
     const result = await adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo, motivo_detalhe)
-      VALUES ($1, $2, '00000000-0000-0000-0000-000000000001', 'inadimplencia', '3 mensalidades atrasadas')
+      VALUES ($1, $2, $3, 'inadimplencia', '3 mensalidades atrasadas')
       RETURNING id, tenant_id, motivo, motivo_detalhe, data_fim
-    `, [suspensaoId, TENANT_ID]);
+    `, [suspensaoId, TENANT_ID, SUSPENSAO_ASSINATURA_ID]);
 
     expect(result.rows[0]).toMatchObject({
       id: suspensaoId,
@@ -345,8 +362,8 @@ describe('com.suspensao', () => {
     const id = uuidv7();
     await expect(adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo)
-      VALUES ($1, $2, '00000000-0000-0000-0000-000000000001', 'invalido')
-    `, [id, TENANT_ID])).rejects.toThrow(/check/i);
+      VALUES ($1, $2, $3, 'invalido')
+    `, [id, TENANT_ID, SUSPENSAO_ASSINATURA_ID])).rejects.toThrow(/check/i);
   });
 
   it('suspensao pode ser marcada como restaurada', async () => {
@@ -354,8 +371,8 @@ describe('com.suspensao', () => {
     const now = new Date();
     await adminPool.query(`
       INSERT INTO com.suspensao (id, tenant_id, assinatura_id, motivo)
-      VALUES ($1, $2, '00000000-0000-0000-0000-000000000001', 'inadimplencia')
-    `, [suspensaoId, TENANT_ID]);
+      VALUES ($1, $2, $3, 'inadimplencia')
+    `, [suspensaoId, TENANT_ID, SUSPENSAO_ASSINATURA_ID]);
 
     const result = await adminPool.query(`
       UPDATE com.suspensao SET data_fim = $1, restaurada_em = $1
