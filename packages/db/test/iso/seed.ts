@@ -1477,4 +1477,26 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($2, $4, 2)`,
     [F.TENANT_A, F.TENANT_B, F.OPERADORA_A, F.OPERADORA_B],
   );
+
+  // Configurações e templates adicionados nas migrations 0164, 0166 e 0167.
+  // O canário de isolamento precisa de uma linha real do tenant B em cada tabela
+  // multi-tenant para provar que a RLS não passa por vacuidade.
+  await admin.query(
+    `INSERT INTO app.clinic_print_config
+       (tenant_id, clinic_id, header_line1) VALUES ($1, $2, 'Clínica Rio Branco')`,
+    [F.TENANT_B, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.professional_config
+       (tenant_id, professional_id, especialidade) VALUES ($1, $2, 'Clínica médica')`,
+    [F.TENANT_B, F.PROF_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.document_template
+       (tenant_id, clinic_id, professional_id, kind, titulo, corpo) VALUES
+       ($1, $2, $3, 'atestado', 'Atestado do tenant B', 'Conteúdo isolado do tenant B')`,
+    [F.TENANT_B, F.CLINIC_B_RIO_BRANCO, F.PROF_B_DIEGO],
+  );
 }
