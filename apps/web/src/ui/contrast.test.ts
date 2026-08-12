@@ -7,11 +7,11 @@ const CSS = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
 
 describe('contraste e contrato dos tokens claros', () => {
   it('declara os tokens oficiais do novo sistema claro', () => {
-    expect(CSS).toContain('--canvas: #f6f8fb');
+    expect(CSS).toContain('--canvas: #f5f7f8');
     expect(CSS).toContain('--surface: #ffffff');
-    expect(CSS).toContain('--border: #dde5ee');
-    expect(CSS).toContain('--text-primary: #13233a');
-    expect(CSS).toContain('--brand: #075985');
+    expect(CSS).toContain('--border: #e0e6e8');
+    expect(CSS).toContain('--text-primary: #17313b');
+    expect(CSS).toContain('--brand: #0b6b76');
   });
 
   it('--warn sobre --surface passa em AA no tema claro', () => {
