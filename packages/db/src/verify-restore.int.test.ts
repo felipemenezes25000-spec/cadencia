@@ -25,7 +25,7 @@ describe('verify-restore — restauracao so vale se for verificada', () => {
 
   it('aprova quando a trilha tem evento — e o estado esperado de um banco restaurado de verdade', async () => {
     const resultados = await verifyRestore(catalogPool());
-    const trilha = check(resultados, 'trilha-nao-vazia');
+    const trilha = check(resultados, 'trilha-não-vazia');
     expect(trilha.skipped).toBe(false);
     expect(trilha.ok).toBe(true);
     expect(trilha.detail).toMatch(/^[1-9]\d* evento\(s\) em audit\.event$/);
@@ -38,7 +38,7 @@ describe('verify-restore — restauracao so vale se for verificada', () => {
       await c.query('TRUNCATE audit.event');
       return verifyRestore(c);
     });
-    const trilha = check(resultados, 'trilha-nao-vazia');
+    const trilha = check(resultados, 'trilha-não-vazia');
     expect(trilha.skipped).toBe(false);
     expect(trilha.ok).toBe(false);
     expect(trilha.detail).toBe('0 evento(s) em audit.event');
