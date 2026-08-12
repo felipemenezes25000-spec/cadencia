@@ -54,6 +54,6 @@ describe('runner unico dos 10 invariantes', () => {
       return runAllInvariants(c);
     });
     const rls = resultados.find((r) => r.number === 1);
-    expect(rls?.violations).toContain('clin.__sem_rls: RLS nao habilitada');
+    expect(rls?.violations).toContain('clin.__sem_rls: RLS não habilitada');
   });
 });
