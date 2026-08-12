@@ -15,6 +15,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { uuidv7 } from '@cadencia/kernel';
+import { systemClock } from '@cadencia/kernel/src/clock';
 
 export async function tenancyRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -37,7 +38,7 @@ export async function tenancyRoutes(app: FastifyInstance): Promise<void> {
       id: '00000000-0000-0000-0000-000000000001',
       nome: 'Clínica Demo',
       slug: 'demo',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(systemClock.nowMs()).toISOString(),
     };
   });
 
