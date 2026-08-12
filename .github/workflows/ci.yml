@@ -82,7 +82,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: instala Chromium para os testes de PDF
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm --filter @cadencia/documents exec playwright install --with-deps chromium
 
       - name: .env do CI
         run: |
