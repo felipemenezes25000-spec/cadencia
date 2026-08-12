@@ -31,7 +31,7 @@ export interface RecurringTemplateCreated {
 }
 
 /**
- * Cria um template de lancamento recorrente. A materializacao e feita pelo
+ * Cria um template de lançamento recorrente. A materialização é feita pelo
  * job materializeRecurringEntries (Task 12), que gera fin.entry a partir
  * de templates com next_due_date <= hoje + 30 dias.
  */

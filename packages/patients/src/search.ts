@@ -3,7 +3,7 @@ import type { TxClient } from '@cadencia/db';
 export interface PatientHit {
   readonly patientId: string;
   readonly displayName: string;      // nome social quando houver
-  readonly legalName: string;        // nome civil, para conferencia de documento
+  readonly legalName: string;        // nome civil, para conferência de documento
   readonly hasSocialName: boolean;
   readonly birthDate: string | null;
   readonly cadastroStatus: 'preliminar' | 'completo';
@@ -18,35 +18,35 @@ export interface SearchInput {
 const SO_DIGITOS = /\D+/g;
 
 /**
- * §6.4 — o combobox de busca de paciente e o componente mais importante do
- * produto. Duas estrategias, escolhidas pelo que foi digitado:
- *   - 3 ou mais digitos  -> `search_digits`, que guarda os grupos de digitos
- *     separados por espaco, um por identificador ou telefone
- *     ('11144477735 11987654321'). O casamento e por SUBSTRING, nao por prefixo:
- *     a recepcionista digita o telefone tao naturalmente quanto o CPF e o
- *     telefone quase nunca e o primeiro grupo;
- *   - qualquer outra coisa -> prefixo em `search_name`, que e
+ * §6.4 — o combobox de busca de paciente é o componente mais importante do
+ * produto. Duas estratégias, escolhidas pelo que foi digitado:
+ *   - 3 ou mais dígitos  -> `search_digits`, que guarda os grupos de dígitos
+ *     separados por espaço, um por identificador ou telefone
+ *     ('11144477735 11987654321'). O casamento é por SUBSTRING, não por prefixo:
+ *     a recepcionista digita o telefone tão naturalmente quanto o CPF e o
+ *     telefone quase nunca é o primeiro grupo;
+ *   - qualquer outra coisa -> prefixo em `search_name`, que é
  *     unaccent(lower(coalesce(nome_social, full_name))) e por isso imune a caixa,
  *     a acento e ao locale.
  *
- * Quem limita a varredura, nos dois ramos, e o `tenant_id` a frente do indice
+ * Quem limita a varredura, nos dois ramos, é o `tenant_id` a frente do índice
  * (ix_patient_busca / ix_patient_ordem, ambos liderados por tenant_id). Sem essa
- * lideranca a recepcionista de uma clinica pagaria o preco do crescimento da base
+ * liderança a recepcionista de uma clínica pagaria o preço do crescimento da base
  * de todas as outras — medido: com 200 mil pacientes de OUTROS tenants na tabela,
- * o plano le as ~6 linhas do proprio tenant e nao faz Seq Scan.
+ * o plano lê as ~6 linhas do próprio tenant e não faz Seq Scan.
  *
- * O LIKE em si NAO vira Index Cond e nem poderia: `textlike` nao e leakproof
- * (pg_proc.proleakproof = false), entao sob RLS ele nunca desce abaixo das quals
- * de seguranca da policy. Ele e filtro de heap sobre as linhas do tenant. Um
- * indice trigrama em search_digits foi medido e ficou com idx_scan = 0 por
- * exatamente esse motivo; nao existe, de proposito.
+ * O LIKE em si NÃO vira Index Cond e nem poderia: `textlike` não é leakproof
+ * (pg_proc.proleakproof = false), então sob RLS ele nunca desce abaixo das quals
+ * de segurança da policy. Ele é filtro de heap sobre as linhas do tenant. Um
+ * índice trigrama em search_digits foi medido e ficou com idx_scan = 0 por
+ * exatamente esse motivo; não existe, de propósito.
  *
- * A ordenacao final e por display_name COLLATE "pt-BR-x-icu" (§10 item 19).
+ * A ordenação final é por display_name COLLATE "pt-BR-x-icu" (§10 item 19).
  *
- * Ver o nome de um paciente ja e acesso a dado pessoal (§5.6): a busca emite
- * PATIENT_SEARCH pelo canal A, dentro da transacao de leitura. O evento nao
- * carrega o termo digitado — que pode ser o nome completo de alguem — e as
- * chaves de `meta` sao as da whitelist de audit.meta_keys_ok (0009).
+ * Ver o nome de um paciente já é acesso a dado pessoal (§5.6): a busca emite
+ * PATIENT_SEARCH pelo canal A, dentro da transação de leitura. O evento não
+ * carrega o termo digitado — que pode ser o nome completo de alguém — e as
+ * chaves de `meta` são as da whitelist de audit.meta_keys_ok (0009).
  */
 export async function searchPatients(tx: TxClient, input: SearchInput): Promise<PatientHit[]> {
   const limite = Math.min(Math.max(input.limit ?? 8, 1), 25);

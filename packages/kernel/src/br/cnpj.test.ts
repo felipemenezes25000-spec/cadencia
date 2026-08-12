@@ -32,7 +32,7 @@ describe('CNPJ alfanumerico (IN RFB 2.229/2024)', () => {
 
   it('recusa formato fora de 12 alfanumericos + 2 digitos', () => {
     expect(isErr(parseCnpj('12ABC34501DE3'))).toBe(true);         // curto
-    expect(isErr(parseCnpj('12ABC34501DEAB'))).toBe(true);        // DV nao numerico
+    expect(isErr(parseCnpj('12ABC34501DEAB'))).toBe(true);        // DV não numérico
     expect(isErr(parseCnpj('12.ÇBC.345/01DE-35'))).toBe(true);    // caractere fora de [A-Z0-9]
     const resultado = parseCnpj('12ABC34501DE3');
     expect(isErr(resultado) && resultado.error.code).toBe('cnpj.formato_invalido');

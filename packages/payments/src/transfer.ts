@@ -22,12 +22,12 @@ export interface TransferCreated {
 }
 
 /**
- * Cria transferencia entre contas bancarias. Gera DOIS fin.entry vinculados:
- * - Um debito (kind='despesa') na conta de origem
- * - Um credito (kind='receita') na conta de destino
+ * Cria transferência entre contas bancárias. Gera DOIS fin.entry vinculados:
+ * - Um débito (kind='despesa') na conta de origem
+ * - Um crédito (kind='receita') na conta de destino
  *
- * O saldo de cada conta e DERIVADO de SUM(amount_cents) sobre entries da conta,
- * nunca e campo atualizado. Transferencia e a unica operacao que cria entries
+ * O saldo de cada conta é DERIVADO de SUM(amount_cents) sobre entries da conta,
+ * nunca é campo atualizado. Transferência é a única operação que cria entries
  * sem patient_id e sem appointment_id.
  */
 export async function createTransfer(
@@ -54,7 +54,7 @@ export async function createTransfer(
     return err({ kind: 'conta_destino_nao_encontrada' });
   }
 
-  // Resolver metodo de pagamento 'transferencia_interna' (auto-provisiona)
+  // Resolver método de pagamento 'transferencia_interna' (auto-provisiona)
   const { rows: pmRows } = await tx.query<{ id: string }>(
     `SELECT id FROM fin.payment_method
       WHERE kind = 'dinheiro'::fin.payment_method_kind LIMIT 1`);
@@ -75,7 +75,7 @@ export async function createTransfer(
   const creditEntryId = uuidv7();
   const transferId = uuidv7();
 
-  // Entry de debito na conta de origem (kind='despesa')
+  // Entry de débito na conta de origem (kind='despesa')
   await tx.query(
     `INSERT INTO fin.entry
        (tenant_id, id, kind, professional_id, clinic_id, description,
@@ -88,7 +88,7 @@ export async function createTransfer(
      i.description, i.amountCents, paymentMethodId,
      `transfer-deb:${transferId}`, i.fromBankAccountId]);
 
-  // Entry de credito na conta de destino (kind='receita')
+  // Entry de crédito na conta de destino (kind='receita')
   await tx.query(
     `INSERT INTO fin.entry
        (tenant_id, id, kind, professional_id, clinic_id, description,
@@ -101,7 +101,7 @@ export async function createTransfer(
      i.description, i.amountCents, paymentMethodId,
      `transfer-cre:${transferId}`, i.toBankAccountId]);
 
-  // Registro da transferencia
+  // Registro da transferência
   await tx.query(
     `INSERT INTO fin.transfer
        (tenant_id, id, from_bank_account_id, to_bank_account_id,

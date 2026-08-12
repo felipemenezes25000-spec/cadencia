@@ -3,10 +3,10 @@ import { Pool } from 'pg';
 import { loadCid11Release, resolveCid11At } from './cid11';
 
 /**
- * Os codigos aqui sao SINTETICOS ('ZZ...'), fora de qualquer faixa real da
- * CID-11. O catalogo de verdade vem da OMS pelo script de ingestao; inventar
- * codigo de CID em fixture criaria uma segunda fonte de verdade que ninguem
- * lembraria de conferir — e um dia alguem procuraria por ele em producao.
+ * Os códigos aqui são SINTÉTICOS ('ZZ...'), fora de qualquer faixa real da
+ * CID-11. O catálogo de verdade vem da OMS pelo script de ingestão; inventar
+ * código de CID em fixture criaria uma segunda fonte de verdade que ninguém
+ * lembraria de conferir — e um dia alguém procuraria por ele em produção.
  */
 const URI = 'http://id.who.int/icd/entity/999000001';
 const CODIGOS = ['ZZ00', 'ZZ01'];
@@ -33,9 +33,9 @@ afterAll(async () => {
 
 describe('catalogo CID-11', () => {
   it('resolve pela DATA DO EVENTO, nao pela data de hoje', async () => {
-    // Dois releases do mesmo codigo, com descricoes diferentes. E o cenario que
+    // Dois releases do mesmo código, com descrições diferentes. É o cenário que
     // a coluna `vigencia` existe para atender: o atendimento de 2027 tem de
-    // continuar lendo a descricao de 2027 quando for consultado em 2028.
+    // continuar lendo a descrição de 2027 quando for consultado em 2028.
     await loadCid11Release(pool, {
       competencia: '202701', vigenciaFrom: '2027-01-01', vigenciaTo: '2028-01-01',
       rows: [{ uri: URI, codigo: 'ZZ00', descricao: 'Descricao do release de 2027', capitulo: '01' }],
@@ -51,8 +51,8 @@ describe('catalogo CID-11', () => {
       expect(em2027.value.display).toBe('Descricao do release de 2027');
       expect(em2027.value.terminologyVersion).toBe('202701');
       expect(em2027.value.system).toBe('CID11');
-      // A URI e a mesma nos dois releases: e ela que prova que se trata da
-      // MESMA entidade, mesmo com a descricao reescrita.
+      // A URI é a mesma nos dois releases: é ela que prova que se trata da
+      // MESMA entidade, mesmo com a descrição reescrita.
       expect(em2027.value.uri).toBe(URI);
     }
 
@@ -61,15 +61,15 @@ describe('catalogo CID-11', () => {
   });
 
   it('codigo fora da vigencia nao resolve — nao cai no release mais proximo', async () => {
-    // Devolver "o mais proximo" poria no prontuario um termo que nao existia na
-    // data do atendimento, e a pericia leria isso como registro adulterado.
+    // Devolver "o mais próximo" poria no prontuário um termo que não existia na
+    // data do atendimento, e a perícia leria isso como registro adulterado.
     const antes = await resolveCid11At(pool, 'ZZ00', '2026-12-31');
     expect(antes.ok).toBe(false);
     if (!antes.ok) expect(antes.error).toBe('codigo_inexistente_na_data');
   });
 
   it('vigencia sobreposta derruba a carga inteira', async () => {
-    // Meia carga e pior que nenhuma: a busca passaria a devolver um catalogo
+    // Meia carga é pior que nenhuma: a busca passaria a devolver um catálogo
     // pela metade sem nada na tela indicando isso.
     await expect(loadCid11Release(pool, {
       competencia: '202702', vigenciaFrom: '2027-06-01', vigenciaTo: null,
@@ -79,7 +79,7 @@ describe('catalogo CID-11', () => {
       ],
     })).rejects.toMatchObject({ code: '23P01' });
 
-    // O primeiro termo do lote NAO pode ter sobrevivido ao ROLLBACK.
+    // O primeiro termo do lote NÃO pode ter sobrevivido ao ROLLBACK.
     const orfao = await resolveCid11At(pool, 'ZZ01', '2027-07-01');
     expect(orfao.ok).toBe(false);
   });

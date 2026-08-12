@@ -13,7 +13,7 @@ interface SementeGuias {
   patientId: string;
   operadoraId: string;
   operadoraBId: string;
-  // Cada guia e usada por UM unico teste para evitar conflito entre testes
+  // Cada guia é usada por UM único teste para evitar conflito entre testes
   guiaAddSingle: string;       // test 1: add single
   guiaSeqA: string;            // test 2: primeira guia do par
   guiaSeqB: string;            // test 2: segunda guia do par
@@ -78,7 +78,7 @@ async function semearGuias(): Promise<SementeGuias> {
               ($1, $3, '111222', 'Outra Operadora', '77XYZ00003DE03', '3.05', true, $4)`,
       [s.tenantId, s.operadoraId, s.operadoraBId, s.userId]);
 
-    // 7 encounters (um por guia) para evitar conflito no indice unico ux_guia_live
+    // 7 encounters (um por guia) para evitar conflito no índice único ux_guia_live
     const eIds: string[] = [];
     const vIds: string[] = [];
     for (let k = 0; k < 7; k++) {

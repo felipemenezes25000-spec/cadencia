@@ -16,7 +16,7 @@ beforeAll(async () => {
     kind: 'user', tenantId: s.tenantId, userId: s.userId,
     clinicId: s.clinicId, requestId: uuidv7(),
   };
-  // Limpa eventos pendentes de execucoes anteriores para nao poluir o teste
+  // Limpa eventos pendentes de execuções anteriores para não poluir o teste
   const pool = jobsPool();
   await pool.query(
     `UPDATE app.outbox SET dispatched_at = clock_timestamp() WHERE dispatched_at IS NULL`,
@@ -28,7 +28,7 @@ describe('outbox worker - ciclo completo', () => {
   it('enqueue + fetchPending + dispatch + markDispatched', async () => {
     const aggregateId = uuidv7();
 
-    // 1. Enfileira dentro da transacao
+    // 1. Enfileira dentro da transação
     await withTenantTx(actor, (tx) =>
       enqueue(tx, {
         eventType: 'APPOINTMENT_CONFIRMED',
@@ -60,7 +60,7 @@ describe('outbox worker - ciclo completo', () => {
     expect(result).toEqual({ status: 'dispatched' });
     expect(chamadas).toContain(meuEvento!.id);
 
-    // 4. Verifica que nao aparece mais como pendente
+    // 4. Verifica que não aparece mais como pendente
     const pending2 = await fetchPending(pool, 10);
     const depois = pending2.find((r) => r.id === meuEvento!.id);
     expect(depois).toBeUndefined();
@@ -113,7 +113,7 @@ describe('outbox worker - ciclo completo', () => {
       await markFailed(pool, evt!.id, `falha ${i + 1}`);
     }
 
-    // na sexta busca, nao deve aparecer
+    // na sexta busca, não deve aparecer
     const pending = await fetchPending(pool, 10);
     const evt = pending.find((r) => r.aggregateId === aggregateId);
     expect(evt).toBeUndefined();

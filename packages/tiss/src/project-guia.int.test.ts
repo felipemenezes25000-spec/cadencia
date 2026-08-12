@@ -257,7 +257,7 @@ describe('projectGuiaConsulta — procedimento TUSS nao vigente', () => {
   });
 
   it('a data usada na validacao TUSS e occurred_date, NUNCA occurred_at::date', async () => {
-    // Verifica que a funcao usa a data do billing (que e = occurred_date)
+    // Verifica que a função usa a data do billing (que é = occurred_date)
     const billing = await withTenantTx(actorTussInv, async (tx) => {
       const { rows } = await tx.query<{ data_atendimento: string }>(
         `SELECT data_atendimento::text AS data_atendimento
@@ -267,7 +267,7 @@ describe('projectGuiaConsulta — procedimento TUSS nao vigente', () => {
       return rows[0];
     });
     expect(billing).toBeDefined();
-    // A data e a mesma que o encounter.occurred_date
+    // A data é a mesma que o encounter.occurred_date
     const encounter = await withTenantTx(actorTussInv, async (tx) => {
       const { rows } = await tx.query<{ occurred_date: string }>(
         `SELECT occurred_date::text AS occurred_date FROM clin.encounter WHERE id = $1`,

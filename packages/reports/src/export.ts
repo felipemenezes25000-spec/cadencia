@@ -40,13 +40,13 @@ function toXlsx(
 }
 
 /**
- * Exporta linhas ja filtradas para CSV ou XLSX.
+ * Exporta linhas já filtradas para CSV ou XLSX.
  *
- * CSV usa ponto e virgula como separador (padrao brasileiro — Excel pt-BR abre
- * direto) e inclui BOM UTF-8 para que o Excel reconheca a codificacao.
- * XLSX usa SheetJS para gerar o arquivo binario.
+ * CSV usa ponto e vírgula como separador (padrão brasileiro — Excel pt-BR abre
+ * direto) e inclui BOM UTF-8 para que o Excel reconheça a codificação.
+ * XLSX usa SheetJS para gerar o arquivo binário.
  *
- * A funcao NAO acessa banco. Recebe dados ja consultados pela API.
+ * A função NÃO acessa banco. Recebe dados já consultados pela API.
  */
 export function exportReport(
   rows: readonly Record<string, unknown>[],

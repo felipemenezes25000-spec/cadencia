@@ -85,7 +85,7 @@ describe('rotas de pagamento', () => {
   it('recepcao nao pode estornar (403)', async () => {
     const recep = await semearSessao({ role: 'recepcao' });
     const app = await buildApp();
-    // Criar um pagamento para a recepcao tentar estornar
+    // Criar um pagamento para a recepção tentar estornar
     const criarR = await app.inject({
       method: 'POST', url: '/v1/payments', ...auth(recep),
       payload: {

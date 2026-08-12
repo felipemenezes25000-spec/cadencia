@@ -8,8 +8,8 @@ import { ACTIONS } from '../packages/authz/src/actions';
 import { catalogRows, catalogChecksum } from '../packages/authz/src/catalog';
 import { closePools, jobsPool } from '../packages/db/src/pool';
 
-// Este script roda em processo proprio (o teste o invoca por execFileSync) e
-// nao passa pelo setupFiles do vitest: sem isto, DATABASE_URL_JOBS nao existe.
+// Este script roda em processo próprio (o teste o invoca por execFileSync) e
+// não passa pelo setupFiles do vitest: sem isto, DATABASE_URL_JOBS não existe.
 const envPath = resolve(process.cwd(), '.env');
 if (existsSync(envPath)) {
   process.loadEnvFile(envPath);
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
         [r.key, r.description, r.roles, r.requiresMfa],
       );
     }
-    // Acao que saiu de actions.ts sai do banco: o banco nunca vira fonte paralela.
+    // Ação que saiu de actions.ts sai do banco: o banco nunca vira fonte paralela.
     await client.query(`DELETE FROM ref.action WHERE key <> ALL($1::text[])`,
       [rows.map((r) => r.key)]);
     await client.query('COMMIT');

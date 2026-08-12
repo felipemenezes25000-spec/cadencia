@@ -22,19 +22,19 @@ const ConvenioSchema = z.object({
 });
 
 /**
- * Convenio DO PACIENTE — a carteirinha, nao a operadora.
+ * Convênio DO PACIENTE — a carteirinha, não a operadora.
  *
- * As acoes sao `tiss.paciente_convenio.*` e nao `tiss.operadora.*`: cadastrar a
- * operadora e ato administrativo (admin e financeiro), vincular a carteirinha e
- * ato de BALCAO. Quem recebe o cartao do paciente e a recepcao, e ela nao tem
- * `tiss.operadora.write`. Usar a acao da operadora aqui invertia exatamente as
- * duas pontas: travava a recepcao no cadastro que e dela e liberava o
- * financeiro num cadastro que nao e.
+ * As ações são `tiss.paciente_convenio.*` e não `tiss.operadora.*`: cadastrar a
+ * operadora é ato administrativo (admin e financeiro), vincular a carteirinha é
+ * ato de BALCÃO. Quem recebe o cartão do paciente é a recepção, e ela não tem
+ * `tiss.operadora.write`. Usar a ação da operadora aqui invertia exatamente as
+ * duas pontas: travava a recepção no cadastro que é dela e liberava o
+ * financeiro num cadastro que não é.
  */
 export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
-  // ── POST /v1/tiss/pacientes/:patientId/convenios — vincular convenio ──
+  // ── POST /v1/tiss/pacientes/:patientId/convenios — vincular convênio ──
   r.post('/v1/tiss/pacientes/:patientId/convenios', {
     schema: {
       params: z.object({ patientId: z.string().uuid() }),
@@ -73,7 +73,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
     return { convenioId: id };
   }));
 
-  // ── GET /v1/tiss/pacientes/:patientId/convenios — listar convenios ────
+  // ── GET /v1/tiss/pacientes/:patientId/convenios — listar convênios ────
   r.get('/v1/tiss/pacientes/:patientId/convenios', {
     schema: {
       params: z.object({ patientId: z.string().uuid() }),
@@ -117,7 +117,7 @@ export async function convenioPacienteRoutes(app: FastifyInstance): Promise<void
     };
   }));
 
-  // ── PUT /v1/tiss/pacientes/:patientId/convenios — atualizar convenio ──
+  // ── PUT /v1/tiss/pacientes/:patientId/convenios — atualizar convênio ──
   r.put('/v1/tiss/pacientes/:patientId/convenios', {
     schema: {
       params: z.object({ patientId: z.string().uuid() }),

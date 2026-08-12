@@ -46,9 +46,9 @@ export default function PaginaOperadoras() {
             nome: op.nome,
             registroAns: op.registroAns,
             cnpj: op.cnpj,
-            // A versao TISS e por OPERADORA, nao global: a ANS publica 4.03.00
-            // mas cada operadora migra no seu tempo, e enviar lote na versao
-            // errada e rejeicao imediata.
+            // A versão TISS é por OPERADORA, não global: a ANS publica 4.03.00
+            // mas cada operadora migra no seu tempo, e enviar lote na versão
+            // errada é rejeição imediata.
             tissVersion: op.versaoTiss,
           },
           clinicId, csrfToken });

@@ -5,24 +5,24 @@ import type { CabecalhoInput, ContratadoInput } from './types';
 /**
  * O envelope `ans:mensagemTISS` conforme o XSD 4.03.00 publicado pela ANS.
  *
- * O cabecalho do padrao NAO e plano. O que o repositorio emitia — versaoPadrao,
- * registroANS, dataGeracao, horaGeracao, sequencialTransacao, um atras do outro
- * — era o formato de um XSD de amostra escrito a mao, nunca o da norma. Contra o
+ * O cabeçalho do padrão NÃO é plano. O que o repositório emitia — versaoPadrao,
+ * registroANS, dataGeracao, horaGeracao, sequencialTransacao, um atrás do outro
+ * — era o formato de um XSD de amostra escrito a mão, nunca o da norma. Contra o
  * schema oficial o libxml2 recusa na primeira linha:
  *
  *   Element 'versaoPadrao': This element is not expected.
  *   Expected is ( identificacaoTransacao ).
  *
- * A forma real agrupa por proposito: QUE transacao e esta (`identificacaoTransacao`),
- * QUEM manda (`origem`), PARA QUEM (`destino`), e em que versao do padrao
- * (`Padrao`). Origem e destino sao `choice`: prestador se identifica por CNPJ,
- * CPF ou codigo na operadora — nunca por mais de um.
+ * A forma real agrupa por propósito: QUE transação é esta (`identificacaoTransacao`),
+ * QUEM manda (`origem`), PARA QUEM (`destino`), e em que versão do padrão
+ * (`Padrao`). Origem e destino são `choice`: prestador se identifica por CNPJ,
+ * CPF ou código na operadora — nunca por mais de um.
  */
 
-/** Um dos tres identificadores do prestador. A norma aceita exatamente um. */
+/** Um dos três identificadores do prestador. A norma aceita exatamente um. */
 function emitirIdentificacaoPrestador(xml: XmlBuilder, c: ContratadoInput): void {
-  // Ordem de preferencia: CNPJ identifica a pessoa juridica de forma estavel;
-  // o codigo na operadora e local e muda quando o contrato e renegociado.
+  // Ordem de preferência: CNPJ identifica a pessoa jurídica de forma estável;
+  // o código na operadora é local e muda quando o contrato é renegociado.
   if (c.cnpjContratado !== undefined && c.cnpjContratado !== '') {
     xml.tag('ans:CNPJ', c.cnpjContratado);
   } else if (c.cpfContratado !== undefined && c.cpfContratado !== '') {
@@ -31,18 +31,18 @@ function emitirIdentificacaoPrestador(xml: XmlBuilder, c: ContratadoInput): void
              && c.codigoPrestadorNaOperadora !== '') {
     xml.tag('ans:codigoPrestadorNaOperadora', c.codigoPrestadorNaOperadora);
   } else {
-    // Falhar aqui e melhor que emitir `<identificacaoPrestador/>` vazio: o XSD
-    // recusaria de qualquer forma, mas so depois de o lote inteiro ter sido
-    // montado, e a mensagem do libxml2 nao diria de qual prestador se trata.
+    // Falhar aqui é melhor que emitir `<identificacaoPrestador/>` vazio: o XSD
+    // recusaria de qualquer forma, mas só depois de o lote inteiro ter sido
+    // montado, e a mensagem do libxml2 não diria de qual prestador se trata.
     throw new Error('prestador sem CNPJ, CPF ou codigo na operadora');
   }
 }
 
 export interface EnvelopeInput {
   readonly cabecalho: CabecalhoInput;
-  /** Identificacao do prestador que ORIGINA a mensagem. */
+  /** Identificação do prestador que ORIGINA a mensagem. */
   readonly origem: ContratadoInput;
-  /** Registro ANS da operadora DESTINO, 6 digitos. */
+  /** Registro ANS da operadora DESTINO, 6 dígitos. */
   readonly registroANS: string;
 }
 
@@ -51,8 +51,8 @@ export function emitirCabecalho(xml: XmlBuilder, e: EnvelopeInput): void {
   xml.open('ans:cabecalho');
 
   xml.open('ans:identificacaoTransacao');
-  // Lote de guias enviado pelo prestador. Outras transacoes (elegibilidade,
-  // autorizacao, recurso de glosa) tem tipo proprio no dominio dm_tipoTransacao.
+  // Lote de guias enviado pelo prestador. Outras transações (elegibilidade,
+  // autorização, recurso de glosa) têm tipo próprio no domínio dm_tipoTransacao.
   xml.tag('ans:tipoTransacao', 'ENVIO_LOTE_GUIAS');
   xml.tag('ans:sequencialTransacao', e.cabecalho.sequencialTransacao);
   xml.tag('ans:dataRegistroTransacao', e.cabecalho.dataGeracao);
@@ -69,13 +69,13 @@ export function emitirCabecalho(xml: XmlBuilder, e: EnvelopeInput): void {
   xml.tag('ans:registroANS', e.registroANS);
   xml.close('ans:destino');
 
-  // `Padrao` com P maiusculo — e assim no XSD, e o validador diferencia.
+  // `Padrao` com P maiúsculo — é assim no XSD, e o validador diferencia.
   xml.tag('ans:Padrao', e.cabecalho.versaoPadrao);
 
   xml.close('ans:cabecalho');
 }
 
-/** `ans:epilogo` — carrega o hash proprietario do padrao. */
+/** `ans:epilogo` — carrega o hash proprietário do padrão. */
 export function emitirEpilogo(xml: XmlBuilder, hash: string): void {
   xml.open('ans:epilogo');
   xml.tag('ans:hash', hash);

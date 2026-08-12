@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 
-// §2.2 — o grafo de modulos. Uma pasta por modulo, nome @cadencia/<modulo>.
+// §2.2 — o grafo de módulos. Uma pasta por módulo, nome @cadencia/<modulo>.
 const L0 = ['kernel', 'db', 'audit', 'authn', 'authz', 'storage', 'jobs', 'outbox', 'integrations', 'events'];
 const L1 = ['identity', 'tenancy', 'people', 'patients', 'catalogs'];
 const L2 = ['scheduling', 'emr', 'documents', 'prescriptions', 'billing', 'payments',

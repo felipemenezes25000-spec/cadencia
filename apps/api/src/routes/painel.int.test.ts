@@ -11,8 +11,8 @@ let aniversarianteDeHoje = '';
 async function semearPainel(t: SementeSessao): Promise<void> {
   const a = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
   try {
-    // Um paciente que faz aniversario HOJE, em outro ano. O ano nao pode entrar
-    // na comparacao — senao "aniversariantes de hoje" so acha quem nasceu hoje.
+    // Um paciente que faz aniversário HOJE, em outro ano. O ano não pode entrar
+    // na comparação — senão "aniversariantes de hoje" só acha quem nasceu hoje.
     aniversarianteDeHoje = uuidv7();
     await a.query(
       `INSERT INTO clin.patient
@@ -23,7 +23,7 @@ async function semearPainel(t: SementeSessao): Promise<void> {
                '11988887777')`,
       [t.tenantId, aniversarianteDeHoje]);
 
-    // Um que faz amanha, para provar que a janela e do DIA e nao do mes.
+    // Um que faz amanhã, para provar que a janela é do DIA e não do mês.
     await a.query(
       `INSERT INTO clin.patient
          (tenant_id, id, full_name, cadastro_status, birth_date)
@@ -32,7 +32,7 @@ async function semearPainel(t: SementeSessao): Promise<void> {
                                extract(day   FROM app.local_date(clock_timestamp(),'America/Sao_Paulo') + 1)::int))`,
       [t.tenantId, uuidv7()]);
 
-    // Atendimentos com duracao REAL medida (started_at -> finished_at).
+    // Atendimentos com duração REAL medida (started_at -> finished_at).
     const proc = uuidv7();
     await a.query(
       `INSERT INTO sched.procedure (tenant_id, id, code, nome, cor, duracao_min)
@@ -80,7 +80,7 @@ describe('painel — aniversariantes', () => {
 
     const hoje = itens.find((x) => x.patientId === aniversarianteDeHoje);
     expect(hoje?.nome).toBe('Aniversariante Do Dia');
-    // A idade e a que a pessoa COMPLETA hoje, nao a que tinha ontem.
+    // A idade é a que a pessoa COMPLETA hoje, não a que tinha ontem.
     expect(hoje?.idade).toBe(new Date().getUTCFullYear() - 1980);
     expect(hoje?.telefone).toBe('11988887777');
 
@@ -119,13 +119,13 @@ describe('painel — graficos', () => {
     expect(d.atendimentosNoPeriodo.length).toBeGreaterThan(0);
     expect(d.porProcedimento.find((x) => x.rotulo === 'Consulta Painel')?.total).toBe(3);
 
-    // Quem nao tem convenio e PARTICULAR, nao "sem dados": a distribuicao so
+    // Quem não tem convênio é PARTICULAR, não "sem dados": a distribuição só
     // informa se o particular aparece como fatia.
     expect(d.porConvenio.find((x) => x.rotulo === 'Unimed')?.total).toBe(2);
     expect(d.porConvenio.find((x) => x.rotulo === 'Particular')?.total).toBe(1);
 
-    // Duracao REAL (started_at -> finished_at), nao a agendada: 20, 40 e 30
-    // dao media 30. A diferenca entre agendado e realizado e o numero que
+    // Duração REAL (started_at -> finished_at), não a agendada: 20, 40 e 30
+    // dão média 30. A diferença entre agendado e realizado é o número que
     // interessa a quem monta a grade.
     expect(d.duracaoMedia.find((x) => x.rotulo === 'Consulta Painel')?.minutos).toBe(30);
 

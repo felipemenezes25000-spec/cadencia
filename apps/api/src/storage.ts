@@ -9,15 +9,15 @@ let cache: StorageAdapter | null = null;
 /**
  * O armazenamento de objetos da API.
  *
- * `STORAGE_DIR` aponta o disco. Sem ele, cai num diretorio temporario — que e
- * suficiente para teste e demonstracao e some no reboot da maquina, o que e
+ * `STORAGE_DIR` aponta o disco. Sem ele, cai num diretório temporário — que é
+ * suficiente para teste e demonstração e some no reboot da máquina, o que é
  * exatamente o que se quer de dado de teste.
  *
- * `STORAGE_DRIVER=memory` existe para a suite: escrever em disco a cada teste de
- * anexo deixa lixo em qualquer maquina que rode a suite duas vezes.
+ * `STORAGE_DRIVER=memory` existe para a suíte: escrever em disco a cada teste de
+ * anexo deixa lixo em qualquer máquina que rode a suíte duas vezes.
  *
- * Em producao o lugar disto e um S3-compatible em sa-east-1 (decisao 15). A
- * troca e de uma linha porque o contrato `StorageAdapter` e o mesmo.
+ * Em produção o lugar disto é um S3-compatible em sa-east-1 (decisão 15). A
+ * troca é de uma linha porque o contrato `StorageAdapter` é o mesmo.
  */
 export function armazenamento(): StorageAdapter {
   if (cache !== null) return cache;
@@ -33,7 +33,7 @@ export function armazenamento(): StorageAdapter {
   return cache;
 }
 
-/** Zera o cache. So para teste: cada suite escolhe o proprio adaptador. */
+/** Zera o cache. Só para teste: cada suíte escolhe o próprio adaptador. */
 export function limparArmazenamento(): void {
   cache = null;
 }

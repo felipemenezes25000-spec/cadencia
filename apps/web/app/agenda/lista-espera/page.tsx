@@ -40,7 +40,7 @@ export default function PaginaListaDeEspera() {
     <div className="grid gap-6">
       {itens.length === 0 && !carregando ? (
         <p className="text-sm text-text-muted">
-          Ninguem na lista. Quando uma vaga abrir, quem esta aqui e chamado por
+          Ninguém na lista. Quando uma vaga abrir, quem está aqui é chamado por
           prioridade e tempo de espera.
         </p>
       ) : (
@@ -48,8 +48,8 @@ export default function PaginaListaDeEspera() {
           itens={itens}
           aoChamar={(waitlistId) => {
             // Chamar ENCERRA a entrada com motivo registrado. O CHECK da tabela
-            // exige que `closed_at` e `close_reason` andem juntos — nao existe
-            // saida da fila sem explicacao de por que a pessoa saiu.
+            // exige que `closed_at` e `close_reason` andem juntos — não existe
+            // saída da fila sem explicação de por que a pessoa saiu.
             void apiFetch(`/v1/agenda/lista-espera/${waitlistId}`, {
               method: 'DELETE', body: { motivo: 'chamado para encaixe' },
               clinicId, csrfToken,

@@ -1,12 +1,12 @@
 /**
- * pnpm restore:drill — restaura o snapshot automatico mais recente numa VPC ISOLADA,
- * roda verify-restore e os 10 invariantes, grava o relatorio e destroi a instancia.
+ * pnpm restore:drill — restaura o snapshot automático mais recente numa VPC ISOLADA,
+ * roda verify-restore e os 10 invariantes, grava o relatório e destrói a instância.
  *
- * A VPC isolada nao e zelo: restaurar ao lado da producao coloca um endpoint quase
- * identico ao lado do verdadeiro, e o erro de digitacao escreve no banco vivo.
+ * A VPC isolada não é zelo: restaurar ao lado da produção coloca um endpoint quase
+ * idêntico ao lado do verdadeiro, e o erro de digitação escreve no banco vivo.
  *
- * O relogio aqui MEDE (performance.now) e carimba um relatorio operacional. Nada
- * disto vira dado de dominio: o carimbo persistido vem sempre do PostgreSQL.
+ * O relógio aqui MEDE (performance.now) e carimba um relatório operacional. Nada
+ * disto vira dado de domínio: o carimbo persistido vem sempre do PostgreSQL.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
     await client.connect();
     try {
       checks = await verifyRestore(client, { rpoMinutes: RPO_BUDGET_MINUTES });
-      // Restauracao que devolve os bytes e perde FORCE ROW LEVEL SECURITY so se
+      // Restauração que devolve os bytes e perde FORCE ROW LEVEL SECURITY só se
       // descobre errada no dia em que o backup for usado de verdade.
       invariantes = await runAllInvariants(client, { auditMaxLagMinutes: RPO_BUDGET_MINUTES });
     } finally {

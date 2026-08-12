@@ -18,8 +18,8 @@ function PacientesInner() {
     <Pacientes
       faceta={faceta}
       aoMudarFaceta={(f) => { void setFaceta(f as typeof CHAVES_FACETA[number]); }}
-      // /v1/pacientes/lista, e nao /v1/pacientes: a busca do combobox devolve
-      // vazio sem termo, e a tela de lista precisa abrir ja povoada.
+      // /v1/pacientes/lista, e não /v1/pacientes: a busca do combobox devolve
+      // vazio sem termo, e a tela de lista precisa abrir já povoada.
       buscar={(termo, f) => apiFetch<{ itens: PacienteHit[] }>(
         `/v1/pacientes/lista?faceta=${f}&termo=${encodeURIComponent(termo)}`,
         { clinicId, csrfToken }).then((r) => r.itens)}

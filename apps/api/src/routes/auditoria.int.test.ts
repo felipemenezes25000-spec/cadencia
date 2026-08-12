@@ -9,8 +9,8 @@ let s: SementeSessao;
 beforeAll(async () => {
   s = await semearSessao({ role: 'admin_clinico' });
   // Gera trilha DE VERDADE: cada busca de paciente emite PATIENT_SEARCH pelo
-  // canal A, dentro da transacao de leitura. Inserir evento na mao provaria
-  // que o INSERT funciona, nao que o sistema registra o que faz.
+  // canal A, dentro da transação de leitura. Inserir evento na mão provaria
+  // que o INSERT funciona, não que o sistema registra o que faz.
   const app = await buildApp();
   await app.inject({ method: 'GET', url: '/v1/pacientes?termo=pacient', ...auth(s) });
   await app.inject({ method: 'GET', url: '/v1/pacientes?termo=sessao', ...auth(s) });
@@ -48,9 +48,9 @@ describe('trilha de auditoria consultavel', () => {
   it('filtra por tipo de evento e por periodo', async () => {
     const app = await buildApp();
     // A rota filtra por `app.local_date(occurred_at, cl.timezone)` — a data da
-    // CLINICA. Montar a janela com o relogio do processo em UTC faz o teste
-    // pedir 10/08 enquanto os eventos estao carimbados em 09/08, todo dia
-    // entre 21h e meia-noite em Sao Paulo.
+    // CLÍNICA. Montar a janela com o relógio do processo em UTC faz o teste
+    // pedir 10/08 enquanto os eventos estão carimbados em 09/08, todo dia
+    // entre 21h e meia-noite em São Paulo.
     const hoje = await withTenantTx(
       { kind: 'user', tenantId: s.tenantId, userId: s.userId,
         clinicId: s.clinicId, requestId: uuidv7() },
@@ -84,9 +84,9 @@ describe('trilha de auditoria consultavel', () => {
     const r = await app.inject({ method: 'GET', url: '/v1/auditoria', ...auth(s) });
     const corpo = r.body;
 
-    // Decisao irreversivel 8: a trilha nasce sem conteudo clinico e sem
-    // identificador de paciente. Se a rota vazasse um, seria o proprio painel
-    // de auditoria virando a superficie que ele existe para vigiar.
+    // Decisão irreversível 8: a trilha nasce sem conteúdo clínico e sem
+    // identificador de paciente. Se a rota vazasse um, seria o próprio painel
+    // de auditoria virando a superfície que ele existe para vigiar.
     expect(corpo).not.toContain(s.patientId);
     expect(corpo).not.toContain(s.patientCpf);
     expect(corpo).not.toContain(s.patientNome);

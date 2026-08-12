@@ -62,13 +62,13 @@ afterAll(async () => {
 describe('materializeRollup — job noturno', () => {
   it('materializa rollup com as duas bases para o dia', async () => {
     // O job noturno roda com o papel `jobs` (BYPASSRLS).
-    // Simulamos com a conexao administrativa.
+    // Simulamos com a conexão administrativa.
     const client = await adminPool.connect();
     try {
       await client.query('BEGIN');
       const tx = { query: client.query.bind(client) };
 
-      // Descobre o dia dos lancamentos
+      // Descobre o dia dos lançamentos
       const { rows: entryRows } = await client.query<{ d: string }>(
         `SELECT DISTINCT created_at::date::text AS d FROM fin.entry WHERE tenant_id = $1`,
         [s.tenantId]);
@@ -105,7 +105,7 @@ describe('materializeRollup — job noturno', () => {
       // Materializa primeiro
       await materializeRollup(tx as never, s.tenantId, day);
 
-      // Detecta divergencia — deve estar vazio
+      // Detecta divergência — deve estar vazio
       const divs = await detectDivergence(tx as never, s.tenantId, day);
       expect(divs).toEqual([]);
 
@@ -134,7 +134,7 @@ describe('materializeRollup — job noturno', () => {
       // Materializa
       await materializeRollup(tx as never, s.tenantId, day);
 
-      // Insere um lancamento extra sem rematerializar
+      // Insere um lançamento extra sem rematerializar
       await client.query(
         `INSERT INTO fin.entry
            (tenant_id, id, kind, category_id, professional_id, clinic_id,
@@ -146,7 +146,7 @@ describe('materializeRollup — job noturno', () => {
         [s.tenantId, uuidv7(), s.categoryId, s.professionalId, s.clinicId,
          s.paymentMethodDinheiroId, `extra-${uuidv7()}`, day]);
 
-      // Detecta divergencia — deve encontrar
+      // Detecta divergência — deve encontrar
       const divs = await detectDivergence(tx as never, s.tenantId, day);
       expect(divs.length).toBeGreaterThan(0);
 

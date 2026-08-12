@@ -4,16 +4,16 @@ export type { Queryable } from '../queryable';
 
 /**
  * Os schemas sujeitos ao regime multi-tenant (§3.13 item 1).
- * `ref`, `id`, `rpt` e `pgboss` ficam de fora por construcao: referencia global,
- * identidade global, relatorio (exposto so por view) e fila de jobs.
- * `sched` entrou na Fase 1 junto com a agenda: schema fora desta lista e schema
- * sem RLS obrigatoria, sem FK composta exigida e fora da matriz CRUD.
+ * `ref`, `id`, `rpt` e `pgboss` ficam de fora por construção: referência global,
+ * identidade global, relatório (exposto só por view) e fila de jobs.
+ * `sched` entrou na Fase 1 junto com a agenda: schema fora desta lista é schema
+ * sem RLS obrigatória, sem FK composta exigida e fora da matriz CRUD.
  */
 export const TENANT_SCHEMAS = ['app', 'clin', 'fin', 'tiss', 'audit', 'sched', 'msg', 'inv'] as const;
 
 /**
- * Schemas cujos privilegios sao declarados em privileges.json.
- * Inclui os tenant schemas e `ref` (referencia global sem RLS, mas com GRANTs
+ * Schemas cujos privilégios são declarados em privileges.json.
+ * Inclui os tenant schemas e `ref` (referência global sem RLS, mas com GRANTs
  * explícitos para staging/load_log do TUSS).
  */
 export const PRIVILEGE_SCHEMAS = [...TENANT_SCHEMAS, 'ref'] as const;
@@ -31,9 +31,9 @@ function requireEnv(name: string): string {
 }
 
 /**
- * Conexao administrativa: enxerga o catalogo inteiro e ignora RLS de proposito.
+ * Conexão administrativa: enxerga o catálogo inteiro e ignora RLS de propósito.
  * Um invariante que rodasse sob RLS veria o schema pela fresta e aprovaria o que
- * nao consegue enxergar.
+ * não consegue enxergar.
  */
 export function catalogPool(): Pool {
   pool ??= new Pool({
@@ -51,7 +51,7 @@ export async function closeCatalogPool(): Promise<void> {
 }
 
 /**
- * Conexao como o papel `api` — o mesmo papel de runtime, com os mesmos privilegios
+ * Conexão como o papel `api` — o mesmo papel de runtime, com os mesmos privilégios
  * e a mesma RLS. Usada pela matriz CRUD do invariante 10 (Task 45).
  */
 export async function apiClient(): Promise<Client> {
@@ -64,8 +64,8 @@ export async function apiClient(): Promise<Client> {
 }
 
 /**
- * Executa `fn` numa transacao SEMPRE revertida. DDL no PostgreSQL e transacional,
- * entao a violacao proposital nasce e morre dentro do teste, sem sujar o banco de
+ * Executa `fn` numa transação SEMPRE revertida. DDL no PostgreSQL é transacional,
+ * então a violação proposital nasce e morre dentro do teste, sem sujar o banco de
  * desenvolvimento nem o do CI.
  */
 export async function inRollbackTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {

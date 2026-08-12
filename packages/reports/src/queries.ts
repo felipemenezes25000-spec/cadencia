@@ -3,10 +3,10 @@ import type { TxClient } from '@cadencia/db';
 import type { AtendimentoRow, AgendaRow, RefreshLogEntry } from './types';
 
 /**
- * Lista atendimentos no periodo, filtrados pela view security_barrier.
- * A view app_rpt.atendimentos ja aplica tenant e escopo clinico.
+ * Lista atendimentos no período, filtrados pela view security_barrier.
+ * A view app_rpt.atendimentos já aplica tenant e escopo clínico.
  *
- * packages/reports NAO le matview diretamente — sempre via app_rpt (§3.8, §2.2).
+ * packages/reports NÃO lê matview diretamente — sempre via app_rpt (§3.8, §2.2).
  */
 export async function listAtendimentos(
   tx: TxClient,
@@ -49,7 +49,7 @@ export async function listAtendimentos(
 }
 
 /**
- * Resumo da agenda no periodo. A view app_rpt.agenda ja filtra por tenant.
+ * Resumo da agenda no período. A view app_rpt.agenda já filtra por tenant.
  */
 export async function listAgenda(
   tx: TxClient,
@@ -92,8 +92,8 @@ export async function listAgenda(
 }
 
 /**
- * Ultimo refresh de cada matview. Usado pelo front para exibir
- * "dados ate HH:MM" (§3.8). Le diretamente de rpt.refresh_log
+ * Último refresh de cada matview. Usado pelo front para exibir
+ * "dados ate HH:MM" (§3.8). Lê diretamente de rpt.refresh_log
  * via app_rw (que tem SELECT na tabela).
  */
 export async function getRefreshTimestamps(

@@ -15,10 +15,10 @@ interface ItemCid11 {
 }
 
 const COLUNAS: readonly ColunaCatalogo<ItemCid11>[] = [
-  { chave: 'codigo', rotulo: 'Codigo' },
-  { chave: 'descricao', rotulo: 'Descricao' },
-  { chave: 'capitulo', rotulo: 'Capitulo' },
-  { chave: 'competencia', rotulo: 'Competencia' },
+  { chave: 'codigo', rotulo: 'Código' },
+  { chave: 'descricao', rotulo: 'Descrição' },
+  { chave: 'capitulo', rotulo: 'Capítulo' },
+  { chave: 'competencia', rotulo: 'Competência' },
 ];
 
 export default function PaginaCid11() {
@@ -37,15 +37,15 @@ export default function PaginaCid11() {
     <div className="cadencia-page grid gap-8">
       <PageHeader
         titulo="CID-11"
-        subtitulo="Classificacao Internacional de Doencas, 11a revisao (OMS)"
+        subtitulo="Classificação Internacional de Doenças, 11a revisão (OMS)"
         breadcrumbs={[
-          { rotulo: 'Catalogos', href: '/catalogos' },
+          { rotulo: 'Catálogos', href: '/catalogos' },
           { rotulo: 'CID-11' },
         ]}
       />
       <BuscaDeCatalogo<ItemCid11>
         titulo="CID-11"
-        placeholder="Buscar por codigo ou descricao..."
+        placeholder="Buscar por código ou descrição..."
         colunas={COLUNAS}
         buscar={buscar}
       />

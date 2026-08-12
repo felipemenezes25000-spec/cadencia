@@ -12,9 +12,9 @@ describe('CPF', () => {
   });
 
   it('recusa 000.000.000-00, que a recepcao digita quando o paciente nao tem o documento em maos', () => {
-    // Atencao: 000.000.000-00 PASSA no calculo do digito verificador.
-    // So a regra de digitos repetidos o elimina — e sem ela esse CPF entra na
-    // base, some da busca por duplicidade e contamina guia e relatorio.
+    // Atenção: 000.000.000-00 PASSA no cálculo do dígito verificador.
+    // Só a regra de dígitos repetidos o elimina — e sem ela esse CPF entra na
+    // base, some da busca por duplicidade e contamina guia e relatório.
     const resultado = parseCpf('000.000.000-00');
     expect(isErr(resultado)).toBe(true);
     expect(isErr(resultado) && resultado.error.code).toBe('cpf.digitos_repetidos');

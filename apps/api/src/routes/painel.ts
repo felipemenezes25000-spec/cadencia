@@ -4,18 +4,18 @@ import { z } from 'zod';
 import { rota } from '../guard';
 
 /**
- * O painel de abertura: aniversariantes e os seis graficos do inventario.
+ * O painel de abertura: aniversariantes e os seis gráficos do inventário.
  *
  * Duas escolhas atravessam o arquivo:
  *
- * 1. Todo recorte de DATA usa `app.local_date` com o fuso da clinica (§10 item
- *    10). "Aniversariantes de hoje" e uma pergunta feita em horario local; se
- *    derivasse de `current_date` do servidor, a recepcao em Manaus veria a
+ * 1. Todo recorte de DATA usa `app.local_date` com o fuso da clínica (§10 item
+ *    10). "Aniversariantes de hoje" é uma pergunta feita em horário local; se
+ *    derivasse de `current_date` do servidor, a recepção em Manaus veria a
  *    lista do dia seguinte a partir das 21h.
  *
- * 2. A duracao do atendimento e a REALIZADA (`started_at` -> `finished_at`), nao
- *    a agendada. Quem monta a grade precisa exatamente da diferenca entre as
- *    duas: se a consulta de 30 minutos leva 45, a agenda esta errada e o dia
+ * 2. A duração do atendimento é a REALIZADA (`started_at` -> `finished_at`), não
+ *    a agendada. Quem monta a grade precisa exatamente da diferença entre as
+ *    duas: se a consulta de 30 minutos leva 45, a agenda está errada e o dia
  *    atrasa cumulativamente.
  */
 
@@ -41,8 +41,8 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
       id: string; display_name: string; idade: string;
       phone_primary: string | null; tem_agenda: boolean;
     }>(
-      // Compara MES e DIA, nunca a data inteira: comparar a data acharia so
-      // quem nasceu hoje, e recem-nascido nao faz aniversario.
+      // Compara MÊS e DIA, nunca a data inteira: comparar a data acharia só
+      // quem nasceu hoje, e recém-nascido não faz aniversário.
       `SELECT p.id, p.display_name,
               extract(year FROM age(
                 app.local_date(clock_timestamp(), c.timezone), p.birth_date))::int
@@ -73,9 +73,9 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
         nome: x.display_name,
         idade: Number(x.idade),
         telefone: x.phone_primary,
-        // Quem ja vem hoje nao precisa de mensagem de parabens separada — a
-        // recepcao cumprimenta pessoalmente. Distinguir evita a clinica mandar
-        // um WhatsApp automatico para quem esta na sala de espera.
+        // Quem já vem hoje não precisa de mensagem de parabéns separada — a
+        // recepção cumprimenta pessoalmente. Distinguir evita a clínica mandar
+        // um WhatsApp automático para quem está na sala de espera.
         temAgendamentoHoje: x.tem_agenda,
       })),
     };
@@ -126,9 +126,9 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
           GROUP BY 1 ORDER BY 2 DESC`, [...p]),
 
       tx.query<{ rotulo: string; total: string }>(
-        // Sem operadora e PARTICULAR, e particular e uma fatia legitima do
-        // grafico — nao "sem dados". Agrupar os dois esconderia o mix real de
-        // faturamento, que e o que a gestora esta olhando aqui.
+        // Sem operadora é PARTICULAR, e particular é uma fatia legítima do
+        // gráfico — não "sem dados". Agrupar os dois esconderia o mix real de
+        // faturamento, que é o que a gestora está olhando aqui.
         `SELECT coalesce(a.operadora_nome, 'Particular') AS rotulo, count(*) AS total
            FROM sched.appointment a
           WHERE a.clinic_id = $1 AND a.status = 'atendido'
@@ -156,7 +156,7 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
           GROUP BY 1 ORDER BY 1`, [...p]),
 
       tx.query<{ faixa: string; total: string }>(
-        // Faixas fixas e nao quantis: a gestora compara com a faixa do mes
+        // Faixas fixas e não quantis: a gestora compara com a faixa do mês
         // passado, e quantil move a fronteira a cada consulta.
         `WITH idades AS (
            SELECT extract(year FROM age(current_date, p.birth_date))::int AS anos

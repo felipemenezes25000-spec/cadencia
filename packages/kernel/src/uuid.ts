@@ -1,16 +1,16 @@
 import { randomBytes } from 'node:crypto';
 import { ValidationError } from './errors';
 
-/** UUIDv7 (RFC 9562): 48 bits de epoch em ms, 12 bits de contador, 62 bits aleatorios. */
+/** UUIDv7 (RFC 9562): 48 bits de epoch em ms, 12 bits de contador, 62 bits aleatórios. */
 export type UuidV7 = string & { readonly __brand: 'UuidV7' };
 
 const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const MAX_COUNTER = 0xfff;
 
 /**
- * Cada gerador tem contador proprio. O contador ocupa os 12 bits de rand_a e
- * garante ordem dentro do mesmo milissegundo; quando estoura, o gerador avanca
- * 1 ms artificial. Relogio que anda para tras nunca regride o identificador.
+ * Cada gerador tem contador próprio. O contador ocupa os 12 bits de rand_a e
+ * garante ordem dentro do mesmo milissegundo; quando estoura, o gerador avança
+ * 1 ms artificial. Relógio que anda para trás nunca regride o identificador.
  */
 export function createUuidV7(): (nowMs?: number) => UuidV7 {
   let lastMs = -1;
@@ -37,7 +37,7 @@ export function createUuidV7(): (nowMs?: number) => UuidV7 {
     bytes[3] = Math.floor(ms / 2 ** 16) & 0xff;
     bytes[4] = Math.floor(ms / 2 ** 8) & 0xff;
     bytes[5] = ms & 0xff;
-    bytes[6] = 0x70 | ((counter >>> 8) & 0x0f);   // versao 7 + contador alto
+    bytes[6] = 0x70 | ((counter >>> 8) & 0x0f);   // versão 7 + contador alto
     bytes[7] = counter & 0xff;                     // contador baixo
     bytes[8] = 0x80 | (bytes[8]! & 0x3f);          // variante RFC 4122/9562
 
@@ -46,7 +46,7 @@ export function createUuidV7(): (nowMs?: number) => UuidV7 {
   };
 }
 
-/** Gerador padrao do processo. */
+/** Gerador padrão do processo. */
 export const uuidv7 = createUuidV7();
 
 export function isUuidV7(value: string): value is UuidV7 {

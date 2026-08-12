@@ -84,7 +84,7 @@ describe('updateContrato — atualiza contrato', () => {
   let contratoId = '';
 
   beforeAll(async () => {
-    // Criar nova operadora para ter contrato unico
+    // Criar nova operadora para ter contrato único
     const opId = uuidv7();
     await withTenantTx(actor, (tx) =>
       tx.query(

@@ -16,10 +16,10 @@ const GlosaResumoSchema = z.object({
   protocolo: z.string(),
   numeroGuiaPrestador: z.string(),
   codigoGlosa: z.string(),
-  // Sem estes tres a lista nao serve para abrir recurso, que e o unico motivo
+  // Sem estes três a lista não serve para abrir recurso, que é o único motivo
   // de olhar glosa: `descricaoGlosa` para quem redige a justificativa,
   // `pacienteNome` para o faturista conferir o caso, e `encounterVersionId`
-  // porque `POST /v1/tiss/recursos` exige a versao do atendimento.
+  // porque `POST /v1/tiss/recursos` exige a versão do atendimento.
   descricaoGlosa: z.string().nullable(),
   pacienteNome: z.string(),
   encounterVersionId: z.string().uuid().nullable(),
@@ -29,9 +29,9 @@ const GlosaResumoSchema = z.object({
 });
 
 const GlosaDetalheSchema = GlosaResumoSchema.extend({
-  // `descricaoGlosa` volta a ser nulavel aqui tambem: a operadora manda o codigo
-  // e nem sempre o texto. Forcar string obrigaria a inventar descricao — e
-  // descricao inventada e o que o faturista leria como se fosse da operadora.
+  // `descricaoGlosa` volta a ser nulável aqui também: a operadora manda o código
+  // e nem sempre o texto. Forçar string obrigaria a inventar descrição — e
+  // descrição inventada é o que o faturista leria como se fosse da operadora.
   dataProcessamento: z.string(),
 });
 

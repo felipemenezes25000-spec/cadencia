@@ -8,7 +8,7 @@ export interface CriarRecorrenciaInput {
   readonly professionalId: string;
   readonly clinicId: string;
   readonly procedureId: string;
-  /** Data da primeira ocorrencia no fuso da CLINICA, 'AAAA-MM-DD'. */
+  /** Data da primeira ocorrência no fuso da CLÍNICA, 'AAAA-MM-DD'. */
   readonly primeiraData: string;
   /** Hora de parede, 'HH:MM'. */
   readonly hora: string;
@@ -32,12 +32,12 @@ export interface RecorrenciaCriada {
   readonly recurrenceId: string;
   readonly criadas: readonly OcorrenciaCriada[];
   /**
-   * Ocorrencias que NAO couberam.
+   * Ocorrências que NÃO couberam.
    *
-   * A serie nao e tudo-ou-nada de proposito: numa fisioterapia de 12 sessoes,
-   * uma colidir com feriado nao pode impedir as outras onze. Mas a recepcao
-   * PRECISA ver quais falharam — recusar em silencio deixaria o paciente
-   * achando que tem consulta num dia em que nao tem.
+   * A série não é tudo-ou-nada de propósito: numa fisioterapia de 12 sessões,
+   * uma colidir com feriado não pode impedir as outras onze. Mas a recepção
+   * PRECISA ver quais falharam — recusar em silêncio deixaria o paciente
+   * achando que tem consulta num dia em que não tem.
    */
   readonly recusadas: readonly OcorrenciaRecusada[];
 }
@@ -60,12 +60,12 @@ function restricaoDe(e: unknown): string {
 }
 
 /**
- * Cria a serie recorrente e os agendamentos dela.
+ * Cria a série recorrente e os agendamentos dela.
  *
  * A hora de parede vira instante no POSTGRES, com o fuso da unidade:
  * `($1 || ' ' || $2)::timestamp AT TIME ZONE tz`. Converter em JavaScript usaria
- * as regras de fuso do runtime, que sao as do sistema operacional de quem roda —
- * e uma serie de seis meses atravessa mudanca de regra com facilidade.
+ * as regras de fuso do runtime, que são as do sistema operacional de quem roda —
+ * e uma série de seis meses atravessa mudança de regra com facilidade.
  */
 export async function criarRecorrencia(
   tx: TxClient, i: CriarRecorrenciaInput,
@@ -108,9 +108,9 @@ export async function criarRecorrencia(
     const [data, hora] = quando.split('T') as [string, string];
     const appointmentId = uuidv7();
     try {
-      // SAVEPOINT por ocorrencia: sem ele, a primeira colisao aborta a
-      // transacao inteira no Postgres e as ocorrencias seguintes nem sao
-      // tentadas — a serie de 12 sessoes morreria na terceira.
+      // SAVEPOINT por ocorrência: sem ele, a primeira colisão aborta a
+      // transação inteira no Postgres e as ocorrências seguintes nem são
+      // tentadas — a série de 12 sessões morreria na terceira.
       await tx.query('SAVEPOINT ocorrencia');
       await tx.query(
         `INSERT INTO sched.appointment (
@@ -147,11 +147,11 @@ export async function criarRecorrencia(
 }
 
 /**
- * Cancela as ocorrencias FUTURAS de uma serie.
+ * Cancela as ocorrências FUTURAS de uma série.
  *
- * Nunca toca no passado: consulta que ja aconteceu e fato, e apagar o registro
- * dela apagaria o motivo de uma cobranca. O que a recepcao quer ao "cancelar a
- * recorrencia" e parar o que ainda vem.
+ * Nunca toca no passado: consulta que já aconteceu é fato, e apagar o registro
+ * dela apagaria o motivo de uma cobrança. O que a recepção quer ao "cancelar a
+ * recorrência" é parar o que ainda vem.
  */
 export async function cancelarRecorrenciaFutura(
   tx: TxClient, recurrenceId: string, clinicId: string,

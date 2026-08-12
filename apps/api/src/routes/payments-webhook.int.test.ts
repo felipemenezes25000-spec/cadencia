@@ -1,8 +1,8 @@
 // apps/api/src/routes/payments-webhook.int.test.ts
 //
-// ADAPTACAO: o plano original referenciava `fin.payment` e colunas
-// fantasma. O repositorio real usa `fin.entry` (0077) e `fin.payment_link`
-// com entry_id (0079). Veja 00-CONTRATOS.md secoes A3 e A7.
+// ADAPTAÇÃO: o plano original referenciava `fin.payment` e colunas
+// fantasma. O repositório real usa `fin.entry` (0077) e `fin.payment_link`
+// com entry_id (0079). Veja 00-CONTRATOS.md seções A3 e A7.
 import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closePools, jobsPool } from '@cadencia/db';
@@ -10,7 +10,7 @@ import { uuidv7 } from '@cadencia/kernel';
 import { Pool } from 'pg';
 import { buildApp } from '../app';
 
-/** Assina o payload com o segredo padrao do FakePaymentProvider. */
+/** Assina o payload com o segredo padrão do FakePaymentProvider. */
 function signPayment(payload: string): string {
   return createHmac('sha256', 'fake-payment-secret').update(Buffer.from(payload)).digest('hex');
 }
@@ -124,7 +124,7 @@ describe('webhook de pagamento', () => {
         ORDER BY received_at DESC LIMIT 1`, [tenantId]);
     expect(events.length).toBeGreaterThanOrEqual(1);
 
-    // Verificar que o lancamento foi marcado como pago com external_ref
+    // Verificar que o lançamento foi marcado como pago com external_ref
     const { rows: entries } = await jobsPool().query<{
       external_ref: string; status: string;
     }>(
@@ -192,7 +192,7 @@ describe('webhook de pagamento', () => {
 
     expect(r.statusCode).toBe(200);
 
-    // Lancamento atualizado com o tenant correto (via entry, nao o injetado)
+    // Lançamento atualizado com o tenant correto (via entry, não o injetado)
     const { rows } = await jobsPool().query<{ tenant_id: string }>(
       `SELECT tenant_id FROM fin.entry WHERE external_ref = 'psp_pay_inject2'
        AND tenant_id = $1`, [tenantId]);

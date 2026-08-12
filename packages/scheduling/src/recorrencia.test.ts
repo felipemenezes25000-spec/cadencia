@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { expandirRecorrencia } from './recorrencia';
 
 /**
- * A expansao trabalha em HORA DE PAREDE, nao em instante.
+ * A expansão trabalha em HORA DE PAREDE, não em instante.
  *
- * "Toda terca as 14h" e um compromisso com o relogio da clinica. Expandir em
- * UTC e converter depois faria o horario ANDAR se o pais reinstituir horario de
- * verao no meio da serie — o paciente marcado para as 14h apareceria as 15h. A
- * conversao para instante acontece no Postgres, que conhece as regras do fuso;
- * aqui so se conta dia de calendario.
+ * "Toda terça as 14h" é um compromisso com o relógio da clínica. Expandir em
+ * UTC e converter depois faria o horário ANDAR se o país reinstituir horário de
+ * verão no meio da série — o paciente marcado para as 14h apareceria as 15h. A
+ * conversão para instante acontece no Postgres, que conhece as regras do fuso;
+ * aqui só se conta dia de calendário.
  */
 describe('expandirRecorrencia', () => {
   it('semanal mantem o dia da semana', () => {
@@ -27,7 +27,7 @@ describe('expandirRecorrencia', () => {
       primeiraData: '2026-08-11', hora: '09:00', freq: 'semanal',
       intervalo: 1, horizonteAte: '2026-08-18',
     });
-    // Excluir o ultimo dia faria a recepcao marcar "ate 18/08" e o paciente
+    // Excluir o último dia faria a recepção marcar "até 18/08" e o paciente
     // ficar sem a consulta do dia 18.
     expect(r).toHaveLength(2);
     expect(r[1]).toBe('2026-08-18T09:00');
@@ -38,7 +38,7 @@ describe('expandirRecorrencia', () => {
       primeiraData: '2026-08-11', hora: '14:00', freq: 'quinzenal',
       intervalo: 1, horizonteAte: '2026-09-30',
     });
-    // "De 15 em 15" trocaria terca por quarta na segunda ocorrencia, e a agenda
+    // "De 15 em 15" trocaria terça por quarta na segunda ocorrência, e a agenda
     // do profissional deixaria de bater com a rotina dele.
     expect(r).toEqual([
       '2026-08-11T14:00', '2026-08-25T14:00', '2026-09-08T14:00',
@@ -73,8 +73,8 @@ describe('expandirRecorrencia', () => {
       primeiraData: '2026-01-31', hora: '10:00', freq: 'mensal',
       intervalo: 1, horizonteAte: '2026-04-30',
     });
-    // Pular fevereiro deixaria o paciente dois meses sem retorno sem ninguem
-    // decidir isso. O ultimo dia do mes e o que a recepcao marcaria no papel.
+    // Pular fevereiro deixaria o paciente dois meses sem retorno sem ninguém
+    // decidir isso. O último dia do mês é o que a recepção marcaria no papel.
     expect(r).toEqual([
       '2026-01-31T10:00', '2026-02-28T10:00', '2026-03-31T10:00',
       '2026-04-30T10:00',
@@ -86,8 +86,8 @@ describe('expandirRecorrencia', () => {
       primeiraData: '2026-01-31', hora: '10:00', freq: 'mensal',
       intervalo: 1, horizonteAte: '2026-03-31',
     });
-    // Aparar para 28 e ARRASTAR o resto da serie transformaria "todo dia 31" em
-    // "todo dia 28" a partir de fevereiro. O dia pedido e sempre a referencia.
+    // Aparar para 28 e ARRASTAR o resto da série transformaria "todo dia 31" em
+    // "todo dia 28" a partir de fevereiro. O dia pedido é sempre a referência.
     expect(r[2]).toBe('2026-03-31T10:00');
   });
 
@@ -96,14 +96,14 @@ describe('expandirRecorrencia', () => {
       primeiraData: '2026-08-11', hora: '14:00', freq: 'semanal',
       intervalo: 1, horizonteAte: '2026-08-01',
     });
-    // O agendamento de hoje nao pode sumir porque alguem errou o horizonte.
+    // O agendamento de hoje não pode sumir porque alguém errou o horizonte.
     expect(r).toEqual(['2026-08-11T14:00']);
   });
 
   it('recusa serie que nao cabe na agenda de ninguem', () => {
-    // Diaria por tres anos sao mais de mil linhas em `sched.appointment`, cada
-    // uma disputando o indice de sobreposicao. Recusar aqui protege o banco de
-    // um clique distraido; a recepcao remarca o horizonte.
+    // Diária por três anos são mais de mil linhas em `sched.appointment`, cada
+    // uma disputando o índice de sobreposição. Recusar aqui protege o banco de
+    // um clique distraído; a recepção remarca o horizonte.
     expect(() => expandirRecorrencia({
       primeiraData: '2026-01-01', hora: '08:00', freq: 'diaria',
       intervalo: 1, horizonteAte: '2029-01-01',

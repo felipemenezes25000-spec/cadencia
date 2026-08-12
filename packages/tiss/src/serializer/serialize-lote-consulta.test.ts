@@ -74,15 +74,15 @@ describe('serializeLoteConsulta', () => {
     const { xml } = serializeLoteConsulta(loteAmostra());
     const text = new TextDecoder('iso-8859-1').decode(xml);
 
-    // O padrao agrupa por proposito. A versao antiga deste teste afirmava um
-    // cabecalho plano (versaoPadrao, registroANS, dataGeracao... em sequencia),
-    // que era a forma de um XSD de amostra escrito a mao — nunca a da ANS.
+    // O padrão agrupa por propósito. A versão antiga deste teste afirmava um
+    // cabeçalho plano (versaoPadrao, registroANS, dataGeracao... em sequência),
+    // que era a forma de um XSD de amostra escrito a mão — nunca a da ANS.
     expect(text).toContain('<ans:identificacaoTransacao>');
     expect(text).toContain('<ans:tipoTransacao>ENVIO_LOTE_GUIAS</ans:tipoTransacao>');
     expect(text).toContain('<ans:dataRegistroTransacao>2026-08-07</ans:dataRegistroTransacao>');
     expect(text).toContain('<ans:horaRegistroTransacao>14:30:00</ans:horaRegistroTransacao>');
     expect(text).toContain('<ans:sequencialTransacao>12345</ans:sequencialTransacao>');
-    // `Padrao`, com P maiusculo, e o nome do elemento no XSD.
+    // `Padrao`, com P maiúsculo, é o nome do elemento no XSD.
     expect(text).toContain('<ans:Padrao>4.01.00</ans:Padrao>');
     expect(text).toContain('<ans:destino><ans:registroANS>339679</ans:registroANS></ans:destino>');
     expect(text).not.toContain('<ans:versaoPadrao>');
@@ -124,7 +124,7 @@ describe('serializeLoteConsulta', () => {
   it('omite tags opcionais quando campo e undefined', () => {
     const { xml } = serializeLoteConsulta(loteAmostra());
     const text = new TextDecoder('iso-8859-1').decode(xml);
-    // guia da amostra nao tem observacao, guia operadora, saude ocupacional, cobertura especial
+    // guia da amostra não tem observação, guia operadora, saúde ocupacional, cobertura especial
     expect(text).not.toContain('<ans:observacao>');
     expect(text).not.toContain('<ans:numeroGuiaOperadora>');
     expect(text).not.toContain('<ans:saudeOcupacional>');

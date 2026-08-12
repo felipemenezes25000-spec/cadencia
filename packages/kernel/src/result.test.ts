@@ -49,7 +49,7 @@ describe('Result', () => {
     } catch (error) {
       capturado = error;
     }
-    expect(capturado).toBe(original);                                  // identidade, nao a mensagem
+    expect(capturado).toBe(original);                                  // identidade, não a mensagem
     expect((capturado as ValidationError).httpStatus).toBe(422);
     expect(unwrapOrThrow(ok('ok'))).toBe('ok');
   });

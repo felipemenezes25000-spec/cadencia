@@ -10,12 +10,12 @@ import type {
 /**
  * Cria um recurso de glosa em status rascunho com os itens informados.
  *
- * Validacoes:
+ * Validações:
  * - Ao menos 1 item
  * - Operadora existe
- * - Cada glosa existe em tiss.glosa, esta com status 'pendente',
+ * - Cada glosa existe em tiss.glosa, está com status 'pendente',
  *   e pertence a mesma operadora do recurso (via guia)
- * - Glosa nao esta em outro recurso ativo (nao-indeferido)
+ * - Glosa não está em outro recurso ativo (não-indeferido)
  */
 export async function createRecursoGlosa(
   tx: TxClient,
@@ -67,7 +67,7 @@ export async function createRecursoGlosa(
       return err({ kind: 'glosa_operadora_divergente', glosaId: item.glosaId });
     }
 
-    // Verifica se a glosa ja esta em outro recurso ativo
+    // Verifica se a glosa já está em outro recurso ativo
     const { rows: existeRows } = await tx.query<{ recurso_id: string }>(
       `SELECT rgi.recurso_id
          FROM tiss.recurso_glosa_item rgi

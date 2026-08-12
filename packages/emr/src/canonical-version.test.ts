@@ -82,8 +82,8 @@ describe('payload canonico da versao', () => {
   });
 
   it('VETOR CONGELADO — este hash NUNCA muda; se mudar, e versao nova do canonicalizador', () => {
-    // Gravado na execucao da Task 18. Alterar este literal invalida a verificacao
-    // de TODO o acervo assinado. Se a canonicalizacao precisar mudar, o caminho e
+    // Gravado na execução da Task 18. Alterar este literal invalida a verificação
+    // de TODO o acervo assinado. Se a canonicalização precisar mudar, o caminho é
     // CANONICAL_VERSION = 'jcs-2' com o verificador 'jcs-1' mantido para sempre.
     expect(hashCanonicalVersion(SNAPSHOT).toString('hex'))
       .toBe('fd29e08f1700c53e9e02b7e5a90e7081ba78d4ef7ddb0bddd0570754212f21b8');

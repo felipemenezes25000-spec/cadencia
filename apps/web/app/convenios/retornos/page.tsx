@@ -50,9 +50,9 @@ export default function PaginaRetornos() {
             registroAns: '',
             protocolo: d.protocolo,
             tipo: d.kind,
-            // A "data do retorno" e a do PROCESSAMENTO pela operadora, nao a da
-            // nossa importacao: importar tres dias depois nao muda quando a
-            // operadora decidiu, e e a decisao dela que conta o prazo de recurso.
+            // A "data do retorno" é a do PROCESSAMENTO pela operadora, não a da
+            // nossa importação: importar três dias depois não muda quando a
+            // operadora decidiu, e é a decisão dela que conta o prazo de recurso.
             dataImportacao: d.dataProcessamento,
             periodoInicio: d.dataProcessamento,
             periodoFim: d.dataProcessamento,
@@ -65,8 +65,8 @@ export default function PaginaRetornos() {
           })),
           operadoras: operadoras.itens.map((o) => ({
             id: o.operadoraId, nome: o.nome, registroAns: o.registroAns })),
-          // Os totais somam o que a OPERADORA disse, nao o que a clinica
-          // esperava: e a diferenca entre apresentado e liberado que vira a
+          // Os totais somam o que a OPERADORA disse, não o que a clínica
+          // esperava: é a diferença entre apresentado e liberado que vira a
           // fila de glosa, e ela precisa vir do documento dela.
           totais: demos.itens.reduce((a, d) => ({
             apresentadoCentavos: a.apresentadoCentavos + d.totalApresentadoCents,

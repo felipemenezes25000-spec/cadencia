@@ -2,10 +2,10 @@
 import { ValidationError } from '@cadencia/kernel';
 import type { BuiltQuery, ReportQuery, ReportFilter, FilterOp } from './types';
 
-/** Views permitidas — unico ponto de whitelist. */
+/** Views permitidas — único ponto de whitelist. */
 const ALLOWED_VIEWS = new Set(['atendimentos', 'financeiro', 'pacientes', 'mensagens']);
 
-/** Regex para validar nomes de colunas: so letras, numeros e underscore. */
+/** Regex para validar nomes de colunas: só letras, números e underscore. */
 const COLUMN_RE = /^[a-z][a-z0-9_]{0,62}$/;
 
 function assertValidColumn(name: string): void {
@@ -86,8 +86,8 @@ function buildFilterClause(
 /**
  * Monta SQL parametrizado a partir de uma ReportQuery.
  *
- * NUNCA interpola valores — tudo via $N. Nomes de colunas e views sao validados
- * contra whitelist e regex. O SQL resultante roda sobre app_rpt views, que ja
+ * NUNCA interpola valores — tudo via $N. Nomes de colunas e views são validados
+ * contra whitelist e regex. O SQL resultante roda sobre app_rpt views, que já
  * aplicam security_barrier com predicado de tenant e papel.
  */
 export function buildQuery(query: ReportQuery): BuiltQuery {
@@ -99,7 +99,7 @@ export function buildQuery(query: ReportQuery): BuiltQuery {
     );
   }
 
-  // Validar colunas visiveis
+  // Validar colunas visíveis
   for (const col of query.columns.visible) {
     assertValidColumn(col);
   }

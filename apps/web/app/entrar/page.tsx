@@ -15,20 +15,20 @@ type Passo =
   | { nome: 'mfa'; vinculos: Vinculo[] }
   | { nome: 'unidade'; vinculos: Vinculo[] };
 
-/** Erros do servidor sao NOMES; o texto de tela mora aqui e so aqui. */
+/** Erros do servidor são NOMES; o texto de tela mora aqui e só aqui. */
 const TEXTO: Record<string, string> = {
-  credenciais_invalidas: 'E-mail ou senha nao conferem.',
+  credenciais_invalidas: 'E-mail ou senha não conferem.',
   conta_bloqueada: 'Conta bloqueada por tentativas seguidas. Tente de novo em 15 minutos.',
-  csrf_invalido: 'Sua sessao expirou. Recarregue a pagina.',
-  codigo_invalido: 'Codigo invalido.',
-  codigo_reutilizado: 'Esse codigo ja foi usado. Espere o proximo.',
-  nao_cadastrado: 'Nao ha segundo fator cadastrado nesta conta.',
-  sem_vinculo_na_unidade: 'Voce nao tem acesso a esta unidade.',
+  csrf_invalido: 'Sua sessão expirou. Recarregue a página.',
+  codigo_invalido: 'Código inválido.',
+  codigo_reutilizado: 'Esse código já foi usado. Espere o próximo.',
+  nao_cadastrado: 'Não há segundo fator cadastrado nesta conta.',
+  sem_vinculo_na_unidade: 'Você não tem acesso a esta unidade.',
 };
 
 function mensagem(e: unknown): string {
-  if (e instanceof ApiError) return TEXTO[e.codigo] ?? 'Nao foi possivel continuar.';
-  return 'Sem conexao com o servidor.';
+  if (e instanceof ApiError) return TEXTO[e.codigo] ?? 'Não foi possível continuar.';
+  return 'Sem conexão com o servidor.';
 }
 
 export default function PaginaEntrar() {
@@ -39,9 +39,9 @@ export default function PaginaEntrar() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  // Uma leitura antes do primeiro POST: e ela que faz o servidor emitir o
+  // Uma leitura antes do primeiro POST: é ela que faz o servidor emitir o
   // cookie de CSRF. Sem isso o login do primeiro acesso cai em 403 — o
-  // navegador nao tem como fabricar um cookie com prefixo __Host-.
+  // navegador não tem como fabricar um cookie com prefixo __Host-.
   useEffect(() => {
     void apiFetch('/v1/sessao', { clinicId: '', csrfToken: '' }).catch(() => undefined);
   }, []);
@@ -51,10 +51,10 @@ export default function PaginaEntrar() {
       await apiFetch('/v1/sessao/unidade', {
         method: 'POST', body: { clinicId: vinculos[0].clinicId },
         clinicId: '', csrfToken: lerCsrf() });
-      // Recarga completa em vez de router.replace: o SessaoProvider so consulta
+      // Recarga completa em vez de router.replace: o SessaoProvider só consulta
       // GET /v1/sessao ao montar, e navegar por cliente o deixaria com o estado
-      // "anonimo" da carga anterior -- ele devolveria o usuario para ca em
-      // seguida. Recarregar apos autenticar tambem garante estado limpo.
+      // "anônimo" da carga anterior -- ele devolveria o usuário para cá em
+      // seguida. Recarregar após autenticar também garante estado limpo.
       window.location.assign('/hoje');
       return;
     }
@@ -99,8 +99,8 @@ export default function PaginaEntrar() {
         <header className="mb-8">
           <p className="font-doc text-2xl font-semibold tracking-tight">Cadencia</p>
           <p className="mt-1 text-sm text-text-muted">
-            {passo.nome === 'credenciais' ? 'Entre para comecar o dia.'
-              : passo.nome === 'mfa' ? 'Confirme com o codigo do seu aplicativo.'
+            {passo.nome === 'credenciais' ? 'Entre para começar o dia.'
+              : passo.nome === 'mfa' ? 'Confirme com o código do seu aplicativo.'
               : 'Escolha a unidade.'}
           </p>
         </header>
@@ -122,7 +122,7 @@ export default function PaginaEntrar() {
         {passo.nome === 'mfa' && (
           <form onSubmit={(e) => { void confirmarMfa(e); }} className="flex flex-col gap-4">
             <Campo
-              id="codigo" rotulo="Codigo de 6 digitos" tipo="text" valor={codigo}
+              id="codigo" rotulo="Código de 6 dígitos" tipo="text" valor={codigo}
               aoMudar={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
               autoComplete="one-time-code" inputMode="numeric" autoFocus
             />

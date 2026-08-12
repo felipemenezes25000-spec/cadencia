@@ -3,7 +3,7 @@ import type { Client } from 'pg';
 import { connectAs, connectSuperuser, setContext } from './helpers/pg';
 import { logDomainEvent } from '../src/domain';
 
-// Os quatro UUIDs sao DISTINTOS de proposito: se `audit.log` trocar duas colunas
+// Os quatro UUIDs são DISTINTOS de propósito: se `audit.log` trocar duas colunas
 // de lugar, o teste do mapeamento abaixo tem que ficar vermelho.
 const TENANT = '0192f8a0-0000-7000-8000-00000000030a';
 const USER = '0192f8a0-0000-7000-8000-000000000301';
@@ -31,9 +31,9 @@ describe('Canal A: o evento de dominio so e verdade se a escrita commitou', () =
   });
 
   it('grava o evento na mesma transacao do negocio e ele sobrevive ao commit', async () => {
-    // A trilha e append-only: nenhuma execucao consegue limpar o que a anterior
-    // gravou. Por isso a assercao e sobre o id recem-gerado, e nao sobre "a
-    // unica linha da tabela" — senao o teste so ficaria verde em banco novo.
+    // A trilha é append-only: nenhuma execução consegue limpar o que a anterior
+    // gravou. Por isso a asserção é sobre o id recém-gerado, e não sobre "a
+    // única linha da tabela" — senão o teste só ficaria verde em banco novo.
     let eventId = 0n;
     const app = await connectAs('app_rw');
     try {
@@ -106,8 +106,8 @@ describe('Canal A: o evento de dominio so e verdade se a escrita commitou', () =
       await app.end();
     }
 
-    // Trilha que afirma uma retificacao que nao aconteceu e prova documental
-    // de um fato falso: pior que nao ter trilha.
+    // Trilha que afirma uma retificação que não aconteceu é prova documental
+    // de um fato falso: pior que não ter trilha.
     expect(await countEvents(root, 'ENCOUNTER_AMEND')).toBe(antes);
   });
 
@@ -164,7 +164,7 @@ describe('Canal A: o evento de dominio so e verdade se a escrita commitou', () =
     );
     // Sem `writer`, clin.finalize_encounter (que roda como clin_writer) morre com
     // 42501 "permission denied for schema audit" no primeiro deploy — o EXECUTE
-    // concedido abaixo seria inutil.
+    // concedido abaixo seria inútil.
     expect(res.rows[0]).toEqual({ exec: true, ins: false, writer: true });
   });
 });

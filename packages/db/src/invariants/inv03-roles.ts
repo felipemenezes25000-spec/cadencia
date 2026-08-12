@@ -12,15 +12,15 @@ export interface RoleRow {
 }
 
 /**
- * Os papeis da §3.1 — os unicos sujeitos ao invariante 3. O superusuario do
+ * Os papéis da §3.1 — os únicos sujeitos ao invariante 3. O superusuário do
  * cluster (o `postgres` do compose, o mestre do RDS) tem `rolbypassrls = true` por
- * construcao do initdb e nao e papel de aplicacao. Por isso o check varre este
- * conjunto fechado e, separadamente, afirma que nenhum deles e superuser.
+ * construção do initdb e não é papel de aplicação. Por isso o check varre este
+ * conjunto fechado e, separadamente, afirma que nenhum deles é superuser.
  *
- * `id_login` entrou na migration 0132 como o decimo. Entrar NESTA lista e o
- * ponto: papel que existe no cluster e fica de fora do conjunto varrido nao e
- * um papel seguro — e um papel sem vigilancia. Se um dia alguem lhe der
- * BYPASSRLS ou LOGIN, e aqui que o CI reprova.
+ * `id_login` entrou na migration 0132 como o décimo. Entrar NESTA lista é o
+ * ponto: papel que existe no cluster e fica de fora do conjunto varrido não é
+ * um papel seguro — é um papel sem vigilância. Se um dia alguém lhe der
+ * BYPASSRLS ou LOGIN, é aqui que o CI reprova.
  */
 export const APP_ROLES: ReadonlySet<string> = new Set([
   'app_owner',
@@ -58,7 +58,7 @@ SELECT 'schema ' || n.nspname
  WHERE r.rolname = 'api'
  ORDER BY 1`;
 
-/** audit.event E as particoes dela: GRANT na particao e a porta dos fundos. */
+/** audit.event E as partições dela: GRANT na partição é a porta dos fundos. */
 const AUDIT_GRANTS_SQL = `
 WITH trilha AS (
   SELECT c.oid, n.nspname || '.' || c.relname AS object, c.relowner
@@ -100,7 +100,7 @@ SELECT n.nspname || '.' || c.relname AS object,
    AND c.relname <> 'refresh_log'
  ORDER BY 1, 2, 3`;
 
-/** Qualquer privilegio de escrita concedido a id_login, em qualquer relacao. */
+/** Qualquer privilégio de escrita concedido a id_login, em qualquer relação. */
 const ID_LOGIN_WRITES_SQL = `
 SELECT n.nspname || '.' || c.relname AS relation, a.privilege_type AS privilege
   FROM pg_class c
@@ -169,11 +169,11 @@ export async function roleViolations(db: Queryable): Promise<string[]> {
     if (!api.config.includes('row_security=on')) out.push('api sem row_security=on no papel');
   }
 
-  // id_login e o unico papel cujas policies sao `USING (true)` (migration 0132).
-  // Isso so e seguro enquanto ele nao puder conectar nem escrever: a leitura
-  // ampla existe para UMA funcao SECURITY DEFINER que filtra por user_id. Se
-  // ganhar LOGIN, vira credencial que le o vinculo de todos os tenants; se
-  // ganhar escrita, vira caminho para conceder vinculo a si mesmo.
+  // id_login é o único papel cujas policies são `USING (true)` (migration 0132).
+  // Isso só é seguro enquanto ele não puder conectar nem escrever: a leitura
+  // ampla existe para UMA função SECURITY DEFINER que filtra por user_id. Se
+  // ganhar LOGIN, vira credencial que lê o vínculo de todos os tenants; se
+  // ganhar escrita, vira caminho para conceder vínculo a si mesmo.
   const login = papeis.find((r) => r.name === 'id_login');
   if (login) {
     if (login.canLogin) {

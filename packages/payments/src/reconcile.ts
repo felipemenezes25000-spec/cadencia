@@ -45,7 +45,7 @@ export async function reconcileSettlements(
     );
 
     if (rows.length === 0) {
-      // Pagamento existe no PSP mas nao no sistema
+      // Pagamento existe no PSP mas não no sistema
       await tx.query(
         `INSERT INTO fin.reconciliation_log
            (tenant_id, id, reconciled_date, provider_payment_id, kind,
@@ -84,7 +84,7 @@ export async function reconcileSettlements(
     );
   }
 
-  // Verificar entries pagos que nao apareceram na liquidacao do PSP
+  // Verificar entries pagos que não apareceram na liquidação do PSP
   const { rows: missingInPsp } = await tx.query<{ id: string; external_ref: string }>(
     `SELECT e.id, e.external_ref
        FROM fin.entry e

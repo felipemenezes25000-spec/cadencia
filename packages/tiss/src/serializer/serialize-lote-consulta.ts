@@ -5,26 +5,26 @@ import { emitirCabecalho, emitirEpilogo, valorDecimal } from './envelope';
 import type { LoteConsultaInput, GuiaConsultaInput } from './types';
 
 /**
- * Resultado da serializacao de um lote de consulta TISS.
+ * Resultado da serialização de um lote de consulta TISS.
  */
 export interface SerializeLoteResult {
   /** XML completo em bytes ISO-8859-1, pronto para envio. */
   readonly xml: Uint8Array;
-  /** Warnings de caracteres nao mapeados para ISO-8859-1. */
+  /** Warnings de caracteres não mapeados para ISO-8859-1. */
   readonly warnings: readonly string[];
 }
 
 /**
  * Serializa um lote de guias de consulta TISS em XML ISO-8859-1.
  *
- * Funcao PURA: recebe dados tipados, devolve Uint8Array. ZERO side-effect.
- * O hash MD5 proprietario e calculado e embutido em <ans:hash>.
- * O XML segue o padrao TISS 4.01.00 (ou a versao do lote).
+ * Função PURA: recebe dados tipados, devolve Uint8Array. ZERO side-effect.
+ * O hash MD5 proprietário é calculado e embutido em <ans:hash>.
+ * O XML segue o padrão TISS 4.01.00 (ou a versão do lote).
  */
 export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteResult {
   const { cabecalho, numeroLote, guias } = input;
 
-  // Calcula o hash antes de montar o XML — ele sera embutido no epilogo
+  // Calcula o hash antes de montar o XML — ele será embutido no epílogo
   const hash = computeTissHash(cabecalho, numeroLote, guias);
 
   const xml = new XmlBuilder();
@@ -34,9 +34,9 @@ export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteRe
     'xmlns:ans': 'http://www.ans.gov.br/padroes/tiss/schemas',
   });
 
-  // ---- Cabecalho ----
-  // A origem sai do contratado da primeira guia: num lote todas as guias sao do
-  // mesmo prestador, por construcao de `tiss.lote`. Sem guia nao ha lote.
+  // ---- Cabeçalho ----
+  // A origem sai do contratado da primeira guia: num lote todas as guias são do
+  // mesmo prestador, por construção de `tiss.lote`. Sem guia não há lote.
   const primeira = guias[0];
   if (primeira === undefined) throw new Error('lote sem guias');
   emitirCabecalho(xml, {
@@ -48,7 +48,7 @@ export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteRe
   xml.open('ans:loteGuias');
   xml.tag('ans:numeroLote', numeroLote);
 
-  // `guiasTISS` nao e decoracao: e o `choice` que impede o lote de misturar
+  // `guiasTISS` não é decoração: é o `choice` que impede o lote de misturar
   // consulta com SP/SADT. A operadora processa cada tipo por uma esteira
   // diferente, e um lote misto seria recusado inteiro.
   xml.open('ans:guiasTISS');
@@ -76,7 +76,7 @@ export function serializeLoteConsulta(input: LoteConsultaInput): SerializeLoteRe
 /**
  * Uma guia de consulta — tipo `ctm_consultaGuia` do XSD.
  *
- * A ordem dos elementos e normativa: `sequence`, nao `all`. Trocar dois campos
+ * A ordem dos elementos é normativa: `sequence`, não `all`. Trocar dois campos
  * de lugar produz XML bem-formado que a operadora recusa.
  */
 function emitGuiaConsulta(xml: XmlBuilder, guia: GuiaConsultaInput): void {
@@ -94,7 +94,7 @@ function emitGuiaConsulta(xml: XmlBuilder, guia: GuiaConsultaInput): void {
   xml.tag('ans:atendimentoRN', guia.atendimentoRN ? 'S' : 'N');
   xml.close('ans:dadosBeneficiario');
 
-  // `ct_contratadoDados` e um CHOICE: exatamente um identificador. O codigo
+  // `ct_contratadoDados` é um CHOICE: exatamente um identificador. O código
   // antigo emitia codigoPrestadorNaOperadora E cnpjContratado juntos.
   xml.open('ans:contratadoExecutante');
   emitIdentificacaoContratado(xml, guia);
@@ -104,7 +104,7 @@ function emitGuiaConsulta(xml: XmlBuilder, guia: GuiaConsultaInput): void {
   xml.open('ans:profissionalExecutante');
   xml.optionalTag('ans:nomeProfissional', guia.profissionalExecutante.nome);
   xml.tag('ans:conselhoProfissional', guia.profissionalExecutante.conselhoProfissional);
-  // O XSD chama `numeroConselhoProfissional` e `UF`, nao `numeroConselho`/`ufConselho`.
+  // O XSD chama `numeroConselhoProfissional` e `UF`, não `numeroConselho`/`ufConselho`.
   xml.tag('ans:numeroConselhoProfissional', guia.profissionalExecutante.numeroConselho);
   xml.tag('ans:UF', guia.profissionalExecutante.ufConselho);
   xml.tag('ans:CBOS', guia.profissionalExecutante.cbos);

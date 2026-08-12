@@ -220,7 +220,7 @@ describe('ciclo completo: demonstrativo -> glosa -> recurso -> resolucao', () =>
       );
     });
 
-    // Verificar que a glosa esta pendente
+    // Verificar que a glosa está pendente
     await withTenantTx(actor, async (tx) => {
       const { rows } = await tx.query<{ status: string }>(
         `SELECT status FROM tiss.glosa WHERE id = $1`,
@@ -260,7 +260,7 @@ describe('ciclo completo: demonstrativo -> glosa -> recurso -> resolucao', () =>
     );
     expect(resolveResult.ok).toBe(true);
 
-    // 6. Verificar que o recurso esta deferido
+    // 6. Verificar que o recurso está deferido
     await withTenantTx(actor, async (tx) => {
       const { rows } = await tx.query<{ status: string }>(
         `SELECT status FROM tiss.recurso_glosa WHERE id = $1`,

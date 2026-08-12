@@ -23,17 +23,17 @@ function adminUrl(): string {
 
 /**
  * Semeia o grafo completo para testes de recurso de glosa:
- * - tenant, clinica, usuario, profissional, paciente
+ * - tenant, clínica, usuário, profissional, paciente
  * - operadora
  * - 10 encounters finalizados, cada um com encounter_version e guia
  * - 1 lote retornado contendo as 10 guias
- * - 1 demonstrativo de analise vinculado ao lote
+ * - 1 demonstrativo de análise vinculado ao lote
  * - 10 demonstrativo_items com glosa (valor_glosa_cents > 0, glosa_codigo preenchido)
  * - 10 tiss.glosa em status pendente vinculando demonstrativo_item, guia e version
  *
  * Os 10 tiss.glosa servem como "glosas pendentes" para vincular ao recurso.
  * Quantidade elevada permite que testes criem recursos independentes sem
- * conflitar com a validacao "glosa ja em recurso ativo" de createRecursoGlosa.
+ * conflitar com a validação "glosa já em recurso ativo" de createRecursoGlosa.
  */
 export async function semearRecursoGlosa(): Promise<SementeRecurso> {
   const GLOSA_COUNT = 10;
@@ -61,7 +61,7 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
   try {
     await c.query('BEGIN');
 
-    // --- tenant, clinica, usuario, membership, profissional, paciente ---
+    // --- tenant, clínica, usuário, membership, profissional, paciente ---
     await c.query(
       `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
        VALUES ($1, $2, 'Clinica Recurso Glosa', '33ABC44556DE77')`,
@@ -165,7 +165,7 @@ export async function semearRecursoGlosa(): Promise<SementeRecurso> {
       );
     }
 
-    // --- demonstrativo de analise ---
+    // --- demonstrativo de análise ---
     let totalGlosaCents = 0;
     for (let i = 1; i <= GLOSA_COUNT; i++) totalGlosaCents += i * 1000;
     const totalLiberadoCents = totalCents - totalGlosaCents;

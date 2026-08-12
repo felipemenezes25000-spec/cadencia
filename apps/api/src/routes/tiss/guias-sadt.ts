@@ -10,18 +10,18 @@ function erroDominio(kind: string, status: number): never {
 }
 
 /**
- * Guia SP/SADT — servico profissional e servico auxiliar de diagnostico.
+ * Guia SP/SADT — serviço profissional e serviço auxiliar de diagnóstico.
  *
- * POR QUE ESTA NAO E PROJETADA COMO A DE CONSULTA:
+ * POR QUE ESTA NÃO É PROJETADA COMO A DE CONSULTA:
  * a guia de consulta nasce sozinha ao finalizar o atendimento, porque tudo que
- * ela precisa ja esta em `clin.encounter_billing` — houve uma consulta, ela e
- * faturada. SP/SADT e ATO DELIBERADO: o medico decide pedir hemograma. Nao ha
+ * ela precisa já está em `clin.encounter_billing` — houve uma consulta, ela é
+ * faturada. SP/SADT é ATO DELIBERADO: o médico decide pedir hemograma. Não há
  * como derivar do atendimento quais exames ele quis, e inventar exame em guia de
- * convenio e fraude, nao conveniencia.
+ * convênio é fraude, não conveniência.
  *
- * O que da para reaproveitar do billing (carteira, CNES, conselho, CBO) e
- * reaproveitado: sao dados do MESMO atendimento, e pedir de novo na tela faria
- * a recepcao redigitar — que e como nasce divergencia entre duas guias do mesmo
+ * O que dá para reaproveitar do billing (carteira, CNES, conselho, CBO) é
+ * reaproveitado: são dados do MESMO atendimento, e pedir de novo na tela faria
+ * a recepção redigitar — que é como nasce divergência entre duas guias do mesmo
  * paciente no mesmo dia.
  */
 
@@ -33,7 +33,7 @@ const Procedimento = z.object({
   valorCentavos: z.number().int().min(0),
   /** Ausente = data do atendimento. Exame pode ser executado noutro dia. */
   dataExecucao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  /** 1.00 e o neutro; 0.50 e a reducao de segundo procedimento na mesma via. */
+  /** 1.00 é o neutro; 0.50 é a redução de segundo procedimento na mesma via. */
   reducaoAcrescimo: z.number().min(0.01).max(9.99).optional(),
 });
 
@@ -61,9 +61,9 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
     schema: {
       body: z.object({
         encounterId: z.string().uuid(),
-        /** '1' eletivo, '2' urgencia/emergencia. */
+        /** '1' eletivo, '2' urgência/emergência. */
         caraterAtendimento: z.enum(['1', '2']),
-        /** `dm_tipoAtendimento`: {01,02,03,04,08,09,10,13,23} — nao tem 05. */
+        /** `dm_tipoAtendimento`: {01,02,03,04,08,09,10,13,23} — não tem 05. */
         tipoAtendimento: z.enum(['01', '02', '03', '04', '08', '09', '10', '13', '23']),
         indicacaoClinica: z.string().trim().max(500).optional(),
         observacao: z.string().trim().max(500).optional(),
@@ -83,8 +83,8 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
       indicacaoClinica?: string; observacao?: string;
       procedimentos: z.infer<typeof Procedimento>[] };
 
-    // A guia se prende a VERSAO do atendimento, nao so ao atendimento: se o
-    // registro for retificado depois, da para saber sobre qual texto clinico
+    // A guia se prende a VERSÃO do atendimento, não só ao atendimento: se o
+    // registro for retificado depois, dá para saber sobre qual texto clínico
     // esta guia foi emitida.
     const { rows: enc } = await tx.query<{ head_version_id: string | null; status: string }>(
       `SELECT head_version_id::text, status::text FROM clin.encounter WHERE id = $1`,
@@ -92,8 +92,8 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
     const atendimento = enc[0];
     if (atendimento === undefined) erroDominio('atendimento_nao_encontrado', 404);
     if (atendimento.head_version_id === null) {
-      // Sem versao selada nao ha o que a guia referencie. Emitir agora produziria
-      // uma cobranca que aponta para um rascunho que ainda pode mudar.
+      // Sem versão selada não há o que a guia referencie. Emitir agora produziria
+      // uma cobrança que aponta para um rascunho que ainda pode mudar.
       erroDominio('atendimento_sem_versao_finalizada', 422);
     }
 
@@ -108,7 +108,7 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
     const billing = bill[0];
     if (billing === undefined) erroDominio('atendimento_sem_dados_de_faturamento', 422);
     if (billing.registro_ans === null) {
-      // Particular nao tem guia: nao ha operadora para receber.
+      // Particular não tem guia: não há operadora para receber.
       erroDominio('atendimento_particular_nao_gera_guia', 422);
     }
 
@@ -118,9 +118,9 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
     const operadora = op[0];
     if (operadora === undefined) erroDominio('operadora_nao_cadastrada', 422);
 
-    // Mesma sequencia da guia de consulta (`tiss.next_guia_number`), por tenant:
-    // o numero da guia e unico no universo do prestador, atravessando os dois
-    // tipos. Duas sequencias independentes gerariam o mesmo numero para uma
+    // Mesma sequência da guia de consulta (`tiss.next_guia_number`), por tenant:
+    // o número da guia é único no universo do prestador, atravessando os dois
+    // tipos. Duas sequências independentes gerariam o mesmo número para uma
     // consulta e uma SP/SADT, e a operadora recusaria a segunda.
     const { rows: num } = await tx.query<{ next_guia_number: string }>(
       `SELECT tiss.next_guia_number($1)`, [ctx.actor.tenantId]);
@@ -166,8 +166,8 @@ export async function guiaSadtRoutes(app: FastifyInstance): Promise<void> {
     let total = 0;
     for (const [i, p] of b.procedimentos.entries()) {
       const fator = p.reducaoAcrescimo ?? 1;
-      // Total DERIVADO, e a tabela nao tem coluna para ele: guardar abriria
-      // espaco para divergir dos proprios itens, que e a glosa mais boba.
+      // Total DERIVADO, e a tabela não tem coluna para ele: guardar abriria
+      // espaço para divergir dos próprios itens, que é a glosa mais boba.
       total += Math.round(p.valorCentavos * p.quantidade * fator);
       await tx.query(
         `INSERT INTO tiss.encounter_guia_sadt_item (

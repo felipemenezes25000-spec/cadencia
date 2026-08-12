@@ -68,9 +68,9 @@ describe('invariante: sem relogio em codigo de terminologia', () => {
       path: 'packages/tiss/src/serializer.test.ts',
       content: `const agora = new Date();\n`,
     }]);
-    // O collectTerminologyFiles ja exclui .test.ts, mas findClockUsages recebe
-    // a lista pronta — se alguem passar o teste, deve acusar, e o filtro e no collect.
-    // Este teste verifica que o GLOB nao inclui .test.ts, abaixo.
+    // O collectTerminologyFiles já exclui .test.ts, mas findClockUsages recebe
+    // a lista pronta — se alguém passar o teste, deve acusar, e o filtro é no collect.
+    // Este teste verifica que o GLOB não inclui .test.ts, abaixo.
     expect(achados).toHaveLength(1);
   });
 
@@ -86,7 +86,7 @@ describe('invariante: sem relogio em codigo de terminologia', () => {
 
   it('a arvore real do repositorio esta limpa', () => {
     const arquivos = collectTerminologyFiles();
-    // Se der zero, o glob esta errado e o invariante nao esta olhando para nada.
+    // Se der zero, o glob está errado e o invariante não está olhando para nada.
     expect(TERMINOLOGY_GLOBS.length).toBeGreaterThan(0);
     expect(arquivos.length).toBeGreaterThan(0);
     expect(findClockUsages(arquivos)).toEqual([]);

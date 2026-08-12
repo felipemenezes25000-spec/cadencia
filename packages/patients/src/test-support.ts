@@ -1,7 +1,7 @@
-// Semeia tenant, clinica, usuario, vinculo de recepcao e a lista de pacientes que
-// os testes de busca interrogam. Roda com a conexao ADMINISTRATIVA porque cria o
-// tenant — que e a raiz do isolamento e nao existe transacao de negocio capaz de
-// cria-lo: `app_rw` so tem SELECT em app.tenant (0007).
+// Semeia tenant, clínica, usuário, vínculo de recepção e a lista de pacientes que
+// os testes de busca interrogam. Roda com a conexão ADMINISTRATIVA porque cria o
+// tenant — que é a raiz do isolamento e não existe transação de negócio capaz de
+// criá-lo: `app_rw` só tem SELECT em app.tenant (0007).
 import { Pool } from 'pg';
 import { uuidv7 } from '@cadencia/kernel';
 
@@ -52,8 +52,8 @@ export async function semearPacientes(): Promise<SementePacientes> {
   const c = await admin.connect();
   try {
     await c.query('BEGIN');
-    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros digitos hex de
-    // um uuidv7 sao `ms >> 16`, um balde de ~65 segundos, entao duas semeaduras
+    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros dígitos hex de
+    // um uuidv7 são `ms >> 16`, um balde de ~65 segundos, então duas semeaduras
     // da mesma rodada cairiam no mesmo slug e a segunda quebraria em
     // tenant_slug_key (23505).
     await c.query(
@@ -75,8 +75,8 @@ export async function semearPacientes(): Promise<SementePacientes> {
     for (const p of PACIENTES) {
       const id = p.nome === 'Maria Souza Lima' ? s.patientMariaId : uuidv7();
       if (p.nome === 'MARIA SOUSA') sobrevivente = id;
-      // inactivated_at nasce de clock_timestamp() e nunca do relogio do Node:
-      // §10 item 4 — a fonte de tempo do que e persistido e o PostgreSQL.
+      // inactivated_at nasce de clock_timestamp() e nunca do relógio do Node:
+      // §10 item 4 — a fonte de tempo do que é persistido é o PostgreSQL.
       await c.query(
         `INSERT INTO clin.patient
            (tenant_id, id, full_name, nome_social, cadastro_status, phone_primary,

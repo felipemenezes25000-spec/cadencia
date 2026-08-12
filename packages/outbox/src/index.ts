@@ -8,6 +8,6 @@ export {
   type OutboxRow,
 } from './dispatcher';
 export { fetchPending, markDispatched, markFailed } from './outbox-worker';
-// Reexporta EventType para conveniencia de quem consome outbox + events junto.
+// Reexporta EventType para conveniência de quem consome outbox + events junto.
 // Permitido: outbox (serv-L0) importa events (base-L0).
 export { type EventType } from '@cadencia/events';

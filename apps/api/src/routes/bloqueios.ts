@@ -11,14 +11,14 @@ function erroDominio(kind: string, status: number): never {
 const TIPOS = ['almoco', 'ausencia', 'feriado', 'bloqueio', 'manutencao'] as const;
 
 /**
- * Bloqueios da agenda: almoco, ausencia, feriado, manutencao de sala.
+ * Bloqueios da agenda: almoço, ausência, feriado, manutenção de sala.
  *
- * `sched.block` existia no banco desde a Fase 1, com constraint de sobreposicao
- * e tudo, e nao tinha rota nenhuma — a agenda so sabia agendar. Na pratica a
- * recepcao marcava consulta em cima do almoco do medico e descobria no dia.
+ * `sched.block` existia no banco desde a Fase 1, com constraint de sobreposição
+ * e tudo, e não tinha rota nenhuma — a agenda só sabia agendar. Na prática a
+ * recepção marcava consulta em cima do almoço do médico e descobria no dia.
  *
- * O motivo e obrigatorio porque bloqueio sem motivo vira buraco que ninguem
- * sabe explicar, e a recepcao acaba desbloqueando por engano.
+ * O motivo é obrigatório porque bloqueio sem motivo vira buraco que ninguém
+ * sabe explicar, e a recepção acaba desbloqueando por engano.
  */
 export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -30,7 +30,7 @@ export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
         endsAt: z.string().datetime(),
         kind: z.enum(TIPOS),
         motivo: z.string().trim().min(1).max(200),
-        /** Ausente = bloqueia a unidade inteira (feriado, manutencao). */
+        /** Ausente = bloqueia a unidade inteira (feriado, manutenção). */
         professionalId: z.string().uuid().optional(),
         roomId: z.string().uuid().optional(),
       }),
@@ -41,8 +41,8 @@ export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
       startsAt: string; endsAt: string; kind: typeof TIPOS[number];
       motivo: string; professionalId?: string; roomId?: string };
 
-    // CHECK (ends_at > starts_at) no banco. Recusar aqui devolve validacao em
-    // vez de 500 vindo do Postgres, que o usuario leria como falha do sistema.
+    // CHECK (ends_at > starts_at) no banco. Recusar aqui devolve validação em
+    // vez de 500 vindo do Postgres, que o usuário leria como falha do sistema.
     if (new Date(b.endsAt) <= new Date(b.startsAt)) {
       erroDominio('intervalo_invalido', 400);
     }
@@ -59,8 +59,8 @@ export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
          b.startsAt, b.endsAt, b.kind, b.motivo.trim()]);
     } catch (e) {
       // 23P01 = exclusion_violation, de `ex_block_sem_sobreposicao`. Traduzir
-      // para 409 diz a recepcao o que aconteceu: ja existe bloqueio naquele
-      // horario. Deixar subir como 500 diria "o sistema quebrou".
+      // para 409 diz a recepção o que aconteceu: já existe bloqueio naquele
+      // horário. Deixar subir como 500 diria "o sistema quebrou".
       if ((e as { code?: string }).code === '23P01') {
         erroDominio('bloqueio_sobreposto', 409);
       }
@@ -97,9 +97,9 @@ export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
       id: string; kind: string; motivo: string; starts_at: string;
       ends_at: string; professional_id: string | null; nome: string | null;
     }>(
-      // O intervalo e comparado no FUSO DA UNIDADE: "os bloqueios de 10 a 14 de
-      // junho" e a semana da clinica, nao a janela UTC equivalente. Sem isso, o
-      // almoco das 12h de uma clinica no Acre cai fora do filtro do proprio dia.
+      // O intervalo é comparado no FUSO DA UNIDADE: "os bloqueios de 10 a 14 de
+      // junho" é a semana da clínica, não a janela UTC equivalente. Sem isso, o
+      // almoço das 12h de uma clínica no Acre cai fora do filtro do próprio dia.
       `SELECT b.id, b.kind::text AS kind, b.motivo,
               to_char(b.starts_at, 'YYYY-MM-DD"T"HH24:MI:SSOF:00') AS starts_at,
               to_char(b.ends_at,   'YYYY-MM-DD"T"HH24:MI:SSOF:00') AS ends_at,
@@ -134,9 +134,9 @@ export async function bloqueioRoutes(app: FastifyInstance): Promise<void> {
     },
   }, rota('appointment.write', async (tx, _ctx, req, reply) => {
     const p = req.params as { id: string };
-    // DELETE de verdade: bloqueio nao e registro clinico nem financeiro, e um
-    // almoco cancelado nao precisa sobreviver para auditoria. A trilha ja
-    // registra a operacao.
+    // DELETE de verdade: bloqueio não é registro clínico nem financeiro, e um
+    // almoço cancelado não precisa sobreviver para auditoria. A trilha já
+    // registra a operação.
     const { rowCount } = await tx.query(
       `DELETE FROM sched.block WHERE id = $1`, [p.id]);
     if (rowCount === 0) erroDominio('bloqueio_nao_encontrado', 404);

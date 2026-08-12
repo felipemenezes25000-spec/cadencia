@@ -1,15 +1,15 @@
 import { ValidationError } from '../errors';
 import { err, ok, type Result } from '../result';
 
-/** CPF normalizado: 11 digitos, sem pontuacao. */
+/** CPF normalizado: 11 dígitos, sem pontuação. */
 export type Cpf = string & { readonly __brand: 'Cpf' };
 
 const ALL_EQUAL = /^(\d)\1{10}$/;
 
 /**
- * Digitos verificadores do CPF (modulo 11).
- * 1o DV: digitos 1..9 com pesos 10..2; resto = (soma * 10) % 11; 10 vira 0.
- * 2o DV: digitos 1..9 + 1o DV com pesos 11..2; mesma regra.
+ * Dígitos verificadores do CPF (módulo 11).
+ * 1o DV: dígitos 1..9 com pesos 10..2; resto = (soma * 10) % 11; 10 vira 0.
+ * 2o DV: dígitos 1..9 + 1o DV com pesos 11..2; mesma regra.
  */
 function checkDigits(digits: readonly number[]): [number, number] {
   let sum1 = 0;
@@ -33,7 +33,7 @@ export function parseCpf(input: string): Result<Cpf, ValidationError> {
     return err(new ValidationError('cpf.tamanho_invalido', 'CPF precisa ter 11 digitos', { length: digits.length }));
   }
   if (ALL_EQUAL.test(digits)) {
-    // 000.000.000-00 e 111.111.111-11 passam no modulo 11. So esta regra os pega.
+    // 000.000.000-00 e 111.111.111-11 passam no módulo 11. Só esta regra os pega.
     return err(new ValidationError('cpf.digitos_repetidos', 'CPF com todos os digitos iguais nao existe'));
   }
 

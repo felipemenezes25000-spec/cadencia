@@ -3,10 +3,10 @@ import { serializeRecursoGlosa } from './serialize-recurso-glosa';
 import type { RecursoGlosaInput } from './types';
 
 /**
- * Teste dedicado: caracteres acentuados do portugues brasileiro sao
+ * Teste dedicado: caracteres acentuados do português brasileiro são
  * preservados na justificativa do recurso de glosa (UTF-16 -> ISO-8859-1)
- * e na volta (decodificacao). Garante que justificativas com acentos
- * nao perdem informacao no XML TISS.
+ * e na volta (decodificação). Garante que justificativas com acentos
+ * não perdem informação no XML TISS.
  */
 
 function recursoComJustificativa(justificativa: string): RecursoGlosaInput {
@@ -64,11 +64,11 @@ describe('preservacao de acentos ISO-8859-1 na justificativa do recurso de glosa
       const { xml, warnings } = serializeRecursoGlosa(recursoComJustificativa(just));
       expect(warnings).toEqual([]);
 
-      // Decodifica e verifica que o caractere acentuado aparece na saida
+      // Decodifica e verifica que o caractere acentuado aparece na saída
       const text = new TextDecoder('iso-8859-1').decode(xml);
       expect(text).toContain(char);
 
-      // Verifica que o byte correto esta presente no array
+      // Verifica que o byte correto está presente no array
       const bytes = Array.from(xml);
       expect(bytes).toContain(expectedByte);
     });
@@ -87,15 +87,15 @@ describe('preservacao de acentos ISO-8859-1 na justificativa do recurso de glosa
     const fraseComEmoji = 'Procedimento necessário ❤ indicação clínica';
     const { xml, warnings } = serializeRecursoGlosa(recursoComJustificativa(fraseComEmoji));
 
-    // U+2764 (coracao) nao existe em ISO-8859-1
+    // U+2764 (coração) não existe em ISO-8859-1
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain('U+2764');
 
-    // Mas os acentos validos foram preservados
+    // Mas os acentos válidos foram preservados
     const text = new TextDecoder('iso-8859-1').decode(xml);
     expect(text).toContain('necessário');
     expect(text).toContain('indicação');
-    // O emoji foi substituido por ?
+    // O emoji foi substituído por ?
     expect(text).toContain('Procedimento necessário ? indicação clínica');
   });
 });

@@ -1,17 +1,17 @@
 /**
  * O Clock existe para DUAS coisas, e nada mais:
- *   1. medir duracao (latencia, timeout, backoff);
+ *   1. medir duração (latência, timeout, backoff);
  *   2. alimentar o componente temporal do UUIDv7.
  *
- * A fonte de tempo PERSISTIDO e sempre o Postgres — `clock_timestamp()`, com o
- * cluster em UTC e NTP (convencoes universais da secao 3 da spec). Nenhum valor
- * gravado em coluna timestamptz sai daqui. Relogio de aplicacao deriva entre
- * processos; o do banco e unico, e a ordem dos fatos do prontuario depende disso.
+ * A fonte de tempo PERSISTIDO é sempre o Postgres — `clock_timestamp()`, com o
+ * cluster em UTC e NTP (convenções universais da seção 3 da spec). Nenhum valor
+ * gravado em coluna timestamptz sai daqui. Relógio de aplicação deriva entre
+ * processos; o do banco é único, e a ordem dos fatos do prontuário depende disso.
  */
 export interface Clock {
   /** Epoch em milissegundos. Para o UUIDv7 e para carimbo de log. */
   nowMs(): number;
-  /** Relogio monotonico, imune a ajuste de NTP. NUNCA persistir. */
+  /** Relógio monotônico, imune a ajuste de NTP. NUNCA persistir. */
   monotonicMs(): number;
 }
 
@@ -21,9 +21,9 @@ export const systemClock: Clock = {
 };
 
 export interface TestClock extends Clock {
-  /** Passagem normal do tempo: move os dois relogios. */
+  /** Passagem normal do tempo: move os dois relógios. */
   advance(ms: number): void;
-  /** Ajuste de NTP: move SO o relogio de parede, e pode ir para tras. */
+  /** Ajuste de NTP: move SÓ o relógio de parede, e pode ir para trás. */
   stepWallClock(ms: number): void;
 }
 

@@ -37,8 +37,8 @@ SELECT n.nspname   AS schema,
  ORDER BY 1, 2, 3`;
 
 /**
- * `audit` fica de fora da varredura de coluna orfa: a trilha registra tentativa sem
- * contexto e entidade que pode ja nao existir. FK ali faria a trilha recusar
+ * `audit` fica de fora da varredura de coluna órfã: a trilha registra tentativa sem
+ * contexto e entidade que pode já não existir. FK ali faria a trilha recusar
  * justamente o evento que o auditor procura.
  */
 const ORPHAN_SCOPE = ['app', 'clin', 'fin', 'tiss'];
@@ -98,7 +98,7 @@ export function fkViolations(fks: readonly ForeignKey[]): string[] {
   const out: string[] = [];
 
   for (const fk of fks) {
-    // Alvo global (app.tenant, id."user", ref.*): FK composta e impossivel, e e isenta.
+    // Alvo global (app.tenant, id."user", ref.*): FK composta é impossível, e é isenta.
     if (!fk.refHasTenantId) continue;
 
     const onde = `${fk.schema}.${fk.relation}.${fk.constraintName}`;

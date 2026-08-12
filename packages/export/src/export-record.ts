@@ -67,10 +67,10 @@ export async function exportRecord(
     readonly clock: Clock;
     readonly docs: ExportDocumentAdapter;
     /**
-     * Onde o PDF exportado e guardado. Sem isto o arquivo era gerado, hasheado,
+     * Onde o PDF exportado é guardado. Sem isto o arquivo era gerado, hasheado,
      * a linha era gravada apontando para `pdf_key` — e os bytes eram
-     * descartados: a exportacao devolvia recibo de um documento inexistente, e
-     * o titular so descobria ao tentar abrir.
+     * descartados: a exportação devolvia recibo de um documento inexistente, e
+     * o titular só descobria ao tentar abrir.
      */
     readonly storage: StorageAdapter;
   },
@@ -169,8 +169,8 @@ export async function exportRecord(
   const durationMs = Math.round(deps.clock.monotonicMs() - inicio);
 
   // Grava o OBJETO antes da linha. Na ordem inversa, uma falha de escrita
-  // deixaria no acervo um recibo assinado de um PDF que nao existe — e recibo de
-  // exportacao e o que a clinica apresenta quando o titular reclama na ANPD.
+  // deixaria no acervo um recibo assinado de um PDF que não existe — e recibo de
+  // exportação é o que a clínica apresenta quando o titular reclama na ANPD.
   await deps.storage.put(`exportacoes/${pdfKey}`, carimbado, 'application/pdf');
 
   await tx.query(

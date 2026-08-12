@@ -8,7 +8,7 @@ let s: SementeSessao;
 beforeAll(async () => { s = await semearSessao({ role: 'recepcao' }); });
 afterAll(async () => { await closePools(); });
 
-/** Um dia futuro, para nao colidir com o que a semente ja criou. */
+/** Um dia futuro, para não colidir com o que a semente já criou. */
 function faixa(diaOffset: number, horaInicio: number, horaFim: number) {
   const d = new Date(Date.UTC(2030, 5, 10 + diaOffset));
   const ini = new Date(d); ini.setUTCHours(horaInicio, 0, 0, 0);
@@ -38,8 +38,8 @@ describe('bloqueios e observacoes da agenda', () => {
       method: 'POST', url: '/v1/agenda/bloqueios',
       payload: { ...faixa(1, 8, 9), kind: 'bloqueio', motivo: '  ' },
       ...auth(s) });
-    // `motivo` e NOT NULL no banco. Bloqueio sem motivo vira buraco na agenda
-    // que ninguem sabe explicar — e a recepcao acaba desbloqueando por engano.
+    // `motivo` é NOT NULL no banco. Bloqueio sem motivo vira buraco na agenda
+    // que ninguém sabe explicar — e a recepção acaba desbloqueando por engano.
     expect(r.statusCode).toBe(400);
     await app.close();
   });
@@ -50,7 +50,7 @@ describe('bloqueios e observacoes da agenda', () => {
       method: 'POST', url: '/v1/agenda/bloqueios',
       payload: { ...faixa(2, 15, 14), kind: 'bloqueio', motivo: 'invertido' },
       ...auth(s) });
-    // CHECK (ends_at > starts_at). Recusar aqui devolve validacao em vez de 500.
+    // CHECK (ends_at > starts_at). Recusar aqui devolve validação em vez de 500.
     expect(r.statusCode).toBe(400);
     await app.close();
   });
@@ -73,7 +73,7 @@ describe('bloqueios e observacoes da agenda', () => {
       },
       ...auth(s) });
     // `ex_block_sem_sobreposicao` no banco. Devolver 409 em vez de 500 diz a
-    // recepcao o que aconteceu: ja existe bloqueio naquele horario.
+    // recepção o que aconteceu: já existe bloqueio naquele horário.
     expect(segundo.statusCode).toBe(409);
     await app.close();
   });

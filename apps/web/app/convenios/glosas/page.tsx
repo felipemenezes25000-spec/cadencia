@@ -53,16 +53,16 @@ export default function PaginaGlosas() {
             nomeProcedimento: '',
             codigoGlosa: g.codigoGlosa,
             // O motivo em texto vem da TUSS tabela 38, decodificado no detalhe
-            // do demonstrativo. Aqui a tela mostra o codigo, que e o que a
-            // operadora devolveu — traduzir errado seria pior que nao traduzir.
+            // do demonstrativo. Aqui a tela mostra o código, que é o que a
+            // operadora devolveu — traduzir errado seria pior que não traduzir.
             descricaoGlosa: '',
             valorApresentadoCentavos: 0,
             valorGlosadoCentavos: g.valorGlosadoCents,
             dataAtendimento: g.createdAt.slice(0, 10),
-            // O status da TELA descreve onde a glosa esta no ciclo do recurso,
-            // e nao o enum cru do banco: 'aceita' no banco quer dizer que a
-            // clinica aceitou a glosa (desistiu), o que na tela e o fim da
-            // linha, nao um estado de recurso.
+            // O status da TELA descreve onde a glosa está no ciclo do recurso,
+            // e não o enum cru do banco: 'aceita' no banco quer dizer que a
+            // clínica aceitou a glosa (desistiu), o que na tela é o fim da
+            // linha, não um estado de recurso.
             status: g.status === 'recursada' ? 'recurso_enviado' as const
               : g.status === 'aceita' ? 'recurso_negado' as const
               : 'pendente' as const,
@@ -76,9 +76,9 @@ export default function PaginaGlosas() {
         return dados;
       }}
       aoCriarRecurso={(glosaIds) => {
-        // `/novo`, e nao `/convenios/recursos?glosas=`: a lista de recursos ignora
-        // o parametro e mostrava a lista de sempre, como se o clique nao tivesse
-        // acontecido. Agora vai para o formulario que existe.
+        // `/novo`, e não `/convenios/recursos?glosas=`: a lista de recursos ignora
+        // o parâmetro e mostrava a lista de sempre, como se o clique não tivesse
+        // acontecido. Agora vai para o formulário que existe.
         router.push(`/convenios/recursos/novo?glosas=${glosaIds.join(',')}`);
       }}
     />

@@ -34,7 +34,7 @@ beforeAll(async () => {
        VALUES ($1, $2, 'Unidade Ob', '2077508', 'America/Sao_Paulo')`,
       [tenantId, clinicId]);
 
-    // Inserir evento de outbox pendente na tabela unica app.outbox
+    // Inserir evento de outbox pendente na tabela única app.outbox
     await c.query(
       `INSERT INTO app.outbox
          (tenant_id, id, event_type, aggregate_id, payload,

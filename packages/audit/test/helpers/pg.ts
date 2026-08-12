@@ -11,9 +11,9 @@ function adminUrl(): string {
 }
 
 /**
- * Abre uma conexao no banco local e assume o papel pedido.
- * A URL administrativa e a do superusuario do container; o SET ROLE e o que faz
- * a RLS valer, porque um superusuario que assume papel comum passa a ser filtrado.
+ * Abre uma conexão no banco local e assume o papel pedido.
+ * A URL administrativa é a do superusuário do container; o SET ROLE é o que faz
+ * a RLS valer, porque um superusuário que assume papel comum passa a ser filtrado.
  */
 export async function connectAs(role: string): Promise<Client> {
   if (!ROLE_RE.test(role)) {
@@ -26,9 +26,9 @@ export async function connectAs(role: string): Promise<Client> {
 }
 
 /**
- * Abre uma conexao SEM SET ROLE: continua superusuario. Usado para ler a trilha
- * nos testes (a RLS forcada da Task 26 nao deixa nem o dono da tabela ler) e,
- * na Task 27, para provar que o trigger detem inclusive o superusuario.
+ * Abre uma conexão SEM SET ROLE: continua superusuário. Usado para ler a trilha
+ * nos testes (a RLS forçada da Task 26 não deixa nem o dono da tabela ler) e,
+ * na Task 27, para provar que o trigger detém inclusive o superusuário.
  */
 export async function connectSuperuser(): Promise<Client> {
   const client = new Client({ connectionString: adminUrl() });
@@ -37,9 +37,9 @@ export async function connectSuperuser(): Promise<Client> {
 }
 
 /**
- * Preambulo de contexto. O terceiro argumento de set_config e sempre TRUE:
- * o escopo e a TRANSACAO, nunca a sessao. Com PgBouncer em transaction mode a
- * conexao e reciclada entre tenants e um SET de sessao vazaria o tenant anterior.
+ * Preâmbulo de contexto. O terceiro argumento de set_config é sempre TRUE:
+ * o escopo é a TRANSAÇÃO, nunca a sessão. Com PgBouncer em transaction mode a
+ * conexão é reciclada entre tenants e um SET de sessão vazaria o tenant anterior.
  * Chame sempre depois de um BEGIN.
  */
 export async function setContext(

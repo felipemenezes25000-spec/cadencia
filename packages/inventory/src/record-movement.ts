@@ -69,8 +69,8 @@ export interface AdjustStockInput {
 }
 
 /**
- * Ajuste de estoque: calcula a diferenca entre estoque atual e o desejado,
- * e registra uma movimentacao de ajuste (entrada ou saida) para chegar la.
+ * Ajuste de estoque: calcula a diferença entre estoque atual e o desejado,
+ * e registra uma movimentação de ajuste (entrada ou saida) para chegar lá.
  */
 export async function adjustStock(
   tx: TxClient,

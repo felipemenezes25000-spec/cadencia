@@ -15,12 +15,12 @@ interface ItemTuss {
 
 const COLUNAS: readonly ColunaCatalogo<ItemTuss>[] = [
   { chave: 'tabela', rotulo: 'Tabela' },
-  { chave: 'codigo', rotulo: 'Codigo' },
+  { chave: 'codigo', rotulo: 'Código' },
   { chave: 'termo', rotulo: 'Termo' },
 ];
 
 const TABELAS = [
-  { value: '18', label: '18 — Diarias e taxas' },
+  { value: '18', label: '18 — Diárias e taxas' },
   { value: '19', label: '19 — Materiais e OPME' },
   { value: '20', label: '20 — Medicamentos' },
   { value: '22', label: '22 — Procedimentos e eventos' },
@@ -44,9 +44,9 @@ export default function PaginaTuss() {
     <div className="cadencia-page grid gap-8">
       <PageHeader
         titulo="TUSS"
-        subtitulo="Terminologia Unificada da Saude Suplementar (ANS)"
+        subtitulo="Terminologia Unificada da Saúde Suplementar (ANS)"
         breadcrumbs={[
-          { rotulo: 'Catalogos', href: '/catalogos' },
+          { rotulo: 'Catálogos', href: '/catalogos' },
           { rotulo: 'TUSS' },
         ]}
       />
@@ -60,7 +60,7 @@ export default function PaginaTuss() {
       </div>
       <BuscaDeCatalogo<ItemTuss>
         titulo="TUSS"
-        placeholder="Buscar por codigo ou termo..."
+        placeholder="Buscar por código ou termo..."
         colunas={COLUNAS}
         buscar={buscar}
       />

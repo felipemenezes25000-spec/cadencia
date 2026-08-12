@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { rota } from '../guard';
 
 /**
- * §3.9 e decisao irreversivel 11 — terminologia versionada POR DATA DO EVENTO.
+ * §3.9 e decisão irreversível 11 — terminologia versionada POR DATA DO EVENTO.
  *
- * `data` e obrigatoria nas duas rotas, e essa e a decisao de design inteira.
- * Deixa-la opcional com default de `current_date` daria uma API mais confortavel
- * e um bug que so aparece meses depois: o atendimento de marco faturado em julho
- * levaria a descricao de julho, e o lote volta glosado sem que ninguem entenda
- * por que. As funcoes `ref.cid10_at` e `ref.tuss_at` do banco tambem nao tem
- * versao sem data — esta rota so mantem a mesma regra na borda HTTP.
+ * `data` é obrigatória nas duas rotas, e essa é a decisão de design inteira.
+ * Deixá-la opcional com default de `current_date` daria uma API mais confortável
+ * e um bug que só aparece meses depois: o atendimento de março faturado em julho
+ * levaria a descrição de julho, e o lote volta glosado sem que ninguém entenda
+ * por que. As funções `ref.cid10_at` e `ref.tuss_at` do banco também não têm
+ * versão sem data — esta rota só mantém a mesma regra na borda HTTP.
  */
 
 const LIMITE_PADRAO = 20;
@@ -35,11 +35,11 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
             codigo: z.string(),
             descricao: z.string(),
             capitulo: z.number().int().nullable(),
-            // A competencia e a VERSAO da terminologia. `clin.diagnosis` exige
+            // A competência é a VERSÃO da terminologia. `clin.diagnosis` exige
             // terminology_version para responder "qual CID valia quando este
-            // diagnostico foi feito"; sem ela vindo daqui, quem monta o payload
-            // inventaria a versao — e versao inventada e pior que ausente numa
-            // pericia.
+            // diagnóstico foi feito"; sem ela vindo daqui, quem monta o payload
+            // inventaria a versão — e versão inventada é pior que ausente numa
+            // perícia.
             competencia: z.string(),
           })),
         }),
@@ -65,12 +65,12 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
   /**
    * Busca na CID-11.
    *
-   * Rota SEPARADA da `/v1/catalogos/cid`, e nao um parametro `sistema` nela,
-   * porque as duas terminologias tem forma diferente: a CID-11 carrega a URI da
-   * fundacao (identidade estavel entre releases) e o capitulo e TEXTO — a CID-11
-   * tem os capitulos V e X, que sao letras. Espremer as duas na mesma resposta
-   * obrigaria a converter capitulo para texto no CID-10 tambem, quebrando quem
-   * ja consome aquela rota, para acomodar um catalogo que so vale a partir de
+   * Rota SEPARADA da `/v1/catalogos/cid`, e não um parâmetro `sistema` nela,
+   * porque as duas terminologias têm forma diferente: a CID-11 carrega a URI da
+   * fundação (identidade estável entre releases) e o capítulo é TEXTO — a CID-11
+   * tem os capítulos V e X, que são letras. Espremer as duas na mesma resposta
+   * obrigaria a converter capítulo para texto no CID-10 também, quebrando quem
+   * já consome aquela rota, para acomodar um catálogo que só vale a partir de
    * 2027.
    */
   r.get('/v1/catalogos/cid11', {
@@ -86,8 +86,8 @@ export async function catalogoRoutes(app: FastifyInstance): Promise<void> {
             codigo: z.string(),
             descricao: z.string(),
             capitulo: z.string().nullable(),
-            // A URI acompanha o resultado para que quem grava o diagnostico
-            // possa guardar a identidade estavel, e nao so o codigo — que a OMS
+            // A URI acompanha o resultado para que quem grava o diagnóstico
+            // possa guardar a identidade estável, e não só o código — que a OMS
             // pode recodificar no release seguinte.
             uri: z.string(),
             competencia: z.string(),

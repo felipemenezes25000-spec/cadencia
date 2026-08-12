@@ -15,9 +15,9 @@ export type DraftFailure =
   | { kind: 'conflito_de_revisao'; currentRev: number; currentPayload: DraftPayload };
 
 /**
- * Abre o rascunho. Se ainda nao existe, devolve o estado inicial SEM gravar:
- * abrir a tela nao pode criar linha, senao todo atendimento aberto por engano
- * vira rascunho orfao e depois versao `incompleto` pela politica dos 7 dias.
+ * Abre o rascunho. Se ainda não existe, devolve o estado inicial SEM gravar:
+ * abrir a tela não pode criar linha, senão todo atendimento aberto por engano
+ * vira rascunho órfão e depois versão `incompleto` pela política dos 7 dias.
  */
 export async function openDraft(
   tx: TxClient, encounterId: string,
@@ -25,7 +25,7 @@ export async function openDraft(
   const enc = await tx.query<{ status: string }>(
     `SELECT status::text AS status FROM clin.encounter WHERE id = $1`, [encounterId]);
   const linha = enc.rows[0];
-  // RLS ja filtrou tenant e escopo clinico: zero linhas e "nao existe para voce".
+  // RLS já filtrou tenant e escopo clínico: zero linhas é "não existe para você".
   if (!linha) return err({ kind: 'atendimento_nao_encontrado' });
   if (linha.status !== 'rascunho') return err({ kind: 'atendimento_nao_esta_em_rascunho' });
 
@@ -46,8 +46,8 @@ export interface SaveDraftInput {
 }
 
 /**
- * Grava o rascunho com concorrencia otimista. `expectedRev` e a revisao que a
- * tela tinha quando o usuario comecou a digitar; se o banco avancou, devolvemos
+ * Grava o rascunho com concorrência otimista. `expectedRev` é a revisão que a
+ * tela tinha quando o usuário começou a digitar; se o banco avançou, devolvemos
  * o estado vigente para a tela reconciliar em vez de sobrescrever.
  */
 export async function saveDraft(
@@ -59,8 +59,8 @@ export async function saveDraft(
   if (!linha) return err({ kind: 'atendimento_nao_encontrado' });
   if (linha.status !== 'rascunho') return err({ kind: 'atendimento_nao_esta_em_rascunho' });
 
-  // Primeira gravacao: INSERT idempotente. ON CONFLICT DO NOTHING evita corrida
-  // entre duas abas do mesmo medico abrindo o atendimento ao mesmo tempo.
+  // Primeira gravação: INSERT idempotente. ON CONFLICT DO NOTHING evita corrida
+  // entre duas abas do mesmo médico abrindo o atendimento ao mesmo tempo.
   if (input.expectedRev === 1) {
     const ins = await tx.query<{ rev: number }>(
       `INSERT INTO clin.encounter_draft (encounter_id, payload, rev, updated_by)
@@ -70,7 +70,7 @@ export async function saveDraft(
       [input.encounterId, JSON.stringify(input.payload)]);
     const criado = ins.rows[0];
     if (criado) return ok({ rev: criado.rev });
-    // Ja existia: cai no caminho do UPDATE, que devolve o conflito correto.
+    // Já existia: cai no caminho do UPDATE, que devolve o conflito correto.
   }
 
   const upd = await tx.query<{ rev: number }>(

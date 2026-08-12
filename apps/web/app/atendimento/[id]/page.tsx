@@ -30,10 +30,10 @@ interface Contexto {
 interface ConfigDoProntuario { secoes: SecaoDaFicha[] }
 
 /**
- * O painel de cobranca fala `credito`/`debito`; `fin.payment_method_kind` fala
- * `cartao_credito`/`cartao_debito`. Sao vocabularios diferentes de propósito —
- * um e rotulo de tela, o outro e dominio contabil — e a traducao mora aqui, na
- * borda. `boleto` nao tem par: fica de fora e o painel diz que nao suporta, em
+ * O painel de cobrança fala `credito`/`debito`; `fin.payment_method_kind` fala
+ * `cartao_credito`/`cartao_debito`. São vocabulários diferentes de propósito —
+ * um é rótulo de tela, o outro é domínio contábil — e a tradução mora aqui, na
+ * borda. `boleto` não tem par: fica de fora e o painel diz que não suporta, em
  * vez de virar dinheiro no fechamento do caixa.
  */
 const METODO_DA_API: Record<string, string | undefined> = {
@@ -45,16 +45,16 @@ const METODO_DA_API: Record<string, string | undefined> = {
 
 const QUEBRA = String.fromCharCode(10);
 
-/** Doc do TipTap: arvore de nos com `text` nas folhas. */
+/** Doc do TipTap: árvore de nós com `text` nas folhas. */
 interface NoDoEditor { type?: string; text?: string; content?: NoDoEditor[] }
 
 /**
  * Extrai o texto do documento do editor, um bloco por linha.
  *
- * O rascunho guarda a arvore do TipTap, que e o formato de EDICAO. A versao
- * selada guarda TEXTO, que e o formato de LEITURA: ela e o registro que sai em
- * requisicao judicial, em transferencia para outra clinica e em auditoria do
- * CFM. Um JSON de editor num anexo pericial e ilegivel para quem precisa ler.
+ * O rascunho guarda a árvore do TipTap, que é o formato de EDIÇÃO. A versão
+ * selada guarda TEXTO, que é o formato de LEITURA: ela é o registro que sai em
+ * requisição judicial, em transferência para outra clínica e em auditoria do
+ * CFM. Um JSON de editor num anexo pericial é ilegível para quem precisa ler.
  */
 function textoDoDocumento(doc: unknown): string {
   const linhas: string[] = [];
@@ -67,7 +67,7 @@ function textoDoDocumento(doc: unknown): string {
   const visitarBloco = (bloco: NoDoEditor): void => {
     const antes = linhas.length;
     visitar(bloco, false);
-    // Junta as folhas do bloco numa linha so; separa blocos por quebra. Sem
+    // Junta as folhas do bloco numa linha só; separa blocos por quebra. Sem
     // isso, "Paciente refere " e "dor" viram duas linhas por causa de um negrito.
     const partes = linhas.splice(antes);
     linhas.push(partes.join(''));
@@ -85,8 +85,8 @@ export default function PaginaAtendimento() {
   const [conteudoInicial, setConteudoInicial] = useState<string | undefined>(undefined);
   const [erro, setErro] = useState<string | null>(null);
 
-  // rev do rascunho: concorrencia otimista. Guardado em ref porque o autosave
-  // dispara fora do ciclo de render e precisa do valor mais recente, nao do que
+  // rev do rascunho: concorrência otimista. Guardado em ref porque o autosave
+  // dispara fora do ciclo de render e precisa do valor mais recente, não do que
   // estava em escopo quando o efeito montou.
   const rev = useRef(1);
   const ultimoDoc = useRef<Record<string, unknown> | null>(null);
@@ -94,15 +94,15 @@ export default function PaginaAtendimento() {
   const [anexos, setAnexos] = useState<readonly Anexo[]>([]);
   const [guiasSadt, setGuiasSadt] = useState<readonly GuiaSadtEmitida[]>([]);
   const [valoresDaFicha, setValoresDaFicha] = useState<Record<string, string>>({});
-  // Competencia do CID vigente. Fica em ref porque so e usada no momento de
-  // selar, e state aqui provocaria render a cada busca no catalogo.
+  // Competência do CID vigente. Fica em ref porque só é usada no momento de
+  // selar, e state aqui provocaria render a cada busca no catálogo.
   const competenciaCid = useRef('');
   /**
-   * Quando a guia SP/SADT e emitida.
+   * Quando a guia SP/SADT é emitida.
    *
    * A regra vive em `src/lib/emissao-sadt.ts`, pura e testada — enquanto morava
-   * aqui dentro, so o typecheck a cobria. Em ref porque o emissor guarda estado
-   * entre renders e recria-lo perderia a guia montada.
+   * aqui dentro, só o typecheck a cobria. Em ref porque o emissor guarda estado
+   * entre renders e recriá-lo perderia a guia montada.
    */
   const emissorSadt = useRef(criarEmissorDeSadt({
     enviar: async (g: NovaGuiaSadt) => {
@@ -186,10 +186,10 @@ export default function PaginaAtendimento() {
       });
       rev.current = r.rev;
     } catch (e) {
-      // 409 e o outro dispositivo do mesmo medico, ou a mesma aba aberta duas
-      // vezes. Reaproveitar a revisao vigente e reenviar sobrescreveria o que o
+      // 409 é o outro dispositivo do mesmo médico, ou a mesma aba aberta duas
+      // vezes. Reaproveitar a revisão vigente e reenviar sobrescreveria o que o
       // outro lado escreveu; deixar estourar faz o editor mostrar "erro" e o
-      // texto continua na tela, que e onde ele ainda pode ser salvo.
+      // texto continua na tela, que é onde ele ainda pode ser salvo.
       if (e instanceof ApiError && e.status === 409) {
         const atual = e.dados['currentRev'];
         if (typeof atual === 'number') rev.current = atual;
@@ -203,8 +203,8 @@ export default function PaginaAtendimento() {
       <div className="cadencia-page">
         <p className="text-sm text-danger">
           {erro === 'atendimento_nao_encontrado'
-            ? 'Este atendimento nao existe nesta unidade.'
-            : `Nao foi possivel abrir o atendimento (${erro}).`}
+            ? 'Este atendimento não existe nesta unidade.'
+            : `Não foi possível abrir o atendimento (${erro}).`}
         </p>
       </div>
     );
@@ -227,8 +227,8 @@ export default function PaginaAtendimento() {
         ...(ctx.paciente.sexo === null ? {} : { sexo: ctx.paciente.sexo }),
         convenio: ctx.paciente.convenio,
         alergias: ctx.alergias,
-        // Posologia junto do nome: "Losartana 50mg" sozinho nao diz se o
-        // paciente toma um por dia ou tres. Quem checa interacao precisa da dose.
+        // Posologia junto do nome: "Losartana 50mg" sozinho não diz se o
+        // paciente toma um por dia ou três. Quem checa interação precisa da dose.
         medicamentos: ctx.medicamentos.map((m) => `${m.nome} — ${m.posologia}`),
         ultimosAtendimentos: ctx.ultimosAtendimentos.map((a) => ({
           data: a.data, procedimento: a.procedimento ?? 'Atendimento',
@@ -239,9 +239,9 @@ export default function PaginaAtendimento() {
       aoVoltar={() => router.push('/hoje')}
 
       abrirSessaoDoPrescritor={async () => {
-        // A tela abre a sessao ao montar. Se a Memed estiver fora do ar a
-        // CONSULTA continua: o medico examina, escreve e finaliza. So a receita
-        // e que nao sai — e o painel diz isso, em vez de girar para sempre.
+        // A tela abre a sessão ao montar. Se a Memed estiver fora do ar a
+        // CONSULTA continua: o médico examina, escreve e finaliza. Só a receita
+        // é que não sai — e o painel diz isso, em vez de girar para sempre.
         try {
           return await apiFetch<{
             mode: string; scriptUrl: string; token: string;
@@ -258,15 +258,15 @@ export default function PaginaAtendimento() {
 
       buscarCodigo={async (termo) => {
         if (termo.trim().length < 2) return [];
-        // `data` e a data do EVENTO, nao hoje: o CID vigente e o da epoca do
-        // atendimento (decisao irreversivel 10 — terminologia versionada por
-        // daterange). Um atendimento retroativo nao pode receber codigo que so
+        // `data` é a data do EVENTO, não hoje: o CID vigente é o da época do
+        // atendimento (decisão irreversível 10 — terminologia versionada por
+        // daterange). Um atendimento retroativo não pode receber código que só
         // passou a existir depois.
-        // Qual catalogo consultar sai da FICHA, nao de uma constante: a mesma
-        // clinica pode ter um modelo em CID-10 (faturamento de convenio, que o
-        // TISS 4.03.00 ainda exige) e outro em CID-11 (vigilancia, a partir de
-        // 2027). As duas terminologias convivem, entao a tela nao escolhe por
-        // ninguem — ela pergunta ao campo.
+        // Qual catálogo consultar sai da FICHA, não de uma constante: a mesma
+        // clínica pode ter um modelo em CID-10 (faturamento de convênio, que o
+        // TISS 4.03.00 ainda exige) e outro em CID-11 (vigilância, a partir de
+        // 2027). As duas terminologias convivem, então a tela não escolhe por
+        // ninguém — ela pergunta ao campo.
         const usaCid11 = secoes.some(
           (s) => s.campos.some((c) => c.refSource === 'CID11'));
         const rota = usaCid11 ? 'cid11' : 'cid';
@@ -274,23 +274,23 @@ export default function PaginaAtendimento() {
           itens: { codigo: string; descricao: string; competencia: string }[] }>(
           `/v1/catalogos/${rota}?termo=${encodeURIComponent(termo)}&data=${ctx.inicio.slice(0, 10)}`,
           { clinicId, csrfToken });
-        // A competencia vem do proprio catalogo, na data do EVENTO. E ela que
-        // vai para `terminology_version` da versao selada e responde depois
-        // "qual CID valia quando este diagnostico foi feito".
+        // A competência vem do próprio catálogo, na data do EVENTO. É ela que
+        // vai para `terminology_version` da versão selada e responde depois
+        // "qual CID valia quando este diagnóstico foi feito".
         competenciaCid.current = r.itens[0]?.competencia ?? competenciaCid.current;
         return r.itens.map((x) => ({ code: x.codigo, display: x.descricao }));
       }}
 
-      // Os dois ganchos abaixo estao no contrato do editor mas ele ainda nao os
-      // consome: nao ha painel de modelos nem de valor anterior montado. Devolver
-      // vazio e honesto; inventar dado para preencher tela nao e.
+      // Os dois ganchos abaixo estão no contrato do editor mas ele ainda não os
+      // consome: não há painel de modelos nem de valor anterior montado. Devolver
+      // vazio é honesto; inventar dado para preencher tela não é.
       buscarModelo={async () => []}
       buscarValorAnterior={async () => null}
 
       aoConfirmarPrescricao={async ({ providerPrescriptionId }) => {
-        // Disparado pelo evento `prescricaoImpressa`: a receita JA existe do lado
+        // Disparado pelo evento `prescricaoImpressa`: a receita JÁ existe do lado
         // da Memed quando chegamos aqui. Buscamos os itens e registramos no
-        // prontuario, amarrada a este atendimento.
+        // prontuário, amarrada a este atendimento.
         const r = await apiFetch<{ prescriptionId: string }>('/v1/prescricoes', {
           method: 'POST',
           body: {
@@ -313,19 +313,19 @@ export default function PaginaAtendimento() {
             kind,
             patientId: ctx.paciente.patientId,
             // Amarrado ao atendimento: atestado solto no cadastro do paciente
-            // nao diz de qual consulta saiu, e e exatamente isso que a auditoria
-            // do convenio pergunta.
+            // não diz de qual consulta saiu, e é exatamente isso que a auditoria
+            // do convênio pergunta.
             encounterId: id,
             payload: { corpo },
           },
           clinicId, csrfToken,
         });
-        // O PDF vem por fetch com cabecalhos, nao por href direto: navegacao do
-        // navegador nao manda `x-clinic-id` e a rota devolveria 400 no clique.
+        // O PDF vem por fetch com cabeçalhos, não por href direto: navegação do
+        // navegador não manda `x-clinic-id` e a rota devolveria 400 no clique.
         //
-        // `assinado` sai do que a API DEVOLVEU, e nao de um otimismo do front:
-        // sem PSC ICP-Brasil contratado o documento e emitido e fica pendente, e
-        // a tela precisa dizer isso enquanto o medico ainda esta com o paciente.
+        // `assinado` sai do que a API DEVOLVEU, e não de um otimismo do front:
+        // sem PSC ICP-Brasil contratado o documento é emitido e fica pendente, e
+        // a tela precisa dizer isso enquanto o médico ainda está com o paciente.
         return {
           documentId: r.documentId,
           assinado: r.assinatura.estado === 'assinado',
@@ -339,10 +339,10 @@ export default function PaginaAtendimento() {
       guiasSadt={guiasSadt}
       buscarProcedimentoTuss={async (termo) => {
         if (termo.trim().length < 2) return [];
-        // Tabela 22 e a TUSS de procedimentos e eventos em saude — a que a
-        // operadora espera numa guia de exame. A data e a do ATENDIMENTO:
-        // codigo TUSS tambem tem vigencia, e o exame pedido em marco vale pela
-        // tabela de marco, nao pela de hoje.
+        // Tabela 22 é a TUSS de procedimentos e eventos em saúde — a que a
+        // operadora espera numa guia de exame. A data é a do ATENDIMENTO:
+        // código TUSS também tem vigência, e o exame pedido em março vale pela
+        // tabela de março, não pela de hoje.
         const r = await apiFetch<{ itens: { codigo: string; termo: string; tabela: number }[] }>(
           `/v1/catalogos/tuss?tabela=22&termo=${encodeURIComponent(termo)}`
           + `&data=${ctx.inicio.slice(0, 10)}`,
@@ -356,7 +356,7 @@ export default function PaginaAtendimento() {
       }}
       anexos={anexos}
       aoEnviarAnexo={async ({ arquivo, kind }) => {
-        // Base64 no corpo: o volume aqui e laudo e foto. FileReader em vez de
+        // Base64 no corpo: o volume aqui é laudo e foto. FileReader em vez de
         // btoa porque btoa quebra em byte acima de 0xFF — e PDF tem muitos.
         const bytes = new Uint8Array(await arquivo.arrayBuffer());
         let bin = '';
@@ -394,9 +394,9 @@ export default function PaginaAtendimento() {
         return r.sugestao;
       }}
       aoAceitarSugestao={(sug, campos) => {
-        // A sugestao vira VALOR DE CAMPO da ficha, e nao gravacao direta: entra
-        // no mesmo caminho que o medico usaria digitando, e so e selada quando
-        // ele finalizar. Aceitar nao e assinar.
+        // A sugestão vira VALOR DE CAMPO da ficha, e não gravação direta: entra
+        // no mesmo caminho que o médico usaria digitando, e só é selada quando
+        // ele finalizar. Aceitar não é assinar.
         const porCode = new Map(
           secoes.flatMap((sec) => sec.campos).map((c) => [c.code, c]));
         const aplicar = (code: string, valor: string | null): void => {
@@ -420,8 +420,8 @@ export default function PaginaAtendimento() {
         if (campos.has('cid') && sug.cid !== null) {
           aplicar('cid', `${sug.cid.codigo}|${sug.cid.descricao}`);
         }
-        // A evolucao vai para o EDITOR, nao para a ficha. Ela e o texto narrativo
-        // e o editor e quem o guarda.
+        // A evolução vai para o EDITOR, não para a ficha. Ela é o texto narrativo
+        // e o editor é quem o guarda.
         if (campos.has('evolucao') && sug.evolucao !== '') {
           setConteudoInicial(sug.evolucao.split(QUEBRA)
             .map((l) => `<p>${l}</p>`).join(''));
@@ -435,9 +435,9 @@ export default function PaginaAtendimento() {
       }}
 
       aoFinalizar={async () => {
-        // Uma unica montagem cobre evolucao, alergias, sinais vitais e CID —
-        // e ela lanca se nao houver campo de evolucao configurado, em vez de
-        // selar uma versao vazia e perder o atendimento em silencio.
+        // Uma única montagem cobre evolução, alergias, sinais vitais e CID —
+        // e ela lança se não houver campo de evolução configurado, em vez de
+        // selar uma versão vazia e perder o atendimento em silêncio.
         const corpo = montarPayloadClinico({
           secoes,
           valores: valoresDaFicha,
@@ -448,9 +448,9 @@ export default function PaginaAtendimento() {
           `/v1/atendimentos/${id}/finalizar`,
           { method: 'POST', body: corpo, clinicId, csrfToken });
 
-        // A guia SP/SADT sai AGORA: e neste instante que existe a versao
-        // assinada para ela apontar. Mesmo momento em que a guia de consulta e
-        // projetada — uma so verdade sobre quando o faturamento existe.
+        // A guia SP/SADT sai AGORA: é neste instante que existe a versão
+        // assinada para ela apontar. Mesmo momento em que a guia de consulta é
+        // projetada — uma só verdade sobre quando o faturamento existe.
         const r = await emissorSadt.current.aoSelar();
         if (r.emitida) await recarregarGuiasSadt();
 
@@ -460,9 +460,9 @@ export default function PaginaAtendimento() {
       aoRegistrarPagamento={async (dados) => {
         const metodo = METODO_DA_API[dados.method];
         if (metodo === undefined) {
-          // `boleto` existe no painel e nao existe em fin.payment_method_kind.
-          // Traduzir para um metodo parecido registraria a receita na forma
-          // errada e o fechamento do dia nao bateria com o extrato.
+          // `boleto` existe no painel e não existe em fin.payment_method_kind.
+          // Traduzir para um método parecido registraria a receita na forma
+          // errada e o fechamento do dia não bateria com o extrato.
           throw new ApiError('metodo_nao_suportado', 422);
         }
         const r = await apiFetch<{
@@ -478,10 +478,10 @@ export default function PaginaAtendimento() {
           },
           clinicId, csrfToken,
         });
-        // O painel pede um numero de recibo; a API devolve o id do recibo. O
-        // numero sequencial e emitido na geracao do PDF, entao aqui vai 0 — que
-        // e visivelmente "ainda nao numerado" e nao um numero falso que o
-        // paciente anotaria e nao encontraria depois.
+        // O painel pede um número de recibo; a API devolve o id do recibo. O
+        // número sequencial é emitido na geração do PDF, então aqui vai 0 — que
+        // é visivelmente "ainda não numerado" e não um número falso que o
+        // paciente anotaria e não encontraria depois.
         return { entryId: r.paymentId, receiptNumber: 0 };
       }}
 
@@ -497,9 +497,9 @@ export default function PaginaAtendimento() {
           clinicId, csrfToken,
         });
 
-        // A criacao no PSP e assincrona (outbox -> worker), entao o POST devolve
-        // o lancamento e a URL chega depois. Perguntamos por ~12s: mais que isso
-        // e o medico esperando de braco cruzado com o paciente na frente, e a
+        // A criação no PSP é assíncrona (outbox -> worker), então o POST devolve
+        // o lançamento e a URL chega depois. Perguntamos por ~12s: mais que isso
+        // é o médico esperando de braço cruzado com o paciente na frente, e a
         // mensagem honesta de "ainda processando" serve melhor que um spinner
         // eterno.
         for (let tentativa = 0; tentativa < 12; tentativa += 1) {

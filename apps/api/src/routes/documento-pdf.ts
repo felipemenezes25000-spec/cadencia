@@ -16,15 +16,15 @@ const TITULOS: Record<string, string> = {
 };
 
 /**
- * O documento clinico impresso.
+ * O documento clínico impresso.
  *
- * O documento existia no banco com hash e assinatura, e nao havia como o
- * paciente levar nada embora — emitir sem imprimir e emitir para ninguem.
+ * O documento existia no banco com hash e assinatura, e não havia como o
+ * paciente levar nada embora — emitir sem imprimir é emitir para ninguém.
  *
- * O PDF e gerado a partir do PAYLOAD GRAVADO, nunca de dados vindos da
- * requisicao. Um atestado cujo texto pudesse ser passado na URL seria um
- * atestado que qualquer um reimprime com o conteudo que quiser, com o cabecalho
- * da clinica e o nome do medico.
+ * O PDF é gerado a partir do PAYLOAD GRAVADO, nunca de dados vindos da
+ * requisição. Um atestado cujo texto pudesse ser passado na URL seria um
+ * atestado que qualquer um reimprime com o conteúdo que quiser, com o cabeçalho
+ * da clínica e o nome do médico.
  */
 export async function documentoPdfRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -71,15 +71,15 @@ export async function documentoPdfRoutes(app: FastifyInstance): Promise<void> {
     const d = rows[0];
     if (d === undefined) erroDominio('documento_nao_encontrado', 404);
 
-    // §3.7 — atestado, relatorio e pedido de exame sao documento clinico do
-    // paciente. Imprimir e ler, e leitura de prontuario deixa rastro.
+    // §3.7 — atestado, relatório e pedido de exame são documento clínico do
+    // paciente. Imprimir é ler, e leitura de prontuário deixa rastro.
     await tx.query(`SELECT audit.log_read('document_read', $1)`, [d.patient_id]);
 
-    // O texto vem de um `<textarea>`: e TEXTO, nao HTML, e `documentHtml`
+    // O texto vem de um `<textarea>`: é TEXTO, não HTML, e `documentHtml`
     // interpola `corpo` sem escapar (contrato do template — o exportador de
-    // prontuario monta lista com ele). Sem escapar aqui, `saturacao <95%` some
+    // prontuário monta lista com ele). Sem escapar aqui, `saturacao <95%` some
     // do atestado impresso a partir do `<`. E sem `pre-wrap` as quebras de
-    // linha do modelo colapsam: o pedido de exame vira um paragrafo corrido.
+    // linha do modelo colapsam: o pedido de exame vira um parágrafo corrido.
     const corpoTexto = typeof d.payload['corpo'] === 'string' ? d.payload['corpo'] : '';
     const corpo = `<p style="white-space:pre-wrap">${escapeHtml(corpoTexto)}</p>`;
     const titulo = typeof d.payload['titulo'] === 'string'
@@ -104,14 +104,14 @@ export async function documentoPdfRoutes(app: FastifyInstance): Promise<void> {
 
     const pdf = await renderPdf(html);
 
-    // `inline` e nao `attachment`: o medico quer ver antes de imprimir, e o
-    // download forcado obrigaria a abrir o arquivo baixado para conferir se o
+    // `inline` e não `attachment`: o médico quer ver antes de imprimir, e o
+    // download forçado obrigaria a abrir o arquivo baixado para conferir se o
     // texto saiu certo.
     void reply
       .header('content-type', 'application/pdf')
       .header('content-disposition',
         `inline; filename="${d.kind}-${p.id.slice(0, 8)}.pdf"`)
-      // Documento clinico nao entra em cache de proxy: e dado de saude com nome
+      // Documento clínico não entra em cache de proxy: é dado de saúde com nome
       // de paciente no corpo.
       .header('cache-control', 'private, no-store');
     return reply.send(Buffer.from(pdf));

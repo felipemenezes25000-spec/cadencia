@@ -36,7 +36,7 @@ export async function processPaymentWebhook(
 
   const link = rows[0]!;
 
-  // Idempotencia: se ja esta pago, retorna sem erro
+  // Idempotência: se já está pago, retorna sem erro
   if (link.status === 'paid' && payload.status === 'paid') {
     return ok({
       paymentLinkId: link.id,

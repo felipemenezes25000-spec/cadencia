@@ -42,8 +42,8 @@ export default function PaginaLotes() {
             // "09T04:49:13Z/08/2026" na listagem.
             criadoEm: l.createdAt.slice(0, 10),
             enviadoEm: l.sentAt === null ? null : l.sentAt.slice(0, 10),
-            // As guias do lote sao carregadas ao expandir a linha, nao aqui: uma
-            // clinica com 40 lotes abertos traria milhares de guias so para
+            // As guias do lote são carregadas ao expandir a linha, não aqui: uma
+            // clínica com 40 lotes abertos traria milhares de guias só para
             // desenhar a listagem.
             guias: [],
           })),
@@ -59,7 +59,7 @@ export default function PaginaLotes() {
           method: 'POST', clinicId, csrfToken });
       }}
       aoBaixarXml={async (loteId) => {
-        // O XML sai em ISO-8859-1 com hash proprietario (§3.9): baixar pelo
+        // O XML sai em ISO-8859-1 com hash proprietário (§3.9): baixar pelo
         // navegador preserva os bytes exatos que a operadora vai validar.
         window.open(`/v1/tiss/lotes/${loteId}/xml`, '_blank', 'noopener');
       }}

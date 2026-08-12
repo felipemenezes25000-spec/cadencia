@@ -29,7 +29,7 @@ export async function closeRepassePeriod(
   tx: TxClient,
   i: CloseRepasseInput,
 ): Promise<Result<CloseRepasseResult, CloseRepasseFailure>> {
-  // Buscar splits pendentes do profissional no periodo
+  // Buscar splits pendentes do profissional no período
   const { rows: pendingSplits } = await tx.query<{
     id: string;
     professional_share_cents: string;

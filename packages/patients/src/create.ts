@@ -16,15 +16,15 @@ export type CreateFailure =
   | { kind: 'cpf_duplicado' };
 
 /**
- * §5.5 fluxo (a) — a regra PACIENTE MINIMO VIAVEL. Nome + UM canal bastam para
- * agendar; o cadastro nasce `preliminar` e CPF, nascimento e sexo viram DIVIDA
+ * §5.5 fluxo (a) — a regra PACIENTE MÍNIMO VIÁVEL. Nome + UM canal bastam para
+ * agendar; o cadastro nasce `preliminar` e CPF, nascimento e sexo viram DÍVIDA
  * DE DADOS, cobrada no check-in (com a pessoa na frente) e BLOQUEANTE na
- * finalizacao do atendimento e no faturamento de convenio.
+ * finalização do atendimento e no faturamento de convênio.
  *
- * A justificativa e empirica, nao estetica: dado exigido na hora errada e dado
- * falso, e dado falso contamina o grafico de distribuicao etaria e o disparo de
- * aniversariantes para sempre. E por isso que recepcionista digita 000.000.000-00
- * — e por isso que este caminho RECUSA um CPF invalido em vez de aceita-lo.
+ * A justificativa é empírica, não estética: dado exigido na hora errada é dado
+ * falso, e dado falso contamina o gráfico de distribuição etária e o disparo de
+ * aniversariantes para sempre. É por isso que recepcionista digita 000.000.000-00
+ * — e por isso que este caminho RECUSA um CPF inválido em vez de aceitá-lo.
  */
 export async function createMinimalPatient(
   tx: TxClient, input: CreateMinimalInput,
@@ -58,8 +58,8 @@ export async function createMinimalPatient(
     if (!dup.ok) return dup;
   }
 
-  // A chave de meta e `kind`, da whitelist de audit.meta_keys_ok (0009). Um
-  // `cadastro_status` ali violaria a CHECK meta_sem_pii e abortaria a transacao.
+  // A chave de meta é `kind`, da whitelist de audit.meta_keys_ok (0009). Um
+  // `cadastro_status` ali violaria a CHECK meta_sem_pii e abortaria a transação.
   await tx.query(
     `SELECT audit.log('PATIENT_CREATE', 'clin', 'patient', $1, 'sucesso',
                       jsonb_build_object('kind', 'preliminar'), NULL)`,
@@ -71,8 +71,8 @@ export async function createMinimalPatient(
 async function gravarCpf(
   tx: TxClient, patientId: string, cpfDigitos: string,
 ): Promise<Result<true, CreateFailure>> {
-  // ux_pid e UNIQUE (tenant_id, kind, value): o duplicado e 23505 e vira um erro
-  // de dominio nomeado, nao um 500 com "duplicate key" na cara da recepcionista.
+  // ux_pid é UNIQUE (tenant_id, kind, value): o duplicado é 23505 e vira um erro
+  // de domínio nomeado, não um 500 com "duplicate key" na cara da recepcionista.
   const { rowCount } = await tx.query(
     `INSERT INTO clin.patient_identifier (id, patient_id, kind, value)
      VALUES (gen_random_uuid(), $1, 'CPF', $2)
@@ -89,7 +89,7 @@ export interface CompleteInput {
   readonly cpf?: string;
 }
 
-/** Paga a divida de dados e promove o cadastro para `completo`. */
+/** Paga a dívida de dados e promove o cadastro para `completo`. */
 export async function completePatient(
   tx: TxClient, input: CompleteInput,
 ): Promise<Result<{ patientId: string }, CreateFailure>> {
@@ -122,7 +122,7 @@ export interface DataDebt {
   readonly pendentes: readonly string[];
 }
 
-/** A barra "N dados pendentes" do Perfil, e o bloqueio da finalizacao. */
+/** A barra "N dados pendentes" do Perfil, e o bloqueio da finalização. */
 export async function dataDebt(tx: TxClient, patientId: string): Promise<DataDebt> {
   const { rows } = await tx.query<{
     birth_date: string | null; sex_at_birth: string | null; tem_cpf: boolean }>(

@@ -3,38 +3,38 @@ import type { Period, VariationFactors, VariationSnapshot } from './variation-ty
 import { factorsAddUp } from './variation-types';
 
 /**
- * ss5.5 fluxo (c) — Calcula a decomposicao aditiva da variacao de receita
- * entre dois periodos.
+ * ss5.5 fluxo (c) — Calcula a decomposição aditiva da variação de receita
+ * entre dois períodos.
  *
  * REGRA DE LEITURA: toda consulta usa app_rpt views, NUNCA rpt matviews
  * diretamente. A view security_barrier garante isolamento de tenant.
  *
- * A decomposicao e aditiva: volume + mix_procedimento + mix_convenio +
- * ticket + faltas + glosas = delta_total. Propriedade matematica, nao
- * aproximacao.
+ * A decomposição é aditiva: volume + mix_procedimento + mix_convenio +
+ * ticket + faltas + glosas = delta_total. Propriedade matemática, não
+ * aproximação.
  *
- * Metodo: decomposicao sequencial inspirada em analise de variancia (ANOVA)
- * de preco x volume, adaptada para o contexto de clinica medica.
+ * Método: decomposição sequencial inspirada em análise de variância (ANOVA)
+ * de preço x volume, adaptada para o contexto de clínica médica.
  *
  * 1. Volume: (qtd_B - qtd_A) * ticket_medio_A
- *    "Se a clinica tivesse feito N atendimentos a mais/menos, com o mesmo
- *     ticket medio do periodo A, quanto mudaria?"
+ *    "Se a clínica tivesse feito N atendimentos a mais/menos, com o mesmo
+ *     ticket médio do período A, quanto mudaria?"
  *
  * 2. Mix de procedimento: para cada procedimento, (prop_B - prop_A) * qtd_B * ticket_medio_A
- *    "Se a proporcao entre consultas e retornos mudou, quanto isso explica?"
+ *    "Se a proporção entre consultas e retornos mudou, quanto isso explica?"
  *
- * 3. Mix de convenio: mesma logica, mas entre particular e convenio.
+ * 3. Mix de convênio: mesma lógica, mas entre particular e convênio.
  *
  * 4. Ticket: (ticket_medio_B - ticket_medio_A) * qtd_B
- *    "Se o preco medio mudou, quanto isso explica?"
+ *    "Se o preço médio mudou, quanto isso explica?"
  *
  * 5. Faltas: receita estimada dos atendimentos faltados/cancelados em B
  *            menos a dos faltados em A.
  *
- * 6. Glosas: valor de glosas aceitas (nao recuperadas) por periodo,
+ * 6. Glosas: valor de glosas aceitas (não recuperadas) por período,
  *    consultando tiss.glosa via encounter_guia_consulta.
  *
- * O residuo (arredondamento inteiro) e absorvido pelo fator de ticket para
+ * O resíduo (arredondamento inteiro) é absorvido pelo fator de ticket para
  * garantir a igualdade exata.
  */
 export async function computeVariation(
@@ -45,10 +45,10 @@ export async function computeVariation(
   periodB: Period,
 ): Promise<VariationSnapshot> {
   // -----------------------------------------------------------------------
-  // 1. Buscar dados agregados do periodo A e B via app_rpt e tabelas vivas
+  // 1. Buscar dados agregados do período A e B via app_rpt e tabelas vivas
   // -----------------------------------------------------------------------
 
-  // Receita total realizada por periodo (lancamentos pagos de receita)
+  // Receita total realizada por período (lançamentos pagos de receita)
   const totais = await tx.query<{
     periodo: string; total_cents: string; qtd: string;
   }>(
@@ -96,7 +96,7 @@ export async function computeVariation(
   const ticketMedioA = qtdA > 0 ? totalACents / qtdA : 0;
 
   // -----------------------------------------------------------------------
-  // 2. Receita por procedimento em cada periodo (para mix de procedimento)
+  // 2. Receita por procedimento em cada período (para mix de procedimento)
   // -----------------------------------------------------------------------
   const porProcedimento = await tx.query<{
     periodo: string; procedure_id: string; total_cents: string; qtd: string;
@@ -144,7 +144,7 @@ export async function computeVariation(
   }
 
   // -----------------------------------------------------------------------
-  // 3. Receita por tipo (particular vs convenio) para mix de convenio
+  // 3. Receita por tipo (particular vs convênio) para mix de convênio
   // -----------------------------------------------------------------------
   const porConvenio = await tx.query<{
     periodo: string; tipo: string; total_cents: string; qtd: string;
@@ -192,7 +192,7 @@ export async function computeVariation(
   }
 
   // -----------------------------------------------------------------------
-  // 4. Faltas e cancelamentos por periodo
+  // 4. Faltas e cancelamentos por período
   // -----------------------------------------------------------------------
   const faltas = await tx.query<{
     periodo: string; qtd_faltas: string; receita_estimada_cents: string;
@@ -256,7 +256,7 @@ export async function computeVariation(
   }
   const mixProcCents = Math.round(mixProcCentsExact);
 
-  // Mix de convenio: mesma logica
+  // Mix de convênio: mesma lógica
   let mixConvCentsExact = 0;
   const allTipos = new Set([...convA.keys(), ...convB.keys()]);
   for (const tipo of allTipos) {
@@ -269,11 +269,11 @@ export async function computeVariation(
   }
   const mixConvCents = Math.round(mixConvCentsExact);
 
-  // Faltas: diferenca de receita estimada perdida (B - A, negativo = mais faltas em B)
+  // Faltas: diferença de receita estimada perdida (B - A, negativo = mais faltas em B)
   const faltasCents = -(faltasBCents - faltasACents);
 
   // -----------------------------------------------------------------------
-  // 5b. Glosas nao recuperadas (aceitas) por periodo
+  // 5b. Glosas não recuperadas (aceitas) por período
   // -----------------------------------------------------------------------
   const glosas = await tx.query<{
     periodo: string; total_glosado_cents: string;
@@ -318,12 +318,12 @@ export async function computeVariation(
     }
   }
 
-  // Glosas: receita perdida por glosas aceitas (nao recuperadas).
+  // Glosas: receita perdida por glosas aceitas (não recuperadas).
   // Mais glosas em B do que em A = fator negativo (perda).
-  // Menos glosas em B do que em A = fator positivo (recuperacao).
+  // Menos glosas em B do que em A = fator positivo (recuperação).
   const glosasCents = -(glosasBCents - glosasACents) || 0;
 
-  // Ticket: residuo para garantir soma exata
+  // Ticket: resíduo para garantir soma exata
   // delta = volume + mixProc + mixConv + ticket + faltas + glosas
   // ticket = delta - volume - mixProc - mixConv - faltas - glosas
   const ticketCents = deltaTotalCents - volumeCents - mixProcCents - mixConvCents - faltasCents - glosasCents;
@@ -340,7 +340,7 @@ export async function computeVariation(
     delta_total_cents: deltaTotalCents,
   };
 
-  // Invariante: a soma DEVE ser exata. Se nao for, e bug nosso.
+  // Invariante: a soma DEVE ser exata. Se não for, é bug nosso.
   if (!factorsAddUp(factors)) {
     throw new Error(
       `bug: soma dos fatores (${factors.volume_cents + factors.mix_procedimento_cents + factors.mix_convenio_cents + factors.ticket_cents + factors.faltas_cents + factors.glosas_cents}) !== delta (${deltaTotalCents})`,

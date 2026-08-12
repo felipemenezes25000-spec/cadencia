@@ -107,11 +107,11 @@ export async function semearProntuarioCompleto(): Promise<SementeExport> {
 
     // Version 3: retificação que supersedes version 1.
     //
-    // `prev_hash` APONTA para o content_hash da versao 1. Sem ele a cadeia fica
+    // `prev_hash` APONTA para o content_hash da versão 1. Sem ele a cadeia fica
     // partida, e `verify-restore` — que varre o banco inteiro — passa a acusar
-    // acervo corrompido por causa de um fixture. Em producao quem preenche isso
-    // e `clin.finalize_encounter`; aqui a montagem tem que imitar a producao,
-    // senao o teste de integridade vira teste de paciencia.
+    // acervo corrompido por causa de um fixture. Em produção quem preenche isso
+    // é `clin.finalize_encounter`; aqui a montagem tem que imitar a produção,
+    // senão o teste de integridade vira teste de paciência.
     await c.query(
       `INSERT INTO clin.encounter_version
          (tenant_id, id, encounter_id, version_no, kind, supersedes_version_id,

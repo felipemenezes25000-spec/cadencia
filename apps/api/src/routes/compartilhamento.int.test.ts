@@ -7,8 +7,8 @@ let dono: SementeSessao;
 let colega: SementeSessao;
 
 /**
- * Dois profissionais no MESMO tenant e na mesma unidade. E a unica montagem que
- * exercita a politica RESTRICTIVE `clinical_scope`: entre tenants a RLS ja
+ * Dois profissionais no MESMO tenant e na mesma unidade. É a única montagem que
+ * exercita a política RESTRICTIVE `clinical_scope`: entre tenants a RLS já
  * separa por outro caminho, e o teste passaria sem provar nada.
  */
 beforeAll(async () => {
@@ -24,9 +24,9 @@ describe('compartilhamento de prontuario', () => {
     const r = await app.inject({
       method: 'GET', url: `/v1/atendimentos/${dono.encounterId}/contexto`,
       ...auth(colega) });
-    // Politica RESTRICTIVE clinical_scope. E 404 e nao 403 de proposito:
-    // confirmar que o atendimento existe ja diz ao colega qual paciente o outro
-    // medico esta atendendo.
+    // Política RESTRICTIVE clinical_scope. É 404 e não 403 de propósito:
+    // confirmar que o atendimento existe já diz ao colega qual paciente o outro
+    // médico está atendendo.
     expect(r.statusCode).toBe(404);
     await app.close();
   });
@@ -60,8 +60,8 @@ describe('compartilhamento de prontuario', () => {
         reason: '  ',
       },
       ...auth(dono) });
-    // `reason` e NOT NULL no banco. Aceitar branco cumpriria a coluna e
-    // esvaziaria a auditoria: "por que este medico viu este paciente?" e
+    // `reason` é NOT NULL no banco. Aceitar branco cumpriria a coluna e
+    // esvaziaria a auditoria: "por que este médico viu este paciente?" é
     // exatamente a pergunta que o CFM faz.
     expect(r.statusCode).toBe(400);
     await app.close();
@@ -97,7 +97,7 @@ describe('compartilhamento de prontuario', () => {
     const r = await app.inject({
       method: 'GET', url: `/v1/atendimentos/${dono.encounterId}/contexto`,
       ...auth(colega) });
-    // Revogacao que so vale no proximo login e revogacao que nao vale.
+    // Revogação que só vale no próximo login é revogação que não vale.
     expect(r.statusCode).toBe(404);
     await app.close();
   });

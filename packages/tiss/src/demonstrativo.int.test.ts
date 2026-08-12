@@ -5,7 +5,7 @@ import { closePools, withTenantTx, type Actor } from '@cadencia/db';
 import { uuidv7 } from '@cadencia/kernel';
 
 /* ------------------------------------------------------------------ */
-/* Semente minima para demonstrativo                                  */
+/* Semente mínima para demonstrativo                                  */
 /* ------------------------------------------------------------------ */
 
 interface SementeDemonstrativo {
@@ -39,7 +39,7 @@ async function semearDemonstrativo(): Promise<SementeDemonstrativo> {
   try {
     await c.query('BEGIN');
 
-    // --- tenant, clinica, usuario, membership ---
+    // --- tenant, clínica, usuário, membership ---
     await c.query(
       `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
        VALUES ($1, $2, 'Clinica Demonstrativo', '44ABC55667DE88')`,
@@ -68,7 +68,7 @@ async function semearDemonstrativo(): Promise<SementeDemonstrativo> {
       [s.tenantId, s.operadoraId, s.userId],
     );
 
-    // --- encounter + version + guia (minimo para FK) ---
+    // --- encounter + version + guia (mínimo para FK) ---
     const encId = uuidv7();
     const verId = uuidv7();
     const profId = uuidv7();
@@ -118,7 +118,7 @@ async function semearDemonstrativo(): Promise<SementeDemonstrativo> {
       [s.tenantId, s.guiaId, encId, verId, s.operadoraId, s.userId],
     );
 
-    // --- lote enviado (pre-requisito para vincular demonstrativo) ---
+    // --- lote enviado (pré-requisito para vincular demonstrativo) ---
     await c.query(
       `INSERT INTO tiss.lote
          (tenant_id, id, operadora_id, numero_lote, status, tiss_version,

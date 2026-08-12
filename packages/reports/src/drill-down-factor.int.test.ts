@@ -21,7 +21,7 @@ describe('drillDownFactor', () => {
       void client.query('SET ROLE app_rw').catch(() => undefined);
     });
 
-    // Periodo B (julho 2026): 3 faltas do profissional A, todas de manha em dias uteis
+    // Período B (julho 2026): 3 faltas do profissional A, todas de manhã em dias úteis
     for (let i = 0; i < 3; i++) {
       await criarAtendimentoComLancamento({
         tenantId: s.tenantId, clinicId: s.clinicId,
@@ -71,7 +71,7 @@ describe('drillDownFactor', () => {
     expect(result.byDayOfWeek.length).toBeGreaterThan(0);
     expect(result.byTimeSlot.length).toBeGreaterThan(0);
 
-    // Todas as 3 faltas sao do profissional A, de manha
+    // Todas as 3 faltas são do profissional A, de manhã
     const totalFaltas = result.byProfessional.reduce((acc, g) => acc + g.count, 0);
     expect(totalFaltas).toBe(3);
 
@@ -79,10 +79,10 @@ describe('drillDownFactor', () => {
     expect(manha).toBeDefined();
     expect(manha!.count).toBe(3);
 
-    // `label` e o que a tela IMPRIME. `byTimeSlot` ja entendia isso ('manha'),
+    // `label` é o que a tela IMPRIME. `byTimeSlot` já entendia isso ('manha'),
     // mas `byProfessional` devolvia o UUID do profissional — e a tela de
     // Desempenho passou a exibi-lo assim que a rota de drill-down foi ligada.
-    // Um identificador opaco nao e rotulo: quem le precisa saber de QUEM sao as
+    // Um identificador opaco não é rótulo: quem lê precisa saber de QUEM são as
     // faltas para agir.
     const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     for (const g of result.byProfessional) {
@@ -104,7 +104,7 @@ describe('drillDownFactor', () => {
     }, pool);
 
     expect(result.factor).toBe('volume');
-    // Profissional B tem 2 lancamentos no periodo B
+    // Profissional B tem 2 lançamentos no período B
     const totalReceitas = result.byProfessional.reduce((acc, g) => acc + g.count, 0);
     expect(totalReceitas).toBe(2);
   });

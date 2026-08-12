@@ -11,7 +11,7 @@ import { receiveLoteReturn } from '../lote-lifecycle';
 export interface ImportDemonstrativoInput {
   /** XML do demonstrativo em bytes ISO-8859-1. */
   readonly xml: Uint8Array;
-  /** Id da operadora destino (FK obrigatoria em tiss.demonstrativo). */
+  /** Id da operadora destino (FK obrigatória em tiss.demonstrativo). */
   readonly operadoraId: string;
   /** Chave de storage do XML original (coluna xml_storage_key). */
   readonly xmlStorageKey: string;
@@ -36,7 +36,7 @@ export interface ImportDemonstrativoResult {
 }
 
 // ---------------------------------------------------------------------------
-// Funcao principal
+// Função principal
 // ---------------------------------------------------------------------------
 
 /**
@@ -46,12 +46,12 @@ export interface ImportDemonstrativoResult {
  * (2) Para cada item, faz match de numero_guia_prestador com
  *     tiss.encounter_guia_consulta (RLS filtra por tenant automaticamente).
  * (3) Insere em tiss.demonstrativo e tiss.demonstrativo_item.
- * (4) Marca guias com glosa: o vinculo demonstrativo_item.guia_id +
- *     valor_glosa_cents > 0 constitui a marcacao de glosa na guia.
+ * (4) Marca guias com glosa: o vínculo demonstrativo_item.guia_id +
+ *     valor_glosa_cents > 0 constitui a marcação de glosa na guia.
  * (5) Se loteId presente, atualiza lote.status para 'retornado' via
  *     receiveLoteReturn.
  *
- * As tabelas tiss.demonstrativo e tiss.demonstrativo_item sao criadas
+ * As tabelas tiss.demonstrativo e tiss.demonstrativo_item são criadas
  * pelo bloco 01-demonstrativo-migrations.
  */
 export async function importDemonstrativo(
@@ -85,8 +85,8 @@ export async function importDemonstrativo(
     totalGlosa += item.valorGlosaCents;
   }
 
-  // 3. Insere cabecalho do demonstrativo (tenant_id vem do DEFAULT via RLS).
-  //    Nomes de coluna seguem o schema canonico do bloco 01 (migration 0123).
+  // 3. Insere cabeçalho do demonstrativo (tenant_id vem do DEFAULT via RLS).
+  //    Nomes de coluna seguem o schema canônico do bloco 01 (migration 0123).
   await tx.query(
     `INSERT INTO tiss.demonstrativo
        (id, operadora_id, lote_id, protocolo_operadora, kind,
@@ -123,8 +123,8 @@ export async function importDemonstrativo(
     const guiaId = guiaRows.length > 0 ? guiaRows[0]!.id : null;
     if (guiaId !== null) matchedCount++;
 
-    // Nomes de coluna seguem o schema canonico do bloco 01 (migration 0124).
-    // Glosa armazenada como par codigo+descricao (primeiro da lista parseada);
+    // Nomes de coluna seguem o schema canônico do bloco 01 (migration 0124).
+    // Glosa armazenada como par código+descrição (primeiro da lista parseada);
     // detalhes completos preservados no XML original (xml_storage_key).
     const primaryGlosa = item.glosas.length > 0 ? item.glosas[0]! : null;
     await tx.query(

@@ -55,7 +55,7 @@ async function queryTestDb<T extends Record<string, unknown>>(sql: string): Prom
 
 describe('pnpm db:migrate', () => {
   it('aplica os arquivos .sql em ordem numerica e registra cada um', async () => {
-    // A segunda migration so funciona se a primeira ja tiver rodado.
+    // A segunda migration só funciona se a primeira já tiver rodado.
     writeFileSync(join(dir, '0001_probe.sql'), 'CREATE TABLE public.probe (id int PRIMARY KEY);');
     writeFileSync(join(dir, '0002_probe_nome.sql'), 'ALTER TABLE public.probe ADD COLUMN nome text;');
 

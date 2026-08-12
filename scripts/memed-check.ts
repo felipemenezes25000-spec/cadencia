@@ -1,10 +1,10 @@
 /**
- * Valida o par api-key/secret-key da Memed e mede a latencia.
+ * Valida o par api-key/secret-key da Memed e mede a latência.
  *
  * Usa `health()` do adaptador, que bate em /sinapse-prescricao/check-key — a
- * unica rota da Memed que responde "suas chaves servem?" SEM criar, alterar nem
- * apagar nada. Nao cadastra prescritor, nao emite receita, nao toca no historico
- * de ninguem. E o teste que se pode rodar contra PRODUCAO sem consequencia.
+ * única rota da Memed que responde "suas chaves servem?" SEM criar, alterar nem
+ * apagar nada. Não cadastra prescritor, não emite receita, não toca no histórico
+ * de ninguém. É o teste que se pode rodar contra PRODUÇÃO sem consequência.
  *
  *   npx tsx --env-file=.env scripts/memed-check.ts
  */
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
     secretKey: exigir('MEMED_SECRET_KEY'),
   });
 
-  // Nunca imprime a chave inteira: a saida deste script costuma virar print.
+  // Nunca imprime a chave inteira: a saída deste script costuma virar print.
   process.stdout.write(
     `base ....... ${baseUrl}\n` +
     `api-key .... ${apiKey.slice(0, 6)}…${apiKey.slice(-4)}\n`);

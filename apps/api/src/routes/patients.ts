@@ -30,12 +30,12 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
   }));
 
   /**
-   * A LISTA de pacientes, que nao e a busca.
+   * A LISTA de pacientes, que não é a busca.
    *
-   * `searchPatients` devolve conjunto vazio para termo vazio de proposito: um
-   * combobox nao deve despejar a base inteira a cada foco. Mas a tela Pacientes
-   * e uma lista com facetas — chegar nela e nao ver ninguem ate digitar algo faz
-   * o produto parecer quebrado. Sao ferramentas diferentes e por isso rotas
+   * `searchPatients` devolve conjunto vazio para termo vazio de propósito: um
+   * combobox não deve despejar a base inteira a cada foco. Mas a tela Pacientes
+   * é uma lista com facetas — chegar nela e não ver ninguém até digitar algo faz
+   * o produto parecer quebrado. São ferramentas diferentes e por isso rotas
    * diferentes, cada uma com a consulta que lhe serve.
    */
   r.get('/v1/pacientes/lista', {
@@ -253,11 +253,11 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
   }));
 
   /**
-   * O cadastro de UM paciente, para o cabecalho da ficha.
+   * O cadastro de UM paciente, para o cabeçalho da ficha.
    *
-   * Devolve 404 — nao 403 — para paciente de outro tenant. A diferenca importa:
-   * 403 confirma que o cadastro existe em algum lugar, e isso ja e vazamento.
-   * A RLS entrega conjunto vazio e a rota traduz como nao encontrado, que e a
+   * Devolve 404 — não 403 — para paciente de outro tenant. A diferença importa:
+   * 403 confirma que o cadastro existe em algum lugar, e isso já é vazamento.
+   * A RLS entrega conjunto vazio e a rota traduz como não encontrado, que é a
    * verdade do ponto de vista de quem pergunta.
    */
   r.get('/v1/pacientes/:id', {
@@ -336,8 +336,8 @@ export async function patientRoutes(app: FastifyInstance): Promise<void> {
       professionalId: string; profissionalNome: string; clinicId: string;
       headVersionId: string | null; versionCount: number;
     }>(
-      // O nome do profissional vem junto: a linha do historico diz COM QUEM o
-      // paciente esteve, e um uuid nao responde isso para ninguem.
+      // O nome do profissional vem junto: a linha do histórico diz COM QUEM o
+      // paciente esteve, e um uuid não responde isso para ninguém.
       `SELECT e.id AS "encounterId", e.occurred_date::text AS "occurredDate",
               e.status::text AS status, e.professional_id AS "professionalId",
               coalesce(u.full_name, '') AS "profissionalNome",

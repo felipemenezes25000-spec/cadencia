@@ -37,12 +37,12 @@ interface EncontroDaApi {
 }
 
 /**
- * Amanha no fuso da CLINICA, 'AAAA-MM-DD'.
+ * Amanhã no fuso da CLÍNICA, 'AAAA-MM-DD'.
  *
- * Nao `new Date()` cru: quem olha pode estar em outro estado, e entre 21h e
- * meia-noite em Sao Paulo o dia do navegador ja virou enquanto o da clinica
- * nao. A serie comecaria um dia adiantada — e o paciente perderia a primeira
- * sessao sem ninguem entender por que.
+ * Não `new Date()` cru: quem olha pode estar em outro estado, e entre 21h e
+ * meia-noite em São Paulo o dia do navegador já virou enquanto o da clínica
+ * não. A série começaria um dia adiantada — e o paciente perderia a primeira
+ * sessão sem ninguém entender por quê.
  */
 function amanhaNaClinica(timezone: string): string {
   const partes = new Intl.DateTimeFormat('en-CA', {
@@ -73,8 +73,8 @@ export default function PaginaFichaDoPaciente(
   const [profissionais, setProfissionais] = useState<
     readonly { professionalId: string; nome: string }[]>([]);
 
-  // `record.share` e permissao de quem RESPONDE pelo prontuario. A recepcao ve
-  // o cadastro e nao pode abrir o registro clinico para terceiros.
+  // `record.share` é permissão de quem RESPONDE pelo prontuário. A recepção vê
+  // o cadastro e não pode abrir o registro clínico para terceiros.
   const podeCompartilhar = vinculoAtivo.role === 'profissional'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'admin_clinico';
@@ -86,10 +86,10 @@ export default function PaginaFichaDoPaciente(
     setCompartilhamentos(r.itens);
   }, [id, clinicId, csrfToken]);
 
-  // Prontuario e o unico dado da tela com policy RESTRICTIVE propria (§10.18):
-  // ver o cadastro nao implica ver o registro clinico. A tela pergunta as duas
-  // coisas separadamente, que e o que permite mostrar "existe, mas voce nao tem
-  // acesso" em vez de fingir que o paciente nao existe.
+  // Prontuário é o único dado da tela com policy RESTRICTIVE própria (§10.18):
+  // ver o cadastro não implica ver o registro clínico. A tela pergunta as duas
+  // coisas separadamente, que é o que permite mostrar "existe, mas você não tem
+  // acesso" em vez de fingir que o paciente não existe.
   const podeVerProntuario = vinculoAtivo.role === 'profissional'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'admin_clinico';
@@ -120,7 +120,7 @@ export default function PaginaFichaDoPaciente(
             tipo: x.status === 'finalizado' ? 'Atendimento' : 'Rascunho',
             data: x.occurredDate,
             resumo: x.versionCount > 1
-              ? `${x.versionCount} versoes` : 'Registro finalizado',
+              ? `${x.versionCount} versões` : 'Registro finalizado',
             profissional: x.profissionalNome,
           })));
         }
@@ -135,22 +135,22 @@ export default function PaginaFichaDoPaciente(
     return (
       <div className="cadencia-page grid min-h-[50vh] place-items-center">
         <p className="text-sm text-text-muted">
-          {carregando ? 'Carregando…' : 'Paciente nao encontrado nesta unidade.'}
+          {carregando ? 'Carregando…' : 'Paciente não encontrado nesta unidade.'}
         </p>
       </div>
     );
   }
 
   /**
-   * Exporta o prontuario completo em PDF.
+   * Exporta o prontuário completo em PDF.
    *
-   * Direito do titular (LGPD art. 18, V). A rota existia desde a Fase 3 e nao
-   * tinha botao: na pratica o paciente pedia, e alguem precisava chamar a API
-   * na mao — ou o pedido morria.
+   * Direito do titular (LGPD art. 18, V). A rota existia desde a Fase 3 e não
+   * tinha botão: na prática o paciente pedia, e alguém precisava chamar a API
+   * na mão — ou o pedido morria.
    *
-   * `requesterKind: 'titular'` porque quem clica aqui esta atendendo um pedido
-   * do proprio paciente. Representante e ordem judicial tem tratamento
-   * diferente na rota e merecem tela propria quando aparecerem.
+   * `requesterKind: 'titular'` porque quem clica aqui está atendendo um pedido
+   * do próprio paciente. Representante e ordem judicial têm tratamento
+   * diferente na rota e merecem tela própria quando aparecerem.
    */
   async function exportarProntuario(): Promise<void> {
     setExportando(true);
@@ -161,15 +161,15 @@ export default function PaginaFichaDoPaciente(
           body: { requesterKind: 'titular' },
           clinicId, csrfToken,
         });
-      // Blob e nao `<a href>`: a navegacao do navegador nao carrega o cabecalho
+      // Blob e não `<a href>`: a navegação do navegador não carrega o cabeçalho
       // `x-clinic-id` e a API responderia 400.
       const url = await apiFetchBlobUrl(
         `/v1/exportacoes/${r.exportId}/pdf`, { clinicId, csrfToken });
       window.open(url, '_blank', 'noopener');
     } catch {
-      // Falhar em silencio num pedido de LGPD e o pior desfecho: o paciente
-      // fica esperando um documento que ninguem sabe que nao saiu.
-      window.alert('Nao foi possivel gerar a exportacao. Tente de novo.');
+      // Falhar em silêncio num pedido de LGPD é o pior desfecho: o paciente
+      // fica esperando um documento que ninguém sabe que não saiu.
+      window.alert('Não foi possível gerar a exportação. Tente de novo.');
     } finally {
       setExportando(false);
     }
@@ -192,8 +192,8 @@ export default function PaginaFichaDoPaciente(
 
   async function abrirCompartilhamento(): Promise<void> {
     setCompartilhando(true);
-    // Carga preguicosa: as duas listas so interessam a quem abriu o painel, e
-    // pagar dois round trips em toda visita a ficha atrasaria o caso comum.
+    // Carga preguiçosa: as duas listas só interessam a quem abriu o painel, e
+    // pagar dois round trips em toda visita à ficha atrasaria o caso comum.
     const prof = await apiFetch<{ itens: { professionalId: string; nome: string }[] }>(
       '/v1/profissionais', { clinicId, csrfToken })
       .catch(() => ({ itens: [] as { professionalId: string; nome: string }[] }));
@@ -235,7 +235,7 @@ export default function PaginaFichaDoPaciente(
               carregando={exportando}
               onClick={() => { void exportarProntuario(); }}
             >
-              Exportar prontuario
+              Exportar prontuário
             </Botao>
           )}
           {podeCompartilhar && (
@@ -282,7 +282,7 @@ export default function PaginaFichaDoPaciente(
           entradas: { id: string; description: string; amountCents: number;
                       dueDate: string; daysPastDue: number }[] }>(
           // DESTE paciente. Sem o filtro, a aba Financeiro da ficha listava os
-          // recebiveis da clinica inteira sob o nome de quem estava aberto.
+          // recebíveis da clínica inteira sob o nome de quem estava aberto.
           `/v1/financeiro/a-receber?patientId=${id}`, { clinicId, csrfToken });
         const itens: LancamentoResumo[] = r.entradas.map((e) => ({
           entryId: e.id,
@@ -296,8 +296,8 @@ export default function PaginaFichaDoPaciente(
       }}
       aoSolicitarAcesso={() => { /* pedido de compartilhamento entra depois */ }}
       aoQuebrarVidro={async (justificativa, horas) => {
-        // Quebra-vidro e caminho legitimo e AUDITADO: a funcao do banco registra
-        // quem, quando, por que e por quanto tempo, e a clinica e notificada.
+        // Quebra-vidro é caminho legítimo e AUDITADO: a função do banco registra
+        // quem, quando, por que e por quanto tempo, e a clínica é notificada.
         await apiFetch(`/v1/pacientes/${id}/quebra-vidro`, {
           method: 'POST', body: { justificativa, horas }, clinicId, csrfToken });
         setSemAcesso(false);
@@ -306,8 +306,8 @@ export default function PaginaFichaDoPaciente(
 
     <PainelDeRecorrencia
       aberto={repetindo}
-      // A serie comeca AMANHA por padrao: marcar a primeira sessao para hoje,
-      // com o paciente ja atendido, e o engano mais facil de cometer aqui.
+      // A série começa AMANHÃ por padrão: marcar a primeira sessão para hoje,
+      // com o paciente já atendido, é o engano mais fácil de cometer aqui.
       dia={amanhaNaClinica(vinculoAtivo.timezone)}
       pacienteNome={paciente.displayName}
       procedimentos={procedimentos}
@@ -317,9 +317,9 @@ export default function PaginaFichaDoPaciente(
           body: {
             patientId: id,
             // Sem seletor de profissional nesta tela: cai no primeiro que
-            // atende na unidade, como o compositor da agenda ja faz. Clinica
-            // com dois medicos precisa escolher — e isso e campo a acrescentar,
-            // nao um palpite que a tela deva esconder.
+            // atende na unidade, como o compositor da agenda já faz. Clínica
+            // com dois médicos precisa escolher — e isso é campo a acrescentar,
+            // não um palpite que a tela deva esconder.
             professionalId: profissionais[0]?.professionalId ?? '',
             procedureId: r.procedureId,
             primeiraData: r.primeiraData,
@@ -340,13 +340,13 @@ export default function PaginaFichaDoPaciente(
       timezone={vinculoAtivo.timezone}
       itens={compartilhamentos}
       profissionais={profissionais.filter(
-        // Compartilhar com quem ja atende o paciente e ruido: o acesso dele
-        // vem pela primeira porta da policy, nao por esta.
+        // Compartilhar com quem já atende o paciente é ruído: o acesso dele
+        // vem pela primeira porta da policy, não por esta.
         (x) => !compartilhamentos.some((c) => c.granteeProfessionalId === x.professionalId),
       )}
       aoCompartilhar={async (c) => {
-        // O painel entrega PRAZO EM DIAS; virar instante e responsabilidade de
-        // quem tem o relogio. Mantem o painel puro e testavel sem fingir tempo.
+        // O painel entrega PRAZO EM DIAS; virar instante é responsabilidade de
+        // quem tem o relógio. Mantém o painel puro e testável sem fingir tempo.
         const expira = c.diasDeValidade === null
           ? {}
           : { expiraEm: new Date(Date.now() + c.diasDeValidade * 86_400_000).toISOString() };

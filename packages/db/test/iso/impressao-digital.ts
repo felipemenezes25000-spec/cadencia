@@ -4,9 +4,9 @@ import { TENANT_B } from './fixtures';
 import { TENANT_SCHEMAS } from '../../src/invariants/catalog';
 
 /**
- * Le, como superusuario (sem RLS), TODA linha de TODA tabela multi-tenant que
- * pertence ao tenant B, e resume em um hash estavel. Roda antes da suite e
- * depois dela: qualquer diferenca significa que a suite, rodando como tenant A,
+ * Lê, como superusuário (sem RLS), TODA linha de TODA tabela multi-tenant que
+ * pertence ao tenant B, e resume em um hash estável. Roda antes da suite e
+ * depois dela: qualquer diferença significa que a suite, rodando como tenant A,
  * encostou em dado do tenant B.
  */
 export async function impressaoDigitalDoTenantB(admin: Client): Promise<string> {
@@ -25,7 +25,7 @@ export async function impressaoDigitalDoTenantB(admin: Client): Promise<string> 
 
   const hash = createHash('sha256');
 
-  // app.tenant nao tem coluna tenant_id: a linha do tenant B entra a parte.
+  // app.tenant não tem coluna tenant_id: a linha do tenant B entra a parte.
   const raiz = await admin.query<{ linha: string }>(
     `SELECT to_jsonb(t.*)::text AS linha FROM app.tenant t WHERE t.id = $1`,
     [TENANT_B],

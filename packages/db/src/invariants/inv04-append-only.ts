@@ -43,19 +43,19 @@ const EXCECAO = 'append-only-except:';
 /**
  * Colunas que o clin_writer pode atualizar numa tabela com `version_id`.
  *
- * `live` vale para todas: e o bit que marca se a linha ainda e a verdade vigente,
- * e apaga-lo e o PASSO 6 da finalizacao.
+ * `live` vale para todas: é o bit que marca se a linha ainda é a verdade vigente,
+ * e apagá-lo é o PASSO 6 da finalização.
  *
- * Alem dele, a tabela pode DECLARAR NO BANCO colunas extras, via
- * `COMMENT ON TABLE ... IS 'append-only-except: col1, col2'`. Hoje so
+ * Além dele, a tabela pode DECLARAR NO BANCO colunas extras, via
+ * `COMMENT ON TABLE ... IS 'append-only-except: col1, col2'`. Hoje só
  * clin.ai_assistance usa isso (migration 0039), porque a §4.6 exige gravar a
- * decisao do medico antes da finalizacao e o version_id na selagem — enquanto a
- * §3.13 previa apenas `live`, escrita quando `live` era a unica coluna mutavel
- * do dominio clinico.
+ * decisão do médico antes da finalização e o version_id na selagem — enquanto a
+ * §3.13 previa apenas `live`, escrita quando `live` era a única coluna mutável
+ * do domínio clínico.
  *
- * A excecao mora no COMMENT, e nao num Set aqui no codigo, pelo mesmo motivo que
+ * A exceção mora no COMMENT, e não num Set aqui no código, pelo mesmo motivo que
  * a §3.13 exige isso no invariante 1: acrescentar coluna passa a exigir uma
- * migration revisada. Excecao que se altera sem revisao deixa de ser excecao e
+ * migration revisada. Exceção que se altera sem revisão deixa de ser exceção e
  * vira porta.
  */
 function colunasPermitidas(comment: string): Set<string> {
@@ -85,8 +85,8 @@ export async function appendOnlyViolations(db: Queryable): Promise<string[]> {
     if (row.rw_update) out.push(`${row.relation}: app_rw tem UPDATE — tabela com version_id e append-only`);
     if (row.rw_delete) out.push(`${row.relation}: app_rw tem DELETE — tabela com version_id e append-only`);
 
-    // GRANT de tabela inteira nunca e aceitavel, nem com excecao declarada: a
-    // excecao e por COLUNA, e um GRANT de tabela cobre tambem as colunas que
+    // GRANT de tabela inteira nunca é aceitável, nem com exceção declarada: a
+    // exceção é por COLUNA, e um GRANT de tabela cobre também as colunas que
     // ainda nem existem.
     if (row.writer_table_update) {
       out.push(`${row.relation}: clin_writer tem UPDATE da tabela inteira — a excecao e por coluna, nunca por tabela`);
@@ -107,7 +107,7 @@ export async function appendOnlyViolations(db: Queryable): Promise<string[]> {
   return out;
 }
 
-/** As relacoes que o invariante 5 varre — exportada para o teste provar que a varredura nao e vazia. */
+/** As relações que o invariante 5 varre — exportada para o teste provar que a varredura não é vazia. */
 export async function clinicalScopeRelations(db: Queryable): Promise<string[]> {
   const { rows } = await db.query<{ relation: string }>(CLINICAL_SCOPE_SQL);
   return rows.map((r) => r.relation);

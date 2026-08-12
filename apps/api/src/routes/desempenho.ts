@@ -4,22 +4,22 @@ import { z } from 'zod';
 import { rota } from '../guard';
 
 /**
- * Os tres indicadores do topo da tela de Desempenho.
+ * Os três indicadores do topo da tela de Desempenho.
  *
- * Cada um compara um MES com o mes anterior — e a tela mostra "Agosto vs Julho".
- * Mes de calendario e o que a gestora fecha com o contador, e e nesse recorte
- * que ela ja pensa; janela movel daria um numero mais estavel e sem interlocutor.
+ * Cada um compara um MÊS com o mês anterior — e a tela mostra "Agosto vs Julho".
+ * Mês de calendário é o que a gestora fecha com o contador, e é nesse recorte
+ * que ela já pensa; janela móvel daria um número mais estável e sem interlocutor.
  *
- * O corte usa app.local_date com o fuso da CLINICA (§10 item 10): um pagamento
- * das 22h do dia 31 em Manaus pertence a agosto, nao a setembro.
+ * O corte usa app.local_date com o fuso da CLÍNICA (§10 item 10): um pagamento
+ * das 22h do dia 31 em Manaus pertence a agosto, não a setembro.
  */
 
 /**
- * Variacao percentual que nunca devolve Infinity nem NaN.
+ * Variação percentual que nunca devolve Infinity nem NaN.
  *
  * Dividir por zero produz Infinity, que o JSON serializa como `null` e a tela
- * renderiza como buraco. Zero contra zero e variacao ZERO; algo contra zero e
- * 100% de crescimento — nao infinito.
+ * renderiza como buraco. Zero contra zero é variação ZERO; algo contra zero é
+ * 100% de crescimento — não infinito.
  */
 function variacao(atual: number, anterior: number): number {
   if (anterior === 0) return atual === 0 ? 0 : 100;
@@ -32,7 +32,7 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
   r.get('/v1/desempenho/indicadores', {
     schema: {
       querystring: z.object({
-        // AAAA-MM. Ausente = mes corrente.
+        // AAAA-MM. Ausente = mês corrente.
         mes: z.string().regex(/^\d{4}-\d{2}$/).optional(),
       }),
       response: {
@@ -58,7 +58,7 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
       agendados_atual: string; comparecidos_atual: string;
       agendados_anterior: string; comparecidos_anterior: string;
     }>(
-      // Uma consulta so, com FILTER por janela: duas consultas separadas leriam
+      // Uma consulta só, com FILTER por janela: duas consultas separadas leriam
       // a tabela duas vezes e poderiam cair em lados diferentes de um commit.
       `WITH cl AS (
          SELECT timezone FROM app.clinic WHERE id = $1
@@ -132,9 +132,9 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
     const agAnterior = Number(l?.agendados_anterior ?? 0);
     const compAnterior = Number(l?.comparecidos_anterior ?? 0);
 
-    // Ocupacao e PONTO PERCENTUAL, nao centavo: 62% contra 55% e +7 pontos.
+    // Ocupação é PONTO PERCENTUAL, não centavo: 62% contra 55% é +7 pontos.
     // Chamar isso de "+12,7%" seria tecnicamente verdadeiro e praticamente
-    // enganoso — ninguem gerencia agenda em variacao relativa de taxa.
+    // enganoso — ninguém gerencia agenda em variação relativa de taxa.
     const ocupAtual = agAtual === 0 ? 0 : Math.round((compAtual / agAtual) * 100);
     const ocupAnterior = agAnterior === 0 ? 0 : Math.round((compAnterior / agAnterior) * 100);
 
@@ -156,9 +156,9 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
           deltaPercent: variacao(ocupAtual, ocupAnterior),
         },
       ],
-      // 'live' porque a conta acabou de ser feita na transacao da requisicao.
-      // Quando a matview de relatorio servir esta tela, o carimbo passa a ser o
-      // do ultimo refresh — e a tela ja publica isso para quem le o numero.
+      // 'live' porque a conta acabou de ser feita na transação da requisição.
+      // Quando a matview de relatório servir esta tela, o carimbo passa a ser o
+      // do último refresh — e a tela já publica isso para quem lê o número.
       freshness: { source: 'live' as const, refreshedAt: null },
     };
   }));

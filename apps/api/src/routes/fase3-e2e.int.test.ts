@@ -22,7 +22,7 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
 
   // =========================================================================
   // FLUXO (c) — gestora descobre por que o faturamento caiu
-  // §5.5(c): 3 cliques ate a causa, 1 ate a acao
+  // §5.5(c): 3 cliques até a causa, 1 até a ação
   // =========================================================================
 
   it('1. report.read e acessivel pela gestora (admin_clinico) e pela financeira', () => {
@@ -40,16 +40,16 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
     expect(isEventType('PAYMENT_RECEIVED')).toBe(true);
     // O fluxo completo: recordPayment grava fin.entry + emite PAYMENT_RECEIVED
     // -> worker materializa rollup via fin.refresh_daily_rollup
-    // -> dashboard le rollup via app_rpt.daily_rollup (view security_barrier)
-    // -> decomposeVariance calcula diferenca entre dois periodos
+    // -> dashboard lê rollup via app_rpt.daily_rollup (view security_barrier)
+    // -> decomposeVariance calcula diferença entre dois períodos
     // Cada elo foi testado individualmente nas tasks anteriores.
   });
 
   it('4. a variacao se decompoe em frases com centavos — nao em graficos sem explicacao', () => {
-    // §5.5(c): "faltas e cancelamentos -R$ 9.800 | mix de convenio -R$ 3.100 |
-    //           glosas nao recuperadas -R$ 2.400 | ticket medio +R$ 1.100"
-    // O formato e: [{ category: string, amountCents: number, direction: 'up'|'down' }]
-    // A soma das decomposicoes bate com a variacao total.
+    // §5.5(c): "faltas e cancelamentos -R$ 9.800 | mix de convênio -R$ 3.100 |
+    //           glosas não recuperadas -R$ 2.400 | ticket médio +R$ 1.100"
+    // O formato é: [{ category: string, amountCents: number, direction: 'up'|'down' }]
+    // A soma das decomposições bate com a variação total.
     const decomposicao = [
       { category: 'faltas_e_cancelamentos', amountCents: -980000, direction: 'down' as const },
       { category: 'mix_de_convenio', amountCents: -310000, direction: 'down' as const },
@@ -65,7 +65,7 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
   });
 
   it('5. drill-down mostra agrupamento por profissional, dia da semana e faixa de horario', () => {
-    // §5.5(c): "22 das 37 sao segunda de manha; 19 sem confirmacao respondida"
+    // §5.5(c): "22 das 37 são segunda de manhã; 19 sem confirmação respondida"
     const drillDown = {
       category: 'faltas_e_cancelamentos',
       totalCount: 37,
@@ -87,7 +87,7 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
   });
 
   // =========================================================================
-  // REPASSE — receita chega, split e calculado, profissional ve so o seu
+  // REPASSE — receita chega, split é calculado, profissional vê só o seu
   // =========================================================================
 
   it('6. finance.repasse e restrito a admin_clinico e financeiro', () => {
@@ -131,7 +131,7 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
   });
 
   // =========================================================================
-  // ESTOQUE — movimento de saida, alerta disparado, Precisa de voce
+  // ESTOQUE — movimento de saída, alerta disparado, Precisa de você
   // =========================================================================
 
   it('10. inventory.read e acessivel por admin_clinico, financeiro e recepcao', () => {
@@ -147,7 +147,7 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
   });
 
   it('12. STOCK_ALERT_TRIGGERED prova: saida fez qty cair abaixo do minimo -> alerta -> Precisa de voce', () => {
-    // Cenario: produto tinha qty=10, minimo=10. Saida de 7 unidades. Agora qty=3 < minimo=10.
+    // Cenário: produto tinha qty=10, mínimo=10. Saída de 7 unidades. Agora qty=3 < mínimo=10.
     const evt: StockAlertTriggered = {
       type: 'STOCK_ALERT_TRIGGERED',
       tenantId: 't1', aggregateId: 'product1', occurredAt: '2026-09-01T10:00:00.000Z',
@@ -157,11 +157,11 @@ describe('demonstracao de ponta a ponta da Fase 3', () => {
     const generico: DomainEvent = evt;
     expect(generico.type).toBe('STOCK_ALERT_TRIGGERED');
     // O worker consome STOCK_ALERT_TRIGGERED e incrementa o contador de
-    // "estoque abaixo do minimo" na query de Precisa de voce.
+    // "estoque abaixo do mínimo" na query de Precisa de você.
   });
 
   // =========================================================================
-  // LANCAMENTO RECORRENTE — regra materializa entrada
+  // LANÇAMENTO RECORRENTE — regra materializa entrada
   // =========================================================================
 
   it('13. RECURRING_ENTRY_MATERIALIZED prova materializacao de despesa recorrente', () => {

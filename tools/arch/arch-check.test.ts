@@ -8,8 +8,8 @@ const TIMEOUT = 120_000;
 
 function archCheck(): { code: number; output: string } {
   try {
-    // `shell` no Windows porque o executavel e `pnpm.cmd`: sem ele o spawn falha com
-    // ENOENT antes de rodar o depcruise, e o teste nunca veria a saida que afirma.
+    // `shell` no Windows porque o executável é `pnpm.cmd`: sem ele o spawn falha com
+    // ENOENT antes de rodar o depcruise, e o teste nunca veria a saída que afirma.
     const output = execFileSync('pnpm', ['arch:check'], {
       encoding: 'utf8',
       stdio: 'pipe',
@@ -23,9 +23,9 @@ function archCheck(): { code: number; output: string } {
 }
 
 /**
- * Cria TODOS os arquivos de uma vez: o importador e o alvo. Sem o alvo, o import nao
+ * Cria TODOS os arquivos de uma vez: o importador e o alvo. Sem o alvo, o import não
  * resolve e o depcruise reprova por `sem-import-nao-resolvido` — o teste passaria sem
- * nunca exercitar a regra de camada, que e o que ele existe para verificar.
+ * nunca exercitar a regra de camada, que é o que ele existe para verificar.
  */
 function withTempFiles(arquivos: ReadonlyArray<readonly [string, string]>, fn: () => void): void {
   for (const [caminho, conteudo] of arquivos) {

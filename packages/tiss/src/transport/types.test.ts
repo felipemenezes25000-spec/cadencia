@@ -34,7 +34,7 @@ describe('TissTransport tipos', () => {
   });
 
   it('TissTransport exige mode, tissVersion e os tres metodos', () => {
-    // Verificacao em tempo de compilacao: se o tipo compilar, os campos existem.
+    // Verificação em tempo de compilação: se o tipo compilar, os campos existem.
     // O teste de runtime usa um objeto que satisfaz a interface minimamente.
     const stub: Pick<TissTransport, 'mode' | 'tissVersion'> = {
       mode: 'arquivo',

@@ -31,7 +31,7 @@ export interface LoteCancelledResult {
 
 /**
  * Marca o lote como pronto para envio. Valida que o lote tem ao menos uma guia.
- * Transicao permitida: rascunho -> pronto.
+ * Transição permitida: rascunho -> pronto.
  */
 export async function markLoteReady(
   tx: TxClient,
@@ -72,7 +72,7 @@ export async function markLoteReady(
 
 /**
  * Marca o lote como enviado. Grava o protocolo da operadora e a data de envio.
- * Transicao permitida: pronto -> enviado.
+ * Transição permitida: pronto -> enviado.
  * xml_storage_key e xml_hash_md5 devem ter sido gravados antes (pelo bloco de XML).
  */
 export async function markLoteSent(
@@ -126,7 +126,7 @@ export async function markLoteSent(
 
 /**
  * Marca o lote como retornado pela operadora (demonstrativo recebido).
- * Transicao permitida: enviado -> retornado.
+ * Transição permitida: enviado -> retornado.
  */
 export async function receiveLoteReturn(
   tx: TxClient,
@@ -153,9 +153,9 @@ export async function receiveLoteReturn(
 }
 
 /**
- * Cancela o lote e libera suas guias para inclusao em outro lote.
- * So e permitido se o lote NAO foi enviado (rascunho ou pronto).
- * As linhas de lote_guia sao removidas para liberar o indice unico.
+ * Cancela o lote e libera suas guias para inclusão em outro lote.
+ * Só é permitido se o lote NÃO foi enviado (rascunho ou pronto).
+ * As linhas de lote_guia são removidas para liberar o índice único.
  */
 export async function cancelLote(
   tx: TxClient,
@@ -176,7 +176,7 @@ export async function cancelLote(
     return err({ kind: 'transicao_invalida', de: 'cancelado', para: 'cancelado' });
   }
 
-  // Remove os vinculos de guia para liberar o indice unico
+  // Remove os vínculos de guia para liberar o índice único
   const { rowCount } = await tx.query(
     `DELETE FROM tiss.lote_guia WHERE lote_id = $1`,
     [loteId],

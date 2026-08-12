@@ -102,8 +102,8 @@ describe('schema fin.bank_account — RLS, unicidade e default', () => {
   });
 
   it('permite no maximo UMA conta default por tenant', async () => {
-    // O trigger trg_tenant_default_bank_account ja criou "Caixa Geral" (is_default=true)
-    // Tentar inserir outra default deve falhar pelo indice parcial unico
+    // O trigger trg_tenant_default_bank_account já criou "Caixa Geral" (is_default=true)
+    // Tentar inserir outra default deve falhar pelo índice parcial único
     await expect(
       withTenantTx(actor, (tx) =>
         tx.query(
@@ -223,6 +223,6 @@ describe('schema fin.cost_center — RLS e unicidade', () => {
          VALUES (app.require_tenant_id(), $1, 'ADM', 'Administrativo')`,
         [uuidv7()]);
     });
-    // Se chegou aqui sem erro, o mesmo codigo e aceito em outro tenant
+    // Se chegou aqui sem erro, o mesmo código é aceito em outro tenant
   });
 });

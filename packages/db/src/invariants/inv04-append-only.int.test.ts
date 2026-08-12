@@ -59,7 +59,7 @@ describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao',
       );
       return appendOnlyViolations(c);
     });
-    // `decidido_em` foi declarada e passa; `intruso` nao foi e continua reprovando.
+    // `decidido_em` foi declarada e passa; `intruso` não foi e continua reprovando.
     expect(violacoes.join('\n')).toContain('clin_writer tem UPDATE das colunas intruso');
     expect(violacoes.join('\n')).not.toContain('decidido_em —');
   });
@@ -90,14 +90,14 @@ describe('invariante 4 — imutabilidade clinica por REVOKE, nao por convencao',
 
 describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornavel trocando de tabela', () => {
   it('a varredura enxerga as tabelas clinicas com patient_id — nao passa por vacuo', async () => {
-    // clin.encounter_field_value entrou na lista com a migration 0034: e a
+    // clin.encounter_field_value entrou na lista com a migration 0034: é a
     // primeira tabela com a coluna `version_id` literal. clin.encounter_version
     // continua de fora porque a coluna dela chama supersedes_version_id.
     // As quatro tabelas de primeira classe (migration 0035) entraram por terem
-    // patient_id E version_id: sao prontuario, e o compartilhamento tem que valer
+    // patient_id E version_id: são prontuário, e o compartilhamento tem que valer
     // nelas tanto quanto no atendimento de onde saíram.
     // clin.ai_assistance entrou com a migration 0036 pelo mesmo motivo: o apoio
-    // por IA e parte do prontuario, nao um log paralelo.
+    // por IA é parte do prontuário, não um log paralelo.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
       'clin.ai_assistance',
       'clin.attachment',

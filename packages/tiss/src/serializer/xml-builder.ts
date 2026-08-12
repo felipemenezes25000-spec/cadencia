@@ -1,13 +1,13 @@
 /**
  * Builder tipado para XML TISS.
  *
- * NAO usa concatenacao de string direta para conteudo — todo texto passa
+ * NÃO usa concatenação de string direta para conteúdo — todo texto passa
  * por escape de entidades XML. O builder rastreia a pilha de tags abertas
  * e rejeita fechamento fora de ordem, impossibilitando XML malformado.
  */
 
 const ENTITY_MAP: ReadonlyMap<number, string> = new Map([
-  [0x26, '&amp;'],   // & — DEVE ser primeiro para nao re-escapar
+  [0x26, '&amp;'],   // & — DEVE ser primeiro para não re-escapar
   [0x3C, '&lt;'],    // <
   [0x3E, '&gt;'],    // >
   [0x22, '&quot;'],  // "
@@ -43,20 +43,20 @@ export class XmlBuilder {
     this.stack.push(tagName);
   }
 
-  /** Fecha a tag no topo da pilha. Erro se o nome nao bater. */
+  /** Fecha a tag no topo da pilha. Erro se o nome não bater. */
   close(tagName: string): void {
     const top = this.stack.pop();
     if (top === undefined) {
       throw new Error(`Tentativa de fechar tag "${tagName}" mas nenhuma tag esta aberta`);
     }
     if (top !== tagName) {
-      this.stack.push(top); // restaura para nao corromper o estado
+      this.stack.push(top); // restaura para não corromper o estado
       throw new Error(`Tentativa de fechar tag "${tagName}" mas a tag aberta e "${top}"`);
     }
     this.parts.push(`</${tagName}>`);
   }
 
-  /** Emite tag folha com conteudo texto (escape automatico). */
+  /** Emite tag folha com conteúdo texto (escape automático). */
   tag(tagName: string, value: string): void {
     this.parts.push(`<${tagName}>${escapeXml(value)}</${tagName}>`);
   }
@@ -67,7 +67,7 @@ export class XmlBuilder {
     this.tag(tagName, value);
   }
 
-  /** Retorna o XML completo como string UTF-16 (sera codificado para ISO-8859-1 depois). */
+  /** Retorna o XML completo como string UTF-16 (será codificado para ISO-8859-1 depois). */
   toString(): string {
     return this.parts.join('');
   }

@@ -11,7 +11,7 @@ export interface SementeTiss {
   operadoraId: string;
 }
 
-/* ---------- Interfaces para projecao de guia (Task 23) ---------- */
+/* ---------- Interfaces para projeção de guia (Task 23) ---------- */
 
 export interface TissSemente {
   tenantId: string;
@@ -28,7 +28,7 @@ export interface TissSemente {
   fieldQueixaId: string;
 }
 
-/** Semente com convenio mas SEM numero_carteira no billing — dados incompletos. */
+/** Semente com convênio mas SEM numero_carteira no billing — dados incompletos. */
 export interface TissSementeIncompleta {
   tenantId: string;
   clinicId: string;
@@ -43,7 +43,7 @@ export interface TissSementeIncompleta {
   fieldQueixaId: string;
 }
 
-/** Semente para testes de projecao de guia: SEM convenio (particular). */
+/** Semente para testes de projeção de guia: SEM convênio (particular). */
 export interface TissSementeParticular {
   tenantId: string;
   clinicId: string;
@@ -66,7 +66,7 @@ function adminUrl(): string {
   return url;
 }
 
-/* ---------- Semente basica (Bloco 01, mantida para contrato.int.test) ---------- */
+/* ---------- Semente básica (Bloco 01, mantida para contrato.int.test) ---------- */
 
 export async function semearTiss(): Promise<SementeTiss> {
   const s: SementeTiss = {
@@ -108,12 +108,12 @@ export async function semearTiss(): Promise<SementeTiss> {
   return s;
 }
 
-/* ---------- Semente completa para projecao de guia TISS (Task 23) ---------- */
+/* ---------- Semente completa para projeção de guia TISS (Task 23) ---------- */
 
 /**
- * Semeia o grafo completo para projecao de guia TISS.
- * Inclui: tenant, clinica, usuario, profissional, paciente (cadastro completo),
- * atendimento em rascunho, encounter_billing COM convenio, operadora, contrato,
+ * Semeia o grafo completo para projeção de guia TISS.
+ * Inclui: tenant, clínica, usuário, profissional, paciente (cadastro completo),
+ * atendimento em rascunho, encounter_billing COM convênio, operadora, contrato,
  * paciente_convenio e termo TUSS vigente.
  */
 export async function semearProjecaoTiss(): Promise<TissSemente> {
@@ -136,7 +136,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
   try {
     await c.query('BEGIN');
 
-    // --- Infraestrutura base (mesmo padrao do emr test-support) ---
+    // --- Infraestrutura base (mesmo padrão do emr test-support) ---
     await c.query(
       `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
        VALUES ($1, $2, 'Clinica TISS Teste', '11ABC22233DE44')`,
@@ -169,7 +169,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
       [s.tenantId, s.patientId],
     );
 
-    // --- Prontuario: secao e campo minimos ---
+    // --- Prontuário: seção e campo mínimos ---
     await c.query(
       `INSERT INTO clin.record_section (tenant_id, id, code, label, ordinal)
        VALUES ($1, $2, 'consulta', 'Consulta', 1)`,
@@ -190,7 +190,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
       [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId],
     );
 
-    // --- Encounter billing COM convenio ---
+    // --- Encounter billing COM convênio ---
     await c.query(
       `INSERT INTO clin.encounter_billing
          (tenant_id, id, encounter_id, operadora_nome, registro_ans, numero_carteira,
@@ -216,7 +216,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
       [s.tenantId, s.operadoraId, s.userId],
     );
 
-    // --- Contrato (vinculo operadora x prestador) ---
+    // --- Contrato (vínculo operadora x prestador) ---
     await c.query(
       `INSERT INTO tiss.contrato
          (tenant_id, id, operadora_id, clinic_id, codigo_prestador_na_operadora, vigencia_inicio, created_by)
@@ -224,7 +224,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
       [s.tenantId, s.contratoId, s.operadoraId, s.clinicId, s.userId],
     );
 
-    // --- Paciente convenio (vinculo paciente x operadora) ---
+    // --- Paciente convênio (vínculo paciente x operadora) ---
     await c.query(
       `INSERT INTO tiss.paciente_convenio
          (tenant_id, id, patient_id, operadora_id, numero_carteira, validade, created_by)
@@ -233,7 +233,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
     );
 
     // --- Termo TUSS vigente para o procedimento de amostra ---
-    // Usa INSERT ... ON CONFLICT DO NOTHING: o termo pode ja existir de outra semeadura.
+    // Usa INSERT ... ON CONFLICT DO NOTHING: o termo pode já existir de outra semeadura.
     await c.query(
       `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
        VALUES (22, '10101012', 'Consulta em consultorio', '[2020-01-01,)', '202001', 'inclusao')
@@ -252,7 +252,7 @@ export async function semearProjecaoTiss(): Promise<TissSemente> {
 }
 
 /**
- * Semeia um atendimento PARTICULAR (sem convenio).
+ * Semeia um atendimento PARTICULAR (sem convênio).
  * O encounter_billing tem registro_ans e numero_carteira NULL.
  */
 export async function semearProjecaoParticular(): Promise<TissSementeParticular> {
@@ -323,10 +323,10 @@ export async function semearProjecaoParticular(): Promise<TissSementeParticular>
       [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId],
     );
 
-    // Billing PARTICULAR: registro_ans e numero_carteira sao NULL, codigo_tabela NAO e 18.
+    // Billing PARTICULAR: registro_ans e numero_carteira são NULL, codigo_tabela NÃO é 18.
     // O CHECK (registro_ans IS NULL) = (numero_carteira IS NULL) permite ambos NULL.
-    // Precisa de ao menos um dos tres: codigo_prestador, cpf_contratado, cnpj_contratado.
-    // Como e particular SEM convenio, usamos cpf_contratado.
+    // Precisa de ao menos um dos três: codigo_prestador, cpf_contratado, cnpj_contratado.
+    // Como é particular SEM convênio, usamos cpf_contratado.
     await c.query(
       `INSERT INTO clin.encounter_billing
          (tenant_id, id, encounter_id,
@@ -355,9 +355,9 @@ export async function semearProjecaoParticular(): Promise<TissSementeParticular>
 }
 
 /**
- * Semeia atendimento com convenio mas com dados obrigatorios FALTANDO.
+ * Semeia atendimento com convênio mas com dados obrigatórios FALTANDO.
  * O encounter_billing tem registro_ans preenchido mas numero_carteira NULL
- * (invalido para guia completa). A operadora e contrato existem.
+ * (inválido para guia completa). A operadora e contrato existem.
  */
 export async function semearProjecaoIncompleta(): Promise<TissSementeIncompleta> {
   const s: TissSementeIncompleta = {
@@ -429,17 +429,17 @@ export async function semearProjecaoIncompleta(): Promise<TissSementeIncompleta>
       [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId],
     );
 
-    // Billing COM convenio mas com dados que levarao a guia incompleta:
+    // Billing COM convênio mas com dados que levarão a guia incompleta:
     // numero_carteira PRESENTE (exigido pelo CHECK), mas
     // codigo_prestador_na_operadora, cpf_contratado e cnpj_contratado:
     // usamos cpf_contratado para satisfazer o CHECK, mas o campo que o
-    // teste vai verificar como faltando e a OPERADORA NAO CADASTRADA
-    // (registro_ans '000000' nao tem operadora correspondente no tiss).
+    // teste vai verificar como faltando é a OPERADORA NÃO CADASTRADA
+    // (registro_ans '000000' não tem operadora correspondente no tiss).
     // Na verdade, para testar dados incompletos no billing, precisamos
-    // que a operadora EXISTA mas algum campo obrigatorio do billing esteja
+    // que a operadora EXISTA mas algum campo obrigatório do billing esteja
     // ausente. O CHECK do billing impede carteira NULL com ans preenchido.
-    // Estrategia: todos os campos do billing preenchidos, mas a operadora
-    // NAO esta cadastrada em tiss.operadora — isso gera 'operadora_nao_cadastrada'.
+    // Estratégia: todos os campos do billing preenchidos, mas a operadora
+    // NÃO está cadastrada em tiss.operadora — isso gera 'operadora_nao_cadastrada'.
     await c.query(
       `INSERT INTO clin.encounter_billing
          (tenant_id, id, encounter_id, operadora_nome, registro_ans, numero_carteira,
@@ -457,10 +457,10 @@ export async function semearProjecaoIncompleta(): Promise<TissSementeIncompleta>
       [s.tenantId, s.encounterBillingId, s.encounterId, s.userId],
     );
 
-    // Operadora com registro_ans '999999' NAO cadastrada em tiss.operadora
-    // (de proposito, para testar o fluxo de dados incompletos)
+    // Operadora com registro_ans '999999' NÃO cadastrada em tiss.operadora
+    // (de propósito, para testar o fluxo de dados incompletos)
 
-    // Termo TUSS para o procedimento (global, pode ja existir)
+    // Termo TUSS para o procedimento (global, pode já existir)
     await c.query(
       `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
        VALUES (22, '10101012', 'Consulta em consultorio', '[2020-01-01,)', '202001', 'inclusao')
@@ -478,7 +478,7 @@ export async function semearProjecaoIncompleta(): Promise<TissSementeIncompleta>
   return s;
 }
 
-/* ---------- Semente para reprojecao/retificacao (Task 30) ---------- */
+/* ---------- Semente para reprojeção/retificação (Task 30) ---------- */
 
 export interface TissSementeRetificacao {
   tenantId: string;
@@ -495,15 +495,15 @@ export interface TissSementeRetificacao {
 }
 
 /**
- * Semeia um tenant completo para testes de integracao de reprojecao TISS:
- * - tenant, clinica, usuario, profissional, paciente
+ * Semeia um tenant completo para testes de integração de reprojeção TISS:
+ * - tenant, clínica, usuário, profissional, paciente
  * - atendimento FINALIZADO (status='finalizado', version_no=1)
- * - encounter_billing com dados de convenio (registro_ans, carteirinha)
+ * - encounter_billing com dados de convênio (registro_ans, carteirinha)
  * - tiss.operadora e tiss.contrato
  * - tiss.paciente_convenio
  *
- * O atendimento PRECISA estar finalizado porque a guia e projecao da
- * versao finalizada — nunca de rascunho.
+ * O atendimento PRECISA estar finalizado porque a guia é projeção da
+ * versão finalizada — nunca de rascunho.
  */
 export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
   const s: TissSementeRetificacao = {
@@ -562,7 +562,7 @@ export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
        VALUES ($1, $2, $3, $4, '900123', DATE '2026-01-01', $5)`,
       [s.tenantId, s.contratoId, s.operadoraId, s.clinicId, s.userId]);
 
-    // Vinculo paciente x convenio
+    // Vínculo paciente x convênio
     await c.query(
       `INSERT INTO tiss.paciente_convenio
          (tenant_id, id, patient_id, operadora_id, numero_carteira, nome_plano, created_by)
@@ -579,7 +579,7 @@ export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
                'finalizado'::clin.encounter_status)`,
       [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId]);
 
-    // Versao original (como superusuario)
+    // Versão original (como superusuário)
     await c.query(
       `INSERT INTO clin.encounter_version
          (tenant_id, id, encounter_id, version_no, kind, author_user_id,
@@ -594,7 +594,7 @@ export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
         WHERE id = $2`,
       [s.versionId, s.encounterId]);
 
-    // Encounter billing com dados de convenio
+    // Encounter billing com dados de convênio
     await c.query(
       `INSERT INTO clin.encounter_billing
          (tenant_id, id, encounter_id, operadora_nome, registro_ans,
@@ -612,7 +612,7 @@ export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
       [s.tenantId, s.billingId, s.encounterId,
        s.clinicId, s.professionalId, s.userId]);
 
-    // Termo TUSS vigente (global, pode ja existir)
+    // Termo TUSS vigente (global, pode já existir)
     await c.query(
       `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
        VALUES (22, '10101012', 'Consulta em consultorio', '[2020-01-01,)', '202001', 'inclusao')
@@ -630,9 +630,9 @@ export async function semearRetificacaoTiss(): Promise<TissSementeRetificacao> {
   return s;
 }
 
-/* ---------- Semente com TUSS invalido (Task 27) ---------- */
+/* ---------- Semente com TUSS inválido (Task 27) ---------- */
 
-/** Semente com convenio mas procedimento TUSS nao vigente na data do atendimento. */
+/** Semente com convênio mas procedimento TUSS não vigente na data do atendimento. */
 export interface TissSementeTussInvalido {
   tenantId: string;
   clinicId: string;
@@ -649,9 +649,9 @@ export interface TissSementeTussInvalido {
 }
 
 /**
- * Semeia atendimento com convenio completo mas procedimento TUSS
- * que NAO esta vigente na data do atendimento.
- * O codigo '99999999' nao existe em ref.tuss_term.
+ * Semeia atendimento com convênio completo mas procedimento TUSS
+ * que NÃO está vigente na data do atendimento.
+ * O código '99999999' não existe em ref.tuss_term.
  */
 export async function semearProjecaoTussInvalido(): Promise<TissSementeTussInvalido> {
   const s: TissSementeTussInvalido = {
@@ -724,7 +724,7 @@ export async function semearProjecaoTussInvalido(): Promise<TissSementeTussInval
       [s.tenantId, s.encounterId, s.patientId, s.professionalId, s.clinicId],
     );
 
-    // Billing COM convenio valido, mas procedimento '99999999' que NAO existe na TUSS
+    // Billing COM convênio válido, mas procedimento '99999999' que NÃO existe na TUSS
     await c.query(
       `INSERT INTO clin.encounter_billing
          (tenant_id, id, encounter_id, operadora_nome, registro_ans, numero_carteira,
@@ -758,7 +758,7 @@ export async function semearProjecaoTussInvalido(): Promise<TissSementeTussInval
       [s.tenantId, s.contratoId, s.operadoraId, s.clinicId, s.userId],
     );
 
-    // Paciente convenio
+    // Paciente convênio
     await c.query(
       `INSERT INTO tiss.paciente_convenio
          (tenant_id, id, patient_id, operadora_id, numero_carteira, validade, created_by)
@@ -766,7 +766,7 @@ export async function semearProjecaoTussInvalido(): Promise<TissSementeTussInval
       [s.tenantId, s.pacienteConvenioId, s.patientId, s.operadoraId, s.userId],
     );
 
-    // NAO inserimos o procedimento '99999999' em ref.tuss_term — esse e o ponto do teste.
+    // NÃO inserimos o procedimento '99999999' em ref.tuss_term — esse é o ponto do teste.
 
     await c.query('COMMIT');
   } catch (e) {

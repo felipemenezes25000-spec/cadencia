@@ -23,7 +23,7 @@ export default function PaginaExplorar() {
         if (!vivo) return;
         setVisoes(r.views as unknown as SavedView[]);
       })
-      .catch(() => { if (vivo) setErro('Nao foi possivel carregar as visoes.'); });
+      .catch(() => { if (vivo) setErro('Não foi possível carregar as visões.'); });
     return () => { vivo = false; };
   }, [clinicId, csrfToken]);
 
@@ -38,7 +38,7 @@ export default function PaginaExplorar() {
     <div className="cadencia-page grid gap-6">
       <PageHeader
         titulo="Explorar"
-        subtitulo="Consulta livre sobre os dados da clinica, com filtros e exportacao."
+        subtitulo="Consulta livre sobre os dados da clínica, com filtros e exportação."
       />
 
       {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
@@ -47,14 +47,14 @@ export default function PaginaExplorar() {
         visoesSalvas={visoes}
         aoConsultar={consultar}
         aoExportar={async (p) => {
-          // Exportacao passa pelo POST e volta como arquivo. `apiFetchBlobUrl`
-          // porque navegacao direta nao carrega `x-clinic-id` e a rota recusaria
+          // Exportação passa pelo POST e volta como arquivo. `apiFetchBlobUrl`
+          // porque navegação direta não carrega `x-clinic-id` e a rota recusaria
           // — o mesmo motivo do PDF de documento.
           const url = await apiFetchBlobUrl(
             `/v1/reports/export?formato=${p.format}`, { clinicId, csrfToken })
             .catch(() => null);
           if (url === null) {
-            setErro('Exportacao indisponivel para esta consulta.');
+            setErro('Exportação indisponível para esta consulta.');
             return;
           }
           window.open(url, '_blank', 'noopener');

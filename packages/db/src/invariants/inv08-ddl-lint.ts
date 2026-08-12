@@ -2,9 +2,9 @@ import { TENANT_SCHEMAS } from './catalog';
 import type { Queryable } from '../queryable';
 
 /**
- * Toda expressao PERSISTIDA no banco, de todas as origens onde um erro de DDL se
- * esconde: corpo de funcao, DEFAULT de coluna, CHECK/EXCLUDE, definicao de view e
- * de indice. O `comment` carrega a marca de excecao, quando ela existir.
+ * Toda expressão PERSISTIDA no banco, de todas as origens onde um erro de DDL se
+ * esconde: corpo de função, DEFAULT de coluna, CHECK/EXCLUDE, definição de view e
+ * de índice. O `comment` carrega a marca de exceção, quando ela existir.
  */
 const EXPRESSIONS_SQL = `
 SELECT 'function' AS source_kind, n.nspname AS schema, p.proname AS object_name,
@@ -79,7 +79,7 @@ SELECT n.nspname AS schema,
                   AND a.attnum > 0 AND NOT a.attisdropped)
  ORDER BY 1, 2, 3`;
 
-/** Literal de texto vira '' antes do teste: '2020-01-01'::date e valor, nao derivacao. */
+/** Literal de texto vira '' antes do teste: '2020-01-01'::date é valor, não derivação. */
 function stripLiterals(definition: string): string {
   return definition.replace(/'[^']*'/g, "''").replace(/''\s*::\s*date\b/gi, "''");
 }
@@ -144,7 +144,7 @@ export async function ddlLintViolations(db: Queryable): Promise<string[]> {
   }>(INDEX_SQL, [schemas]);
 
   for (const row of indices.rows) {
-    if (row.is_primary || row.is_unique) continue; // chave global de UUIDv7, por decisao
+    if (row.is_primary || row.is_unique) continue; // chave global de UUIDv7, por decisão
     if (row.comment === 'tenant-scoped-by-parent') continue;
     if (row.first_column === 'tenant_id') continue;
     out.push(

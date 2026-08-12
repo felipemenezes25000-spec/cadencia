@@ -12,14 +12,14 @@ function isFactor(s: string): s is Factor {
 }
 
 /**
- * Drill-down de um fator especifico da decomposicao de variacao.
+ * Drill-down de um fator específico da decomposição de variação.
  *
  * O click em "faltas custaram R$ 9.800" abre: "37 atendimentos perdidos,
- * agrupados por profissional, dia da semana e faixa de horario".
+ * agrupados por profissional, dia da semana e faixa de horário".
  *
- * Para cada fator, a query retorna os agendamentos/lancamentos relevantes
- * do periodo B agrupados por tres eixos: profissional, dia da semana e
- * faixa de horario (manha/tarde/noite).
+ * Para cada fator, a query retorna os agendamentos/lançamentos relevantes
+ * do período B agrupados por três eixos: profissional, dia da semana e
+ * faixa de horário (manha/tarde/noite).
  */
 export async function drillDownFactor(
   tx: TxClient,
@@ -33,13 +33,13 @@ export async function drillDownFactor(
     throw new Error(`fator invalido: ${factor}. Validos: ${VALID_FACTORS.join(', ')}`);
   }
 
-  // Para faltas: agrupamos os agendamentos com status faltou/cancelado no periodo B
+  // Para faltas: agrupamos os agendamentos com status faltou/cancelado no período B
   if (factor === 'faltas') {
     return drillDownFaltas(tx, tenantId, clinicId, periodB);
   }
 
   // Para volume, mix_procedimento, mix_convenio, ticket:
-  // agrupamos os lancamentos pagos do periodo B
+  // agrupamos os lançamentos pagos do período B
   return drillDownReceita(tx, tenantId, clinicId, periodB, factor);
 }
 
@@ -53,8 +53,8 @@ async function drillDownFaltas(
   const byProfResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(
-    // `label` e impresso na tela: precisa ser o NOME. Antes daqui saia
-    // `pr.user_id`, um UUID — trocar um identificador por outro nao resolvia
+    // `label` é impresso na tela: precisa ser o NOME. Antes daqui saia
+    // `pr.user_id`, um UUID — trocar um identificador por outro não resolvia
     // nada, e a tela de Desempenho passou a exibi-lo assim que ganhou rota.
     // O fallback continua sendo o id porque agendamento sem profissional
     // vinculado existe, e some-lo num balde "sem nome" esconderia faltas.
@@ -94,7 +94,7 @@ async function drillDownFaltas(
     [tenantId, clinicId, period.start, period.end],
   );
 
-  // Por faixa de horario
+  // Por faixa de horário
   const byTimeResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(
@@ -144,7 +144,7 @@ async function drillDownReceita(
   const byProfResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(
-    // Mesmo motivo do drill-down de faltas: o rotulo vai para a tela.
+    // Mesmo motivo do drill-down de faltas: o rótulo vai para a tela.
     `SELECT coalesce(u.full_name, e.professional_id::text) AS label,
             count(*)::text AS count,
             coalesce(sum(e.amount_cents), 0)::text AS amount_cents
@@ -182,7 +182,7 @@ async function drillDownReceita(
     [tenantId, clinicId, period.start, period.end],
   );
 
-  // Por faixa de horario
+  // Por faixa de horário
   const byTimeResult = await tx.query<{
     label: string; count: string; amount_cents: string;
   }>(

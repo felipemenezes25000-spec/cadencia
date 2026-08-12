@@ -156,7 +156,7 @@ describe('fin.calculate_splits — resolve regra mais especifica', () => {
          ON CONFLICT DO NOTHING`,
         [ruleDefault, s.professionalId]);
 
-      // Regra especifica com procedure: 60%
+      // Regra específica com procedure: 60%
       await tx.query(
         `INSERT INTO fin.split_rule
            (tenant_id, id, professional_id, procedure_id, percentage, priority)
@@ -255,7 +255,7 @@ describe('fin.calculate_splits — resolve regra mais especifica', () => {
         [entryId]));
 
     expect(rows).toHaveLength(1);
-    // Fixo: 8000 para o profissional, 2000 para a clinica
+    // Fixo: 8000 para o profissional, 2000 para a clínica
     expect(rows[0]).toEqual({
       professional_share_cents: '8000',
       clinic_share_cents: '2000',

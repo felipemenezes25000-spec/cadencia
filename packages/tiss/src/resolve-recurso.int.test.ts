@@ -6,7 +6,7 @@ import { uuidv7 } from '@cadencia/kernel';
 import { resolveRecurso } from './resolve-recurso';
 
 /* ------------------------------------------------------------------ */
-/* Semente para testes de resolucao de recurso                        */
+/* Semente para testes de resolução de recurso                        */
 /* ------------------------------------------------------------------ */
 
 interface SementeResolve {
@@ -191,7 +191,7 @@ async function semearResolve(): Promise<SementeResolve> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Funcao auxiliar: cria recurso enviado com itens                     */
+/* Função auxiliar: cria recurso enviado com itens                     */
 /* ------------------------------------------------------------------ */
 
 async function criarRecursoEnviado(
@@ -292,7 +292,7 @@ describe('resolveRecurso — transicao de status das glosas', () => {
   });
 
   it('indeferido — todas as glosas vinculadas transitam para aceita', async () => {
-    // Precisa de novas glosas para este teste (as anteriores ja foram resolvidas)
+    // Precisa de novas glosas para este teste (as anteriores já foram resolvidas)
     const admin = new Pool({ connectionString: adminUrl(), max: 1 });
     const c = await admin.connect();
     const glosaD = uuidv7();
@@ -372,7 +372,7 @@ describe('resolveRecurso — transicao de status das glosas', () => {
   });
 
   it('parcial — cada glosa marcada individualmente', async () => {
-    // Reusar glosaIdC que ainda esta pendente
+    // Reusar glosaIdC que ainda está pendente
     const admin = new Pool({ connectionString: adminUrl(), max: 1 });
     const c = await admin.connect();
     const glosaF = uuidv7();
@@ -481,7 +481,7 @@ describe('resolveRecurso — transicao de status das glosas', () => {
   });
 
   it('retorna erro para recurso que nao esta em status enviado', async () => {
-    // Criar recurso em rascunho (nao enviado)
+    // Criar recurso em rascunho (não enviado)
     const recursoId = uuidv7();
     await withTenantTx(actor, (tx) =>
       tx.query(

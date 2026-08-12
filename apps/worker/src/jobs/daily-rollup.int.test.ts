@@ -50,13 +50,13 @@ beforeAll(async () => {
       `INSERT INTO clin.patient (tenant_id, id, full_name, cadastro_status, birth_date)
        VALUES ($1, $2, 'Paciente Rl', 'completo', '1990-01-01')`,
       [tenantId, patientId]);
-    // Criar metodo de pagamento para FK (colunas reais: kind, name)
+    // Criar método de pagamento para FK (colunas reais: kind, name)
     await c.query(
       `INSERT INTO fin.payment_method (tenant_id, id, kind, name)
        VALUES ($1, $2, 'pix', 'PIX')`,
       [tenantId, paymentMethodId]);
 
-    // Inserir lancamento de ontem usando fin.entry (nao fin.payment)
+    // Inserir lançamento de ontem usando fin.entry (não fin.payment)
     await c.query(
       `INSERT INTO fin.entry
          (tenant_id, id, kind, patient_id, professional_id, clinic_id,

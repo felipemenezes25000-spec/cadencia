@@ -21,14 +21,14 @@ function agora(): Rfc3339 {
 }
 
 /**
- * Gera nome de arquivo na convencao ANS: CNPJ_ANO_MES_SEQ.xml
- * O SEQ e derivado do loteId para garantir unicidade dentro do mes.
+ * Gera nome de arquivo na convenção ANS: CNPJ_ANO_MES_SEQ.xml
+ * O SEQ é derivado do loteId para garantir unicidade dentro do mês.
  */
 function ansFileName(prestadorCnpj: string, loteId: string): string {
   const iso = isoFromMs(systemClock.nowMs());
   const ano = iso.slice(0, 4);
   const mes = iso.slice(5, 7);
-  // Sequencia derivada do loteId: extrai digitos ou usa hash curto
+  // Sequência derivada do loteId: extrai dígitos ou usa hash curto
   const seqHash = createHash('md5').update(loteId).digest('hex').slice(0, 6);
   const seqNum = parseInt(seqHash, 16);
   return `${prestadorCnpj}_${ano}_${mes}_${seqNum}.xml`;

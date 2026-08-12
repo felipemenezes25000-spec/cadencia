@@ -1,8 +1,8 @@
 /**
  * Identificadores fixos da suite de isolamento.
- * Sao UUIDs validos com o formato de um UUIDv7 (versao 7, variante 10xx) para que
- * nenhuma coluna precise de tratamento especial. Sao literais de proposito:
- * um teste de isolamento tem que ser reproduzivel byte a byte.
+ * São UUIDs válidos com o formato de um UUIDv7 (versão 7, variante 10xx) para que
+ * nenhuma coluna precise de tratamento especial. São literais de propósito:
+ * um teste de isolamento tem que ser reproduzível byte a byte.
  */
 export const TENANT_A = '01930000-0000-7000-8000-0000000000a0';
 export const TENANT_B = '01930000-0000-7000-8000-0000000000b0';
@@ -37,13 +37,13 @@ export const PID_B_MARCOS_CPF = '01930000-0000-7000-8000-0000000000b5';
 export const SHARE_A_JOANA_PARA_BRUNO = '01930000-0000-7000-8000-0000000000ac';
 export const SHARE_B_MARCOS_PARA_DIEGO = '01930000-0000-7000-8000-0000000000ad';
 
-/** Definicao de prontuario: uma secao e um campo vivos em cada tenant. */
+/** Definição de prontuário: uma seção e um campo vivos em cada tenant. */
 export const SECTION_A_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000ae';
 export const FIELD_A_PESO = '01930000-0000-7000-8000-0000000000af';
 export const SECTION_B_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000b6';
 export const FIELD_B_PESO = '01930000-0000-7000-8000-0000000000b7';
 
-/** Campo composto: 'PA' e um campo com DOIS componentes em cada tenant. */
+/** Campo composto: 'PA' é um campo com DOIS componentes em cada tenant. */
 export const FIELD_A_PA = '01930000-0000-7000-8000-0000000000b8';
 export const FIELD_B_PA = '01930000-0000-7000-8000-0000000000b9';
 export const COMPONENT_A_PA_SIS = '01930000-0000-7000-8000-0000000000ba';
@@ -51,25 +51,25 @@ export const COMPONENT_A_PA_DIA = '01930000-0000-7000-8000-0000000000bb';
 export const COMPONENT_B_PA_SIS = '01930000-0000-7000-8000-0000000000bc';
 export const COMPONENT_B_PA_DIA = '01930000-0000-7000-8000-0000000000bd';
 
-/** Layout do prontuario: cada tenant tem um profissional com ordem propria. */
+/** Layout do prontuário: cada tenant tem um profissional com ordem própria. */
 export const LAYOUT_A_ANA_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000be';
 export const LAYOUT_B_DIEGO_SINAIS_VITAIS = '01930000-0000-7000-8000-0000000000bf';
 
-/** Atendimento: o agregado clinico, um em cada tenant. */
+/** Atendimento: o agregado clínico, um em cada tenant. */
 export const ENCOUNTER_A_JOANA = '01930000-0000-7000-8000-0000000000c6';
 export const ENCOUNTER_B_MARCOS = '01930000-0000-7000-8000-0000000000c7';
 
-/** Versao original ja finalizada de cada atendimento do seed. */
+/** Versão original já finalizada de cada atendimento do seed. */
 export const VERSION_A_JOANA_ORIGINAL = '01930000-0000-7000-8000-0000000000c8';
 export const VERSION_B_MARCOS_ORIGINAL = '01930000-0000-7000-8000-0000000000c9';
 
-/** Um valor de campo ('Peso') gravado na versao original de cada tenant. */
+/** Um valor de campo ('Peso') gravado na versão original de cada tenant. */
 export const FIELD_VALUE_A_JOANA_PESO = '01930000-0000-7000-8000-0000000000ca';
 export const FIELD_VALUE_B_MARCOS_PESO = '01930000-0000-7000-8000-0000000000cb';
 
 /**
  * Linhas de primeira classe promovidas para fora do EAV: uma de cada tipo em cada
- * tenant, penduradas na versao original do atendimento daquele tenant.
+ * tenant, penduradas na versão original do atendimento daquele tenant.
  */
 export const DIAGNOSIS_A_JOANA = '01930000-0000-7000-8000-0000000000cc';
 export const DIAGNOSIS_B_MARCOS = '01930000-0000-7000-8000-0000000000cd';
@@ -80,14 +80,14 @@ export const FINDING_B_MARCOS = '01930000-0000-7000-8000-0000000000d1';
 export const PROCEDURE_A_JOANA = '01930000-0000-7000-8000-0000000000d2';
 export const PROCEDURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d3';
 
-/** Apoio por IA registrado no prontuario: uma linha em cada tenant. */
+/** Apoio por IA registrado no prontuário: uma linha em cada tenant. */
 export const AI_ASSISTANCE_A_JOANA = '01930000-0000-7000-8000-0000000000d4';
 export const AI_ASSISTANCE_B_MARCOS = '01930000-0000-7000-8000-0000000000d5';
 
 /**
  * Campos da guia de consulta capturados no atendimento: um por tenant.
- * Aurora atende por convenio (tem registro_ans e carteirinha); Boreal atende
- * particular (nao tem nem uma coisa nem outra).
+ * Aurora atende por convênio (tem registro_ans e carteirinha); Boreal atende
+ * particular (não tem nem uma coisa nem outra).
  */
 export const BILLING_A_JOANA = '01930000-0000-7000-8000-0000000000d6';
 export const BILLING_B_MARCOS = '01930000-0000-7000-8000-0000000000d7';
@@ -96,23 +96,23 @@ export const BILLING_B_MARCOS = '01930000-0000-7000-8000-0000000000d7';
 export const SIGNATURE_A_JOANA = '01930000-0000-7000-8000-0000000000d8';
 export const SIGNATURE_B_MARCOS = '01930000-0000-7000-8000-0000000000d9';
 
-/** Pendencia de assinatura: uma linha em cada tenant. */
+/** Pendência de assinatura: uma linha em cada tenant. */
 export const SIGNATURE_PENDING_A = '01930000-0000-7000-8000-0000000000da';
 export const SIGNATURE_PENDING_B = '01930000-0000-7000-8000-0000000000db';
 
-/** Documento clinico nato-digital: uma linha em cada tenant. */
+/** Documento clínico nato-digital: uma linha em cada tenant. */
 export const DOCUMENT_A_JOANA = '01930000-0000-7000-8000-0000000000dc';
 export const DOCUMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000dd';
 
-/** Anexo clinico: uma linha em cada tenant. */
+/** Anexo clínico: uma linha em cada tenant. */
 export const ATTACHMENT_A_JOANA = '01930000-0000-7000-8000-0000000000de';
 export const ATTACHMENT_B_MARCOS = '01930000-0000-7000-8000-0000000000df';
 
-/** Exportacao de prontuario: uma linha em cada tenant. */
+/** Exportação de prontuário: uma linha em cada tenant. */
 export const RECORD_EXPORT_A_JOANA = '01930000-0000-7000-8000-0000000000e0';
 export const RECORD_EXPORT_B_MARCOS = '01930000-0000-7000-8000-0000000000e1';
 
-/** Prescricao: uma linha em cada tenant. */
+/** Prescrição: uma linha em cada tenant. */
 export const PRESCRIPTION_A_JOANA = '01930000-0000-7000-8000-0000000000e2';
 export const PRESCRIPTION_B_MARCOS = '01930000-0000-7000-8000-0000000000e3';
 export const PRESCRIPTION_ITEM_A = '01930000-0000-7000-8000-0000000000e4';
@@ -122,15 +122,15 @@ export const PRESCRIPTION_ITEM_B = '01930000-0000-7000-8000-0000000000e5';
 export const OUTBOX_A = '01930000-0000-7000-8000-0000000000e6';
 export const OUTBOX_B = '01930000-0000-7000-8000-0000000000e7';
 
-/** Categoria de lancamento financeiro: uma em cada tenant. */
+/** Categoria de lançamento financeiro: uma em cada tenant. */
 export const CATEGORY_A = '01930000-0000-7000-8000-0000000000e8';
 export const CATEGORY_B = '01930000-0000-7000-8000-0000000000e9';
 
-/** Metodo de pagamento: um em cada tenant. */
+/** Método de pagamento: um em cada tenant. */
 export const PAYMENT_METHOD_A = '01930000-0000-7000-8000-0000000000ea';
 export const PAYMENT_METHOD_B = '01930000-0000-7000-8000-0000000000eb';
 
-/** Lancamento financeiro: um em cada tenant. */
+/** Lançamento financeiro: um em cada tenant. */
 export const ENTRY_A = '01930000-0000-7000-8000-0000000000ec';
 export const ENTRY_B = '01930000-0000-7000-8000-0000000000ed';
 
@@ -142,7 +142,7 @@ export const RECEIPT_B = '01930000-0000-7000-8000-0000000000ef';
 export const PAYMENT_LINK_A = '01930000-0000-7000-8000-0000000000f0';
 export const PAYMENT_LINK_B = '01930000-0000-7000-8000-0000000000f1';
 
-/** Log de conciliacao: um em cada tenant. */
+/** Log de conciliação: um em cada tenant. */
 export const RECONCILIATION_LOG_A = '01930000-0000-7000-8000-0000000000f2';
 export const RECONCILIATION_LOG_B = '01930000-0000-7000-8000-0000000000f3';
 
@@ -150,7 +150,7 @@ export const RECONCILIATION_LOG_B = '01930000-0000-7000-8000-0000000000f3';
 export const WEBHOOK_EVENT_A = '01930000-0000-7000-8000-0000000000f4';
 export const WEBHOOK_EVENT_B = '01930000-0000-7000-8000-0000000000f5';
 
-/** Operadora de plano de saude: uma em cada tenant. */
+/** Operadora de plano de saúde: uma em cada tenant. */
 export const OPERADORA_A = '01930000-0000-7000-8000-000000000f01';
 export const OPERADORA_B = '01930000-0000-7000-8000-000000000f02';
 
@@ -158,7 +158,7 @@ export const OPERADORA_B = '01930000-0000-7000-8000-000000000f02';
 export const CONTRATO_A = '01930000-0000-7000-8000-000000000f03';
 export const CONTRATO_B = '01930000-0000-7000-8000-000000000f04';
 
-/** Vinculo paciente x convenio (carteirinha): um em cada tenant. */
+/** Vínculo paciente x convênio (carteirinha): um em cada tenant. */
 export const PACIENTE_CONVENIO_A = '01930000-0000-7000-8000-000000000f05';
 export const PACIENTE_CONVENIO_B = '01930000-0000-7000-8000-000000000f06';
 
@@ -170,7 +170,7 @@ export const GUIA_CONSULTA_B = '01930000-0000-7000-8000-0000000000f9';
 export const GUIA_AJUSTE_A = '01930000-0000-7000-8000-0000000000fa';
 export const GUIA_AJUSTE_B = '01930000-0000-7000-8000-0000000000fb';
 
-/** Pendencia de reprojecao TISS: uma em cada tenant. */
+/** Pendência de reprojeção TISS: uma em cada tenant. */
 export const GUIA_PENDENCIA_A = '01930000-0000-7000-8000-0000000000fc';
 export const GUIA_PENDENCIA_B = '01930000-0000-7000-8000-0000000000fd';
 
@@ -186,7 +186,7 @@ export const SCHED_APPOINTMENT_B = '01930000-0000-7000-8000-000000001004';
 export const SCHED_BLOCK_A = '01930000-0000-7000-8000-000000001005';
 export const SCHED_BLOCK_B = '01930000-0000-7000-8000-000000001006';
 
-/** Recorrencia de agendamento: uma em cada tenant. */
+/** Recorrência de agendamento: uma em cada tenant. */
 export const SCHED_RECURRENCE_A = '01930000-0000-7000-8000-000000001007';
 export const SCHED_RECURRENCE_B = '01930000-0000-7000-8000-000000001008';
 
@@ -214,7 +214,7 @@ export const MESSAGE_B = '01930000-0000-7000-8000-000000001018';
 export const INBOUND_EVENT_A = '01930000-0000-7000-8000-000000001019';
 export const INBOUND_EVENT_B = '01930000-0000-7000-8000-00000000101a';
 
-/** Regra de automacao: uma em cada tenant. */
+/** Regra de automação: uma em cada tenant. */
 export const AUTOMATION_RULE_A = '01930000-0000-7000-8000-00000000101b';
 export const AUTOMATION_RULE_B = '01930000-0000-7000-8000-00000000101c';
 
@@ -234,11 +234,11 @@ export const COST_CENTER_B = '01930000-0000-7000-8000-000000001032';
 export const FIN_SUPPLIER_A = '01930000-0000-7000-8000-000000001033';
 export const FIN_SUPPLIER_B = '01930000-0000-7000-8000-000000001034';
 
-/** Segunda conta bancaria (para transferencias): uma em cada tenant. */
+/** Segunda conta bancária (para transferências): uma em cada tenant. */
 export const BANK_ACCOUNT_2_A = '01930000-0000-7000-8000-000000001035';
 export const BANK_ACCOUNT_2_B = '01930000-0000-7000-8000-000000001036';
 
-/** Lancamentos extras para transferencia: debito e credito em cada tenant. */
+/** Lançamentos extras para transferência: débito e crédito em cada tenant. */
 export const ENTRY_XFER_DEBIT_A = '01930000-0000-7000-8000-000000001037';
 export const ENTRY_XFER_DEBIT_B = '01930000-0000-7000-8000-000000001038';
 export const ENTRY_XFER_CREDIT_A = '01930000-0000-7000-8000-000000001039';
@@ -248,11 +248,11 @@ export const ENTRY_XFER_CREDIT_B = '01930000-0000-7000-8000-00000000103a';
 export const INSTALLMENT_PLAN_A = '01930000-0000-7000-8000-00000000103b';
 export const INSTALLMENT_PLAN_B = '01930000-0000-7000-8000-00000000103c';
 
-/** Template de lancamento recorrente: um em cada tenant. */
+/** Template de lançamento recorrente: um em cada tenant. */
 export const RECURRING_TEMPLATE_A = '01930000-0000-7000-8000-00000000103d';
 export const RECURRING_TEMPLATE_B = '01930000-0000-7000-8000-00000000103e';
 
-/** Transferencia entre contas: uma em cada tenant. */
+/** Transferência entre contas: uma em cada tenant. */
 export const TRANSFER_A = '01930000-0000-7000-8000-00000000103f';
 export const TRANSFER_B = '01930000-0000-7000-8000-000000001040';
 
@@ -260,7 +260,7 @@ export const TRANSFER_B = '01930000-0000-7000-8000-000000001040';
 export const SPLIT_RULE_A = '01930000-0000-7000-8000-000000001041';
 export const SPLIT_RULE_B = '01930000-0000-7000-8000-000000001042';
 
-/** Divisao de lancamento: uma em cada tenant. */
+/** Divisão de lançamento: uma em cada tenant. */
 export const SPLIT_A = '01930000-0000-7000-8000-000000001043';
 export const SPLIT_B = '01930000-0000-7000-8000-000000001044';
 
@@ -276,7 +276,7 @@ export const INV_SUPPLIER_B = '01930000-0000-7000-8000-000000001052';
 export const PRODUCT_A = '01930000-0000-7000-8000-000000001053';
 export const PRODUCT_B = '01930000-0000-7000-8000-000000001054';
 
-/** Movimentacao de estoque: uma em cada tenant. */
+/** Movimentação de estoque: uma em cada tenant. */
 export const STOCK_MOVEMENT_A = '01930000-0000-7000-8000-000000001055';
 export const STOCK_MOVEMENT_B = '01930000-0000-7000-8000-000000001056';
 
@@ -288,18 +288,18 @@ export const STOCK_ALERT_B = '01930000-0000-7000-8000-000000001058';
 export const LOTE_A = '01930000-0000-7000-8000-000000001061';
 export const LOTE_B = '01930000-0000-7000-8000-000000001062';
 
-/** Juncao lote x guia: uma em cada tenant. */
+/** Junção lote x guia: uma em cada tenant. */
 export const LOTE_GUIA_A = '01930000-0000-7000-8000-000000001063';
 export const LOTE_GUIA_B = '01930000-0000-7000-8000-000000001064';
 
 /* ── Fase 4, blocos 07-09: retorno, glosa, recurso e SP/SADT ──────────────
  *
- * Estas nove tabelas entraram sem linha do tenant B, e o canario de
+ * Estas nove tabelas entraram sem linha do tenant B, e o canário de
  * 04-t1-t2-isolamento existe exatamente para pegar isso: sem dado do tenant B,
  * o teste T1 ("o tenant A nao le nenhuma linha do tenant B") passa por
- * VACUIDADE — nao ha o que vazar, entao nada vaza, e o isolamento da tabela
- * nunca chega a ser exercitado. Sao dados de faturamento e de contestacao de
- * glosa, com valor e vinculo a paciente: a tabela mais sensivel e a que mais
+ * VACUIDADE — não há o que vazar, então nada vaza, e o isolamento da tabela
+ * nunca chega a ser exercitado. São dados de faturamento e de contestação de
+ * glosa, com valor e vínculo a paciente: a tabela mais sensível é a que mais
  * precisa da prova.
  */
 
@@ -328,21 +328,21 @@ export const GUIA_SADT_A = '01930000-0000-7000-8000-00000000106f';
 export const GUIA_SADT_B = '01930000-0000-7000-8000-000000001070';
 
 /**
- * Lote SO de SP/SADT: um em cada tenant.
+ * Lote SÓ de SP/SADT: um em cada tenant.
  *
- * Separado do lote de consulta de proposito. No XSD, `guiasTISS` e um `choice`:
- * um lote nao mistura consulta com SP/SADT, e a operadora recusa o arquivo
- * inteiro se misturar. O banco nao impede — a regra vive no serializador —
- * entao o seed segue a regra do dominio em vez do minimo que o banco aceita.
+ * Separado do lote de consulta de propósito. No XSD, `guiasTISS` é um `choice`:
+ * um lote não mistura consulta com SP/SADT, e a operadora recusa o arquivo
+ * inteiro se misturar. O banco não impede — a regra vive no serializador —
+ * então o seed segue a regra do domínio em vez do mínimo que o banco aceita.
  */
 export const LOTE_SADT_A = '01930000-0000-7000-8000-000000001071';
 export const LOTE_SADT_B = '01930000-0000-7000-8000-000000001072';
 
-/** CPF valido (digitos verificadores corretos) usado nos DOIS tenants de proposito. */
+/** CPF válido (dígitos verificadores corretos) usado nos DOIS tenants de propósito. */
 export const CPF_VALIDO = '52998224725';
 
 export const REQUEST_ID = '01930000-0000-7000-8000-0000000000ff';
 
-/** CNPJ alfanumerico da IN RFB 2.229/2024: 12 alfanumericos + 2 digitos. */
+/** CNPJ alfanumérico da IN RFB 2.229/2024: 12 alfanuméricos + 2 dígitos. */
 export const CNPJ_A = '12ABC345678901';
 export const CNPJ_B = '98XYZ765432109';

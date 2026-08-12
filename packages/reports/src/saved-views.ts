@@ -7,8 +7,8 @@ const COLUMN_RE = /^[a-z][a-z0-9_]{0,62}$/;
 const ALLOWED_VIEWS = new Set(['atendimentos', 'financeiro', 'pacientes', 'mensagens']);
 
 /**
- * As 11 visoes salvas built-in. Nomes preservados do iClinic para custo zero de
- * migracao. Cada visao e um conjunto de filtros + colunas + ordenacao + grafico.
+ * As 11 visões salvas built-in. Nomes preservados do iClinic para custo zero de
+ * migração. Cada visão é um conjunto de filtros + colunas + ordenação + gráfico.
  */
 export const BUILT_IN_VIEWS: readonly SavedView[] = Object.freeze([
   // 1. Atendimentos realizados
@@ -37,7 +37,7 @@ export const BUILT_IN_VIEWS: readonly SavedView[] = Object.freeze([
     sort: [{ column: 'return_due_date', dir: 'asc' }],
     chartKind: 'table',
   },
-  // 3. Por periodo
+  // 3. Por período
   {
     id: 'builtin-por-periodo',
     name: 'Por periodo',
@@ -67,7 +67,7 @@ export const BUILT_IN_VIEWS: readonly SavedView[] = Object.freeze([
     sort: [{ column: 'cid_code', dir: 'asc' }],
     chartKind: 'bar',
   },
-  // 5. Por indicacao
+  // 5. Por indicação
   {
     id: 'builtin-por-indicacao',
     name: 'Por indicacao',
@@ -95,7 +95,7 @@ export const BUILT_IN_VIEWS: readonly SavedView[] = Object.freeze([
     sort: [{ column: 'occurred_date', dir: 'desc' }],
     chartKind: 'bar',
   },
-  // 7. Analises financeiras
+  // 7. Análises financeiras
   {
     id: 'builtin-analises-financeiras',
     name: 'Analises financeiras',
@@ -170,12 +170,12 @@ export const BUILT_IN_VIEWS: readonly SavedView[] = Object.freeze([
 
 const VIEW_INDEX = new Map(BUILT_IN_VIEWS.map((v) => [v.id, v]));
 
-/** Busca uma visao salva por id (built-in). */
+/** Busca uma visão salva por id (built-in). */
 export function getSavedView(viewId: string): SavedView | undefined {
   return VIEW_INDEX.get(viewId);
 }
 
-/** Valida input de visao customizada do usuario. */
+/** Valida input de visão customizada do usuário. */
 export function validateCustomViewInput(
   input: CustomViewInput,
 ): Result<CustomViewInput, ValidationError> {

@@ -57,18 +57,18 @@ describe('msg.compute_send_at — fuso da clinica', () => {
   });
 
   it('confirma que 24h antes NAO e simplesmente subtrair 1440 min do UTC', async () => {
-    // Demonstra o ERRO que teriamos se subtraissemos diretamente do UTC.
-    // DST 2026 em America/New_York comeca em 2026-03-08 02:00 (spring forward).
+    // Demonstra o ERRO que teríamos se subtraíssemos diretamente do UTC.
+    // DST 2026 em America/New_York começa em 2026-03-08 02:00 (spring forward).
     // Consulta 2026-03-08 09:00 EDT (UTC-4) = 13:00 UTC
     // 24h antes local = 2026-03-07 09:00 EST (UTC-5) = 14:00 UTC
-    // Se fosse subtracao pura: 13:00 - 24h = 13:00 dia anterior (ERRADO)
+    // Se fosse subtração pura: 13:00 - 24h = 13:00 dia anterior (ERRADO)
     const { rows } = await admin.query<{ send_at: string }>(
       `SELECT to_char(
          msg.compute_send_at('2026-03-08T13:00:00Z'::timestamptz, 'America/New_York', -1440)
            AT TIME ZONE 'UTC',
          'YYYY-MM-DD"T"HH24:MI:SS"Z"'
        ) AS send_at`);
-    // 2026-03-07 09:00 EST = 14:00 UTC, NAO 13:00 UTC
+    // 2026-03-07 09:00 EST = 14:00 UTC, NÃO 13:00 UTC
     expect(rows[0]!.send_at).toBe('2026-03-07T14:00:00Z');
   });
 });

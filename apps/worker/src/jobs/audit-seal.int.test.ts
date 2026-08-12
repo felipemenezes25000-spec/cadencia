@@ -7,8 +7,8 @@ import { selarTrilha, vigiarSelo } from './audit-seal';
 afterAll(async () => { await closePools(); });
 
 /**
- * Tenant proprio por teste. O worker nao importa o test-support da api — sao
- * irmaos em L3 e import entre irmaos e proibido (§2.2 regra 2).
+ * Tenant próprio por teste. O worker não importa o test-support da api — são
+ * irmãos em L3 e import entre irmãos é proibido (§2.2 regra 2).
  */
 async function semearTenant(): Promise<{ tenantId: string; clinicId: string }> {
   const tenantId = uuidv7();
@@ -30,10 +30,10 @@ async function semearTenant(): Promise<{ tenantId: string; clinicId: string }> {
 }
 
 /**
- * Gera uma linha de trilha real, chamando `audit.log` — nao inserindo na tabela.
+ * Gera uma linha de trilha real, chamando `audit.log` — não inserindo na tabela.
  *
- * Vai pela conexao ADMIN e nao pelo pool de `jobs`: `audit.log` e concedida a
- * app_rw, e nao a jobs. E correto que seja assim — o papel dos jobs LE a trilha
+ * Vai pela conexão ADMIN e não pelo pool de `jobs`: `audit.log` é concedida a
+ * app_rw, e não a jobs. É correto que seja assim — o papel dos jobs LÊ a trilha
  * para selar, nunca escreve nela.
  */
 async function gerarEvento(tenantId: string, clinicId: string): Promise<void> {
@@ -79,8 +79,8 @@ describe('selo diario da trilha', () => {
 
     expect(selo).toHaveLength(1);
     expect(Number(selo[0]?.row_count)).toBeGreaterThan(0);
-    // O selo sem hash de cadeia nao sela nada: e o encadeamento que torna
-    // impossivel remover uma linha do meio sem quebrar tudo depois dela.
+    // O selo sem hash de cadeia não sela nada: é o encadeamento que torna
+    // impossível remover uma linha do meio sem quebrar tudo depois dela.
     expect(selo[0]?.chain_hash).not.toBeNull();
 
     const { rows: execucao } = await jobsPool().query<{ outcome: string }>(
@@ -98,7 +98,7 @@ describe('selo diario da trilha', () => {
     const primeira = await selarTrilha({ dia: hoje });
     const segunda = await selarTrilha({ dia: hoje });
 
-    // A segunda passada nao sela ninguem e nao reprova nada: o dia ja esta
+    // A segunda passada não sela ninguém e não reprova nada: o dia já está
     // selado, e reexecutar precisa ser inofensivo para o job poder ser
     // reenfileirado sem medo.
     expect(primeira.tenantsSelados).toBeGreaterThan(0);
@@ -112,9 +112,9 @@ describe('selo diario da trilha', () => {
   });
 
   it('o vigia denuncia ausencia de execucao — nao silencio', async () => {
-    // Dead man's switch (§9): job que para nao faz barulho sozinho. O vigia
-    // existe para transformar AUSENCIA em alarme, que e o modo de falha que
-    // mata a garantia sem ninguem perceber.
+    // Dead man's switch (§9): job que para não faz barulho sozinho. O vigia
+    // existe para transformar AUSÊNCIA em alarme, que é o modo de falha que
+    // mata a garantia sem ninguém perceber.
     const recente = await vigiarSelo({ atrasoMaximo: '48 hours' });
     expect(recente.status).toBe('ok');
 

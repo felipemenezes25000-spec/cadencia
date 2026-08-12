@@ -22,9 +22,9 @@ interface ItemDaApi {
 /**
  * O detalhe do demonstrativo de pagamento da operadora.
  *
- * A lista de retornos ja empurrava para esta URL — que nao existia. O clique em
- * "abrir demonstrativo" dava 404: o componente estava pronto, testado, e nao
- * havia pagina para receber. Item glosado sem tela e glosa que ninguem recorre.
+ * A lista de retornos já empurrava para esta URL — que não existia. O clique em
+ * "abrir demonstrativo" dava 404: o componente estava pronto, testado, e não
+ * havia página para receber. Item glosado sem tela é glosa que ninguém recorre.
  */
 export default function PaginaDetalheDemonstrativo() {
   const { id } = useParams<{ id: string }>();
@@ -48,9 +48,9 @@ export default function PaginaDetalheDemonstrativo() {
         setItens(r.itens.map((x) => ({
           id: x.itemId,
           guiaNumero: x.numeroGuiaPrestador,
-          // O demonstrativo da operadora vem por GUIA, nao por paciente nem por
-          // procedimento: esses campos so existem do nosso lado, ligando pela
-          // guia. Inventar aqui seria afirmar correspondencia que ninguem fez.
+          // O demonstrativo da operadora vem por GUIA, não por paciente nem por
+          // procedimento: esses campos só existem do nosso lado, ligando pela
+          // guia. Inventar aqui seria afirmar correspondência que ninguém fez.
           pacienteNome: '—',
           codigoProcedimento: '—',
           nomeProcedimento: '—',
@@ -62,7 +62,7 @@ export default function PaginaDetalheDemonstrativo() {
           descricaoGlosa: x.glosaDescricao,
         })));
       })
-      .catch(() => { if (vivo) setErro('Nao foi possivel abrir o demonstrativo.'); });
+      .catch(() => { if (vivo) setErro('Não foi possível abrir o demonstrativo.'); });
     return () => { vivo = false; };
   }, [id, clinicId, csrfToken]);
 

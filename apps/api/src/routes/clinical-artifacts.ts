@@ -150,15 +150,15 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
   }));
 
   /**
-   * O PDF da exportacao.
+   * O PDF da exportação.
    *
-   * `POST /exportacoes` devolvia o recibo — paginas, hash, duracao — e nao havia
-   * como BAIXAR o arquivo. Pedido de portabilidade que termina em recibo nao
-   * cumpre a LGPD: o titular tem direito ao dado, nao ao comprovante de que ele
+   * `POST /exportacoes` devolvia o recibo — páginas, hash, duração — e não havia
+   * como BAIXAR o arquivo. Pedido de portabilidade que termina em recibo não
+   * cumpre a LGPD: o titular tem direito ao dado, não ao comprovante de que ele
    * foi gerado.
    *
-   * Sob `record.export`, que exige MFA: exportacao integral e o unico jeito de
-   * tirar o prontuario inteiro de dentro do sistema numa requisicao so.
+   * Sob `record.export`, que exige MFA: exportação integral é o único jeito de
+   * tirar o prontuário inteiro de dentro do sistema numa requisição só.
    */
   r.get('/v1/exportacoes/:id/pdf', {
     schema: { params: z.object({ id: z.string().uuid() }) },
@@ -172,8 +172,8 @@ export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void
     const bytes = await armazenamento().get(`exportacoes/${e.pdf_key}`);
     if (bytes === null) erroDominio('exportacao_sem_arquivo', 404);
 
-    // O hash vai no cabecalho para quem recebe poder conferir sem depender de
-    // nos: e o mesmo valor que consta no recibo assinado da exportacao.
+    // O hash vai no cabeçalho para quem recebe poder conferir sem depender de
+    // nós: é o mesmo valor que consta no recibo assinado da exportação.
     void reply
       .header('content-type', 'application/pdf')
       .header('content-disposition',

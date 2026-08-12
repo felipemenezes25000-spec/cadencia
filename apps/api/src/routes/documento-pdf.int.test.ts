@@ -39,8 +39,8 @@ describe('impressao de documento clinico', () => {
 
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('application/pdf');
-    // O arquivo comeca com %PDF- por definicao do formato. Sem essa checagem,
-    // um HTML servido com content-type errado passaria no teste e so falharia
+    // O arquivo começa com %PDF- por definição do formato. Sem essa checagem,
+    // um HTML servido com content-type errado passaria no teste e só falharia
     // no leitor de PDF do paciente.
     expect(r.rawPayload.subarray(0, 5).toString('latin1')).toBe('%PDF-');
     expect(r.rawPayload.length).toBeGreaterThan(1000);

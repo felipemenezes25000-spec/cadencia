@@ -50,7 +50,7 @@ function hora(iso: string): string {
 
 /**
  * O painel lateral renderiza `dia` cru. Passar '2026-08-11' funciona, mas quem
- * le a conversa esta em pt-BR e le 11/08 — o formato ISO no meio de um dialogo
+ * lê a conversa está em pt-BR e lê 11/08 — o formato ISO no meio de um diálogo
  * denuncia que aquilo veio de um banco.
  */
 function diaCurto(iso: string): string {
@@ -89,9 +89,9 @@ function ConversasInner() {
           lastMessageDirection: c.lastMessageDirection ?? 'outbound',
         }));
 
-        // O filtro e do cliente porque a caixa cabe inteira em memoria (uma
-        // clinica tem dezenas de conversas ativas, nao milhares) e alternar
-        // entre abas sem ida ao servidor e o que faz a caixa parecer instantanea.
+        // O filtro é do cliente porque a caixa cabe inteira em memória (uma
+        // clínica tem dezenas de conversas ativas, não milhares) e alternar
+        // entre abas sem ida ao servidor é o que faz a caixa parecer instantânea.
         if (f === 'nao_lidas') return todas.filter((c) => c.unreadCount > 0);
         if (f === 'whatsapp') return todas.filter((c) => c.channel === 'whatsapp');
         return todas;
@@ -132,8 +132,8 @@ function ConversasInner() {
           `/v1/conversations/${abertaId}/messages`,
           { method: 'POST', body: { bodyText: body }, clinicId, csrfToken });
       }}
-      aoVincularPaciente={() => { /* vinculo entra com a busca de paciente */ }}
-      aoSelecionarTemplate={() => { /* templates ja tem endpoint proprio */ }}
+      aoVincularPaciente={() => { /* vínculo entra com a busca de paciente */ }}
+      aoSelecionarTemplate={() => { /* templates já têm endpoint próprio */ }}
     />
   );
 }

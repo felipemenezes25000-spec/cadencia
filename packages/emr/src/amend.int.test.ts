@@ -57,7 +57,7 @@ describe('retificacao, adendo e o conjunto vigente', () => {
     const cids = await withTenantTx(actor, (tx) => tx.query<{ code: string; live: boolean }>(
       `SELECT code, live FROM clin.diagnosis WHERE encounter_id = $1 ORDER BY code`,
       [s.encounterId]));
-    // J45 e retificado para I10: sem o bit live, os DOIS apareceriam no relatorio.
+    // J45 é retificado para I10: sem o bit live, os DOIS apareceriam no relatório.
     expect(cids.rows).toEqual([{ code: 'I10', live: true }, { code: 'J45', live: false }]);
   });
 
@@ -80,24 +80,24 @@ describe('retificacao, adendo e o conjunto vigente', () => {
   });
 
   /**
-   * Anulacao aberta em A nao pode superar versao de B.
+   * Anulação aberta em A não pode superar versão de B.
    *
-   * `clin.finalize_encounter` apaga o bit `live` das filhas filtrando so por
+   * `clin.finalize_encounter` apaga o bit `live` das filhas filtrando só por
    * `version_id`. Sem guarda, bastava passar o `headVersionId` de OUTRO
-   * atendimento — valor que a leitura do prontuario entrega de bandeja — para o
+   * atendimento — valor que a leitura do prontuário entrega de bandeja — para o
    * registro vigente daquele atendimento sumir de `clin.read_encounter`, sem
    * nenhuma linha dele ter sido tocada e com o 'anulado' gravado no atendimento
-   * errado. Prontuario finalizado e imutavel; isto era um caminho para apaga-lo.
+   * errado. Prontuário finalizado é imutável; isto era um caminho para apagá-lo.
    */
   it('nao supera versao de OUTRO atendimento', async () => {
-    // Atendimento B, finalizado normalmente: ganha a versao 1 'original'.
+    // Atendimento B, finalizado normalmente: ganha a versão 1 'original'.
     const b = await withTenantTx(actor, (tx) => finalizeEncounter(tx, {
       encounterId: s.outroEncounterId,
       fields: [], diagnoses: [], observations: [], findings: [], procedures: [],
     }));
     if (!b.ok) throw new Error(JSON.stringify(b.error));
 
-    // A anulacao e aberta em A e aponta para a versao de B.
+    // A anulação é aberta em A e aponta para a versão de B.
     const r = await withTenantTx(actor, (tx) => amendEncounter(tx, {
       encounterId: s.encounterId, kind: 'anulacao',
       supersedesVersionId: b.value.versionId,
@@ -106,7 +106,7 @@ describe('retificacao, adendo e o conjunto vigente', () => {
     }));
     expect(r).toEqual({ ok: false, error: { kind: 'supersedes_de_outro_atendimento' } });
 
-    // E o atendimento B continua de pe.
+    // E o atendimento B continua de pé.
     const bDepois = await withTenantTx(actor, (tx) => tx.query<{ status: string }>(
       `SELECT status::text AS status FROM clin.encounter WHERE id = $1`,
       [s.outroEncounterId]));

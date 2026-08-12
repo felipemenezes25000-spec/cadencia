@@ -40,7 +40,7 @@ describe('TissArquivoTransport', () => {
     expect(receipt.kind).toBe('arquivo');
     if (receipt.kind !== 'arquivo') return;
 
-    // nome segue convencao ANS: CNPJ_ANO_MES_SEQ.xml
+    // nome segue convenção ANS: CNPJ_ANO_MES_SEQ.xml
     expect(receipt.fileName).toMatch(/^98XYZ76543AB21_\d{4}_\d{2}_\d+\.xml$/);
     expect(receipt.sha256).toHaveLength(64);
     expect(receipt.instructions).toContain('portal');

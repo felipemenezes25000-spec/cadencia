@@ -1,9 +1,9 @@
 import { Client } from 'pg';
 
 /**
- * Espelha o tipo Actor de packages/db/src/tx.ts, que so nasce na Task 15.
- * A duplicacao e deliberada: a suite de isolamento tem que existir ANTES da
- * funcao que abre transacao, e os dois tipos sao estruturalmente identicos —
+ * Espelha o tipo Actor de packages/db/src/tx.ts, que só nasce na Task 15.
+ * A duplicação é deliberada: a suite de isolamento tem que existir ANTES da
+ * função que abre transação, e os dois tipos são estruturalmente idênticos —
  * na Task 16 os testes passam a importar o Actor de verdade.
  */
 export type IsoActor =
@@ -18,9 +18,9 @@ export async function openClient(connectionString: string): Promise<Client> {
 }
 
 /**
- * Replica, byte a byte, o preambulo que packages/db/src/tx.ts emite.
- * O terceiro argumento TRUE de set_config e o item mais importante do desenho:
- * torna a variavel LOCAL a transacao. Fora de uma transacao ele nao gruda,
+ * Replica, byte a byte, o preâmbulo que packages/db/src/tx.ts emite.
+ * O terceiro argumento TRUE de set_config é o item mais importante do desenho:
+ * torna a variável LOCAL a transação. Fora de uma transação ele não gruda,
  * por isso todo helper daqui abre BEGIN antes.
  */
 export const PREAMBULO_SQL = `
@@ -41,8 +41,8 @@ export async function aplicarPreambulo(client: Client, actor: IsoActor): Promise
 }
 
 /**
- * Abre transacao, aplica o preambulo, roda o corpo e SEMPRE faz ROLLBACK.
- * A suite de isolamento nunca deixa rastro: o canario da Task 18 depende disso.
+ * Abre transação, aplica o preâmbulo, roda o corpo e SEMPRE faz ROLLBACK.
+ * A suite de isolamento nunca deixa rastro: o canário da Task 18 depende disso.
  */
 export async function comoAtor<T>(
   client: Client,
@@ -58,7 +58,7 @@ export async function comoAtor<T>(
   }
 }
 
-/** Transacao SEM preambulo nenhum: e o cenario do teste T5. */
+/** Transação SEM preâmbulo nenhum: é o cenário do teste T5. */
 export async function semContexto<T>(
   client: Client,
   fn: (c: Client) => Promise<T>,
@@ -72,8 +72,8 @@ export async function semContexto<T>(
 }
 
 /**
- * Contexto FORJADO: aceita tenantId e userId que nao combinam entre si.
- * Existe so para o teste T6 — nenhum codigo de producao pode montar isso.
+ * Contexto FORJADO: aceita tenantId e userId que não combinam entre si.
+ * Existe só para o teste T6 — nenhum código de produção pode montar isso.
  */
 export async function comContextoForjado<T>(
   client: Client,

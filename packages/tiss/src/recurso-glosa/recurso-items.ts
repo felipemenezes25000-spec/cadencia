@@ -9,11 +9,11 @@ import type {
 } from './types';
 
 /**
- * Adiciona uma glosa a um recurso em rascunho. Validacoes:
- * - Recurso existe e esta em rascunho
- * - Glosa existe em tiss.glosa e esta com status pendente
+ * Adiciona uma glosa a um recurso em rascunho. Validações:
+ * - Recurso existe e está em rascunho
+ * - Glosa existe em tiss.glosa e está com status pendente
  * - Glosa pertence a mesma operadora do recurso (via guia)
- * - Glosa nao esta ja vinculada a este recurso
+ * - Glosa não está já vinculada a este recurso
  */
 export async function addGlosaToRecurso(
   tx: TxClient,

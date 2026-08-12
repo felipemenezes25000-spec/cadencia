@@ -16,11 +16,11 @@ import type {
 } from './types';
 
 /**
- * Marca o recurso de glosa como pronto para envio. Validacoes:
+ * Marca o recurso de glosa como pronto para envio. Validações:
  * - Recurso existe
- * - Status atual e 'rascunho' (transicao permitida: rascunho -> pronto)
+ * - Status atual é 'rascunho' (transição permitida: rascunho -> pronto)
  * - Tem pelo menos 1 item
- * - justificativa_geral esta preenchida
+ * - justificativa_geral está preenchida
  */
 export async function markRecursoReady(
   tx: TxClient,
@@ -66,9 +66,9 @@ export async function markRecursoReady(
 
 /**
  * Submete o recurso de glosa via transport. Fluxo:
- * 1. Valida que o recurso esta em status 'pronto'
- * 2. Busca dados necessarios (operadora, itens)
- * 3. Serializa XML minimo do recurso
+ * 1. Valida que o recurso está em status 'pronto'
+ * 2. Busca dados necessários (operadora, itens)
+ * 3. Serializa XML mínimo do recurso
  * 4. Chama transport.submitRecursoGlosa
  * 5. Sucesso: transita para 'enviado', grava protocolo/storageKey
  * 6. Timeout: transita para 'indeterminado' — NUNCA retry (Design S7)
@@ -131,7 +131,7 @@ export async function submitRecurso(
     [recursoId],
   );
 
-  // 4. Serializa XML minimo do recurso
+  // 4. Serializa XML mínimo do recurso
   const xml = new XmlBuilder();
   xml.openWithAttrs('ans:mensagemTISS', {
     'xmlns:ans': 'http://www.ans.gov.br/padroes/tiss/schemas',
@@ -210,7 +210,7 @@ export async function submitRecurso(
     });
   }
 
-  // Outros erros: nao muda estado
+  // Outros erros: não muda estado
   if (transportResult.error.kind === 'unavailable') {
     return err({ kind: 'transport_indisponivel', detail: transportResult.error.detail });
   }
@@ -228,8 +228,8 @@ function formatCentsAsReais(centavos: number): string {
 
 /**
  * Resolve o recurso de glosa com o resultado da operadora.
- * Transicao permitida: enviado -> (deferido | indeferido | parcial).
- * Tambem aceita resolver recurso em status 'indeterminado' (apos reconciliacao).
+ * Transição permitida: enviado -> (deferido | indeferido | parcial).
+ * Também aceita resolver recurso em status 'indeterminado' (após reconciliação).
  * Atualiza o resultado individual de cada item vinculado.
  */
 export async function resolveRecurso(
@@ -250,7 +250,7 @@ export async function resolveRecurso(
   }
   const recurso = rows[0]!;
 
-  // Transicao permitida: enviado ou indeterminado -> resultado final
+  // Transição permitida: enviado ou indeterminado -> resultado final
   if (recurso.status !== 'enviado' && recurso.status !== 'indeterminado') {
     return err({ kind: 'transicao_invalida', de: recurso.status, para: input.resultado });
   }

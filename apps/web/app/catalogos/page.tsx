@@ -4,16 +4,16 @@ import { Heartbeat, Barcode, Pill } from '@phosphor-icons/react';
 import { PageHeader } from '../../src/ui/PageHeader';
 
 const CATALOGOS = [
-  { href: '/catalogos/cid10', icone: Heartbeat, titulo: 'CID-10', descricao: 'Classificacao Internacional de Doencas, 10a revisao' },
-  { href: '/catalogos/cid11', icone: Heartbeat, titulo: 'CID-11', descricao: 'Classificacao Internacional de Doencas, 11a revisao (OMS)' },
-  { href: '/catalogos/tuss', icone: Barcode, titulo: 'TUSS', descricao: 'Terminologia Unificada da Saude Suplementar (ANS)' },
-  { href: '#', icone: Pill, titulo: 'Bulas', descricao: 'Em breve — catalogo de bulas ANVISA' },
+  { href: '/catalogos/cid10', icone: Heartbeat, titulo: 'CID-10', descricao: 'Classificação Internacional de Doenças, 10a revisão' },
+  { href: '/catalogos/cid11', icone: Heartbeat, titulo: 'CID-11', descricao: 'Classificação Internacional de Doenças, 11a revisão (OMS)' },
+  { href: '/catalogos/tuss', icone: Barcode, titulo: 'TUSS', descricao: 'Terminologia Unificada da Saúde Suplementar (ANS)' },
+  { href: '#', icone: Pill, titulo: 'Bulas', descricao: 'Em breve — catálogo de bulas ANVISA' },
 ] as const;
 
 export default function PaginaCatalogos() {
   return (
     <div className="cadencia-page grid gap-8">
-      <PageHeader titulo="Catalogos" subtitulo="Tabelas de referencia do sistema de saude brasileiro." />
+      <PageHeader titulo="Catálogos" subtitulo="Tabelas de referência do sistema de saúde brasileiro." />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CATALOGOS.map((cat) => {
           const Icone = cat.icone;

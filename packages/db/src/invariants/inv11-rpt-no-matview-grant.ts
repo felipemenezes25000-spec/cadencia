@@ -4,14 +4,14 @@ import type { Queryable } from '../queryable';
 /**
  * §3.8 / §3.13 item 6 — nenhuma matview tem GRANT para app_rw.
  *
- * Matview nao suporta RLS. Toda matview e exposta EXCLUSIVAMENTE por view
+ * Matview não suporta RLS. Toda matview é exposta EXCLUSIVAMENTE por view
  * security_barrier em app_rpt. Se app_rw recebe GRANT direto, a RLS fundadora
- * e anulada por construcao.
+ * é anulada por construção.
  *
- * O teste varre relkind = 'm' em TODOS os schemas — nao so rpt — porque a
- * regra e universal. O filtro inclui relkind IN ('r','p','m','v','f') do
+ * O teste varre relkind = 'm' em TODOS os schemas — não só rpt — porque a
+ * regra é universal. O filtro inclui relkind IN ('r','p','m','v','f') do
  * invariante 7, que no desenho original filtrava 'r' e deixava matview
- * invisivel (§3.8).
+ * invisível (§3.8).
  */
 
 const SQL = `

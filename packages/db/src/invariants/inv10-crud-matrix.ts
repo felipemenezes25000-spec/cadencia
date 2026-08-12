@@ -20,7 +20,7 @@ export interface CrudCell {
   detail: string;
 }
 
-/** As tres relacoes que a fixture semeia com linha dos DOIS tenants. */
+/** As três relações que a fixture semeia com linha dos DOIS tenants. */
 const SEEDED = new Set(['app.tenant', 'app.clinic', 'clin.patient']);
 
 const TARGETS_SQL = `
@@ -74,7 +74,7 @@ async function runCell(
 
   await api.query('BEGIN');
   try {
-    // `api` e NOINHERIT: sem SET ROLE nao ha privilegio de app_rw nem policy aplicavel.
+    // `api` é NOINHERIT: sem SET ROLE não há privilégio de app_rw nem policy aplicável.
     await api.query('SET ROLE app_rw');
     // Ator de sistema: dispensa linha em app.membership e ainda satisfaz app.is_member().
     await api.query(
@@ -128,7 +128,7 @@ export async function runCrudMatrix(
   return celulas;
 }
 
-/** So as celulas que reprovam — e o que o runner da Task 46 publica. */
+/** Só as células que reprovam — é o que o runner da Task 46 publica. */
 export function crudViolations(cells: readonly CrudCell[]): string[] {
   return cells
     .filter((c) => c.outcome === 'VAZOU')

@@ -48,9 +48,9 @@ describe('invariante 1 — isolamento e propriedade estrutural, nao disciplina d
     const relacoes = await readRelations(catalogPool());
     const tenant = relacoes.find((r) => r.schema === 'app' && r.relation === 'tenant');
     expect(tenant, 'app.tenant nao existe: a migration 0003 nao foi aplicada').toBeDefined();
-    // Sem a marca, o invariante acusaria "sem coluna tenant_id" e a tentacao seria
-    // marca-la como 'global-reference' — o que a tiraria da matriz CRUD do invariante 10
-    // justamente na tabela que define a fronteira entre clinicas.
+    // Sem a marca, o invariante acusaria "sem coluna tenant_id" e a tentação seria
+    // marcá-la como 'global-reference' — o que a tiraria da matriz CRUD do invariante 10
+    // justamente na tabela que define a fronteira entre clínicas.
     expect(tenant?.comment).toBe('tenant-root');
     expect(tenant?.hasDiscriminator).toBe(true);
   });

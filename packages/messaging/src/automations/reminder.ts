@@ -2,11 +2,11 @@
  * Agenda lembretes de consulta.
  *
  * Para cada automation_rule com trigger `appointment_reminder`, calcula o
- * instante de envio no fuso da clinica e retorna entradas de outbox com
+ * instante de envio no fuso da clínica e retorna entradas de outbox com
  * `startAfter` para que o pg-boss agende o job no momento correto.
  *
- * Fallback SMS (design §9): se o canal primario e WhatsApp e o envio falhar,
- * o worker tenta por SMS. O fallback e declarado na entrada de outbox para
+ * Fallback SMS (design §9): se o canal primário é WhatsApp e o envio falhar,
+ * o worker tenta por SMS. O fallback é declarado na entrada de outbox para
  * que o despachante saiba o que fazer.
  */
 
@@ -26,7 +26,7 @@ export interface ReminderOutboxEntry {
     readonly to: string;
     readonly templateId: string;
     readonly channel: 'whatsapp' | 'sms' | 'email';
-    /** Canal de fallback se o primario falhar. Null se nao ha fallback. */
+    /** Canal de fallback se o primário falhar. Null se não há fallback. */
     readonly fallbackChannel: 'sms' | null;
     readonly ruleId: string;
     readonly variables: {
@@ -61,13 +61,13 @@ export function scheduleReminders(
       rule.timingOffsetMinutes,
     );
 
-    // Descarta lembretes cujo instante de envio ja passou
+    // Descarta lembretes cujo instante de envio já passou
     const startAfterMs = Date.parse(startAfter);
     if (startAfterMs <= nowMs) {
       continue;
     }
 
-    // Fallback SMS: so quando o canal primario e WhatsApp (design §9)
+    // Fallback SMS: só quando o canal primário é WhatsApp (design §9)
     const fallbackChannel: 'sms' | null = rule.channel === 'whatsapp' ? 'sms' : null;
 
     entries.push({

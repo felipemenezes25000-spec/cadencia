@@ -42,7 +42,7 @@ describe('invariante 10 — matriz CRUD cruzada, com as tabelas descobertas do c
     const celulas = await runCrudMatrix(api, alvos, CRUD_TENANT_A, CRUD_TENANT_B);
 
     expect(celulas.every((c) => c.outcome === 'zero_linhas' || c.outcome === 'privilegio_negado')).toBe(true);
-    // app_rw tem SELECT e nada mais em audit.event: UPDATE tem de ser privilegio negado.
+    // app_rw tem SELECT e nada mais em audit.event: UPDATE tem de ser privilégio negado.
     expect(celulas.find((c) => c.relation === 'audit.event' && c.operation === 'UPDATE')?.outcome).toBe(
       'privilegio_negado',
     );
@@ -51,8 +51,8 @@ describe('invariante 10 — matriz CRUD cruzada, com as tabelas descobertas do c
   it('pega a tabela que vaza — RLS desligada e GRANT aberto', async () => {
     const admin = catalogPool();
     try {
-      // Esta tabela precisa COMMITAR: a conexao do papel api nao enxerga DDL de
-      // uma transacao aberta em outra conexao. O DROP no finally e o que a limpa.
+      // Esta tabela precisa COMMITAR: a conexão do papel api não enxerga DDL de
+      // uma transação aberta em outra conexão. O DROP no finally é o que a limpa.
       await admin.query('CREATE TABLE clin.__vazamento (tenant_id uuid NOT NULL, id uuid NOT NULL)');
       await admin.query('GRANT SELECT, INSERT, UPDATE, DELETE ON clin.__vazamento TO app_rw');
       await admin.query('INSERT INTO clin.__vazamento (tenant_id, id) VALUES ($1, gen_random_uuid())', [

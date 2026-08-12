@@ -62,8 +62,8 @@ export interface MovementHistoryInput {
 }
 
 /**
- * Historico de movimentacoes com paginacao por cursor (moved_at DESC).
- * Filtravel por produto. Traz o nome do produto junto.
+ * Histórico de movimentações com paginação por cursor (moved_at DESC).
+ * Filtrável por produto. Traz o nome do produto junto.
  */
 export async function getMovementHistory(
   tx: TxClient,

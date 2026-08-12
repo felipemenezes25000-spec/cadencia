@@ -9,13 +9,13 @@ export interface NeedsYou {
 }
 
 /**
- * §5.3 — o painel "Precisa de voce" de Hoje. Cinco filas de trabalho, contadas
- * ao vivo. Cada uma existe porque e uma pendencia que hoje mora na cabeca de
- * alguem: o produto so e util se ela sair de la.
+ * §5.3 — o painel "Precisa de você" de Hoje. Cinco filas de trabalho, contadas
+ * ao vivo. Cada uma existe porque é uma pendência que hoje mora na cabeça de
+ * alguém: o produto só é útil se ela sair de lá.
  *
- * `prescricoesNaoAssinadas` e `resultadosChegados` sao zero ate a Task 53/47
+ * `prescricoesNaoAssinadas` e `resultadosChegados` são zero até a Task 53/47
  * criarem clin.prescription e clin.attachment — o campo existe desde agora para
- * que a tela nao mude de forma.
+ * que a tela não mude de forma.
  */
 export async function needsYou(
   tx: TxClient, q: { clinicId: string; professionalId?: string },

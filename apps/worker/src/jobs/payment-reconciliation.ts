@@ -11,17 +11,17 @@ export interface ReconciliationResult {
 }
 
 /**
- * Reconciliacao noturna — busca settlements do PSP e compara com o nosso banco.
+ * Reconciliação noturna — busca settlements do PSP e compara com o nosso banco.
  *
- * Roda como job noturno. Para cada tenant com payment_link pago nos ultimos 30 dias,
- * busca os settlements do dia anterior e marca divergencias.
+ * Roda como job noturno. Para cada tenant com payment_link pago nos últimos 30 dias,
+ * busca os settlements do dia anterior e marca divergências.
  *
- * NAO existe fin.payment — usa fin.payment_link vinculado a fin.entry (00-CONTRATOS.md §3.6).
+ * NÃO existe fin.payment — usa fin.payment_link vinculado a fin.entry (00-CONTRATOS.md §3.6).
  */
 export async function reconcilePayments(
   payment: PaymentProvider,
 ): Promise<ReconciliationResult> {
-  // Buscar tenants com payment_links pagos nos ultimos 30 dias
+  // Buscar tenants com payment_links pagos nos últimos 30 dias
   // fin.payment_link tem provider_link_id que conecta ao PSP
   const { rows: tenants } = await jobsPool().query<{ tenant_id: string }>(
     `SELECT DISTINCT tenant_id FROM fin.payment_link
@@ -76,7 +76,7 @@ export async function reconcilePayments(
           [settlement.providerPaymentId]);
 
         if (rows.length === 0) {
-          // Pagamento no PSP que nao esta no nosso banco — divergencia
+          // Pagamento no PSP que não está no nosso banco — divergência
           divergences += 1;
           const today = isoFromMs(systemClock.nowMs()).slice(0, 10);
           await tx.query(

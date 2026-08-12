@@ -6,8 +6,8 @@ import { validarContraXsdTiss } from '../../test/xsd';
 import type { LoteConsultaInput } from './types';
 
 /**
- * Lote de amostra DETERMINISTICO — os mesmos dados sempre, para que o
- * snapshot byte a byte seja reproduzivel. Nenhum campo depende de relogio.
+ * Lote de amostra DETERMINÍSTICO — os mesmos dados sempre, para que o
+ * snapshot byte a byte seja reproduzível. Nenhum campo depende de relógio.
  */
 function loteAmostraDeterministico(): LoteConsultaInput {
   return {
@@ -84,30 +84,30 @@ describe('snapshot byte a byte do lote de consulta', () => {
     expect(warnings).toEqual([]);
 
     if (!existsSync(FIXTURE_PATH)) {
-      // Primeira execucao: cria o snapshot
+      // Primeira execução: cria o snapshot
       if (!existsSync(FIXTURE_DIR)) {
         mkdirSync(FIXTURE_DIR, { recursive: true });
       }
       writeFileSync(FIXTURE_PATH, xml);
       // eslint-disable-next-line no-console
       console.log(`Snapshot criado: ${FIXTURE_PATH} (${xml.byteLength} bytes)`);
-      // NAO falha na primeira execucao — o snapshot acabou de ser criado.
+      // NÃO falha na primeira execução — o snapshot acabou de ser criado.
     }
 
-    // O snapshot congelado tem de ser, ele proprio, XML VALIDO pela norma.
+    // O snapshot congelado tem de ser, ele próprio, XML VÁLIDO pela norma.
     //
-    // Sem esta ancora o teste vira um espelho: alguem regenera o fixture depois
-    // de uma mudanca errada e ele volta a passar, congelando o defeito. Foi
-    // exatamente o que aconteceu ate aqui — o fixture anterior guardava um
-    // cabecalho plano que nenhuma operadora aceitaria, e o snapshot dizia
-    // "identico", porque era identico a si mesmo.
+    // Sem esta âncora o teste vira um espelho: alguém regenera o fixture depois
+    // de uma mudança errada e ele volta a passar, congelando o defeito. Foi
+    // exatamente o que aconteceu até aqui — o fixture anterior guardava um
+    // cabeçalho plano que nenhuma operadora aceitaria, e o snapshot dizia
+    // "idêntico", porque era idêntico a si mesmo.
     const doFixture = validarContraXsdTiss(new Uint8Array(readFileSync(FIXTURE_PATH)));
     expect(doFixture.erros.join('\n')).toBe('');
 
     const expected = new Uint8Array(readFileSync(FIXTURE_PATH));
     expect(xml.byteLength).toBe(expected.byteLength);
 
-    // Comparacao byte a byte com diagnostico util
+    // Comparação byte a byte com diagnóstico útil
     for (let i = 0; i < xml.byteLength; i++) {
       if (xml[i] !== expected[i]) {
         const context = new TextDecoder('iso-8859-1').decode(xml.slice(Math.max(0, i - 20), i + 20));
@@ -125,7 +125,7 @@ describe('snapshot byte a byte do lote de consulta', () => {
     const text = new TextDecoder('iso-8859-1').decode(xml);
     expect(text).toContain('<?xml version="1.0" encoding="ISO-8859-1"?>');
     expect(text).toContain('</ans:mensagemTISS>');
-    // Verifica que o acento em "pressao" foi preservado em ISO-8859-1
+    // Verifica que o acento em "pressão" foi preservado em ISO-8859-1
     expect(text).toContain('pressão');
   });
 

@@ -28,7 +28,7 @@ messaging = createFakeMessagingProvider();
 payment = createFakePaymentProvider();
 
 describe('demonstracao de ponta a ponta da Fase 2', () => {
-  // --- FLUXO 1: confirmacao via WhatsApp ---
+  // --- FLUXO 1: confirmação via WhatsApp ---
   it('1. enviar confirmacao via messaging provider', async () => {
     const r = await messaging.send(ctx(), {
       channelIdentityRef: 'fake-channel',
@@ -59,7 +59,7 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     }
   });
 
-  // --- FATO 1: webhook com assinatura HMAC invalida e REJEITADO ---
+  // --- FATO 1: webhook com assinatura HMAC inválida é REJEITADO ---
   it('3. webhook com assinatura HMAC invalida e rejeitado pelo messaging provider', () => {
     const resultado = messaging.verifyWebhook(
       Buffer.from('{"tipo":"mensagem"}'),
@@ -69,7 +69,7 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     expect(resultado.reason).toBeTruthy();
   });
 
-  // --- FATO 2: timeout NAO reenvia automaticamente ---
+  // --- FATO 2: timeout NÃO reenvia automaticamente ---
   it('4. timeout no WhatsApp NAO gera retry automatico — persiste estado indeterminado', async () => {
     const msgTimeout = createFakeMessagingProvider({ modo: 'timeout' });
     const r = await msgTimeout.send(ctx(), {
@@ -85,7 +85,7 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     }
   });
 
-  // --- FATO 3: pagamento duplicado por idempotency_key e recusado ---
+  // --- FATO 3: pagamento duplicado por idempotency_key é recusado ---
   it('5. pagamento duplicado por idempotency_key retorna o mesmo resultado, nao duplica', async () => {
     const chave = `idem-${uuidv7()}`;
     const c = ctx(chave);
@@ -108,7 +108,7 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     }
   });
 
-  // --- FATO 4: webhook de pagamento com assinatura invalida e rejeitado ---
+  // --- FATO 4: webhook de pagamento com assinatura inválida é rejeitado ---
   it('6. webhook de pagamento com assinatura invalida e rejeitado', () => {
     const resultado = payment.verifyWebhook(
       Buffer.from('{"event":"payment_confirmed"}'),
@@ -126,7 +126,7 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     const lembreteUtc = new Date(consultaUtc.getTime() - 24 * 60 * 60 * 1000);
     expect(lembreteUtc.toISOString()).toBe('2026-08-04T11:00:00.000Z');
 
-    // Converter para horario local de SP: 08:00
+    // Converter para horário local de SP: 08:00
     const emSP = new Intl.DateTimeFormat('pt-BR', {
       hour: '2-digit', minute: '2-digit',
       timeZone: 'America/Sao_Paulo',
@@ -154,22 +154,22 @@ describe('demonstracao de ponta a ponta da Fase 2', () => {
     expect(payment.capabilities.has('residency:br')).toBe(true);
   });
 
-  // --- FATO 9: safety do send e unsafe ---
+  // --- FATO 9: safety do send é unsafe ---
   it('11. send de mensagem e declarado como unsafe — nunca retry automatico', () => {
     expect(messaging.safety['send']).toBe('unsafe');
   });
 
-  // --- FATO 10: safety do createPaymentLink e idempotent ---
+  // --- FATO 10: safety do createPaymentLink é idempotent ---
   it('12. createPaymentLink e declarado como idempotent', () => {
     expect(payment.safety['createPaymentLink']).toBe('idempotent');
   });
 
-  // --- FATO 11: refund e unsafe ---
+  // --- FATO 11: refund é unsafe ---
   it('13. refund e declarado como unsafe', () => {
     expect(payment.safety['refund']).toBe('unsafe');
   });
 
-  // --- FATO 12: numero bloqueado mostra canal suspenso ---
+  // --- FATO 12: número bloqueado mostra canal suspenso ---
   it('14. messaging com numero bloqueado sinaliza canal suspenso, nao descarta historico', async () => {
     const msgBloqueado = createFakeMessagingProvider({ modo: 'bloqueado' });
     const r = await msgBloqueado.send(ctx(), {

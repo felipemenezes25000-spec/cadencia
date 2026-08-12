@@ -7,14 +7,14 @@ import type { PaymentProvider } from '@cadencia/integrations';
 /**
  * Consome `create_payment_link` do outbox e cria o link no provedor.
  *
- * A rota `POST /v1/payment-links` grava o lancamento pendente e ENFILEIRA — nao
- * chama o provedor. O motivo e bom: uma chamada HTTP a terceiro dentro da
- * transacao segura a conexao do banco pelo tempo do parceiro, e um parceiro
- * lento vira fila de conexoes esgotada no banco inteiro.
+ * A rota `POST /v1/payment-links` grava o lançamento pendente e ENFILEIRA — não
+ * chama o provedor. O motivo é bom: uma chamada HTTP a terceiro dentro da
+ * transação segura a conexão do banco pelo tempo do parceiro, e um parceiro
+ * lento vira fila de conexões esgotada no banco inteiro.
  *
  * O que faltava era este consumidor. Sem ele o evento ficava na tabela para
- * sempre, o lancamento nascia pendente e nenhum link existia — o botao de
- * cobranca da tela de atendimento nao devolvia nada e ninguem via erro.
+ * sempre, o lançamento nascia pendente e nenhum link existia — o botão de
+ * cobrança da tela de atendimento não devolvia nada e ninguém via erro.
  */
 
 export interface GerarLinkInput {
@@ -23,7 +23,7 @@ export interface GerarLinkInput {
   readonly amountCents: number;
   readonly description: string;
   readonly expiresInMinutes?: number;
-  /** Quem clicou em "gerar link". Vem no evento porque aqui o ator e a fila. */
+  /** Quem clicou em "gerar link". Vem no evento porque aqui o ator é a fila. */
   readonly solicitadoPor: string;
 }
 
@@ -48,13 +48,13 @@ export async function gerarLinkDePagamento(
       tx, provider,
       {
         tenantId: input.tenantId,
-        // Sem usuario: quem executa e a fila, nao uma pessoa. Forjar um userId
-        // aqui poluiria a trilha de auditoria com uma acao que ninguem tomou.
+        // Sem usuário: quem executa é a fila, não uma pessoa. Forjar um userId
+        // aqui poluiria a trilha de auditoria com uma ação que ninguém tomou.
         actorUserId: null,
         requestId: actor.requestId,
-        // Estavel POR LANCAMENTO, e nao por execucao: e o que faz a reentrega do
-        // outbox chegar ao provedor como a mesma intencao, e nao como uma
-        // segunda cobranca.
+        // Estável POR LANÇAMENTO, e não por execução: é o que faz a reentrega do
+        // outbox chegar ao provedor como a mesma intenção, e não como uma
+        // segunda cobrança.
         idempotencyKey: `payment-link:${input.entryId}`,
         deadlineMs: 15_000,
       },
@@ -69,9 +69,9 @@ export async function gerarLinkDePagamento(
       });
 
     if (!resultado.ok) {
-      // Lancamento inexistente e falha TERMINAL: nunca vai passar a existir, e
-      // relancar excecao faria o pg-boss tentar de novo indefinidamente.
-      // Provedor fora do ar e falha TRANSITORIA — essa sim merece nova tentativa,
+      // Lançamento inexistente é falha TERMINAL: nunca vai passar a existir, e
+      // relançar exceção faria o pg-boss tentar de novo indefinidamente.
+      // Provedor fora do ar é falha TRANSITÓRIA — essa sim merece nova tentativa,
       // e por isso sai como status distinto para quem chama decidir.
       if (resultado.error.code === 'payment_link.entry_nao_encontrado') {
         return { status: 'lancamento_nao_encontrado' as const };

@@ -21,7 +21,7 @@ function mesAtual(): string {
   return new Date().toISOString().slice(0, 7);
 }
 
-/** 'AAAA-MM' do mes imediatamente anterior, virando o ano quando preciso. */
+/** 'AAAA-MM' do mês imediatamente anterior, virando o ano quando preciso. */
 function mesAnterior(mes: string): string {
   const [ano, m] = mes.split('-').map(Number) as [number, number];
   return m === 1
@@ -29,7 +29,7 @@ function mesAnterior(mes: string): string {
     : `${ano}-${String(m - 1).padStart(2, '0')}`;
 }
 
-/** Primeiro e ultimo dia do mes, no formato que /v1/reports/variation espera. */
+/** Primeiro e último dia do mês, no formato que /v1/reports/variation espera. */
 function limites(mes: string): { inicio: string; fim: string } {
   const [ano, m] = mes.split('-').map(Number) as [number, number];
   const ultimoDia = new Date(Date.UTC(ano, m, 0)).getUTCDate();
@@ -39,8 +39,8 @@ function limites(mes: string): { inicio: string; fim: string } {
 const ROTULO_FATOR: Record<string, string> = {
   volume: 'Volume de atendimentos',
   mix_procedimento: 'Mix de procedimentos',
-  mix_convenio: 'Mix de convenios',
-  ticket: 'Ticket medio',
+  mix_convenio: 'Mix de convênios',
+  ticket: 'Ticket médio',
   faltas: 'Faltas',
   glosas: 'Glosas',
 };
@@ -51,9 +51,9 @@ function DesempenhoInner() {
 
   const periodo: Period = { current: mes, previous: mesAnterior(mes) };
 
-  // A recepcao nao tem `report.variation.read`, e isso e correto — variacao de
-  // receita e informacao de gestao. O que nao pode e a tela ficar em branco:
-  // 403 sem explicacao parece defeito, e quem ve chama o suporte.
+  // A recepção não tem `report.variation.read`, e isso é correto — variação de
+  // receita é informação de gestão. O que não pode é a tela ficar em branco:
+  // 403 sem explicação parece defeito, e quem vê chama o suporte.
   const podeVer = vinculoAtivo.role === 'admin_clinico'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'financeiro';
@@ -62,10 +62,10 @@ function DesempenhoInner() {
     return (
       <div className="grid min-h-[60vh] place-items-center">
         <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold">Desempenho e da gestao</h1>
+          <h1 className="text-lg font-semibold">Desempenho é da gestão</h1>
           <p className="mt-2 text-sm text-text-muted">
-            Seu perfil ({vinculoAtivo.role.replace('_', ' ')}) nao tem acesso aos
-            indicadores de receita. Peca a quem administra a clinica se precisar.
+            Seu perfil ({vinculoAtivo.role.replace('_', ' ')}) não tem acesso aos
+            indicadores de receita. Peça a quem administra a clínica se precisar.
           </p>
         </div>
       </div>
@@ -118,11 +118,11 @@ function DesempenhoInner() {
             throw e;
           });
 
-        // A acao sugerida aponta para a tela que RESOLVE o fator: falta leva a
-        // automacao de confirmacao, glosa leva ao recurso. Sugestao sem link e
-        // conselho, e conselho nao muda numero.
+        // A ação sugerida aponta para a tela que RESOLVE o fator: falta leva à
+        // automação de confirmação, glosa leva ao recurso. Sugestão sem link é
+        // conselho, e conselho não muda número.
         const actions: SuggestedAction[] = factorId === 'faltas'
-          ? [{ actionId: 'confirmacao', label: 'Rever automacao de confirmacao',
+          ? [{ actionId: 'confirmacao', label: 'Rever automação de confirmação',
                href: '/conversas' }]
           : factorId === 'glosas'
             ? [{ actionId: 'recurso', label: 'Abrir glosas pendentes',

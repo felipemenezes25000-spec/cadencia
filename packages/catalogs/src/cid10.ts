@@ -5,9 +5,9 @@ export interface Queryable {
 }
 
 /**
- * Um pool capaz de RESERVAR uma conexao. BEGIN/INSERT/COMMIT por `Pool.query`
- * nao caem necessariamente na mesma conexao: a carga deixaria de ser atomica e
- * o ROLLBACK rodaria numa conexao sem transacao aberta.
+ * Um pool capaz de RESERVAR uma conexão. BEGIN/INSERT/COMMIT por `Pool.query`
+ * não caem necessariamente na mesma conexão: a carga deixaria de ser atômica e
+ * o ROLLBACK rodaria numa conexão sem transação aberta.
  */
 export interface TransactionalDb {
   connect(): Promise<{
@@ -20,16 +20,16 @@ export interface ResolvedTerm {
   system: 'CID10';
   code: string;
   display: string;
-  terminologyVersion: string;   // competencia da publicacao consultada
+  terminologyVersion: string;   // competência da publicação consultada
 }
 
 export type Cid10Failure = 'codigo_inexistente_na_data';
 
 /**
- * Resolve o codigo PELA DATA DO EVENTO. `eventDate` e obrigatorio e vem no
- * formato AAAA-MM-DD: e a `occurred_date` do atendimento, ja no fuso da clinica.
- * NAO existe default para hoje -- resolver pelo relogio de quem executa e o erro
- * que so aparece meses depois, num lote rejeitado pela operadora (§10 item 11).
+ * Resolve o código PELA DATA DO EVENTO. `eventDate` é obrigatório e vem no
+ * formato AAAA-MM-DD: é a `occurred_date` do atendimento, já no fuso da clínica.
+ * NÃO existe default para hoje -- resolver pelo relógio de quem executa é o erro
+ * que só aparece meses depois, num lote rejeitado pela operadora (§10 item 11).
  */
 export async function resolveCid10At(
   db: Queryable, codigo: string, eventDate: string,
@@ -65,10 +65,10 @@ export function parseCid10Csv(
 }
 
 /**
- * Carga de uma competencia inteira, em UMA transacao, numa unica conexao.
- * Roda com o papel `jobs`. Se qualquer codigo sobrepuser vigencia existente, o
- * EXCLUDE derruba a carga inteira (SQLSTATE 23P01) -- que e o comportamento
- * desejado: meia carga e pior que nenhuma.
+ * Carga de uma competência inteira, em UMA transação, numa única conexão.
+ * Roda com o papel `jobs`. Se qualquer código sobrepuser vigência existente, o
+ * EXCLUDE derruba a carga inteira (SQLSTATE 23P01) -- que é o comportamento
+ * desejado: meia carga é pior que nenhuma.
  */
 export async function loadCid10Competencia(
   db: TransactionalDb,

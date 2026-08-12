@@ -50,10 +50,10 @@ import { glosaRoutes } from './routes/tiss/glosas';
 import { recursoRoutes } from './routes/tiss/recursos';
 
 /**
- * Nivel de log. Estava `false` fixo, o que significa API muda em producao: um
- * 500 devolve requestId ao usuario e nao deixa nenhuma linha para procurar por
- * esse id. Teste continua silencioso por padrao — barulho em suite verde faz
- * ninguem ler a saida quando ela fica vermelha.
+ * Nível de log. Estava `false` fixo, o que significa API muda em produção: um
+ * 500 devolve requestId ao usuário e não deixa nenhuma linha para procurar por
+ * esse id. Teste continua silencioso por padrão — barulho em suíte verde faz
+ * ninguém ler a saída quando ela fica vermelha.
  */
 const NIVEL_DE_LOG = process.env['LOG_LEVEL']
   ?? (process.env['NODE_ENV'] === 'test' ? 'silent' : 'info');
@@ -100,10 +100,10 @@ export async function buildApp(): Promise<FastifyInstance> {
       const extra = (erro as { extra?: Record<string, unknown> }).extra ?? {};
       return reply.code(status).send({ erro: dominio, ...extra });
     }
-    // Erro sem dominio e erro que ninguem previu. O corpo continua opaco — a
-    // mensagem do Postgres nao vai para o cliente —, mas ele PRECISA existir no
-    // log do servidor: 500 silencioso vira "quebrou terca-feira" sem nada para
-    // olhar, e o requestId devolvido ao usuario nao encontra par nenhum.
+    // Erro sem domínio é erro que ninguém previu. O corpo continua opaco — a
+    // mensagem do Postgres não vai para o cliente —, mas ele PRECISA existir no
+    // log do servidor: 500 silencioso vira "quebrou terça-feira" sem nada para
+    // olhar, e o requestId devolvido ao usuário não encontra par nenhum.
     if (status >= 500) req.log.error({ err: erro }, 'erro_nao_tratado');
     return reply.code(status).send({
       erro: status === 500 ? 'interno' : 'requisicao_invalida',

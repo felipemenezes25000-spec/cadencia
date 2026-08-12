@@ -77,8 +77,8 @@ describe('emissao sem PSC contratado', () => {
 
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    // O documento EXISTE e esta no prontuario: nao emitir seria pior, porque o
-    // atendimento aconteceu. O que nao pode e sair com carimbo que nao existe.
+    // O documento EXISTE e está no prontuário: não emitir seria pior, porque o
+    // atendimento aconteceu. O que não pode é sair com carimbo que não existe.
     expect(r.value.documentId).toBeTruthy();
     expect(r.value.assinatura.estado).toBe('pendente');
 
@@ -87,9 +87,9 @@ describe('emissao sem PSC contratado', () => {
       `SELECT motivo, signature_id, resolved_at FROM clin.signature_pending
         WHERE subject_id = $1`, [r.value.documentId]));
 
-    // A pendencia fica registrada com o motivo. Quando o PSC for contratado, a
-    // fila e assinada sem reemitir documento nenhum — e por isso o canonico e o
-    // hash ja foram gravados agora.
+    // A pendência fica registrada com o motivo. Quando o PSC for contratado, a
+    // fila é assinada sem reemitir documento nenhum — e por isso o canônico e o
+    // hash já foram gravados agora.
     expect(rows).toHaveLength(1);
     expect(rows[0]?.motivo).toBe('rejected');
     expect(rows[0]?.signature_id).toBeNull();

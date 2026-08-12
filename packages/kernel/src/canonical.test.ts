@@ -4,8 +4,8 @@ import {
 } from './canonical';
 import { ValidationError } from './errors';
 
-// Vetores CONGELADOS. Alterar qualquer linha daqui invalida a verificacao de
-// todo o historico assinado. Se o comportamento precisar mudar: 'jcs-2'.
+// Vetores CONGELADOS. Alterar qualquer linha daqui invalida a verificação de
+// todo o histórico assinado. Se o comportamento precisar mudar: 'jcs-2'.
 const VETORES: readonly { readonly nome: string; readonly entrada: JsonValue; readonly canonico: string }[] = [
   {
     nome: 'ordem de chaves por unidade de codigo UTF-16',
@@ -35,13 +35,13 @@ const VETORES: readonly { readonly nome: string; readonly entrada: JsonValue; re
 ];
 
 // 'e' precomposto = U+00E9. 'e' + U+0301 (acento combinante) e a forma que chega
-// de planilha e de importacao de outro sistema. Escritos com escape \u de proposito:
-// a diferenca e INVISIVEL no editor, e um arquivo normalizado por engano apagaria
-// este teste sem ninguem perceber.
+// de planilha e de importação de outro sistema. Escritos com escape \u de propósito:
+// a diferença é INVISÍVEL no editor, e um arquivo normalizado por engano apagaria
+// este teste sem ninguém perceber.
 const NOME_PRECOMPOSTO: string = 'Jos\u00E9 da Silva';
 const NOME_DECOMPOSTO: string = 'Jose\u0301 da Silva';
 
-// Atendimento canonico congelado — os campos que entram no content_hash (§3.4).
+// Atendimento canônico congelado — os campos que entram no content_hash (§3.4).
 const ATENDIMENTO: JsonValue = {
   canonicalVersion: 'jcs-1',
   clinicId: '0195c8a0-1f4e-7c3a-9b21-6f0a1d2e3b4c',
@@ -77,10 +77,10 @@ describe('canonicalizacao JCS', () => {
   }
 
   it('normaliza Unicode para NFC: o mesmo nome digitado no consultorio e importado de planilha produz o MESMO hash', () => {
-    expect(NOME_PRECOMPOSTO === NOME_DECOMPOSTO).toBe(false);   // sao strings diferentes...
+    expect(NOME_PRECOMPOSTO === NOME_DECOMPOSTO).toBe(false);   // são strings diferentes...
     expect(canonicalize({ nome: NOME_DECOMPOSTO })).toBe('{"nome":"Jos\u00E9 da Silva"}');
     expect(canonicalHashHex({ nome: NOME_DECOMPOSTO }))
-      .toBe(canonicalHashHex({ nome: NOME_PRECOMPOSTO }));      // ...e o mesmo prontuario
+      .toBe(canonicalHashHex({ nome: NOME_PRECOMPOSTO }));      // ...e o mesmo prontuário
     expect(canonicalHashHex({ nome: NOME_PRECOMPOSTO }))
       .toBe('27e45a5ae17c164636b9536ff616696b6683e2d40178fdee80498352051ed65c');
   });

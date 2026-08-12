@@ -6,16 +6,16 @@ export interface ResolvedTussTerm {
   tabela: number;
   code: string;
   display: string;
-  terminologyVersion: string;   // competencia da publicacao da ANS consultada
+  terminologyVersion: string;   // competência da publicação da ANS consultada
 }
 
 export type TussFailure = 'codigo_inexistente_na_data';
 
 /**
- * Resolve o codigo TUSS PELA DATA DO EVENTO. `eventDate` e obrigatorio, no
- * formato AAAA-MM-DD: e a `occurred_date` do atendimento, ja no fuso da clinica.
+ * Resolve o código TUSS PELA DATA DO EVENTO. `eventDate` é obrigatório, no
+ * formato AAAA-MM-DD: é a `occurred_date` do atendimento, já no fuso da clínica.
  * Item 211 do Componente Organizacional: vale a terminologia vigente na data do
- * atendimento, nao a da execucao do faturamento.
+ * atendimento, não a da execução do faturamento.
  */
 export async function resolveTussAt(
   db: Queryable, tabela: number, codigo: string, eventDate: string,
@@ -38,9 +38,9 @@ export async function resolveTussAt(
 }
 
 /**
- * Carga de uma competencia inteira da ANS, em UMA transacao, numa unica conexao,
- * com o papel `jobs`. Se qualquer codigo sobrepuser vigencia existente, o
- * EXCLUDE derruba a carga inteira (SQLSTATE 23P01): meia carga e pior que nenhuma.
+ * Carga de uma competência inteira da ANS, em UMA transação, numa única conexão,
+ * com o papel `jobs`. Se qualquer código sobrepuser vigência existente, o
+ * EXCLUDE derruba a carga inteira (SQLSTATE 23P01): meia carga é pior que nenhuma.
  */
 export async function loadTussCompetencia(
   db: TransactionalDb,

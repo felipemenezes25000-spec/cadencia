@@ -11,8 +11,8 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 const ConversationSchema = z.object({
   conversationId: z.string().uuid(),
   patientId: z.string().uuid().nullable(),
-  // Nulo e caso NORMAL, nao erro: quem escreve pela primeira vez ainda nao esta
-  // no cadastro, e a recepcao precisa ver o numero para decidir se vincula.
+  // Nulo é caso NORMAL, não erro: quem escreve pela primeira vez ainda não está
+  // no cadastro, e a recepção precisa ver o número para decidir se vincula.
   patientName: z.string().nullable(),
   channelIdentityId: z.string().uuid(),
   channel: z.string(),
@@ -21,7 +21,7 @@ const ConversationSchema = z.object({
   lastMessageAt: z.string().nullable(),
   lastMessageBody: z.string(),
   lastMessageDirection: z.enum(['inbound', 'outbound']).nullable(),
-  // Derivado de mensagem ENTRANTE sem read_at. Nao existe coluna de contador:
+  // Derivado de mensagem ENTRANTE sem read_at. Não existe coluna de contador:
   // um contador denormalizado erra na primeira corrida entre duas abas abertas.
   unreadCount: z.number().int(),
 });
@@ -237,10 +237,10 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
   /**
    * O contexto que o painel lateral da conversa mostra.
    *
-   * Existe para a recepcao responder SEM trocar de tela. Sem ele, cada "posso
+   * Existe para a recepção responder SEM trocar de tela. Sem ele, cada "posso
    * remarcar?" obriga a abrir o cadastro em outra aba, e o atendimento por
-   * mensagem deixa de ser mais rapido que o telefone — que e a razao inteira
-   * do modulo existir.
+   * mensagem deixa de ser mais rápido que o telefone — que é a razão inteira
+   * do módulo existir.
    */
   r.get('/v1/conversations/:id/contexto', {
     schema: {
@@ -274,8 +274,8 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const patientId = conv[0]?.patient_id ?? null;
-    // Conversa sem paciente vinculado nao tem contexto — e nao e erro. A tela
-    // mostra o convite para vincular, que e a acao util nesse estado.
+    // Conversa sem paciente vinculado não tem contexto — e não é erro. A tela
+    // mostra o convite para vincular, que é a ação útil nesse estado.
     if (patientId === null) {
       return { proximoAgendamento: null, pendencias: [], historicoAgendamentos: [] };
     }
@@ -477,10 +477,10 @@ export async function messagingRoutes(app: FastifyInstance): Promise<void> {
           WHERE id = $1`,
         [b.templateId, b.name, b.category, b.bodyTemplate,
          JSON.stringify(b.variables)]);
-      // O UPDATE nao reclama de linha inexistente: id errado (ou de outro
+      // O UPDATE não reclama de linha inexistente: id errado (ou de outro
       // tenant, filtrado pela RLS) atualizava zero linhas e a rota respondia
       // 200 com `status: 'pending'`. A tela mostrava o template salvo, o
-      // usuario fechava, e nada tinha sido gravado.
+      // usuário fechava, e nada tinha sido gravado.
       if (r.rowCount === 0) erroDominio('template_nao_encontrado', 404);
       return { templateId: b.templateId, status: 'pending' };
     }

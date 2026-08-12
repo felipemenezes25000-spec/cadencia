@@ -9,9 +9,9 @@ export type DomainErrorKind =
   | 'unavailable';
 
 /**
- * Detalhe de erro NUNCA carrega conteudo clinico nem o valor de um documento:
- * o erro viaja para log, Sentry e trilha de auditoria, e a NGS1.07.06 proibe
- * conteudo la. So primitivo, e so o NOME do campo — nunca o que foi digitado.
+ * Detalhe de erro NUNCA carrega conteúdo clínico nem o valor de um documento:
+ * o erro viaja para log, Sentry e trilha de auditoria, e a NGS1.07.06 proíbe
+ * conteúdo lá. Só primitivo, e só o NOME do campo — nunca o que foi digitado.
  */
 export type ErrorDetails = Readonly<Record<string, string | number | boolean>>;
 
@@ -53,25 +53,25 @@ export class ValidationError extends DomainError {
   readonly httpStatus = 422;
 }
 
-/** 404 — nao existe, ou a RLS devolveu zero linha (leitura falha fechada em silencio). */
+/** 404 — não existe, ou a RLS devolveu zero linha (leitura falha fechada em silêncio). */
 export class NotFoundError extends DomainError {
   readonly kind = 'not_found' as const;
   readonly httpStatus = 404;
 }
 
-/** 409 — inclui a revisao otimista do rascunho (clin.encounter_draft.rev). */
+/** 409 — inclui a revisão otimista do rascunho (clin.encounter_draft.rev). */
 export class ConflictError extends DomainError {
   readonly kind = 'conflict' as const;
   readonly httpStatus = 409;
 }
 
-/** 403 — negado pelo catalogo de acoes ou por policy. */
+/** 403 — negado pelo catálogo de ações ou por policy. */
 export class ForbiddenError extends DomainError {
   readonly kind = 'forbidden' as const;
   readonly httpStatus = 403;
 }
 
-/** 500 — preambulo de transacao esquecido. Escrita falha ALTO, de proposito. */
+/** 500 — preâmbulo de transação esquecido. Escrita falha ALTO, de propósito. */
 export class TenantContextMissingError extends DomainError {
   readonly kind = 'tenant_context_missing' as const;
   readonly httpStatus = 500;
@@ -89,19 +89,19 @@ export class ImmutableRecordError extends DomainError {
   readonly httpStatus = 409;
 }
 
-/** 503 — dependencia fora do ar. */
+/** 503 — dependência fora do ar. */
 export class UnavailableError extends DomainError {
   readonly kind = 'unavailable' as const;
   readonly httpStatus = 503;
 }
 
 /**
- * SQLSTATE -> erro de dominio. Devolve null quando o codigo nao e conhecido:
- * traduzir SQLSTATE desconhecido para um erro generico esconde falha de infra.
+ * SQLSTATE -> erro de domínio. Devolve null quando o código não é conhecido:
+ * traduzir SQLSTATE desconhecido para um erro genérico esconde falha de infra.
  *
- * ONDE ESTA FUNCAO E USADA: na borda HTTP (L3), que captura o erro cru relancado
- * por withTenantTx. `packages/db` NAO a importa — db e kernel sao irmaos em L0 e
- * a §2.2 proibe import entre irmaos, sem excecao.
+ * ONDE ESTA FUNÇÃO É USADA: na borda HTTP (L3), que captura o erro cru relançado
+ * por withTenantTx. `packages/db` NÃO a importa — db e kernel são irmãos em L0 e
+ * a §2.2 proíbe import entre irmãos, sem exceção.
  */
 export function domainErrorFromSqlState(sqlstate: string, details: ErrorDetails = {}): DomainError | null {
   switch (sqlstate) {

@@ -2,23 +2,23 @@ import { createHash } from 'node:crypto';
 import type { CabecalhoInput, ItemRecursoGlosaInput } from './types';
 
 /**
- * Calcula o hash MD5 proprietario do padrao TISS.
+ * Calcula o hash MD5 proprietário do padrão TISS.
  *
- * O hash e construido pela concatenacao de campos especificos do cabecalho
+ * O hash é construído pela concatenação de campos específicos do cabeçalho
  * e de cada guia, na ordem definida pelo XSD da ANS, seguida de MD5 hex.
- * Este hash e embutido na tag <ans:hash> do XML.
+ * Este hash é embutido na tag <ans:hash> do XML.
  *
  * Campos concatenados (ordem do XSD):
  *   cabecalho: registroANS + dataGeracao + horaGeracao + sequencialTransacao
  *   lote: numeroLote
  *   por guia: numeroGuiaPrestador + dataAtendimento + codigoProcedimento + valorProcedimento
  *
- * O valor do procedimento e formatado como reais com 2 casas decimais (ex: 15000 centavos -> "150.00").
+ * O valor do procedimento é formatado como reais com 2 casas decimais (ex: 15000 centavos -> "150.00").
  */
 /**
- * O minimo que uma guia precisa expor para entrar no hash do lote.
+ * O mínimo que uma guia precisa expor para entrar no hash do lote.
  *
- * Nao e `GuiaConsultaInput` porque SP/SADT tambem passa por aqui, e uma guia de
+ * Não é `GuiaConsultaInput` porque SP/SADT também passa por aqui, e uma guia de
  * SADT tem N procedimentos em vez de um. Aceitar a forma reduzida deixa o hash
  * servir aos dois tipos sem cada um conhecer o outro.
  */
@@ -44,21 +44,21 @@ export function computeTissHash(
 ): string {
   const parts: string[] = [];
 
-  // Campos do cabecalho
+  // Campos do cabeçalho
   parts.push(cabecalho.registroANS);
   parts.push(cabecalho.dataGeracao);
   parts.push(cabecalho.horaGeracao);
   parts.push(cabecalho.sequencialTransacao);
 
-  // Numero do lote
+  // Número do lote
   parts.push(numeroLote);
 
-  // Campos de cada guia na ordem de insercao no lote
+  // Campos de cada guia na ordem de inserção no lote
   for (const guia of guias) {
     parts.push(guia.numeroGuiaPrestador);
     if (guia.procedimentos !== undefined) {
       // SP/SADT: cada item entra, na ordem em que aparece na guia. Reduzir a
-      // guia a um so procedimento faria duas guias com os mesmos itens em ordem
+      // guia a um só procedimento faria duas guias com os mesmos itens em ordem
       // diferente colidirem no hash.
       for (const p of guia.procedimentos) {
         parts.push(p.dataExecucao);
@@ -78,14 +78,14 @@ export function computeTissHash(
 }
 
 /**
- * Calcula o hash MD5 proprietario do recurso de glosa TISS.
+ * Calcula o hash MD5 proprietário do recurso de glosa TISS.
  *
  * Campos concatenados (ordem do XSD):
  *   cabecalho: registroANS + dataGeracao + horaGeracao + sequencialTransacao
  *   recurso: numeroLoteOriginal + numeroRecursoGlosa
  *   por item: sequencialItem + codigoProcedimento + valorRecursado
  *
- * O valor recursado e formatado como reais com 2 casas decimais.
+ * O valor recursado é formatado como reais com 2 casas decimais.
  */
 export function computeRecursoGlosaHash(
   cabecalho: CabecalhoInput,
@@ -95,17 +95,17 @@ export function computeRecursoGlosaHash(
 ): string {
   const parts: string[] = [];
 
-  // Campos do cabecalho
+  // Campos do cabeçalho
   parts.push(cabecalho.registroANS);
   parts.push(cabecalho.dataGeracao);
   parts.push(cabecalho.horaGeracao);
   parts.push(cabecalho.sequencialTransacao);
 
-  // Identificacao do recurso
+  // Identificação do recurso
   parts.push(numeroLoteOriginal);
   parts.push(numeroRecursoGlosa);
 
-  // Campos de cada item na ordem de insercao
+  // Campos de cada item na ordem de inserção
   for (const item of itens) {
     parts.push(item.sequencialItem);
     parts.push(item.codigoProcedimento);

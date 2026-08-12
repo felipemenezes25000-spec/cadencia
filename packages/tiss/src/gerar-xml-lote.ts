@@ -8,15 +8,15 @@ import type {
 } from './serializer/types';
 
 /**
- * Monta o XML de um lote a partir do que esta no banco.
+ * Monta o XML de um lote a partir do que está no banco.
  *
- * Este e o unico lugar do sistema que traduz linhas em bytes TISS. Ate agora a
+ * Este é o único lugar do sistema que traduz linhas em bytes TISS. Até agora a
  * rota `/v1/tiss/lotes/:id/xml` devolvia um placeholder — `<lote>0001</lote>` —
- * e o serializer, que existia e era testado, nunca era chamado em producao.
+ * e o serializer, que existia e era testado, nunca era chamado em produção.
  *
- * A funcao e uma leitura pura: nao grava nada, nao muda status. Quem decide
- * persistir o resultado e o chamador, porque o mesmo XML e gerado tanto para
- * download quanto para envio, e so um dos dois muda o estado do lote.
+ * A função é uma leitura pura: não grava nada, não muda status. Quem decide
+ * persistir o resultado é o chamador, porque o mesmo XML é gerado tanto para
+ * download quanto para envio, e só um dos dois muda o estado do lote.
  */
 
 /** `numeric` volta do node-postgres como STRING; centavos exigem inteiro. */
@@ -27,11 +27,11 @@ function centavos(numerico: string): number {
 /**
  * A data que o banco guarda, sem passar por `Date`.
  *
- * `date` do Postgres chega como 'YYYY-MM-DD' quando o driver nao converte, mas
+ * `date` do Postgres chega como 'YYYY-MM-DD' quando o driver não converte, mas
  * como objeto quando converte. Normalizar por texto evita o deslocamento de um
  * dia: construir uma data a partir de 'YYYY-MM-DD' a interpreta como UTC, e em
  * fuso negativo o dia exibido volta um. Uma guia de 09/08 viraria 08/08 — e a
- * operadora glosa por data de atendimento fora da competencia.
+ * operadora glosa por data de atendimento fora da competência.
  */
 function dataIso(valor: string | Date): string {
   return typeof valor === 'string' ? valor.slice(0, 10) : valor.toISOString().slice(0, 10);
@@ -66,19 +66,19 @@ interface CabecalhoDoBanco {
 }
 
 /**
- * Data e hora de geracao vem do LOTE, nao do relogio de ninguem.
+ * Data e hora de geração vem do LOTE, não do relógio de ninguém.
  *
  * O carimbo entra no `<ans:hash>` do lote e no protocolo que a operadora
- * devolve. Ler `clock_timestamp()` a cada chamada — que era o que esta funcao
- * fazia — dava um carimbo diferente por invocacao, entao o MESMO lote produzia
- * um XML e um hash diferentes a cada download. As consequencias: o arquivo que
- * o operador baixa para conferir nao e o que foi enviado, `xml_hash_md5`
+ * devolve. Ler `clock_timestamp()` a cada chamada — que era o que esta função
+ * fazia — dava um carimbo diferente por invocação, então o MESMO lote produzia
+ * um XML e um hash diferentes a cada download. As consequências: o arquivo que
+ * o operador baixa para conferir não é o que foi enviado, `xml_hash_md5`
  * guardado no envio nunca mais bate, e um reenvio depois de falha de rede chega
  * a operadora como documento diferente do primeiro.
  *
- * `l.created_at` e estavel por construcao: e do lote, nao da chamada, e nao muda
- * quando o lote e enviado. Mesmo lote, mesmo carimbo, mesmo hash — em qualquer
- * instancia da API e em qualquer momento, que era a intencao original.
+ * `l.created_at` é estável por construção: é do lote, não da chamada, e não muda
+ * quando o lote é enviado. Mesmo lote, mesmo carimbo, mesmo hash — em qualquer
+ * instância da API e em qualquer momento, que era a intenção original.
  */
 async function cabecalhoDoBanco(
   tx: TxClient, loteId: string, numeroLote: string,
@@ -91,8 +91,8 @@ async function cabecalhoDoBanco(
   return {
     dataGeracao: r.d,
     horaGeracao: r.h,
-    // `st_texto12`: o numero do lote serve de sequencial da transacao, o que
-    // torna o par (prestador, sequencial) unico sem inventar contador novo.
+    // `st_texto12`: o número do lote serve de sequencial da transação, o que
+    // torna o par (prestador, sequencial) único sem inventar contador novo.
     sequencialTransacao: numeroLote.slice(0, 12),
   };
 }
@@ -128,8 +128,8 @@ function paraGuiaConsulta(l: LinhaGuiaConsulta): GuiaConsultaInput {
     profissionalExecutante: {
       conselhoProfissional: l.conselho_profissional,
       numeroConselho: l.numero_conselho,
-      // O cadastro guarda a SIGLA ('SP'); `dm_UF` do XSD exige o codigo do
-      // IBGE ('35'). Sem esta traducao a operadora recusa o lote inteiro.
+      // O cadastro guarda a SIGLA ('SP'); `dm_UF` do XSD exige o código do
+      // IBGE ('35'). Sem esta tradução a operadora recusa o lote inteiro.
       ufConselho: ufParaCodigoIbge(l.uf_conselho),
       cbos: l.cbos,
     },
@@ -198,7 +198,7 @@ function paraGuiaSadt(
 ): GuiaSadtInput {
   // Ligado a uma const antes do spread: com `exactOptionalPropertyTypes`, a
   // asserção dentro do ternário faz o campo virar `T | undefined`, que o tipo
-  // com propriedade opcional (e nao anulavel) recusa.
+  // com propriedade opcional (e não anulável) recusa.
   const tipoConsulta: GuiaSadtInput['tipoConsulta'] | undefined =
     l.tipo_consulta === null
       ? undefined
@@ -225,8 +225,8 @@ function paraGuiaSadt(
         ? {} : { codigoPrestadorNaOperadora: l.sol_codigo_prestador }),
       ...(l.sol_cpf_contratado === null ? {} : { cpfContratado: l.sol_cpf_contratado }),
       ...(l.sol_cnpj_contratado === null ? {} : { cnpjContratado: l.sol_cnpj_contratado }),
-      // O solicitante nao tem CNES proprio na guia — o CNES que a norma pede e
-      // o do executante, que e quem realiza. Repetimos para satisfazer o tipo.
+      // O solicitante não tem CNES próprio na guia — o CNES que a norma pede é
+      // o do executante, que é quem realiza. Repetimos para satisfazer o tipo.
       cnes: l.exe_cnes,
     },
     nomeContratadoSolicitante: l.sol_nome_contratado,
@@ -259,10 +259,10 @@ function paraGuiaSadt(
 }
 
 /**
- * Le o lote e devolve o XML TISS pronto para envio.
+ * Lê o lote e devolve o XML TISS pronto para envio.
  *
- * Lanca `lote_sem_guias` em vez de emitir envelope vazio: um lote sem guia e
- * aceito pela operadora e nao paga nada, o que parece sucesso ate o
+ * Lança `lote_sem_guias` em vez de emitir envelope vazio: um lote sem guia é
+ * aceito pela operadora e não paga nada, o que parece sucesso até o
  * demonstrativo chegar zerado semanas depois.
  */
 export async function gerarXmlDoLote(
@@ -301,9 +301,9 @@ export async function gerarXmlDoLote(
     return { xml, warnings, tipo: 'consulta', quantidadeDeGuias: consultas.length };
   }
 
-  // Vinculo proprio: `tiss.lote_guia` tem FK para a guia de CONSULTA. Duas
-  // tabelas de vinculo tornam o lote misto impossivel de montar — que e o que a
-  // norma exige, ja que `guiasTISS` e um `choice`.
+  // Vínculo próprio: `tiss.lote_guia` tem FK para a guia de CONSULTA. Duas
+  // tabelas de vínculo tornam o lote misto impossível de montar — que é o que a
+  // norma exige, já que `guiasTISS` é um `choice`.
   const { rows: sadts } = await tx.query<LinhaGuiaSadt>(
     `SELECT g.*
        FROM tiss.lote_guia_sadt lg

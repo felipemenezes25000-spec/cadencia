@@ -19,7 +19,7 @@ beforeAll(async () => {
 afterAll(async () => { await closePools(); await closePdfPool(); });
 
 // `storage` entra no deps compartilhado: exportar sem lugar para guardar o PDF
-// deixou de ser possivel, e e isso que se quer — o tipo agora obriga.
+// deixou de ser possível, e é isso que se quer — o tipo agora obriga.
 const deps = {
   clock: systemClock,
   docs: { documentHtml, escapeHtml, renderPdf, stampPageNumbers },
@@ -93,15 +93,15 @@ describe('o PDF exportado precisa EXISTIR', () => {
       [r.value.exportId]));
     const chave = rows[0]!.pdf_key;
 
-    // A linha guardava `pdf_key` e o hash, e ninguem escrevia o arquivo: a
-    // exportacao devolvia 201 com recibo de um documento que nao existia. Um
-    // pedido de portabilidade da LGPD terminava em nada, e o titular so
+    // A linha guardava `pdf_key` e o hash, e ninguém escrevia o arquivo: a
+    // exportação devolvia 201 com recibo de um documento que não existia. Um
+    // pedido de portabilidade da LGPD terminava em nada, e o titular só
     // descobria ao tentar abrir.
     const bytes = await armazem.get(`exportacoes/${chave}`);
     expect(bytes).not.toBeNull();
     expect(Buffer.from(bytes!).subarray(0, 5).toString('latin1')).toBe('%PDF-');
 
-    // E os bytes gravados batem com o hash registrado — senao o recibo atesta
+    // E os bytes gravados batem com o hash registrado — senão o recibo atesta
     // um arquivo diferente do que foi guardado.
     const sha = createHash('sha256').update(bytes!).digest();
     expect(sha.equals(rows[0]!.pdf_sha256)).toBe(true);

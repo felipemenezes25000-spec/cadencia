@@ -6,7 +6,7 @@ export interface MigrationFile {
   readonly version: string; // '0001'
   readonly name: string; // '0001_roles.sql'
   readonly sql: string;
-  readonly checksum: string; // sha256 hex do conteudo
+  readonly checksum: string; // sha256 hex do conteúdo
 }
 
 const MIGRATION_NAME = /^\d{4}_[a-z0-9]+(?:_[a-z0-9]+)*\.sql$/;
@@ -46,10 +46,10 @@ export function nextMigrationName(existing: readonly string[], slug: string): st
 
 /**
  * Regras forward-only, verificadas antes de qualquer escrita no banco:
- * 1. migration aplicada nunca muda de conteudo (checksum);
- * 2. arquivo novo nunca entra com numero menor que uma migration ja aplicada
- *    (senao ele roda em producao numa ordem diferente da que rodou no dev);
- * 3. migration aplicada nunca some do repositorio.
+ * 1. migration aplicada nunca muda de conteúdo (checksum);
+ * 2. arquivo novo nunca entra com número menor que uma migration já aplicada
+ *    (senão ele roda em produção numa ordem diferente da que rodou no dev);
+ * 3. migration aplicada nunca some do repositório.
  */
 export function assertForwardOnly(
   files: readonly MigrationFile[],

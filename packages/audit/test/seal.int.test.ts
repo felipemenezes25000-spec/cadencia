@@ -3,17 +3,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
 import { connectAs, connectSuperuser } from './helpers/pg';
 
-// Tenants NOVOS a cada execucao, pela mesma razao ja documentada em
-// no-mutate.int.test.ts e channel-b.int.test.ts: audit.event e append-only e
+// Tenants NOVOS a cada execução, pela mesma razão já documentada em
+// no-mutate.int.test.ts e channel-b.int.test.ts: audit.event é append-only e
 // nenhum afterAll consegue limpar o que este teste grava — o trigger no_mutate
 // recusa o DELETE. Com tenant constante os eventos da rodada anterior
 // sobrevivem, `row_count` cresce (3, 5, 7...) e a chave (tenant_id, seal_date)
-// de audit.seal ja esta tomada: o selo do dia vira 23505, `run_seal` devolve
+// de audit.seal já está tomada: o selo do dia vira 23505, `run_seal` devolve
 // 'erro' em vez de 'sucesso' e o watchdog nunca chega a 'ok'. Verificado no
 // banco local: com tenant fixo a suite passa exatamente UMA vez.
 //
-// A saida nao e limpar, e sim isolar: cada rodada sela sob tenants que so ela
-// conhece. As linhas antigas continuam la, como a norma exige, sem interferir.
+// A saída não é limpar, e sim isolar: cada rodada sela sob tenants que só ela
+// conhece. As linhas antigas continuam lá, como a norma exige, sem interferir.
 const TENANT = randomUUID();
 const TENANT_RUN_OK = randomUUID();
 const TENANT_RUN_ADIADO = randomUUID();
@@ -63,12 +63,12 @@ describe('audit.seal: selo diario, marca d agua de visibilidade e dead man switc
   it('adia o selo enquanto existe transacao COM ESCRITA aberta antes do fim do dia', async () => {
     const lote = await connectAs('audit_owner');
     try {
-      // O "lote das 23h58": abriu antes do corte, ja escreveu e ainda nao commitou.
+      // O "lote das 23h58": abriu antes do corte, já escreveu e ainda não commitou.
       await lote.query('BEGIN');
       await inserirEvento(lote, 'TISS_BATCH_SUBMIT');
 
       // Selar hoje com esse lote aberto entraria num dia que ainda pode receber
-      // linhas: a verificacao futura acusaria adulteracao.
+      // linhas: a verificação futura acusaria adulteração.
       await expect(
         jobs.query('SELECT audit.seal_day($1, CURRENT_DATE)', [TENANT]),
       ).rejects.toMatchObject({
@@ -131,11 +131,11 @@ describe('audit.seal: selo diario, marca d agua de visibilidade e dead man switc
     );
     expect(run.rows).toEqual([{ outcome: 'sucesso', finished: true }]);
 
-    // Sem esta linha o watchdog nunca sai de 'nunca_executou' em producao.
+    // Sem esta linha o watchdog nunca sai de 'nunca_executou' em produção.
     const wd = await jobs.query<{ status: string }>('SELECT * FROM audit.seal_watchdog()');
     expect(wd.rows[0]?.status).toBe('ok');
 
-    // §3.1: toda execucao de `jobs` grava evento proprio na trilha.
+    // §3.1: toda execução de `jobs` grava evento próprio na trilha.
     const ev = await root.query<{ n: string }>(
       `SELECT count(*)::text AS n FROM audit.event
         WHERE tenant_id = $1 AND event_type = 'SEAL_RUN' AND meta ->> 'job_name' = 'seal'`,

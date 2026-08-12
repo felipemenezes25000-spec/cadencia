@@ -38,14 +38,14 @@ export default function PaginaAFaturar() {
         }
         if (f.dataInicio !== undefined && f.dataInicio !== '') q.set('from', f.dataInicio);
         if (f.dataFim !== undefined && f.dataFim !== '') q.set('to', f.dataFim);
-        // Sem lote: e essa a definicao de "a faturar". Guia ja loteada saiu da
+        // Sem lote: é essa a definição de "a faturar". Guia já loteada saiu da
         // fila de trabalho e aparece em Lotes.
         //
-        // O parametro e `status=pendente`, que a rota traduz para
-        // `lg.lote_id IS NULL`. Antes ia `semLote=true`, que a rota NAO conhece
-        // — e o Zod descarta chave desconhecida em silencio, entao a requisicao
-        // voltava 200 com a lista INTEIRA. A tela "A faturar" mostrava guias ja
-        // faturadas e convidava a lotea-las de novo.
+        // O parâmetro é `status=pendente`, que a rota traduz para
+        // `lg.lote_id IS NULL`. Antes ia `semLote=true`, que a rota NÃO conhece
+        // — e o Zod descarta chave desconhecida em silêncio, então a requisição
+        // voltava 200 com a lista INTEIRA. A tela "A faturar" mostrava guias já
+        // faturadas e convidava a loteá-las de novo.
         q.set('status', 'pendente');
 
         const [guias, operadoras] = await Promise.all([
@@ -65,13 +65,13 @@ export default function PaginaAFaturar() {
             registroAns: g.registroAns,
             codigoProcedimento: g.codigoProcedimento,
             nomeProcedimento: g.nomeProcedimento,
-            // `tiss.encounter_guia_consulta.valor_procedimento` e numeric em
-            // REAIS; a tela formata centavos. Passar o numero direto exibia
+            // `tiss.encounter_guia_consulta.valor_procedimento` é numeric em
+            // REAIS; a tela formata centavos. Passar o número direto exibia
             // R$ 150,00 como R$ 1,50 — e o operador conferia o lote inteiro
             // contra valores cem vezes menores do que os reais.
             valorCentavos: Math.round(g.valorProcedimento * 100),
             dataAtendimento: g.dataAtendimento,
-            // "incompleta" e a guia cujo procedimento nao casou com nenhum termo
+            // "incompleta" é a guia cujo procedimento não casou com nenhum termo
             // TUSS vigente na data — ela seria rejeitada no lote.
             status: g.nomeProcedimento === g.codigoProcedimento ? 'incompleta' : 'completa',
           })),
@@ -82,8 +82,8 @@ export default function PaginaAFaturar() {
       }}
       aoCriarLote={async (guiaIds, operadoraId) => {
         // `POST /v1/tiss/lotes` exige `operadoraId: uuid`. O `null` que ia aqui
-        // era recusado na validacao, antes do handler — e como a tela nao
-        // tratava a rejeicao, o clique nao produzia lote nem mensagem nenhuma.
+        // era recusado na validação, antes do handler — e como a tela não
+        // tratava a rejeição, o clique não produzia lote nem mensagem nenhuma.
         const { loteId } = await apiFetch<{ loteId: string }>('/v1/tiss/lotes', {
           method: 'POST', body: { operadoraId }, clinicId, csrfToken });
         await apiFetch(`/v1/tiss/lotes/${loteId}/guias`, {

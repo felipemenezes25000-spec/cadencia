@@ -3,12 +3,12 @@
 /**
  * §7.1 — Despachante do outbox transacional.
  *
- * Le eventos nao despachados, processa via handler registrado, marca
+ * Lê eventos não despachados, processa via handler registrado, marca
  * dispatched_at em sucesso, incrementa attempts e grava last_error em falha.
- * Backoff exponencial, max 5 tentativas, dead-letter apos isso.
+ * Backoff exponencial, max 5 tentativas, dead-letter após isso.
  *
- * O despachante e puro: as funcoes de persistencia (markDispatched, markFailed)
- * sao injetadas, tornando o nucleo testavel sem banco.
+ * O despachante é puro: as funções de persistência (markDispatched, markFailed)
+ * são injetadas, tornando o núcleo testável sem banco.
  */
 
 const MAX_ATTEMPTS = 5;
@@ -54,7 +54,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     const handler = deps.handlers[row.eventType];
 
     if (handler === undefined) {
-      // evento sem handler: marca como despachado para nao travar a fila
+      // evento sem handler: marca como despachado para não travar a fila
       await deps.markDispatched(row.id);
       return { status: 'no_handler' };
     }
@@ -67,7 +67,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       const message = err instanceof Error ? err.message : String(err);
       await deps.markFailed(row.id, message);
 
-      // attempts ja conta as tentativas ANTERIORES; esta e a tentativa (attempts + 1)
+      // attempts já conta as tentativas ANTERIORES; esta é a tentativa (attempts + 1)
       if (row.attempts + 1 >= MAX_ATTEMPTS) {
         return { status: 'dead_letter', error: message };
       }

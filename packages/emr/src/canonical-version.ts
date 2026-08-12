@@ -1,19 +1,19 @@
 import { CANONICAL_VERSION, canonicalHash, type JsonValue } from '@cadencia/kernel';
 
 /**
- * §4.3 e §10 item 6 — o objeto canonico que o content_hash cobre e que a
- * assinatura ICP-Brasil assina. E o contrato mais permanente do sistema.
+ * §4.3 e §10 item 6 — o objeto canônico que o content_hash cobre e que a
+ * assinatura ICP-Brasil assina. É o contrato mais permanente do sistema.
  *
  * COBRE: patient_id, professional_id, clinic_id, occurred_at, occurred_date,
- *        TODOS os valores de campo, os codigos materializados e o ai_assistance
- *        (modelo, versao, hash da saida, decisao do medico).
- * NAO COBRE: live, head_version_id, version_count — os tres sao bit de indice e
+ *        TODOS os valores de campo, os códigos materializados e o ai_assistance
+ *        (modelo, versão, hash da saída, decisão do médico).
+ * NÃO COBRE: live, head_version_id, version_count — os três são bit de índice e
  *        cache de leitura, e mudam depois da selagem por design.
  *
- * Numeros vem como STRING de proposito. A regra de serializacao numerica do
- * ECMAScript, que a RFC 8785 herda, nao representa `numeric` do PostgreSQL sem
- * perda: 0.1 + 0.2, 1e21 e o arredondamento de 17 digitos significativos sao
- * todos armadilhas reais. Peso "70.50" e "70.5" sao valores diferentes na tela e
+ * Números vêm como STRING de propósito. A regra de serialização numérica do
+ * ECMAScript, que a RFC 8785 herda, não representa `numeric` do PostgreSQL sem
+ * perda: 0.1 + 0.2, 1e21 e o arredondamento de 17 dígitos significativos são
+ * todos armadilhas reais. Peso "70.50" e "70.5" são valores diferentes na tela e
  * precisam ser hashes diferentes.
  */
 
@@ -45,12 +45,12 @@ export interface DiagnosisSnapshot {
 
 export interface ObservationSnapshot {
   /**
-   * De qual CAMPO esta observacao e projecao. `clin.observation.field_id` e NOT
-   * NULL porque observacao solta nao pode ser reprojetada nem retificada: sem
-   * saber a origem, retificar o peso de um atendimento deixaria a serie
-   * numerica antiga viva ao lado da nova.
+   * De qual CAMPO esta observação é projeção. `clin.observation.field_id` é NOT
+   * NULL porque observação solta não pode ser reprojetada nem retificada: sem
+   * saber a origem, retificar o peso de um atendimento deixaria a série
+   * numérica antiga viva ao lado da nova.
    *
-   * O tipo nao declarava isto e `finalize.ts` alcancava o valor por cast — o
+   * O tipo não declarava isto e `finalize.ts` alcançava o valor por cast — o
    * que fazia todo atendimento com sinal vital falhar com 23502, porque nenhum
    * chamador sabia que precisava enviar.
    */
@@ -83,7 +83,7 @@ export interface VersionSnapshot {
   readonly professionalId: string;
   readonly clinicId: string;
   readonly occurredAt: string;       // RFC 3339 UTC com milissegundos
-  readonly occurredDate: string;     // AAAA-MM-DD no fuso da clinica
+  readonly occurredDate: string;     // AAAA-MM-DD no fuso da clínica
   readonly versionNo: number;
   readonly kind: string;
   readonly supersedesVersionId: string | null;
@@ -100,7 +100,7 @@ export interface VersionSnapshot {
   readonly ai: readonly AiSnapshot[];
 }
 
-/** Ordem total e deterministica, independente da ordem em que o banco devolveu. */
+/** Ordem total e determinística, independente da ordem em que o banco devolveu. */
 function porChave<T>(itens: readonly T[], chave: (t: T) => string): T[] {
   return [...itens].sort((a, b) => (chave(a) < chave(b) ? -1 : chave(a) > chave(b) ? 1 : 0));
 }

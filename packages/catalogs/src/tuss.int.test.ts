@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { appPool, jobsPool } from '@cadencia/db';
 import { loadTussCompetencia, resolveTussAt } from './tuss';
 
-// Tabela 22 = "Procedimentos e eventos em saude" da ANS. Tabela 20 = diarias.
+// Tabela 22 = "Procedimentos e eventos em saúde" da ANS. Tabela 20 = diárias.
 const TAB_PROCEDIMENTOS = 22;
 const TAB_DIARIAS = 20;
 
@@ -65,7 +65,7 @@ describe('TUSS versionada por data', () => {
     await expect(
       loadTussCompetencia(jobsPool(), {
         competencia: '202503',
-        vigenciaFrom: '2025-01-01',   // invade a faixa 2024-2026 do mesmo codigo
+        vigenciaFrom: '2025-01-01',   // invade a faixa 2024-2026 do mesmo código
         vigenciaTo: '2027-01-01',
         rows: [{ tabela: TAB_PROCEDIMENTOS, codigo: '10101012',
                  termo: 'Consulta (carga errada)', acao: 'alteracao' }],

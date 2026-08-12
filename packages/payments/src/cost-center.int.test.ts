@@ -149,7 +149,7 @@ describe('listCostCenters — lista centros do tenant', () => {
     for (const item of lista) {
       expect(item.active).toBe(true);
     }
-    // Ordenacao por codigo
+    // Ordenação por código
     for (let i = 1; i < lista.length; i++) {
       expect(lista[i]!.code >= lista[i - 1]!.code).toBe(true);
     }

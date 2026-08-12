@@ -23,7 +23,7 @@ export default function PaginaCadastrosFinanceiros() {
   const [transferindo, setTransferindo] = useState(false);
 
   const carregar = useCallback(async () => {
-    // As quatro juntas: sao listas pequenas e a tela mostra as quatro abas.
+    // As quatro juntas: são listas pequenas e a tela mostra as quatro abas.
     // Buscar por aba faria a troca de aba parecer lenta sem economizar nada.
     const [f, c, cc, r] = await Promise.all([
       apiFetch<{ itens: DadosDosCadastros['fornecedores'] }>(
@@ -42,7 +42,7 @@ export default function PaginaCadastrosFinanceiros() {
   }, [clinicId, csrfToken]);
 
   useEffect(() => {
-    void carregar().catch(() => setErro('Nao foi possivel carregar os cadastros.'));
+    void carregar().catch(() => setErro('Não foi possível carregar os cadastros.'));
   }, [carregar]);
 
   if (erro !== null) {
@@ -50,7 +50,7 @@ export default function PaginaCadastrosFinanceiros() {
   }
 
   const contasParaTransferir: ContaParaTransferir[] = dados.contas
-    // Conta inativa nao recebe nem envia: ela existe so para os lancamentos
+    // Conta inativa não recebe nem envia: ela existe só para os lançamentos
     // antigos continuarem apontando para algum lugar.
     .filter((c) => c.active)
     .map((c) => ({ bankAccountId: c.bankAccountId, name: c.name }));
@@ -70,7 +70,7 @@ export default function PaginaCadastrosFinanceiros() {
       aoTransferir={async (t) => {
         await apiFetch('/v1/transfers', {
           method: 'POST', body: t, clinicId, csrfToken });
-        // Recarrega: a transferencia gera dois lancamentos e muda o saldo das
+        // Recarrega: a transferência gera dois lançamentos e muda o saldo das
         // duas contas na lista.
         await carregar();
       }}

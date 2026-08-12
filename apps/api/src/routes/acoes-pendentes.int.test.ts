@@ -7,17 +7,17 @@ import { auth, semearSessao, type SementeSessao } from '../test-support';
 
 let s: SementeSessao;
 
-/** Uma despesa pendente e um recebimento pendente, para exercer as duas acoes. */
+/** Uma despesa pendente e um recebimento pendente, para exercer as duas ações. */
 async function semearPendencias(t: SementeSessao): Promise<{ despesa: string; receita: string }> {
   const a = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
   const despesa = uuidv7();
   const receita = uuidv7();
   try {
-    // Nome unico por chamada: `fin.payment_method` tem UNIQUE (tenant_id, name)
-    // e esta semeadura roda varias vezes para o mesmo tenant.
+    // Nome único por chamada: `fin.payment_method` tem UNIQUE (tenant_id, name)
+    // e esta semeadura roda várias vezes para o mesmo tenant.
     //
-    // O nome leva o uuid INTEIRO, nunca um prefixo: os primeiros digitos hex de
-    // um uuidv7 sao o timestamp em milissegundos, e duas chamadas da mesma
+    // O nome leva o uuid INTEIRO, nunca um prefixo: os primeiros dígitos hex de
+    // um uuidv7 são o timestamp em milissegundos, e duas chamadas da mesma
     // rodada cairiam no mesmo prefixo. Mesma armadilha documentada em
     // packages/authn/src/totp.int.test.ts.
     const metodo = uuidv7();
@@ -61,7 +61,7 @@ describe('acoes que as telas ja oferecem', () => {
       itens: { payableId: string; status: string; paidAt: string | null }[] })
       .itens.find((x) => x.payableId === despesa);
     expect(item?.status).toBe('confirmed');
-    // O carimbo vem do banco, nao do cliente: e ele que decide em que dia a
+    // O carimbo vem do banco, não do cliente: é ele que decide em que dia a
     // despesa entra no caixa.
     expect(item?.paidAt).not.toBeNull();
 
@@ -78,8 +78,8 @@ describe('acoes que as telas ja oferecem', () => {
       method: 'POST', url: `/v1/payables/${despesa}/pagar`, ...auth(s), payload: {} });
 
     expect(primeira.statusCode).toBe(200);
-    // Idempotente: a recepcao clica duas vezes quando a rede demora, e isso
-    // nao pode virar dois lancamentos nem um 500.
+    // Idempotente: a recepção clica duas vezes quando a rede demora, e isso
+    // não pode virar dois lançamentos nem um 500.
     expect(segunda.statusCode).toBe(200);
     expect(segunda.json()).toMatchObject({ status: 'pago' });
 
@@ -124,8 +124,8 @@ describe('quebra-vidro', () => {
     const curta = await app.inject({
       method: 'POST', url: `/v1/pacientes/${prof.patientId}/quebra-vidro`, ...auth(prof),
       payload: { justificativa: 'urgente', horas: 4 } });
-    // Justificativa curta e o mesmo que nenhuma: quem revisa o acesso depois
-    // precisa entender por que ele aconteceu, e "urgente" nao explica nada.
+    // Justificativa curta é o mesmo que nenhuma: quem revisa o acesso depois
+    // precisa entender por que ele aconteceu, e "urgente" não explica nada.
     expect(curta.statusCode).toBe(422);
 
     const ok = await app.inject({

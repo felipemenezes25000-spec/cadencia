@@ -7,14 +7,14 @@ import { PageHeader } from '../../src/ui/PageHeader';
 import { Tabs, TabsList, TabsTrigger } from '../../src/ui/Tabs';
 
 const ABAS = [
-  { value: 'clinica', rotulo: 'Clinica', href: '/configuracoes' },
+  { value: 'clinica', rotulo: 'Clínica', href: '/configuracoes' },
   { value: 'equipe', rotulo: 'Equipe', href: '/configuracoes/equipe' },
-  { value: 'permissoes', rotulo: 'Permissoes', href: '/configuracoes/permissoes' },
+  { value: 'permissoes', rotulo: 'Permissões', href: '/configuracoes/permissoes' },
   { value: 'procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos' },
-  { value: 'prontuario', rotulo: 'Prontuario', href: '/configuracoes/prontuario' },
+  { value: 'prontuario', rotulo: 'Prontuário', href: '/configuracoes/prontuario' },
   { value: 'auditoria', rotulo: 'Auditoria', href: '/configuracoes/auditoria' },
   { value: 'exportar', rotulo: 'Exportar', href: '/configuracoes/exportar' },
-  { value: 'catalogos', rotulo: 'Catalogos', href: '/catalogos' },
+  { value: 'catalogos', rotulo: 'Catálogos', href: '/catalogos' },
   { value: 'perfil', rotulo: 'Meu perfil', href: '/configuracoes/perfil' },
 ] as const;
 
@@ -24,7 +24,7 @@ export default function LayoutConfiguracoes({ children }: { children: ReactNode 
   const abaAtiva = ABAS.find((a) => a.href === pathname)?.value ?? 'clinica';
   return (
     <div className="cadencia-page space-y-6 max-sm:p-4">
-      <PageHeader titulo="Configuracoes" semBreadcrumb />
+      <PageHeader titulo="Configurações" semBreadcrumb />
       <Tabs value={abaAtiva} onValueChange={(v: string) => {
         const aba = ABAS.find((a) => a.value === v);
         if (aba) router.push(aba.href);

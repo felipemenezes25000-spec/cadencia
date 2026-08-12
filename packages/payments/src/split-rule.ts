@@ -29,7 +29,7 @@ export async function createSplitRule(
   tx: TxClient,
   i: CreateSplitRuleInput,
 ): Promise<Result<SplitRuleCreated, SplitRuleFailure>> {
-  // Validacao: pelo menos um dos dois deve estar presente
+  // Validação: pelo menos um dos dois deve estar presente
   if (i.percentage === undefined && i.fixedAmountCents === undefined) {
     return err({ kind: 'valor_ausente' });
   }
@@ -101,7 +101,7 @@ export async function calculateSplits(
     return err({ kind: 'entry_nao_encontrado' });
   }
 
-  // Delegar para a funcao SQL SECURITY DEFINER
+  // Delegar para a função SQL SECURITY DEFINER
   await tx.query(`SELECT fin.calculate_splits($1, $2)`, [tenantId, entryId]);
 
   // Verificar se o split foi criado

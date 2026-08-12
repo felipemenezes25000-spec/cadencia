@@ -10,8 +10,8 @@ import type { Result } from '@cadencia/kernel';
 /**
  * Registry de transports TISS. Congelado em runtime.
  *
- * tiss-arquivo: sempre disponivel — gera arquivo para upload manual no portal.
- * tiss-soap: disponivel quando a operadora tem soap_endpoint configurado no
+ * tiss-arquivo: sempre disponível — gera arquivo para upload manual no portal.
+ * tiss-soap: disponível quando a operadora tem soap_endpoint configurado no
  *   contrato. A factory retorna Result — se credenciais ausentes, o caller
  *   recebe SoapNotConfigured em vez de exception.
  */

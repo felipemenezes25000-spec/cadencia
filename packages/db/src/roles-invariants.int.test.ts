@@ -24,7 +24,7 @@ describe('invariante 3 do CI: papeis e posse', () => {
           AND c.relkind IN ('r', 'p', 'm', 'v', 'f', 'S')
         ORDER BY 1`,
     );
-    // Dono desliga RLS com um comando. O papel exposto a internet nunca e dono.
+    // Dono desliga RLS com um comando. O papel exposto à internet nunca é dono.
     expect(result.rows.map((r) => r.objeto)).toEqual([]);
   });
 

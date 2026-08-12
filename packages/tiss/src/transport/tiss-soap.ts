@@ -32,15 +32,15 @@ function agora(): Rfc3339 {
 }
 
 /**
- * Remove o prologo XML de um fragmento que vai ser EMBUTIDO em outro documento.
+ * Remove o prólogo XML de um fragmento que vai ser EMBUTIDO em outro documento.
  *
  * `XmlBuilder` abre todo documento com
  * `<?xml version="1.0" encoding="ISO-8859-1"?>` — correto para o arquivo do
- * lote, que e um documento inteiro. Mas o mesmo texto entra aqui como FILHO de
- * `<soap:Body>`, e declaracao XML so e valida na primeira posicao do documento.
+ * lote, que é um documento inteiro. Mas o mesmo texto entra aqui como FILHO de
+ * `<soap:Body>`, e declaração XML só é válida na primeira posição do documento.
  * Embutida no meio, o envelope inteiro deixa de ser XML bem formado e qualquer
  * parser conformante — o da operadora inclusive — recusa antes de olhar o
- * conteudo. O erro que volta e de sintaxe, entao ninguem associa ao lote.
+ * conteúdo. O erro que volta é de sintaxe, então ninguém associa ao lote.
  */
 function semPrologo(xml: string): string {
   return xml.replace(/^﻿?\s*<\?xml[^?]*\?>\s*/i, '');

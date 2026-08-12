@@ -19,8 +19,8 @@ beforeAll(async () => {
      VALUES (gen_random_uuid(), 'exp-' || substr(gen_random_uuid()::text,1,12),
              'Clinica Expurgo', '11222333000181') RETURNING id`);
   tenantId = t[0]!.id;
-  // A unidade e obrigatoria: o corte de retencao sai do FUSO dela, e tenant sem
-  // clinica devolve corte nulo e nao expurga nada.
+  // A unidade é obrigatória: o corte de retenção sai do FUSO dela, e tenant sem
+  // clínica devolve corte nulo e não expurga nada.
   await admin.query(
     `INSERT INTO app.clinic (tenant_id, id, nome, timezone)
      VALUES ($1, gen_random_uuid(), 'Unidade', 'America/Sao_Paulo')`,
@@ -71,7 +71,7 @@ describe('job de expurgo por retencao', () => {
     // O carimbo no banco sem apagar o arquivo seria conformidade de fachada: a
     // linha diz que sumiu e o PDF continua no disco.
     expect(await armazem.get(`anexos/${chaveAntiga}`)).toBeNull();
-    // E o que esta dentro da guarda continua intacto — inclusive o objeto.
+    // E o que está dentro da guarda continua intacto — inclusive o objeto.
     expect(await armazem.get(`anexos/${chaveRecente}`)).not.toBeNull();
 
     const { rows } = await admin.query<{ purged_at: string | null }>(
@@ -82,8 +82,8 @@ describe('job de expurgo por retencao', () => {
   it('rodar de novo nao acha nada e nao explode', async () => {
     const armazem = new InMemoryStorageAdapter();
     const r = await expurgarRetencao({ tenantIds: [tenantId] }, armazem);
-    // Job diario roda todo dia sobre o mesmo acervo. Segunda passada tem que ser
-    // no-op silencioso, nao erro.
+    // Job diário roda todo dia sobre o mesmo acervo. Segunda passada tem que ser
+    // no-op silencioso, não erro.
     expect(r.anexosExpurgados).toBe(0);
     expect(r.falhas).toBe(0);
   });
@@ -104,9 +104,9 @@ describe('job de expurgo por retencao', () => {
 
     const r = await expurgarRetencao({ tenantIds: [tenantId] }, quebrado);
 
-    // O banco ja comitou o expurgo. Estourar aqui faria o job reprocessar para
-    // sempre um tenant cujo carimbo ja esta gravado — e o objeto orfao e lixo
-    // recuperavel, enquanto reverter o carimbo apagaria a prova do expurgo.
+    // O banco já comitou o expurgo. Estourar aqui faria o job reprocessar para
+    // sempre um tenant cujo carimbo já está gravado — e o objeto órfão é lixo
+    // recuperável, enquanto reverter o carimbo apagaria a prova do expurgo.
     expect(r.anexosExpurgados).toBe(1);
     expect(r.objetosApagados).toBe(0);
     expect(r.falhas).toBe(1);

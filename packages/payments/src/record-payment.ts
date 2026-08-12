@@ -36,16 +36,16 @@ export interface RecordedPayment {
 
 /**
  * Registra pagamento no atendimento. Se paidNow=true, marca como pago e gera
- * recibo automaticamente. O recibo usa numero sequencial por tenant via
- * fin.receipt_counter. A geracao de PDF do recibo e injetada em L3 (via
- * callback), NAO importa documents diretamente — mesmo padrao de exportRecord.
+ * recibo automaticamente. O recibo usa número sequencial por tenant via
+ * fin.receipt_counter. A geração de PDF do recibo é injetada em L3 (via
+ * callback), NÃO importa documents diretamente — mesmo padrão de exportRecord.
  */
 export async function recordPayment(
   tx: TxClient,
   i: RecordPaymentInput,
   generateReceiptPdf?: (entryId: string, receiptNumber: number) => Promise<string | null>,
 ): Promise<Result<RecordedPayment, PaymentFailure>> {
-  // Valida que o metodo de pagamento existe
+  // Valida que o método de pagamento existe
   const { rows: methodRows } = await tx.query<{ id: string }>(
     `SELECT id FROM fin.payment_method WHERE id = $1`, [i.paymentMethodId]);
   if (methodRows.length === 0) return err({ kind: 'metodo_nao_encontrado' });
@@ -81,7 +81,7 @@ export async function recordPayment(
   let receiptNumber: number | null = null;
 
   if (i.paidNow) {
-    // Auto-provisiona e consome o proximo numero de recibo
+    // Auto-provisiona e consome o próximo número de recibo
     const { rows: counterRows } = await tx.query<{ consumed: string }>(
       `INSERT INTO fin.receipt_counter (tenant_id, next_value)
        VALUES (app.require_tenant_id(), 2)

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { providers, type Providers } from './providers';
 
 /**
- * Ambiente minimo de um modo que nao e `fake`.
+ * Ambiente mínimo de um modo que não é `fake`.
  *
- * Os segredos de webhook entram aqui junto das chaves da Memed porque sao
- * exigencia do MESMO nivel: `real` e `memed` registram as rotas de webhook, que
- * atendem sem sessao e tem o HMAC como unica barreira.
+ * Os segredos de webhook entram aqui junto das chaves da Memed porque são
+ * exigência do MESMO nível: `real` e `memed` registram as rotas de webhook, que
+ * atendem sem sessão e têm o HMAC como única barreira.
  */
 function ambienteNaoFake(): void {
   process.env['MEMED_BASE_URL'] ??= 'https://api.memed.test/v1';
@@ -41,10 +41,10 @@ describe('registry de providers (fake)', () => {
 
 describe('modo so-prescricao', () => {
   it('CADENCIA_PROVIDERS=memed liga a Memed sem exigir assinatura ICP-Brasil', async () => {
-    // A chave existe porque `real` e tudo-ou-nada e trava no boot enquanto nao
+    // A chave existe porque `real` é tudo-ou-nada e trava no boot enquanto não
     // houver adaptador ICP-Brasil. Sem este meio-termo a Memed nunca poderia ser
-    // ligada — e para RECEITA a propria Memed e a camada de assinatura
-    // qualificada, entao a trava estava protegendo o documento errado.
+    // ligada — e para RECEITA a própria Memed é a camada de assinatura
+    // qualificada, então a trava estava protegendo o documento errado.
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'memed';
     ambienteNaoFake();
@@ -52,9 +52,9 @@ describe('modo so-prescricao', () => {
     try {
       const p = recarregado() as Providers;
       expect(p.prescription.id).toBe('memed');
-      // Assinatura NAO e fake: e a que RECUSA. O fake assina com sucesso e
+      // Assinatura NÃO é fake: é a que RECUSA. O fake assina com sucesso e
       // reporta 'valida' — num modo que emite receita de verdade isso gravaria
-      // atestado 'assinado' sem valor legal, indistinguivel no banco.
+      // atestado 'assinado' sem valor legal, indistinguível no banco.
       expect(p.signature.id).toBe('signature-nao-contratado');
     } finally {
       if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
@@ -73,7 +73,7 @@ describe('assinatura fora de desenvolvimento', () => {
       const p = recarregado() as Providers;
       // O fake ASSINA e reporta 'valida'. Num ambiente que emite documento de
       // verdade isso grava atestado com estado 'assinado' e sem valor legal —
-      // e ninguem consegue distinguir depois. Aqui tem que recusar.
+      // e ninguém consegue distinguir depois. Aqui tem que recusar.
       expect(p.signature.id).toBe('signature-nao-contratado');
       expect(p.signature.capabilities.has('ad-rt')).toBe(false);
     } finally {
@@ -88,10 +88,10 @@ describe('assinatura fora de desenvolvimento', () => {
     ambienteNaoFake();
     const { providers: recarregado } = await import(`./providers?real=${Date.now()}`);
     try {
-      // Antes isto lancava no boot. Travar o sistema inteiro nao protegia
-      // ninguem: com a API no chao ninguem emite documento nenhum, nem os que
-      // funcionam. Com o provedor que recusa, a clinica opera e o atestado fica
-      // explicitamente pendente ate haver PSC.
+      // Antes isto lançava no boot. Travar o sistema inteiro não protegia
+      // ninguém: com a API no chão ninguém emite documento nenhum, nem os que
+      // funcionam. Com o provedor que recusa, a clínica opera e o atestado fica
+      // explicitamente pendente até haver PSC.
       const p = recarregado() as Providers;
       expect(p.signature.id).toBe('signature-nao-contratado');
     } finally {
@@ -103,17 +103,17 @@ describe('assinatura fora de desenvolvimento', () => {
 
 describe('segredo de webhook fora de desenvolvimento', () => {
   /**
-   * `POST /v1/payments/webhook` e `POST /v1/messaging/webhook/:channel` sao
-   * registradas sem sessao: quem chama e o PSP e a Meta. A unica coisa que
-   * separa um evento legitimo de um forjado e o HMAC.
+   * `POST /v1/payments/webhook` e `POST /v1/messaging/webhook/:channel` são
+   * registradas sem sessão: quem chama é o PSP e a Meta. A única coisa que
+   * separa um evento legítimo de um forjado é o HMAC.
    *
-   * Os adaptadores reais ainda nao existem, entao os dois modos de producao
-   * usam o fake — e o fake tem segredo DEFAULT escrito no repositorio
+   * Os adaptadores reais ainda não existem, então os dois modos de produção
+   * usam o fake — e o fake tem segredo DEFAULT escrito no repositório
    * (`fake-payment-secret`). Subir assim significa que qualquer leitor deste
-   * codigo assina um `payment.confirmed` valido e marca lancamento como pago,
+   * código assina um `payment.confirmed` válido e marca lançamento como pago,
    * em qualquer tenant, sem que dinheiro nenhum tenha entrado.
    *
-   * Este teste existe para que o default NUNCA mais chegue a producao: fora de
+   * Este teste existe para que o default NUNCA mais chegue a produção: fora de
    * `fake`, sem segredo no ambiente, o processo tem de recusar subir.
    */
   for (const [modo, variavel] of [

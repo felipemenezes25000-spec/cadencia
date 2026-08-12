@@ -240,7 +240,7 @@ describe('rotas de recursos de glosa TISS', () => {
     };
     expect(body.recursoId).toBe(recursoId);
     expect(body.itens.length).toBe(2);
-    // Design sec 3.9: recurso cita a versao usada (no recurso pai)
+    // Design sec 3.9: recurso cita a versão usada (no recurso pai)
     expect(body.encounterVersionId).toBe(versionId);
     await app.close();
   });
@@ -312,7 +312,7 @@ describe('rotas de recursos de glosa TISS', () => {
     await app.close();
   });
 
-  // --- Testes de envio e resolucao (Task 49) ---
+  // --- Testes de envio e resolução (Task 49) ---
 
   it('POST /v1/tiss/recursos/:id/enviar dispara serializacao e transport', async () => {
     const app = await buildApp();

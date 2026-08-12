@@ -33,24 +33,24 @@ const atorSistema: Actor = {
 const atorAnonimo: Actor = { kind: 'anon', tenantId: TENANT_A, requestId: REQUEST };
 
 let admin: Pool;
-/** max = 1 forca todas as transacoes do teste a reusar a MESMA conexao fisica. */
+/** max = 1 força todas as transações do teste a reusar a MESMA conexão física. */
 let umaConexao: Pool;
 
 beforeAll(async () => {
   await runMigrations();
   admin = new Pool({ connectionString: process.env.DATABASE_URL_ADMIN, max: 1 });
 
-  // Tabela-sonda do teste: existe so para observar commit e rollback sem depender
-  // de nenhuma tabela de dominio.
+  // Tabela-sonda do teste: existe só para observar commit e rollback sem depender
+  // de nenhuma tabela de domínio.
   await admin.query(`
     CREATE TABLE IF NOT EXISTS public.tx_probe (
       id uuid PRIMARY KEY, canal text NOT NULL, nota text NOT NULL)`);
   await admin.query('GRANT USAGE ON SCHEMA public TO app_rw');
   await admin.query('GRANT SELECT, INSERT, DELETE ON public.tx_probe TO app_rw');
-  // O canal B grava por um pool proprio e NAO executa SET LOCAL ROLE app_rw (ele roda
-  // fora da transacao de negocio). Como `api` e NOINHERIT, sem estes dois GRANTs o
-  // INSERT do canal B falharia com 42501 e o teste mediria permissao, nao a
-  // sobrevivencia ao ROLLBACK. Em producao o canal B grava por funcao SECURITY DEFINER
+  // O canal B grava por um pool próprio e NÃO executa SET LOCAL ROLE app_rw (ele roda
+  // fora da transação de negócio). Como `api` é NOINHERIT, sem estes dois GRANTs o
+  // INSERT do canal B falharia com 42501 e o teste mediria permissão, não a
+  // sobrevivência ao ROLLBACK. Em produção o canal B grava por função SECURITY DEFINER
   // do schema audit; aqui a sonda faz o papel dela.
   await admin.query('GRANT USAGE ON SCHEMA public TO api');
   await admin.query('GRANT SELECT, INSERT, DELETE ON public.tx_probe TO api');
@@ -83,10 +83,10 @@ describe('escopo transacional do preambulo', () => {
     );
     expect(dentro).toBe(TENANT_A);
 
-    // Mesma conexao fisica (max = 1), agora fora de transacao.
-    // Apos o COMMIT o valor de transacao some, mas o *placeholder* de GUC continua
-    // existindo na sessao: o Postgres devolve '' (string vazia), nao NULL. As duas
-    // formas significam "sem tenant"; qualquer uuid aqui e vazamento entre clinicas.
+    // Mesma conexão física (max = 1), agora fora de transação.
+    // Após o COMMIT o valor de transação some, mas o *placeholder* de GUC continua
+    // existindo na sessão: o Postgres devolve '' (string vazia), não NULL. As duas
+    // formas significam "sem tenant"; qualquer uuid aqui é vazamento entre clínicas.
     const depois = await umaConexao.query<{ vazou: string | null }>(
       `SELECT current_setting('app.tenant_id', true) AS vazou`,
     );
@@ -119,7 +119,7 @@ describe('escopo transacional do preambulo', () => {
       const vazado = await client.query<{ t: string | null }>(
         `SELECT current_setting('app.tenant_id', true) AS t`,
       );
-      expect(vazado.rows[0]?.t).toBe(TENANT_A); // o proximo tenant leria isto
+      expect(vazado.rows[0]?.t).toBe(TENANT_A); // o próximo tenant leria isto
     } finally {
       await client.query(`SELECT set_config('app.tenant_id', '', FALSE)`);
       client.release();
@@ -142,8 +142,8 @@ describe('os tres tipos de Actor', () => {
         ).rows[0],
       umaConexao,
     );
-    // request_id e o unico fio que liga o evento de auditoria a requisicao HTTP.
-    // Sem esta assercao, errar o nome do GUC so aparece no bloco de audit.
+    // request_id é o único fio que liga o evento de auditoria à requisição HTTP.
+    // Sem esta asserção, errar o nome do GUC só aparece no bloco de audit.
     expect(ctx).toEqual({ t: TENANT_A, u: USER_A, c: CLINIC_A, k: 'user', r: REQUEST });
   });
 
@@ -162,7 +162,7 @@ describe('os tres tipos de Actor', () => {
     );
     expect(ctx?.t).toBe(TENANT_A);
     expect(ctx?.u).toBeNull(); // nullif transformou '' em NULL
-    expect(ctx?.bruto).toBe(''); // o GUC e sempre texto, nunca NULL
+    expect(ctx?.bruto).toBe(''); // o GUC é sempre texto, nunca NULL
     expect(ctx?.k).toBe('system');
   });
 
@@ -214,7 +214,7 @@ describe('erro, rollback e devolucao da conexao', () => {
       }, umaConexao),
     ).rejects.toThrowError('boom');
 
-    // Com max = 1, se a conexao nao tivesse sido devolvida esta chamada travaria.
+    // Com max = 1, se a conexão não tivesse sido devolvida esta chamada travaria.
     const vivo = await withTenantTx(
       atorA,
       async (tx) => (await tx.query<{ n: number }>('SELECT 1 AS n')).rows[0]?.n,
@@ -249,7 +249,7 @@ describe('canal B da auditoria fora da transacao de negocio', () => {
             'negocio',
             'acesso negado',
           ]);
-          // Canal B: pool proprio, conexao propria, transacao propria.
+          // Canal B: pool próprio, conexão própria, transação própria.
           await auditPool().query(
             'INSERT INTO public.tx_probe (id, canal, nota) VALUES ($1, $2, $3)',
             [idAuditoria, 'auditoria', 'ACCESS_DENIED'],
@@ -264,7 +264,7 @@ describe('canal B da auditoria fora da transacao de negocio', () => {
       'SELECT id, canal FROM public.tx_probe WHERE id = ANY($1::uuid[]) ORDER BY canal',
       [[idNegocio, idAuditoria]],
     );
-    // O que o auditor procura e justamente o evento da transacao que falhou.
+    // O que o auditor procura é justamente o evento da transação que falhou.
     expect(r.rows).toEqual([{ id: idAuditoria, canal: 'auditoria' }]);
   });
 });

@@ -41,15 +41,15 @@ export interface ImportDemonstrativoResult {
 }
 
 /**
- * Importa um demonstrativo de retorno TISS e seus itens na mesma transacao.
- * Quando vinculado a um lote (lote_id nao nulo), transita o lote para 'retornado'
+ * Importa um demonstrativo de retorno TISS e seus itens na mesma transação.
+ * Quando vinculado a um lote (lote_id não nulo), transita o lote para 'retornado'
  * via receiveLoteReturn. O lote PRECISA estar em status 'enviado'.
  */
 export async function importDemonstrativo(
   tx: TxClient,
   i: ImportDemonstrativoInput,
 ): Promise<Result<ImportDemonstrativoResult, ImportDemonstrativoFailure>> {
-  // 1. Se vinculado a lote, valida que o lote existe e esta em status 'enviado'
+  // 1. Se vinculado a lote, valida que o lote existe e está em status 'enviado'
   let loteRetornado = false;
 
   if (i.loteId !== null) {

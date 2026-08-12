@@ -1,14 +1,14 @@
 import type { StorageAdapter } from './contract';
 /**
  * L0 — Adaptador abstrato de armazenamento de objetos.
- * Implementacao local (fs) para dev; S3-compatible para producao.
- * Chaves sao opacos UUIDv7 com prefixo de namespace (ex: "tiss/lote-001.xml").
+ * Implementação local (fs) para dev; S3-compatible para produção.
+ * Chaves são opacos UUIDv7 com prefixo de namespace (ex: "tiss/lote-001.xml").
  */
 export type { StorageAdapter } from './contract';
 
 /**
- * InMemoryStorageAdapter — para testes unitarios e de integracao.
- * NAO usar em producao. Nao persiste entre reinicializacoes.
+ * InMemoryStorageAdapter — para testes unitários e de integração.
+ * NÃO usar em produção. Não persiste entre reinicializações.
  */
 export class InMemoryStorageAdapter implements StorageAdapter {
   private readonly store = new Map<string, { data: Uint8Array; contentType: string }>();
@@ -30,12 +30,12 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.store.delete(key);
   }
 
-  /** Utilitario de teste: retorna todas as chaves armazenadas. */
+  /** Utilitário de teste: retorna todas as chaves armazenadas. */
   keys(): string[] {
     return [...this.store.keys()];
   }
 
-  /** Utilitario de teste: limpa todo o armazenamento. */
+  /** Utilitário de teste: limpa todo o armazenamento. */
   clear(): void {
     this.store.clear();
   }

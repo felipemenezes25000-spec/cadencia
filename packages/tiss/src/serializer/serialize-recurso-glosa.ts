@@ -4,29 +4,29 @@ import { computeRecursoGlosaHash } from './compute-tiss-hash';
 import type { RecursoGlosaInput, ItemRecursoGlosaInput } from './types';
 
 /**
- * Resultado da serializacao de um recurso de glosa TISS.
+ * Resultado da serialização de um recurso de glosa TISS.
  */
 export interface SerializeRecursoGlosaResult {
   /** XML completo em bytes ISO-8859-1, pronto para envio. */
   readonly xml: Uint8Array;
-  /** Warnings de caracteres nao mapeados para ISO-8859-1. */
+  /** Warnings de caracteres não mapeados para ISO-8859-1. */
   readonly warnings: readonly string[];
 }
 
 /**
  * Serializa um recurso de glosa TISS em XML ISO-8859-1.
  *
- * Funcao PURA: recebe dados tipados, devolve Uint8Array. ZERO side-effect.
- * O hash MD5 proprietario e calculado e embutido em <ans:hash>.
- * O XML segue o padrao TISS 4.01.00 (ou a versao do recurso).
+ * Função PURA: recebe dados tipados, devolve Uint8Array. ZERO side-effect.
+ * O hash MD5 proprietário é calculado e embutido em <ans:hash>.
+ * O XML segue o padrão TISS 4.01.00 (ou a versão do recurso).
  *
- * O encounterVersionId esta no input mas NAO vai no XML — e obrigatorio
- * para rastreabilidade (§3.9: recurso de glosa sempre cita a versao usada).
+ * O encounterVersionId está no input mas NÃO vai no XML — é obrigatório
+ * para rastreabilidade (§3.9: recurso de glosa sempre cita a versão usada).
  */
 export function serializeRecursoGlosa(input: RecursoGlosaInput): SerializeRecursoGlosaResult {
   const { cabecalho, numeroLoteOriginal, numeroRecursoGlosa, contratado, itens } = input;
 
-  // Calcula o hash antes de montar o XML — ele sera embutido no epilogo
+  // Calcula o hash antes de montar o XML — ele será embutido no epílogo
   const hash = computeRecursoGlosaHash(cabecalho, numeroLoteOriginal, numeroRecursoGlosa, itens);
 
   const xml = new XmlBuilder();
@@ -36,7 +36,7 @@ export function serializeRecursoGlosa(input: RecursoGlosaInput): SerializeRecurs
     'xmlns:ans': 'http://www.ans.gov.br/padroes/tiss/schemas',
   });
 
-  // ---- Cabecalho ----
+  // ---- Cabeçalho ----
   emitCabecalho(xml, cabecalho);
 
   // ---- Corpo: prestadorParaOperadora > recursoGlosa ----
@@ -63,7 +63,7 @@ export function serializeRecursoGlosa(input: RecursoGlosaInput): SerializeRecurs
   xml.close('ans:recursoGlosa');
   xml.close('ans:prestadorParaOperadora');
 
-  // ---- Epilogo: hash ----
+  // ---- Epílogo: hash ----
   xml.open('ans:epilogo');
   xml.tag('ans:hash', hash);
   xml.close('ans:epilogo');

@@ -13,17 +13,17 @@ function erroDominio(kind: string, status: number): never {
 const TIPOS = ['resultado_exame', 'imagem', 'documento_externo',
   'consentimento', 'outro'] as const;
 
-/** 20 MB. Resultado de exame com imagem passa fácil de 5; tomografia nao sobe por aqui. */
+/** 20 MB. Resultado de exame com imagem passa fácil de 5; tomografia não sobe por aqui. */
 const LIMITE_BYTES = 20 * 1024 * 1024;
 
 /**
  * Tipos que o navegador pode ABRIR no lugar de baixar.
  *
- * Lista fechada de proposito, e curta de proposito: e exatamente o conjunto em
- * que ver o anexo na tela vale mais do que baixa-lo — laudo em PDF e foto de
+ * Lista fechada de propósito, e curta de propósito: é exatamente o conjunto em
+ * que ver o anexo na tela vale mais do que baixá-lo — laudo em PDF e foto de
  * exame. Nada aqui executa script. `text/html`, `image/svg+xml` e
  * `application/xhtml+xml` ficam de FORA justamente porque executariam, e o
- * conteudo veio de upload.
+ * conteúdo veio de upload.
  */
 const TIPOS_INLINE: ReadonlySet<string> = new Set([
   'application/pdf',
@@ -31,12 +31,12 @@ const TIPOS_INLINE: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Anexos do prontuario: o exame que o paciente traz na mao.
+ * Anexos do prontuário: o exame que o paciente traz na mão.
  *
  * O arquivo vai para o armazenamento de objetos e a linha em `clin.attachment`
- * guarda o PONTEIRO mais o sha256. O hash e calculado no servidor sobre os bytes
- * que chegaram: aceitar um hash enviado pelo cliente seria aceitar a afirmacao
- * de quem envia sobre o proprio arquivo — e anexo e prova clinica.
+ * guarda o PONTEIRO mais o sha256. O hash é calculado no servidor sobre os bytes
+ * que chegaram: aceitar um hash enviado pelo cliente seria aceitar a afirmação
+ * de quem envia sobre o próprio arquivo — e anexo é prova clínica.
  */
 export async function anexoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -49,9 +49,9 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
         kind: z.enum(TIPOS),
         originalName: z.string().min(1).max(255),
         contentType: z.string().min(1).max(120),
-        // Base64 no corpo, e nao multipart: o volume aqui e laudo e foto, nao
+        // Base64 no corpo, e não multipart: o volume aqui é laudo e foto, não
         // exame de imagem inteiro. Quando entrar DICOM, entra por upload direto
-        // ao armazenamento com URL assinada — e ai o corpo nem passa pela API.
+        // ao armazenamento com URL assinada — e aí o corpo nem passa pela API.
         conteudoBase64: z.string().min(1),
       }),
       response: {
@@ -68,9 +68,9 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
       originalName: string; contentType: string; conteudoBase64: string };
 
     const bytes = Buffer.from(b.conteudoBase64, 'base64');
-    // `CHECK (size_bytes > 0)` no banco. Recusar aqui devolve erro de validacao
-    // em vez de 500 vindo do Postgres — e base64 invalido tambem cai aqui,
-    // porque Buffer.from ignora lixo em silencio e produz vazio.
+    // `CHECK (size_bytes > 0)` no banco. Recusar aqui devolve erro de validação
+    // em vez de 500 vindo do Postgres — e base64 inválido também cai aqui,
+    // porque Buffer.from ignora lixo em silêncio e produz vazio.
     if (bytes.length === 0) erroDominio('anexo_vazio', 400);
     if (bytes.length > LIMITE_BYTES) erroDominio('anexo_grande_demais', 413);
 
@@ -79,8 +79,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
     const sha256 = createHash('sha256').update(bytes).digest();
 
     // Grava o OBJETO antes da linha. Na ordem inversa, uma falha de disco
-    // deixaria no prontuario um anexo que nao abre — e o medico so descobre
-    // quando precisa dele. Objeto orfao, ao contrario, e lixo que a purga limpa.
+    // deixaria no prontuário um anexo que não abre — e o médico só descobre
+    // quando precisa dele. Objeto órfão, ao contrário, é lixo que a purga limpa.
     await armazenamento().put(`anexos/${storageKey}`, bytes, b.contentType);
 
     await tx.query(
@@ -93,8 +93,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
                app.current_user_id())`,
       [attachmentId, b.patientId, b.encounterId ?? null, b.kind, storageKey,
        b.originalName, b.contentType, bytes.length, sha256,
-       // `dek_ref` e NOT NULL e aponta para a chave de dado que cifra o objeto.
-       // Sem KMS ainda, marcamos explicitamente que NAO ha cifra em repouso, em
+       // `dek_ref` é NOT NULL e aponta para a chave de dado que cifra o objeto.
+       // Sem KMS ainda, marcamos explicitamente que NÃO há cifra em repouso, em
        // vez de gravar um identificador que sugira uma chave inexistente.
        'sem-kms', ctx.actor.clinicId]);
 
@@ -146,8 +146,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
         kind: x.kind,
         originalName: x.original_name,
         contentType: x.content_type,
-        // `size_bytes` e bigint: node-postgres devolve string para nao perder
-        // precisao, e o schema de resposta diz numero.
+        // `size_bytes` é bigint: node-postgres devolve string para não perder
+        // precisão, e o schema de resposta diz número.
         sizeBytes: Number(x.size_bytes),
         sha256: x.sha256.toString('hex'),
         encounterId: x.encounter_id,
@@ -169,39 +169,39 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
       [p.id]);
 
     const a = rows[0];
-    // RLS ja filtrou tenant e escopo clinico: zero linhas e "nao existe para
-    // voce", e a mensagem nao distingue isso de "nao existe".
+    // RLS já filtrou tenant e escopo clínico: zero linhas é "não existe para
+    // você", e a mensagem não distingue isso de "não existe".
     if (a === undefined) erroDominio('anexo_nao_encontrado', 404);
     if (a.purged_at !== null) erroDominio('anexo_purgado', 410);
 
-    // §3.7 — baixar o anexo E acessar conteudo clinico: o laudo que o paciente
-    // trouxe e prontuario tanto quanto a evolucao. Registra antes de entregar.
+    // §3.7 — baixar o anexo É acessar conteúdo clínico: o laudo que o paciente
+    // trouxe é prontuário tanto quanto a evolução. Registra antes de entregar.
     await tx.query(`SELECT audit.log_read('attachment_read', $1)`, [a.patient_id]);
 
     const bytes = await armazenamento().get(`anexos/${a.storage_key}`);
     if (bytes === null) erroDominio('anexo_sem_conteudo', 404);
 
-    // `content_type` e o que o CLIENTE declarou no upload (string livre de ate
-    // 120 chars, sem validacao). Devolver isso como veio, com `inline`, na
+    // `content_type` é o que o CLIENTE declarou no upload (string livre de até
+    // 120 chars, sem validação). Devolver isso como veio, com `inline`, na
     // origem da API, transforma o upload de anexo em XSS armazenado: basta
     // enviar `text/html` com <script> e abrir o anexo depois. O cookie de CSRF
-    // nasce com httpOnly:false, entao o script leria o token e emitiria
-    // requisicao autenticada em nome de quem abriu.
+    // nasce com httpOnly:false, então o script leria o token e emitiria
+    // requisição autenticada em nome de quem abriu.
     //
-    // So os tipos que o navegador precisa RENDERIZAR para o anexo ter serventia
+    // Só os tipos que o navegador precisa RENDERIZAR para o anexo ter serventia
     // (laudo em PDF, foto de exame) continuam inline. Todo o resto vira
-    // download, e ai o navegador nao executa nada.
+    // download, e aí o navegador não executa nada.
     const inline = TIPOS_INLINE.has(a.content_type);
     void reply
       .header('content-type', inline ? a.content_type : 'application/octet-stream')
       .header('content-disposition',
         `${inline ? 'inline' : 'attachment'}; filename="${
           a.original_name.replace(/["\r\n]/g, '')}"`)
-      // Rede de seguranca para o caso de um tipo novo entrar na lista: sem
-      // script, sem fetch, sem plugin, mesmo que o conteudo tente.
+      // Rede de segurança para o caso de um tipo novo entrar na lista: sem
+      // script, sem fetch, sem plugin, mesmo que o conteúdo tente.
       .header('content-security-policy',
         "default-src 'none'; img-src 'self' data:; object-src 'none'; base-uri 'none'")
-      // Dado de saude com nome de paciente: nao entra em cache de proxy.
+      // Dado de saúde com nome de paciente: não entra em cache de proxy.
       .header('cache-control', 'private, no-store');
     return reply.send(Buffer.from(bytes));
   }));

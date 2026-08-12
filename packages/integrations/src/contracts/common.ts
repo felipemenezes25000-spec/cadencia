@@ -1,26 +1,26 @@
 /**
  * §7 — o contrato comum de todo provedor externo.
  *
- * A garantia mais cara do documento: timeout NUNCA gera retry automatico em
- * operacao `unsafe`. Gera estado `indeterminado` persistido e agenda
- * RECONCILIACAO — o job consulta o parceiro (getPayment, fetchPrescription,
- * busca por idempotencyKey) e so reenvia se confirmar que nao houve efeito.
- * Sem isso: tres WhatsApps identicos as 7h da manha degradando a qualidade do
- * numero PROPRIO da clinica, estorno em dobro, lote TISS glosado por duplicidade.
+ * A garantia mais cara do documento: timeout NUNCA gera retry automático em
+ * operação `unsafe`. Gera estado `indeterminado` persistido e agenda
+ * RECONCILIAÇÃO — o job consulta o parceiro (getPayment, fetchPrescription,
+ * busca por idempotencyKey) e só reenvia se confirmar que não houve efeito.
+ * Sem isso: três WhatsApps idênticos às 7h da manhã degradando a qualidade do
+ * número PRÓPRIO da clínica, estorno em dobro, lote TISS glosado por duplicidade.
  */
 
 export type Rfc3339 = string & { readonly __brand: 'Rfc3339' };   // UTC, com ms
 export type E164 = string & { readonly __brand: 'E164' };
 export type StorageKey = string & { readonly __brand: 'StorageKey' };
 
-/** Retryability e propriedade da OPERACAO, nao do erro. */
+/** Retryability é propriedade da OPERAÇÃO, não do erro. */
 export type Safety = 'safe' | 'idempotent' | 'unsafe';
 
 export interface ProviderCtx {
   readonly tenantId: string;
   readonly actorUserId: string | null;
   readonly requestId: string;
-  /** Estavel por agregado + intencao. Duas chamadas da mesma intencao repetem a chave. */
+  /** Estável por agregado + intenção. Duas chamadas da mesma intenção repetem a chave. */
   readonly idempotencyKey: string;
   readonly deadlineMs: number;
 }
@@ -38,9 +38,9 @@ export type ProviderResult<T> =
 
 export interface Provider {
   readonly id: string;
-  /** Inclui 'residency:br' quando aplicavel. O runtime recusa quem nao declara. */
+  /** Inclui 'residency:br' quando aplicável. O runtime recusa quem não declara. */
   readonly capabilities: ReadonlySet<string>;
-  /** Por metodo, OBRIGATORIO: e o que o reconciliador consulta. */
+  /** Por método, OBRIGATÓRIO: é o que o reconciliador consulta. */
   readonly safety: Readonly<Record<string, Safety>>;
   health(): Promise<{ up: boolean; latencyMs: number; checkedAt: Rfc3339 }>;
 }
@@ -57,7 +57,7 @@ ProviderResult<T> {
   return rawArchiveKey === undefined ? { ok: false, error } : { ok: false, error, rawArchiveKey };
 }
 
-/** Unica porta de entrada do retry automatico. Nao existe outra regra em lugar nenhum. */
+/** Única porta de entrada do retry automático. Não existe outra regra em lugar nenhum. */
 export function isRetryable<T>(r: ProviderResult<T>): boolean {
   return !r.ok && r.error.kind === 'unavailable';
 }

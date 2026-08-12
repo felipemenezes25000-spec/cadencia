@@ -9,10 +9,10 @@ export interface EnqueueInput {
 }
 
 /**
- * Enfileira um evento de dominio na outbox transacional.
+ * Enfileira um evento de domínio na outbox transacional.
  *
  * DEVE ser chamada DENTRO de withTenantTx — o INSERT participa da mesma
- * transacao. Se o COMMIT nao acontecer, o evento desaparece junto.
+ * transação. Se o COMMIT não acontecer, o evento desaparece junto.
  * Sem job fantasma.
  */
 export async function enqueue(

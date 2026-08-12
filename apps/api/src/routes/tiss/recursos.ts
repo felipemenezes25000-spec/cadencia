@@ -101,7 +101,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
       valorRecursadoCents: number;
     };
 
-    // Verificar que o recurso existe e esta em rascunho
+    // Verificar que o recurso existe e está em rascunho
     const { rows: recRows } = await tx.query<{
       status: string; item_count: number; total_recursado_cents: string;
     }>(
@@ -113,7 +113,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
       erroDominio('recurso_nao_rascunho', 422);
     }
 
-    // Verificar que a glosa existe e esta pendente
+    // Verificar que a glosa existe e está pendente
     const { rows: glosaRows } = await tx.query<{ status: string }>(
       `SELECT status::text FROM tiss.glosa WHERE id = $1`,
       [b.glosaId]);
@@ -122,7 +122,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
       erroDominio('glosa_nao_pendente', 422);
     }
 
-    // Verificar se a glosa ja esta em outro recurso ativo
+    // Verificar se a glosa já está em outro recurso ativo
     const { rowCount: jaEmRecurso } = await tx.query(
       `SELECT 1 FROM tiss.recurso_glosa_item ri
          JOIN tiss.recurso_glosa rg
@@ -172,7 +172,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
   }, rota('tiss.recurso.manage', async (tx, _ctx, req) => {
     const p = req.params as { id: string; itemId: string };
 
-    // Verificar que o recurso esta em rascunho
+    // Verificar que o recurso está em rascunho
     const { rows: recRows } = await tx.query<{
       status: string; item_count: number; total_recursado_cents: string;
     }>(
@@ -426,7 +426,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
         WHERE id = $1`,
       [p.id]);
 
-    // Enfileirar no outbox para serializacao XML + transport
+    // Enfileirar no outbox para serialização XML + transport
     await tx.query(
       `SELECT app.enqueue_outbox('tiss_recurso_send', $1::uuid,
                jsonb_build_object(
@@ -475,7 +475,7 @@ export async function recursoRoutes(app: FastifyInstance): Promise<void> {
       }>;
     };
 
-    // Verificar que o recurso existe e esta enviado
+    // Verificar que o recurso existe e está enviado
     const { rows } = await tx.query<{ status: string }>(
       `SELECT status FROM tiss.recurso_glosa
         WHERE id = $1 FOR UPDATE`,

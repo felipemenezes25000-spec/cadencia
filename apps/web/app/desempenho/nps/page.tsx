@@ -31,7 +31,7 @@ function NpsInner() {
     let vivo = true;
     void apiFetch<Nps>(`/v1/nps?dias=${dias}`, { clinicId, csrfToken })
       .then((r) => { if (vivo) setD(r); })
-      .catch(() => { if (vivo) setErro('Nao foi possivel carregar o NPS.'); });
+      .catch(() => { if (vivo) setErro('Não foi possível carregar o NPS.'); });
     return () => { vivo = false; };
   }, [dias, clinicId, csrfToken]);
 
@@ -63,9 +63,9 @@ function NpsInner() {
             <div className="rounded-[var(--r-md)] border border-line bg-surface p-4">
               <p className="text-xs uppercase tracking-wide text-text-muted">NPS</p>
               <p className="text-3xl font-semibold tabular-nums text-text">{d.nps}</p>
-              {/* `respostas` fica JUNTO do indice de proposito: NPS zero com 200
-                  respostas e empate real; com zero respostas e ausencia de dado.
-                  O mesmo numero, significados incompativeis. */}
+              {/* `respostas` fica JUNTO do índice de propósito: NPS zero com 200
+                  respostas é empate real; com zero respostas é ausência de dado.
+                  O mesmo número, significados incompatíveis. */}
               <p className="text-xs text-text-muted">
                 {d.respostas === 0
                   ? 'nenhuma resposta ainda'
@@ -92,8 +92,8 @@ function NpsInner() {
             <h2 className="text-sm font-semibold text-text">O que escreveram</h2>
             {d.comentarios.length === 0 ? (
               <p className="text-sm text-text-muted">
-                Nenhum comentario no periodo. A nota diz que ha algo errado; o
-                comentario diz o que consertar.
+                Nenhum comentário no período. A nota diz que há algo errado; o
+                comentário diz o que consertar.
               </p>
             ) : (
               <ul className="grid gap-2">
@@ -106,10 +106,10 @@ function NpsInner() {
                         <span className={`font-semibold ${f.cor}`}>{c.score}</span>
                         <span className="text-text-muted">{f.rotulo}</span>
                         <span className="text-text-muted">
-                          {/* Com fuso EXPLICITO da unidade: `received_at` chega
+                          {/* Com fuso EXPLÍCITO da unidade: `received_at` chega
                               como instante em UTC, e formatar sem `timeZone`
-                              usaria o relogio de quem esta olhando — que pode
-                              nao ser o da clinica. */}
+                              usaria o relógio de quem está olhando — que pode
+                              não ser o da clínica. */}
                           · {new Intl.DateTimeFormat('pt-BR', {
                             timeZone: vinculoAtivo.timezone,
                             day: '2-digit', month: '2-digit',

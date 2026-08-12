@@ -131,10 +131,10 @@ describe('finalizeEncounter com sinais vitais', () => {
         terminologyVersion: null, sectionInstance: 1, ordinal: 0,
         value: { slot: 'value_text', text: 'consulta de rotina' },
       }],
-      // `clin.observation.field_id` e NOT NULL: a observacao existe como
-      // PROJECAO de um campo, e sem saber de qual campo veio nao da para
-      // reprojetar nem retificar. O contrato nao tinha `fieldId` e o codigo
-      // alcancava por cast — resultado: qualquer atendimento com sinal vital
+      // `clin.observation.field_id` é NOT NULL: a observação existe como
+      // PROJEÇÃO de um campo, e sem saber de qual campo veio não dá para
+      // reprojetar nem retificar. O contrato não tinha `fieldId` e o código
+      // alcançava por cast — resultado: qualquer atendimento com sinal vital
       // falhava com 23502, e o caminho nunca tinha sido exercitado.
       observations: [{
         fieldId: s2.fieldPaId, observationCode: 'PA_SIS',

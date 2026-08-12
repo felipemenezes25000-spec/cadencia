@@ -4,20 +4,20 @@ import { join, relative, sep } from 'node:path';
 export interface GucViolation {
   readonly file: string; // caminho relativo a raiz, com '/'
   readonly line: number; // 1-based
-  readonly text: string; // a linha ofensora, sem espaco a esquerda
+  readonly text: string; // a linha ofensora, sem espaço a esquerda
 }
 
 /**
  * Pega `SET app.x`, `SET LOCAL app.x` e `SET SESSION app.x`.
- * NAO pega `set_config('app.x', ..., TRUE)` (a forma correta) nem
- * `SET LOCAL ROLE app_rw` (nao ha ponto depois de `app`).
+ * NÃO pega `set_config('app.x', ..., TRUE)` (a forma correta) nem
+ * `SET LOCAL ROLE app_rw` (não há ponto depois de `app`).
  */
 const FORBIDDEN = /\bset\s+(?:local\s+|session\s+)?app\./i;
 
 /**
  * Arquivos autorizados a conter a string proibida.
- * `packages/db/src/tx.ts` e o unico lugar do sistema que monta o preambulo (§3.2).
- * Os outros quatro sao os que documentam ou testam a propria regra: se ficarem de
+ * `packages/db/src/tx.ts` é o único lugar do sistema que monta o preâmbulo (§3.2).
+ * Os outros quatro são os que documentam ou testam a própria regra: se ficarem de
  * fora, o lint reprova a si mesmo e o engenheiro desliga a regra em vez de arrumar.
  */
 const ALLOWED_FILES = new Set([
@@ -29,13 +29,13 @@ const ALLOWED_FILES = new Set([
 ]);
 
 /**
- * `.claude` entra aqui porque abriga os worktrees de agente — o repositorio
- * clonado DENTRO do repositorio. Sem pular, o lint acha a copia dos arquivos que
- * ele proprio autoriza (`tools/session-guc.ts` vira
+ * `.claude` entra aqui porque abriga os worktrees de agente — o repositório
+ * clonado DENTRO do repositório. Sem pular, o lint acha a cópia dos arquivos que
+ * ele próprio autoriza (`tools/session-guc.ts` vira
  * `.claude/worktrees/<nome>/tools/session-guc.ts`, ausente de ALLOWED_FILES) e
- * reprova a si mesmo. Nao e hipotese: derrubou um `git push` com typecheck,
- * arch, as tres suites e o build todos verdes, e a mensagem apontava para
- * arquivos que ninguem tinha editado.
+ * reprova a si mesmo. Não é hipótese: derrubou um `git push` com typecheck,
+ * arch, as três suítes e o build todos verdes, e a mensagem apontava para
+ * arquivos que ninguém tinha editado.
  */
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', 'coverage', '.claude',

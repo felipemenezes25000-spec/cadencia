@@ -29,7 +29,7 @@ describe('enqueue outbox', () => {
     );
     expect(outboxId).toBeTruthy();
 
-    // verifica que esta no banco
+    // verifica que está no banco
     const { rows } = await withTenantTx(actor, (tx) =>
       tx.query<{ id: string; event_type: string; dispatched_at: string | null }>(
         `SELECT id, event_type, dispatched_at FROM app.outbox WHERE id = $1`,
@@ -86,7 +86,7 @@ describe('enqueue outbox', () => {
     const { rows } = await withTenantTx(actorB, (tx) =>
       tx.query<{ id: string }>(`SELECT id FROM app.outbox`),
     );
-    // tenant B nao ve eventos de tenant A
+    // tenant B não vê eventos de tenant A
     const idsA = rows.filter((r) => r.id === aggregateId);
     expect(idsA).toHaveLength(0);
   });

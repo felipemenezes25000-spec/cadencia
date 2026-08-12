@@ -4,11 +4,11 @@ import { z } from 'zod';
 import { rota } from '../guard';
 
 /**
- * As tres acoes que as telas ja ofereciam e que o backend nao servia.
+ * As três ações que as telas já ofereciam e que o backend não servia.
  *
- * Duas quitacoes e o quebra-vidro. As tres compartilham uma propriedade: o
+ * Duas quitações e o quebra-vidro. As três compartilham uma propriedade: o
  * carimbo de tempo vem do BANCO (`clock_timestamp()`), nunca do cliente. Quem
- * decide em que dia uma despesa entrou no caixa nao pode ser o relogio do
+ * decide em que dia uma despesa entrou no caixa não pode ser o relógio do
  * navegador de quem clicou.
  */
 
@@ -21,10 +21,10 @@ export async function acoesPendentesRoutes(app: FastifyInstance): Promise<void> 
   const r = app.withTypeProvider<ZodTypeProvider>();
 
   /**
-   * Quitar despesa. IDEMPOTENTE de proposito: a recepcao clica duas vezes
+   * Quitar despesa. IDEMPOTENTE de propósito: a recepção clica duas vezes
    * quando a rede demora, e a segunda tem que ser inofensiva. O `WHERE` filtra
-   * por status pendente; se ja estava paga, nao ha UPDATE e devolvemos o estado
-   * atual — nao um erro.
+   * por status pendente; se já estava paga, não há UPDATE e devolvemos o estado
+   * atual — não um erro.
    */
   r.post('/v1/payables/:id/pagar', {
     schema: {
@@ -65,7 +65,7 @@ export async function acoesPendentesRoutes(app: FastifyInstance): Promise<void> 
     return { payableId: p.id, status: 'pago' as const, pagoEm: linha.paid_at.toISOString() };
   }));
 
-  /** Quitar recebimento. Mesmo desenho, mesma idempotencia. */
+  /** Quitar recebimento. Mesmo desenho, mesma idempotência. */
   r.post('/v1/payments/:id/confirmar', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
@@ -106,13 +106,13 @@ export async function acoesPendentesRoutes(app: FastifyInstance): Promise<void> 
   }));
 
   /**
-   * Quebra-vidro: acesso de emergencia ao prontuario.
+   * Quebra-vidro: acesso de emergência ao prontuário.
    *
-   * A rota e fina de proposito — quem valida e `clin.break_glass`, no banco:
-   * exige profissional de saude (nao basta o papel na sessao), justificativa de
+   * A rota é fina de propósito — quem valida é `clin.break_glass`, no banco:
+   * exige profissional de saúde (não basta o papel na sessão), justificativa de
    * ao menos 20 caracteres e prazo entre 1 e 72 horas. Repetir essas regras aqui
-   * criaria duas fontes de verdade, e a que vale e a do banco, porque e a que
-   * grava a concessao e emite o evento de auditoria na mesma transacao.
+   * criaria duas fontes de verdade, e a que vale é a do banco, porque é a que
+   * grava a concessão e emite o evento de auditoria na mesma transação.
    */
   r.post('/v1/pacientes/:id/quebra-vidro', {
     schema: {
@@ -141,9 +141,9 @@ export async function acoesPendentesRoutes(app: FastifyInstance): Promise<void> 
       void reply.code(201);
       return { grantId: rows[0]!.grant_id, expiraEmHoras: horas };
     } catch (e) {
-      // 22023 e 42501 sao as recusas DELIBERADAS da funcao (justificativa curta,
-      // prazo fora da faixa, quem pede nao e profissional). Traduzir para 422
-      // com a mensagem do banco preserva a explicacao que ela escreveu.
+      // 22023 e 42501 são as recusas DELIBERADAS da função (justificativa curta,
+      // prazo fora da faixa, quem pede não é profissional). Traduzir para 422
+      // com a mensagem do banco preserva a explicação que ela escreveu.
       const code = (e as { code?: string }).code;
       if (code === '22023' || code === '42501') {
         return reply.code(422).send({

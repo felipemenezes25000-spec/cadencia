@@ -10,23 +10,23 @@ import { useSessao } from '../../../../src/sessao';
  * Detalhe da guia TISS.
  *
  * A tela existia pronta e testada desde a Fase 4 e NENHUM arquivo a importava —
- * so faltava esta rota. Na pratica, a lista de guias mostrava numero e valor e
- * nao havia como ver por que uma delas estava incompleta.
+ * só faltava esta rota. Na prática, a lista de guias mostrava número e valor e
+ * não havia como ver por que uma delas estava incompleta.
  *
- * `DetalheGuia` e um painel lateral (`aberto`/`aoFechar`). Como pagina ele abre
- * sempre, e fechar volta para a lista — mesmo padrao de
- * `/convenios/recursos/[id]`. Assim o link e compartilhavel: a gerente manda a
+ * `DetalheGuia` é um painel lateral (`aberto`/`aoFechar`). Como página ele abre
+ * sempre, e fechar volta para a lista — mesmo padrão de
+ * `/convenios/recursos/[id]`. Assim o link é compartilhável: a gerente manda a
  * URL da guia glosada para o faturamento em vez de dizer "procura a 1042".
  */
 
 /**
- * O que a ROTA devolve — nomes diferentes dos que a tela le.
+ * O que a ROTA devolve — nomes diferentes dos que a tela lê.
  *
- * `apiFetch<T>` e um cast, nao uma validacao: tipar a resposta como
+ * `apiFetch<T>` é um cast, não uma validação: tipar a resposta como
  * `GuiaDetalhe` fazia o TypeScript aceitar sem reclamar e, em runtime, TODO
- * campo chegava `undefined`. O painel abria com "Guia undefined", o valor saia
- * "R$ NaN,NaN" (`Math.abs(undefined)`) e o botao de ajuste chamava
- * `/v1/tiss/guias/undefined/ajuste`. A traducao explicita e o unico lugar onde
+ * campo chegava `undefined`. O painel abria com "Guia undefined", o valor saía
+ * "R$ NaN,NaN" (`Math.abs(undefined)`) e o botão de ajuste chamava
+ * `/v1/tiss/guias/undefined/ajuste`. A tradução explícita é o único lugar onde
  * as duas nomenclaturas se encontram.
  */
 interface GuiaDetalheDaApi {
@@ -68,7 +68,7 @@ function daApi(r: GuiaDetalheDaApi): GuiaDetalhe {
     id: r.guiaId,
     numeroGuia: r.numeroGuiaPrestador,
     pacienteNome: r.pacienteNome,
-    // A rota nao devolve CNS. Vazio e honesto; inventar campo seria pior.
+    // A rota não devolve CNS. Vazio é honesto; inventar campo seria pior.
     numeroCns: '',
     operadoraNome: r.operadoraNome,
     registroAns: r.registroAns,
@@ -103,23 +103,23 @@ function daApi(r: GuiaDetalheDaApi): GuiaDetalhe {
 /**
  * Valor vigente do campo que o ajuste vai alterar.
  *
- * As chaves sao as do `<select>` de `DetalheGuia` (CAMPOS_AJUSTAVEIS), que usa
+ * As chaves são as do `<select>` de `DetalheGuia` (CAMPOS_AJUSTAVEIS), que usa
  * o nome da COLUNA — `codigo_procedimento`, `valor_procedimento` — enquanto o
  * objeto da tela usa camelCase. O valor volta como texto porque
  * `tiss.guia_ajuste` guarda antes/depois como texto: o ajuste registra o que
- * mudou, nao um tipo.
+ * mudou, não um tipo.
  */
 function valorAtualDoCampo(g: GuiaDetalhe, campo: string): string {
   switch (campo) {
     case 'codigo_procedimento': return g.codigoProcedimento;
     case 'codigo_tabela': return g.codigoTabela;
-    // Em reais, com duas casas: e o formato que a guia leva para a operadora.
+    // Em reais, com duas casas: é o formato que a guia leva para a operadora.
     case 'valor_procedimento': return (g.valorCentavos / 100).toFixed(2);
     case 'tipo_consulta': return g.tipoConsulta;
     case 'regime_atendimento': return g.regimeAtendimento;
     case 'cbos': return g.cbos;
     // Campo novo no select sem entrada aqui: string vazia passa no schema
-    // (`max(500)`, sem minimo) em vez de derrubar o ajuste inteiro.
+    // (`max(500)`, sem mínimo) em vez de derrubar o ajuste inteiro.
     default: return '';
   }
 }
@@ -140,8 +140,8 @@ export default function PaginaDetalheDaGuia(
       `/v1/tiss/guias/${id}`, { clinicId, csrfToken })
       .catch((e: unknown) => {
         setErro(e instanceof ApiError && e.status === 404
-          ? 'Esta guia nao existe nesta unidade.'
-          : 'Nao foi possivel carregar a guia.');
+          ? 'Esta guia não existe nesta unidade.'
+          : 'Não foi possível carregar a guia.');
         return null;
       });
     if (r !== null) setGuia(daApi(r));
@@ -174,11 +174,11 @@ export default function PaginaDetalheDaGuia(
           method: 'POST',
           body: {
             campoAlterado: input.campoAlterado,
-            // Obrigatorio no schema da rota e NOT NULL em `tiss.guia_ajuste`.
-            // Sem ele, todo ajuste voltava 400 e o painel nao mostrava por que.
-            // O valor de antes vem da guia carregada — e o que a trilha precisa
+            // Obrigatório no schema da rota e NOT NULL em `tiss.guia_ajuste`.
+            // Sem ele, todo ajuste voltava 400 e o painel não mostrava por quê.
+            // O valor de antes vem da guia carregada — é o que a trilha precisa
             // para responder "o que estava escrito aqui antes do faturamento
-            // mexer", que e a pergunta de uma auditoria da operadora.
+            // mexer", que é a pergunta de uma auditoria da operadora.
             valorAnterior: valorAtualDoCampo(guia, input.campoAlterado),
             valorNovo: input.valorNovo,
             motivo: input.motivo,

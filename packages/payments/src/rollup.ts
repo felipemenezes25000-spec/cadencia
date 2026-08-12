@@ -2,12 +2,12 @@ import type { TxClient } from '@cadencia/db';
 
 /**
  * §3.7 — materializa o daily_rollup para um tenant e um dia. O job noturno
- * chama esta funcao para cada tenant ativo. Usa DELETE + INSERT para garantir
- * consistencia: o rollup e pequeno (~240 linhas/mes por clinica) e o custo e
+ * chama esta função para cada tenant ativo. Usa DELETE + INSERT para garantir
+ * consistência: o rollup é pequeno (~240 linhas/mês por clínica) e o custo é
  * irrelevante comparado a complexidade de um UPSERT correto com PK composta
  * de 6 colunas.
  *
- * IMPORTANTE: esta funcao roda com o papel `jobs` (BYPASSRLS) e NAO usa
+ * IMPORTANTE: esta função roda com o papel `jobs` (BYPASSRLS) e NÃO usa
  * withTenantTx. Ela recebe o pool administrativo diretamente.
  */
 export async function materializeRollup(
@@ -20,7 +20,7 @@ export async function materializeRollup(
     `DELETE FROM fin.daily_rollup WHERE tenant_id = $1 AND day = $2::date`,
     [tenantId, day]);
 
-  // Base competencia: agregado pelo created_at do lancamento
+  // Base competência: agregado pelo created_at do lançamento
   const { rowCount: compRows } = await tx.query(
     `INSERT INTO fin.daily_rollup
        (tenant_id, clinic_id, day, basis, kind, category_id, status, amount_cents, entries)
@@ -34,7 +34,7 @@ export async function materializeRollup(
      GROUP BY e.tenant_id, e.clinic_id, e.kind, e.category_id, e.status`,
     [tenantId, day]);
 
-  // Base caixa: agregado pelo paid_at do lancamento (so os pagos)
+  // Base caixa: agregado pelo paid_at do lançamento (só os pagos)
   const { rowCount: caixaRows } = await tx.query(
     `INSERT INTO fin.daily_rollup
        (tenant_id, clinic_id, day, basis, kind, category_id, status, amount_cents, entries)
@@ -66,10 +66,10 @@ export interface DivergenceRow {
 }
 
 /**
- * Detector de divergencia obrigatorio (§3.7). Compara o rollup materializado
- * com a agregacao ao vivo dos lancamentos. Roda como job noturno apos a
- * materializacao. Qualquer linha retornada indica divergencia que precisa de
- * investigacao. A data da ultima verificacao e exibida no painel.
+ * Detector de divergência obrigatório (§3.7). Compara o rollup materializado
+ * com a agregação ao vivo dos lançamentos. Roda como job noturno após a
+ * materialização. Qualquer linha retornada indica divergência que precisa de
+ * investigação. A data da última verificação é exibida no painel.
  */
 export async function detectDivergence(
   tx: TxClient,
@@ -144,7 +144,7 @@ export async function detectDivergence(
 }
 
 // ---------------------------------------------------------------------------
-// Wrapper para a funcao SQL fin.refresh_daily_rollup (migration 0080)
+// Wrapper para a função SQL fin.refresh_daily_rollup (migration 0080)
 // ---------------------------------------------------------------------------
 
 export interface RollupResult {

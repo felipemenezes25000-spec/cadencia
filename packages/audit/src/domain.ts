@@ -1,11 +1,11 @@
 import type { Client, PoolClient } from 'pg';
 
-/** Conexao ja dentro de uma transacao de negocio. */
+/** Conexão já dentro de uma transação de negócio. */
 export type Tx = Client | PoolClient;
 
 export type AuditOutcome = 'sucesso' | 'negado' | 'erro';
 
-/** Valores aceitos em `meta`. Chaves fora da whitelist do banco sao recusadas. */
+/** Valores aceitos em `meta`. Chaves fora da whitelist do banco são recusadas. */
 export type AuditMeta = Readonly<Record<string, string | number | boolean | null>>;
 
 export interface DomainAuditEvent {
@@ -19,9 +19,9 @@ export interface DomainAuditEvent {
 }
 
 /**
- * Canal A. Grava DENTRO da transacao de negocio recebida em `tx`.
- * Se a transacao fizer rollback, o evento some junto — de proposito:
- * o evento so e verdade se a escrita commitou.
+ * Canal A. Grava DENTRO da transação de negócio recebida em `tx`.
+ * Se a transação fizer rollback, o evento some junto — de propósito:
+ * o evento só é verdade se a escrita commitou.
  */
 export async function logDomainEvent(tx: Tx, event: DomainAuditEvent): Promise<bigint> {
   const res = await tx.query<{ id: string }>(

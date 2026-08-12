@@ -51,7 +51,7 @@ export interface UpdateContratoInput {
 }
 
 // ---------------------------------------------------------------------------
-// Operacoes
+// Operações
 // ---------------------------------------------------------------------------
 
 export async function createContrato(

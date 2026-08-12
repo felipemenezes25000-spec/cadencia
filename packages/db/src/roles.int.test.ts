@@ -62,7 +62,7 @@ describe('papeis do banco (§3.1)', () => {
     expect(api?.rolcreatedb).toBe(false);
     expect(api?.rolcreaterole).toBe(false);
     expect(api?.rolbypassrls).toBe(false);
-    // NOINHERIT: `api` e membro de app_rw mas so usa os privilegios apos SET ROLE.
+    // NOINHERIT: `api` é membro de app_rw mas só usa os privilégios após SET ROLE.
     expect(api?.rolinherit).toBe(false);
   });
 

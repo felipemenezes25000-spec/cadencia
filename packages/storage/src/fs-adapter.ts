@@ -5,10 +5,10 @@ import type { StorageAdapter } from './contract';
 /**
  * Armazenamento em disco local.
  *
- * Existe porque o unico adaptador ate agora era o em memoria, e anexo que some
- * quando a API reinicia nao e anexo: o exame que o paciente trouxe some junto.
- * Em producao o lugar disto e um S3-compatible em sa-east-1 (decisao 15), e a
- * troca e de uma linha porque o contrato e o mesmo.
+ * Existe porque o único adaptador até agora era o em memória, e anexo que some
+ * quando a API reinicia não é anexo: o exame que o paciente trouxe some junto.
+ * Em produção o lugar disto é um S3-compatible em sa-east-1 (decisão 15), e a
+ * troca é de uma linha porque o contrato é o mesmo.
  */
 export class FsStorageAdapter implements StorageAdapter {
   private readonly raiz: string;
@@ -20,9 +20,9 @@ export class FsStorageAdapter implements StorageAdapter {
   /**
    * Resolve a chave DENTRO da raiz, ou recusa.
    *
-   * A chave e opaca por contrato, mas "por contrato" nao e defesa: um `../` que
-   * escape daqui le qualquer arquivo do servidor. A checagem e feita no caminho
-   * ja resolvido, e nao por procura de `..` no texto — `a/../../b` e `%2e%2e`
+   * A chave é opaca por contrato, mas "por contrato" não é defesa: um `../` que
+   * escape daqui lê qualquer arquivo do servidor. A checagem é feita no caminho
+   * já resolvido, e não por procura de `..` no texto — `a/../../b` e `%2e%2e`
    * passam por qualquer filtro textual.
    */
   private caminho(chave: string): string {
@@ -44,8 +44,8 @@ export class FsStorageAdapter implements StorageAdapter {
     try {
       return new Uint8Array(await readFile(alvo));
     } catch (e) {
-      // Ausencia e resposta valida, nao falha. Quem chama distingue "nao existe"
-      // de "nao consegui ler" pelo erro que sobe.
+      // Ausência é resposta válida, não falha. Quem chama distingue "não existe"
+      // de "não consegui ler" pelo erro que sobe.
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
       throw e;
     }
@@ -61,12 +61,12 @@ export class FsStorageAdapter implements StorageAdapter {
   }
 
   async delete(chave: string): Promise<void> {
-    // `force` porque apagar o que ja nao existe e sucesso: a purga da LGPD roda
-    // mais de uma vez sobre o mesmo acervo e nao pode falhar na segunda.
+    // `force` porque apagar o que já não existe é sucesso: a purga da LGPD roda
+    // mais de uma vez sobre o mesmo acervo e não pode falhar na segunda.
     await rm(this.caminho(chave), { force: true });
   }
 
-  /** Caminho absoluto de uma chave. Util em diagnostico, nunca em resposta. */
+  /** Caminho absoluto de uma chave. Útil em diagnóstico, nunca em resposta. */
   caminhoDe(chave: string): string {
     return join(this.raiz, chave);
   }

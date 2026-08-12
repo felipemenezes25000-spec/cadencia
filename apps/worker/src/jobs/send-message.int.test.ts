@@ -35,13 +35,13 @@ beforeAll(async () => {
       `INSERT INTO app.clinic (tenant_id, id, nome, cnes, timezone)
        VALUES ($1, $2, 'Unidade Snd', '2077509', 'America/Sao_Paulo')`,
       [tenantId, clinicId]);
-    // Coluna real: channel (nao channel_kind), phone (nao phone_number)
+    // Coluna real: channel (não channel_kind), phone (não phone_number)
     await c.query(
       `INSERT INTO msg.channel_identity
          (tenant_id, id, channel, display_name, phone, status)
        VALUES ($1, $2, 'whatsapp', 'Clinica Snd', '+5511999777666', 'verified')`,
       [tenantId, channelIdentityId]);
-    // Coluna real: remote_phone (nao remote_address), sem unread_count
+    // Coluna real: remote_phone (não remote_address), sem unread_count
     await c.query(
       `INSERT INTO msg.conversation
          (tenant_id, id, channel_identity_id,
@@ -49,7 +49,7 @@ beforeAll(async () => {
        VALUES ($1, $2, $3, '+5511988776655', 'active',
                clock_timestamp())`,
       [tenantId, conversationId, channelIdentityId]);
-    // Coluna real: body_text (nao body), channel obrigatorio, sem provider_message_id
+    // Coluna real: body_text (não body), channel obrigatório, sem provider_message_id
     await c.query(
       `INSERT INTO msg.message
          (tenant_id, id, conversation_id, direction, channel, body_text, status)

@@ -110,7 +110,7 @@ describe('despachante do outbox', () => {
     expect(backoffMs(2)).toBe(4_000);     // 4s
     expect(backoffMs(3)).toBe(8_000);     // 8s
     expect(backoffMs(4)).toBe(16_000);    // 16s
-    // maximo de 5 minutos
+    // máximo de 5 minutos
     expect(backoffMs(20)).toBe(300_000);
   });
 });

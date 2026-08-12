@@ -22,16 +22,16 @@ export interface TussLoadResult {
 }
 
 /**
- * Carga bimestral TUSS com staging, validacao e merge.
+ * Carga bimestral TUSS com staging, validação e merge.
  *
  * Roda com o papel `jobs` (BYPASSRLS). O fluxo:
  * 1. Cria registro no log como 'running'
  * 2. TRUNCATE ref.tuss_staging
  * 3. INSERT linhas na staging
  * 4. Merge: INSERT INTO ref.tuss_term ... ON CONFLICT
- *    - Termo novo (nao existe no tuss_term): conta como inserted
+ *    - Termo novo (não existe no tuss_term): conta como inserted
  *    - Termo existente com texto diferente: UPDATE e conta como updated
- *    - Termo existente identico: nao faz nada, conta como unchanged
+ *    - Termo existente idêntico: não faz nada, conta como unchanged
  * 5. TRUNCATE staging
  * 6. Atualiza log para 'success'
  *
@@ -71,9 +71,9 @@ export async function loadTussCompetenciaSafe(
     }
 
     // 4. Merge: staging -> tuss_term via INSERT ... ON CONFLICT
-    //    A PK de tuss_term e (tabela, codigo, vigencia).
+    //    A PK de tuss_term é (tabela, codigo, vigencia).
     //    ON CONFLICT atualiza termo, competencia e acao quando o texto muda.
-    //    Retorna a acao efetivamente realizada para contagem.
+    //    Retorna a ação efetivamente realizada para contagem.
 
     // 4a. Inserir/atualizar termos
     const { rows: mergeRows } = await c.query<{ merge_action: string }>(
@@ -128,10 +128,10 @@ export async function loadTussCompetenciaSafe(
     try {
       await c.query('ROLLBACK');
     } catch {
-      // Conexao quebrada, nao tem como fazer mais nada
+      // Conexão quebrada, não tem como fazer mais nada
     }
 
-    // Gravar erro no log numa transacao separada (a original ja foi revertida)
+    // Gravar erro no log numa transação separada (a original já foi revertida)
     if (logId !== null) {
       try {
         const c2 = await pool.connect();
@@ -146,7 +146,7 @@ export async function loadTussCompetenciaSafe(
           c2.release();
         }
       } catch {
-        // Se nem o log funcionar, nao tem o que fazer
+        // Se nem o log funcionar, não tem o que fazer
       }
     }
 

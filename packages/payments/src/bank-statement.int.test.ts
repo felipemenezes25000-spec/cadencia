@@ -82,9 +82,9 @@ beforeAll(async () => {
     clinicId: s.clinicId, requestId: uuidv7(),
   };
 
-  // Semear lancamentos na conta: 3 entries em sequencia
+  // Semear lançamentos na conta: 3 entries em sequência
   await withTenantTx(actor, async (tx) => {
-    // Receita 1 - paga ha 3 dias
+    // Receita 1 - paga há 3 dias
     await tx.query(
       `INSERT INTO fin.entry
          (tenant_id, id, kind, professional_id, clinic_id, description,
@@ -96,7 +96,7 @@ beforeAll(async () => {
       [uuidv7(), s.professionalId, s.clinicId, s.paymentMethodId,
        `st-1-${uuidv7()}`, s.bankAccountId]);
 
-    // Despesa - paga ha 2 dias
+    // Despesa - paga há 2 dias
     await tx.query(
       `INSERT INTO fin.entry
          (tenant_id, id, kind, professional_id, clinic_id, description,
@@ -108,7 +108,7 @@ beforeAll(async () => {
       [uuidv7(), s.professionalId, s.clinicId, s.paymentMethodId,
        `st-2-${uuidv7()}`, s.bankAccountId]);
 
-    // Receita 2 - paga ha 1 dia
+    // Receita 2 - paga há 1 dia
     await tx.query(
       `INSERT INTO fin.entry
          (tenant_id, id, kind, professional_id, clinic_id, description,

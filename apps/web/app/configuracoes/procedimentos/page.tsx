@@ -42,9 +42,9 @@ export default function PaginaProcedimentos() {
       <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-surface-2 text-left text-xs uppercase text-text-muted">
           <tr>
-            <th className="px-4 py-2.5 font-medium">Codigo</th>
+            <th className="px-4 py-2.5 font-medium">Código</th>
             <th className="px-4 py-2.5 font-medium">Procedimento</th>
-            <th className="px-4 py-2.5 font-medium">Duracao</th>
+            <th className="px-4 py-2.5 font-medium">Duração</th>
             <th className="px-4 py-2.5 font-medium">Usos (90 dias)</th>
           </tr>
         </thead>

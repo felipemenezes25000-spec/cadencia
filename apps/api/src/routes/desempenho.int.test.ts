@@ -8,11 +8,11 @@ import { auth, semearSessao, type SementeSessao } from '../test-support';
 let s: SementeSessao;
 
 /**
- * Dois MESES com receita diferente. A tela compara mes contra mes, entao os
- * lancamentos sao ancorados no dia 10 de cada um — longe das bordas, para o
- * teste nao depender de em que dia do mes ele roda.
- *   - mes anterior: 2 atendimentos de R$ 200
- *   - mes atual:    3 atendimentos de R$ 300
+ * Dois MESES com receita diferente. A tela compara mês contra mês, então os
+ * lançamentos são ancorados no dia 10 de cada um — longe das bordas, para o
+ * teste não depender de em que dia do mês ele roda.
+ *   - mês anterior: 2 atendimentos de R$ 200
+ *   - mês atual:    3 atendimentos de R$ 300
  */
 async function semearHistorico(t: SementeSessao): Promise<void> {
   const a = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
@@ -75,7 +75,7 @@ describe('indicadores de desempenho', () => {
     expect(ticket?.deltaPercent).toBe(50);
 
     expect(d.indicators.find((x) => x.metric === 'ocupacao')).toBeDefined();
-    // A tela publica de onde veio o numero: 'live' quando calculado na hora.
+    // A tela publica de onde veio o número: 'live' quando calculado na hora.
     expect(['live', 'matview']).toContain(d.freshness.source);
 
     await app.close();
@@ -93,7 +93,7 @@ describe('indicadores de desempenho', () => {
       .indicators.find((x) => x.metric === 'receita');
 
     // Dividir por zero daria Infinity, que vira `null` no JSON e quebra a tela.
-    // Zero anterior com zero atual e variacao ZERO, nao indefinida.
+    // Zero anterior com zero atual é variação ZERO, não indefinida.
     expect(Number.isFinite(receita?.deltaPercent)).toBe(true);
     expect(receita?.deltaPercent).toBe(0);
 

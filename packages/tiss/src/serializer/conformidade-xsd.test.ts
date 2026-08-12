@@ -7,9 +7,9 @@ import type { LoteConsultaInput } from './types';
 /**
  * Conformidade contra o XSD OFICIAL 4.03.00 da ANS.
  *
- * Este e o unico teste do pacote que responde a pergunta que importa: a
- * operadora aceitaria este arquivo? Snapshot prova que o XML nao MUDOU;
- * so o schema prova que ele esta CERTO.
+ * Este é o único teste do pacote que responde a pergunta que importa: a
+ * operadora aceitaria este arquivo? Snapshot prova que o XML não MUDOU;
+ * só o schema prova que ele está CERTO.
  */
 
 const LOTE: LoteConsultaInput = {
@@ -54,7 +54,7 @@ describe('conformidade com o XSD 4.03.00 da ANS', () => {
     expect(warnings).toEqual([]);
 
     const r = validarContraXsdTiss(xml);
-    // A mensagem entra no expect para que a falha diga QUAL regra do padrao foi
+    // A mensagem entra no expect para que a falha diga QUAL regra do padrão foi
     // violada, em vez de "esperado true, recebido false".
     expect(r.erros.join('\n')).toBe('');
     expect(r.valido).toBe(true);

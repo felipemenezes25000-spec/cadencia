@@ -2,16 +2,16 @@ import { err, ok, type Result } from '@cadencia/kernel';
 import type { Queryable, TransactionalDb } from './cid10';
 
 /**
- * CID-11 (ICD-11 MMS). Irma da CID-10, nao substituta.
+ * CID-11 (ICD-11 MMS). Irmã da CID-10, não substituta.
  *
- * As duas convivem: a CID-11 entra na vigilancia epidemiologica em 01/01/2027
- * (Nota Tecnica 91/2024 do Ministerio da Saude), enquanto o faturamento de
- * convenio continua em CID-10 pelo tempo que o padrao TISS pedir
- * `dm_diagnosticoCID10` — que e o que a versao 4.03.00 pede.
+ * As duas convivem: a CID-11 entra na vigilância epidemiológica em 01/01/2027
+ * (Nota Técnica 91/2024 do Ministério da Saúde), enquanto o faturamento de
+ * convênio continua em CID-10 pelo tempo que o padrão TISS pedir
+ * `dm_diagnosticoCID10` — que é o que a versão 4.03.00 pede.
  */
 
 export interface EntidadeIcd11 {
-  /** URI da FUNDACAO. Estavel entre releases; o codigo nao e. */
+  /** URI da FUNDAÇÃO. Estável entre releases; o código não é. */
   readonly uri: string;
   readonly codigo: string;
   readonly descricao: string;
@@ -29,11 +29,11 @@ export interface ResolvedCid11 {
 export type Cid11Failure = 'codigo_inexistente_na_data';
 
 /**
- * Resolve o codigo PELA DATA DO EVENTO — mesma regra da CID-10.
+ * Resolve o código PELA DATA DO EVENTO — mesma regra da CID-10.
  *
- * Nao existe versao sem data e nao existe default para hoje: resolver pelo
- * relogio de quem executa devolve a descricao de HOJE para um atendimento de
- * dois anos atras, e o prontuario passa a dizer algo que o medico nao escreveu.
+ * Não existe versão sem data e não existe default para hoje: resolver pelo
+ * relógio de quem executa devolve a descrição de HOJE para um atendimento de
+ * dois anos atrás, e o prontuário passa a dizer algo que o médico não escreveu.
  */
 export async function resolveCid11At(
   db: Queryable, codigo: string, eventDate: string,
@@ -55,7 +55,7 @@ export async function resolveCid11At(
   });
 }
 
-/** O que a API da OMS devolve por entidade. So o que consumimos aparece aqui. */
+/** O que a API da OMS devolve por entidade. Só o que consumimos aparece aqui. */
 interface RespostaOms {
   readonly '@id'?: unknown;
   readonly code?: unknown;
@@ -64,10 +64,10 @@ interface RespostaOms {
 }
 
 /**
- * A URI da FUNDACAO a partir da URI do release.
+ * A URI da FUNDAÇÃO a partir da URI do release.
  *
  * A OMS devolve `.../icd/release/11/2025-01/mms/1435254666`, que muda a cada
- * publicacao. A identidade que sobrevive e `.../icd/entity/1435254666`. Guardar
+ * publicação. A identidade que sobrevive é `.../icd/entity/1435254666`. Guardar
  * a URI do release faria o sistema perder o rastro da entidade no release
  * seguinte — exatamente o que a coluna `uri` existe para impedir.
  */
@@ -77,7 +77,7 @@ function uriDaFundacao(idDoRelease: string): string {
 }
 
 /**
- * O texto que vai para o prontuario, sem a marcacao que a OMS embute.
+ * O texto que vai para o prontuário, sem a marcação que a OMS embute.
  *
  * A API devolve o termo indexado envolto em tags. Gravar cru poria lixo no meio
  * de um documento assinado.
@@ -87,11 +87,11 @@ function textoLimpo(bruto: string): string {
 }
 
 /**
- * Converte a resposta da OMS nas entidades que viram linhas do catalogo.
+ * Converte a resposta da OMS nas entidades que viram linhas do catálogo.
  *
- * Devolve lista, e nao um objeto, porque a entidade pode ser descartada: capitulo
- * e bloco AGRUPAM mas nao codificam. Deixar entrar poria "Capitulo 01" na lista
- * de escolha do medico, ao lado de diagnosticos de verdade.
+ * Devolve lista, e não um objeto, porque a entidade pode ser descartada: capítulo
+ * e bloco AGRUPAM mas não codificam. Deixar entrar poria "Capítulo 01" na lista
+ * de escolha do médico, ao lado de diagnósticos de verdade.
  */
 export function entidadesDaLinearizacao(
   resposta: unknown, capitulo: string | null,
@@ -103,8 +103,8 @@ export function entidadesDaLinearizacao(
   const titulo = r.title as { '@value'?: unknown } | undefined;
   const bruto = typeof titulo?.['@value'] === 'string' ? titulo['@value'] : '';
   const descricao = textoLimpo(bruto);
-  // Descricao vazia no prontuario e pior que codigo ausente: o documento fica
-  // com um diagnostico que nao diz nada.
+  // Descrição vazia no prontuário é pior que código ausente: o documento fica
+  // com um diagnóstico que não diz nada.
   if (descricao === '') return [];
 
   const id = typeof r['@id'] === 'string' ? r['@id'] : '';
@@ -112,12 +112,12 @@ export function entidadesDaLinearizacao(
 }
 
 /**
- * Carga de um release inteiro, em UMA transacao, numa unica conexao.
+ * Carga de um release inteiro, em UMA transação, numa única conexão.
  *
- * Roda com o papel `jobs`. Se qualquer codigo sobrepuser vigencia existente, o
- * EXCLUDE derruba a carga inteira (SQLSTATE 23P01) — que e o comportamento
- * desejado: meia carga e pior que nenhuma, porque a busca passaria a devolver um
- * catalogo pela metade sem nada indicar isso na tela.
+ * Roda com o papel `jobs`. Se qualquer código sobrepuser vigência existente, o
+ * EXCLUDE derruba a carga inteira (SQLSTATE 23P01) — que é o comportamento
+ * desejado: meia carga é pior que nenhuma, porque a busca passaria a devolver um
+ * catálogo pela metade sem nada indicar isso na tela.
  */
 export async function loadCid11Release(
   db: TransactionalDb,

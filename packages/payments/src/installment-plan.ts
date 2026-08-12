@@ -26,7 +26,7 @@ export interface InstallmentPlanCreated {
 }
 
 /**
- * Cria um plano de parcelamento: entry-mae (cancelada, referencia), N entries
+ * Cria um plano de parcelamento: entry-mãe (cancelada, referência), N entries
  * filhas com valores rateados via allocate() do kernel (sem perder centavo).
  * Datas de vencimento incrementam mensalmente a partir de firstDueDate.
  */
@@ -39,7 +39,7 @@ export async function createInstallmentPlan(
     return err({ kind: 'valor_invalido' });
   }
 
-  // Valida metodo de pagamento
+  // Valida método de pagamento
   const { rows: methodRows } = await tx.query<{ id: string }>(
     `SELECT id FROM fin.payment_method WHERE id = $1`, [i.paymentMethodId]);
   if (methodRows.length === 0) return err({ kind: 'metodo_nao_encontrado' });
@@ -48,7 +48,7 @@ export async function createInstallmentPlan(
   const ratios = Array.from({ length: i.installments }, () => 1);
   const shares = allocate(brl(i.totalAmountCents), ratios);
 
-  // Cria a entry-mae (referencia, cancelada — substituida pelas parcelas)
+  // Cria a entry-mãe (referência, cancelada — substituída pelas parcelas)
   const motherEntryId = uuidv7();
   await tx.query(
     `INSERT INTO fin.entry
@@ -78,7 +78,7 @@ export async function createInstallmentPlan(
     const entryId = uuidv7();
     installmentEntryIds.push(entryId);
 
-    // Calcula a data de vencimento (incrementa mes a mes a partir da base)
+    // Calcula a data de vencimento (incrementa mês a mês a partir da base)
     const dueDate = new Date(baseDate);
     dueDate.setUTCMonth(dueDate.getUTCMonth() + idx);
     const dueDateStr = dueDate.toISOString().slice(0, 10);

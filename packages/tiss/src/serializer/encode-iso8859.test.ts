@@ -32,16 +32,16 @@ describe('encodeIso8859', () => {
   });
 
   it('substitui caractere fora do range ISO-8859-1 por ? e registra warning', () => {
-    // Emoji (U+1F600) esta fora do ISO-8859-1
+    // Emoji (U+1F600) está fora do ISO-8859-1
     const result = encodeIso8859('abc\u{1F600}def');
-    // O emoji e um surrogate pair em UTF-16, conta como 1 caractere logico
+    // O emoji é um surrogate pair em UTF-16, conta como 1 caractere lógico
     expect(result.bytes).toEqual(new Uint8Array([0x61, 0x62, 0x63, 0x3F, 0x64, 0x65, 0x66]));
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain('U+1F600');
   });
 
   it('substitui caractere Unicode acima de U+00FF por ? e registra warning', () => {
-    // Caractere grego alfa (U+03B1) nao existe em ISO-8859-1
+    // Caractere grego alfa (U+03B1) não existe em ISO-8859-1
     const result = encodeIso8859('aαb');
     expect(result.bytes).toEqual(new Uint8Array([0x61, 0x3F, 0x62]));
     expect(result.warnings).toHaveLength(1);
@@ -70,9 +70,9 @@ describe('encodeIso8859', () => {
   });
 
   it('nunca substitui em silencio — cada caractere perdido gera warning', () => {
-    // Mistura de validos e invalidos
+    // Mistura de válidos e inválidos
     const result = encodeIso8859('João ☃ da ❤ Silva');
-    // U+2603 (boneco de neve) e U+2764 (coracao) sao invalidos
+    // U+2603 (boneco de neve) e U+2764 (coração) são inválidos
     expect(result.warnings).toHaveLength(2);
     expect(result.warnings[0]).toContain('U+2603');
     expect(result.warnings[1]).toContain('U+2764');

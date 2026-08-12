@@ -81,7 +81,7 @@ describe('computeTissHash — hash MD5 proprietario TISS', () => {
 
   it('congela o hash para os dados de amostra (snapshot)', () => {
     const hash = computeTissHash(cabecalho, '0001', [guiaBase]);
-    // Hash pre-calculado: concatenacao dos campos na ordem do XSD, MD5
+    // Hash pré-calculado: concatenação dos campos na ordem do XSD, MD5
     // registroANS + dataGeracao + horaGeracao + sequencialTransacao
     // + numeroLote + (para cada guia: numeroGuiaPrestador + dataAtendimento
     // + codigoProcedimento + valorProcedimento formatado)
@@ -180,7 +180,7 @@ describe('computeRecursoGlosaHash', () => {
 
   it('formata valor recursado como reais com 2 casas (ex: 15000 centavos -> "150.00")', async () => {
     // Teste indireto: hash com 15000 centavos deve usar "150.00"
-    // Verificamos que o hash e o esperado via calculo manual
+    // Verificamos que o hash é o esperado via cálculo manual
     const { createHash: ch } = await import('node:crypto');
     const concat = '339679' + '2026-08-07' + '14:30:00' + '12345' + '0001' + 'RG0001'
       + '1' + '10101012' + '150.00';

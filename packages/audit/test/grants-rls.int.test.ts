@@ -34,8 +34,8 @@ describe('audit.event: privilegios e RLS', () => {
     await owner.query('BEGIN');
     await owner.query('DROP POLICY writer ON audit.event');
 
-    // Este e exatamente o erro que quebraria clin.finalize_encounter no
-    // primeiro deploy: a transacao de negocio aborta e nenhum atendimento
+    // Este é exatamente o erro que quebraria clin.finalize_encounter no
+    // primeiro deploy: a transação de negócio aborta e nenhum atendimento
     // pode ser finalizado.
     await expect(owner.query(INSERT_SQL, [TENANT_A])).rejects.toMatchObject({
       code: '42501',

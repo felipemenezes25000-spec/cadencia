@@ -2,14 +2,14 @@ import { ValidationError } from '../errors';
 import { err, ok, type Result } from '../result';
 
 /**
- * CNPJ ALFANUMERICO — IN RFB 2.229/2024, em vigor desde 01/07/2026.
- * 12 posicoes de base em [A-Z0-9] + 2 digitos verificadores NUMERICOS.
+ * CNPJ ALFANUMÉRICO — IN RFB 2.229/2024, em vigor desde 01/07/2026.
+ * 12 posições de base em [A-Z0-9] + 2 dígitos verificadores NUMÉRICOS.
  *
- * O valor de cada caractere no calculo do DV e `codigo ASCII - 48`:
+ * O valor de cada caractere no cálculo do DV é `codigo ASCII - 48`:
  *   '0' (48) -> 0, '9' (57) -> 9, 'A' (65) -> 17, ..., 'Z' (90) -> 42.
  *
- * E por isso que CNPJ e varchar(14) e nunca coluna numerica — invariante de CI
- * (§3.13 item 8) e decisao irreversivel n. 12.
+ * É por isso que CNPJ é varchar(14) e nunca coluna numérica — invariante de CI
+ * (§3.13 item 8) e decisão irreversível n. 12.
  */
 export type Cnpj = string & { readonly __brand: 'Cnpj' };
 
@@ -22,7 +22,7 @@ function charValue(char: string): number {
   return char.charCodeAt(0) - 48;
 }
 
-/** Modulo 11: resto < 2 => DV 0; senao DV = 11 - resto. */
+/** Módulo 11: resto < 2 => DV 0; senão DV = 11 - resto. */
 function checkDigits(base: string): string {
   let sum1 = 0;
   for (let i = 0; i < 12; i += 1) sum1 += charValue(base[i] ?? '0') * (WEIGHTS_FIRST[i] ?? 0);
@@ -49,7 +49,7 @@ export function parseCnpj(input: string): Result<Cnpj, ValidationError> {
     ));
   }
   if (ALL_EQUAL.test(normalized)) {
-    // 00000000000000 passa no modulo 11: so esta regra o elimina.
+    // 00000000000000 passa no módulo 11: só esta regra o elimina.
     return err(new ValidationError('cnpj.caracteres_repetidos', 'CNPJ com todos os caracteres iguais nao existe'));
   }
   if (checkDigits(normalized.slice(0, 12)) !== normalized.slice(12)) {

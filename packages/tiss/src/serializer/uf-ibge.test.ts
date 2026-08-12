@@ -3,7 +3,7 @@ import { ufParaCodigoIbge } from './uf-ibge';
 
 describe('UF para codigo IBGE', () => {
   it('traduz a sigla que o cadastro guarda para o codigo que o TISS exige', () => {
-    // `dm_UF` no XSD nao aceita 'SP': o dominio e o conjunto de codigos do
+    // `dm_UF` no XSD não aceita 'SP': o domínio é o conjunto de códigos do
     // IBGE. Mandar a sigla derruba a guia inteira no validador da operadora.
     expect(ufParaCodigoIbge('SP')).toBe('35');
     expect(ufParaCodigoIbge('RJ')).toBe('33');
@@ -21,7 +21,7 @@ describe('UF para codigo IBGE', () => {
 
   it('recusa sigla desconhecida em vez de inventar codigo', () => {
     // Devolver '' ou '98' calado poria a guia no ar com UF errada, e a glosa
-    // voltaria semanas depois sem ninguem saber de onde veio.
+    // voltaria semanas depois sem ninguém saber de onde veio.
     expect(() => ufParaCodigoIbge('XX')).toThrow(/uf_desconhecida/);
   });
 

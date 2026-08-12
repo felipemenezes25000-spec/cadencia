@@ -16,7 +16,7 @@ interface PayableDaApi {
   categoryName: string | null;
 }
 
-/** A API fala 'pending'/'confirmed'; a tela fala em portugues e distingue vencido. */
+/** A API fala 'pending'/'confirmed'; a tela fala em português e distingue vencido. */
 function statusDaTela(p: PayableDaApi, hoje: string): DespesaPendente['status'] {
   if (p.status === 'confirmed') return 'pago';
   if (p.dueDate !== null && p.dueDate < hoje) return 'vencido';
@@ -67,7 +67,7 @@ export default function PaginaAPagar() {
         await apiFetch(`/v1/payables/${id}/pagar`, {
           method: 'POST', clinicId, csrfToken });
       }}
-      aoEditar={() => { /* edicao de despesa entra com a tela de lancamento */ }}
+      aoEditar={() => { /* edição de despesa entra com a tela de lançamento */ }}
       aoParcelar={async () => { /* parcelamento usa fin.installment_plan */ }}
     />
   );

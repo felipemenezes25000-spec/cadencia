@@ -165,10 +165,10 @@ describe('rotas de lotes TISS', () => {
     const r = await app.inject({
       method: 'GET', url: `/v1/tiss/lotes/${loteId}/xml`, ...auth(admin),
     });
-    // Antes esta rota devolvia `<lote>0001</lote>` e o teste afirmava 404 "ate
-    // o worker gerar". Nao ha worker: o XML e serializado a partir das guias na
-    // hora, porque enquanto o lote e rascunho as guias ainda podem mudar e um
-    // arquivo congelado antes disso descreveria um lote que nao existe mais.
+    // Antes esta rota devolvia `<lote>0001</lote>` e o teste afirmava 404 "até
+    // o worker gerar". Não há worker: o XML é serializado a partir das guias na
+    // hora, porque enquanto o lote é rascunho as guias ainda podem mudar e um
+    // arquivo congelado antes disso descreveria um lote que não existe mais.
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('ISO-8859-1');
     expect(r.headers['cache-control']).toBe('no-store');
@@ -191,7 +191,7 @@ describe('rotas de lotes TISS', () => {
     const r = await app.inject({
       method: 'GET', url: `/v1/tiss/lotes/${vazioId}/xml`, ...auth(admin),
     });
-    // Lote vazio e ACEITO pela operadora e nao paga nada: parece sucesso ate o
+    // Lote vazio é ACEITO pela operadora e não paga nada: parece sucesso até o
     // demonstrativo chegar zerado semanas depois.
     expect(r.statusCode).toBe(422);
     expect((r.json() as { erro: string }).erro).toBe('lote_sem_guias');

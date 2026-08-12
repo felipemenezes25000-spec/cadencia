@@ -6,7 +6,7 @@ import type { OutboxRow } from './dispatcher';
  * Busca eventos pendentes de despacho.
  *
  * Roda com o papel `jobs` (BYPASSRLS): precisa ler eventos de TODOS os tenants.
- * O filtro e: dispatched_at IS NULL AND attempts < 5, ordenado por created_at.
+ * O filtro é: dispatched_at IS NULL AND attempts < 5, ordenado por created_at.
  * FOR UPDATE SKIP LOCKED evita que dois workers processem o mesmo evento.
  */
 export async function fetchPending(pool: Pool, limit: number): Promise<OutboxRow[]> {

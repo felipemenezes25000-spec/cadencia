@@ -20,7 +20,7 @@ function adminUrl(): string {
 beforeAll(async () => {
   admin = await semearSessao({ role: 'admin_clinico' });
 
-  // Semear dados necessarios para a guia
+  // Semear dados necessários para a guia
   const pool = new Pool({ connectionString: adminUrl(), max: 1 });
   const c = await pool.connect();
   try {
@@ -127,9 +127,9 @@ describe('rotas de guias TISS', () => {
   });
 
   it('medico le guias com tiss.guia.read mas nao ajusta', async () => {
-    // medico tem tiss.guia.read mas nao tiss.guia.adjust
-    // Nota: medico e de outro tenant, entao nao vera guias deste tenant
-    // O teste de RBAC puro e que medico nao pode ajustar
+    // médico tem tiss.guia.read mas não tiss.guia.adjust
+    // Nota: médico é de outro tenant, então não verá guias deste tenant
+    // O teste de RBAC puro é que médico não pode ajustar
     const medicoAdmin = await semearSessao({ role: 'profissional' });
     const app = await buildApp();
     const r = await app.inject({

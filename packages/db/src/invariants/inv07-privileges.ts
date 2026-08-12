@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { PRIVILEGE_SCHEMAS } from './catalog';
 import type { Queryable } from '../queryable';
 
-/** packages/db/privileges.json — resolvido pelo modulo, nao pelo cwd de quem chama. */
+/** packages/db/privileges.json — resolvido pelo módulo, não pelo cwd de quem chama. */
 export const PRIVILEGES_FILE = fileURLToPath(new URL('../../privileges.json', import.meta.url));
 
 export interface RelationGrants {
@@ -13,7 +13,7 @@ export interface RelationGrants {
 
 export type GrantMap = Record<string, RelationGrants>;
 
-/** Privilegio do dono e consequencia da posse, nao GRANT: fica de fora da declaracao. */
+/** Privilégio do dono é consequência da posse, não GRANT: fica de fora da declaração. */
 const TABLE_GRANTS_SQL = `
 SELECT n.nspname || '.' || c.relname AS relation,
        coalesce(g.rolname, 'PUBLIC')  AS grantee,
@@ -48,9 +48,9 @@ SELECT n.nspname || '.' || c.relname AS relation,
  ORDER BY 1, 2, 3, 4`;
 
 /**
- * Relacoes existentes, inclusive as SEM nenhum GRANT — que sao o caso perigoso.
- * Particao fica de fora: o nome dela muda todo mes (event_202608, event_202609) e
- * o arquivo declarado viraria ruido mensal em vez de revisao.
+ * Relações existentes, inclusive as SEM nenhum GRANT — que são o caso perigoso.
+ * Partição fica de fora: o nome dela muda todo mês (event_202608, event_202609) e
+ * o arquivo declarado viraria ruído mensal em vez de revisão.
  */
 const RELATIONS_SQL = `
 SELECT n.nspname || '.' || c.relname AS relation
@@ -93,7 +93,7 @@ export async function readEffectiveGrants(db: Queryable): Promise<GrantMap> {
   return sortDeep(mapa);
 }
 
-/** Ordem estavel: o diff tem que mostrar mudanca de privilegio, nunca mudanca de ordem. */
+/** Ordem estável: o diff tem que mostrar mudança de privilégio, nunca mudança de ordem. */
 function sortDeep(mapa: GrantMap): GrantMap {
   const out: GrantMap = {};
   for (const relacao of Object.keys(mapa).sort()) {

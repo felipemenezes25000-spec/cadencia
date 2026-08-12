@@ -12,9 +12,9 @@ describe('invariante 9 — a trilha tem de estar viva, nao so existir', () => {
     const pool = catalogPool();
     const antes = await pool.query<{ total: string }>('SELECT count(*)::text AS total FROM audit.event');
 
-    // UMA conexao do comeco ao fim: o contexto e transacional (TRUE) e o INSERT
-    // precisa commitar para o check enxergar o evento. Pool.query nao garante a
-    // mesma conexao entre chamadas, e audit.log rodaria sem tenant nenhum.
+    // UMA conexão do começo ao fim: o contexto é transacional (TRUE) e o INSERT
+    // precisa commitar para o check enxergar o evento. Pool.query não garante a
+    // mesma conexão entre chamadas, e audit.log rodaria sem tenant nenhum.
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -74,8 +74,8 @@ describe('invariante 9 — a trilha tem de estar viva, nao so existir', () => {
 
   it('reprova trilha vazia — banco com a tabela e sem evento nao prova nada em auditoria', async () => {
     const violacoes = await inRollbackTx(async (c) => {
-      // TRUNCATE e transacional e nao dispara o trigger no_mutate, que e FOR EACH ROW:
-      // a trilha some so dentro desta transacao, que sempre e revertida.
+      // TRUNCATE é transacional e não dispara o trigger no_mutate, que é FOR EACH ROW:
+      // a trilha some só dentro desta transação, que sempre é revertida.
       await c.query('TRUNCATE audit.event');
       return auditAliveViolations(c);
     });

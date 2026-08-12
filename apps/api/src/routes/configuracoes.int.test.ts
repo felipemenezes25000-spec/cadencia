@@ -46,8 +46,8 @@ describe('configuracoes da clinica', () => {
       method: 'PUT', url: '/v1/configuracoes/clinica', ...auth(s),
       payload: { nome: 'Qualquer', timezone: 'Marte/Olympus' } });
 
-    // O fuso da clinica decide a data de TODO evento do sistema (§10 item 10).
-    // Gravar um invalido faria toda derivacao diaria falhar depois, longe daqui.
+    // O fuso da clínica decide a data de TODO evento do sistema (§10 item 10).
+    // Gravar um inválido faria toda derivação diária falhar depois, longe daqui.
     expect(r.statusCode).toBe(422);
     expect(r.json()).toMatchObject({ erro: 'fuso_invalido' });
 

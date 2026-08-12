@@ -5,7 +5,7 @@ describe('app.local_date', () => {
   afterAll(async () => { await closePools(); });
 
   it('deriva a data no fuso da UNIDADE, nao no do servidor', async () => {
-    // 2026-08-04T02:30:00Z = 03/08 as 23:30 em Sao Paulo e 03/08 as 22:30 em Rio Branco.
+    // 2026-08-04T02:30:00Z = 03/08 às 23:30 em São Paulo e 03/08 às 22:30 em Rio Branco.
     const { rows } = await appPool().query<{ sp: string; rb: string; utc: string }>(
       `SELECT app.local_date($1::timestamptz, 'America/Sao_Paulo')::text AS sp,
               app.local_date($1::timestamptz, 'America/Rio_Branco')::text AS rb,

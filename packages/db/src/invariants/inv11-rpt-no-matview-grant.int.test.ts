@@ -31,10 +31,10 @@ describe('invariante 11 — nenhuma matview tem GRANT para app_rw (§3.8)', () =
       await c.query(`
         CREATE MATERIALIZED VIEW app.__mv_limpa AS
         SELECT 1 AS x WITH NO DATA`);
-      // Sem GRANT — matview so e acessada via view security_barrier
+      // Sem GRANT — matview só é acessada via view security_barrier
       return matviewGrantViolations(await matviewGrantsToAppRw(c));
     });
-    // Nao deve conter a matview limpa
+    // Não deve conter a matview limpa
     expect(violations.some((v) => v.includes('__mv_limpa'))).toBe(false);
   });
 });

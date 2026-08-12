@@ -7,7 +7,7 @@ export interface TimeSourceViolation {
   readonly snippet: string;
 }
 
-/** Os dois unicos arquivos do repositorio autorizados a ler o relogio do sistema. */
+/** Os dois únicos arquivos do repositório autorizados a ler o relógio do sistema. */
 export const TIME_SOURCE_ALLOWLIST: readonly string[] = [
   'packages/kernel/src/clock.ts',
   'packages/kernel/src/uuid.ts',

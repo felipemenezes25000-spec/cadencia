@@ -84,7 +84,7 @@ async function semear(): Promise<Semente> {
                $4, 'monthly', 15, current_date, true, $5)`,
       [s.tenantId, s.templateMonthlyId, s.categoryId, s.clinicId, s.userId]);
 
-    // Template com ends_at no passado (nao deve materializar)
+    // Template com ends_at no passado (não deve materializar)
     await c.query(
       `INSERT INTO fin.recurring_template
          (tenant_id, id, description, kind, amount_cents,
@@ -95,7 +95,7 @@ async function semear(): Promise<Semente> {
                current_date - interval '1 day', $4)`,
       [s.tenantId, s.templateEndedId, s.clinicId, s.userId]);
 
-    // Template inativo (nao deve materializar)
+    // Template inativo (não deve materializar)
     await c.query(
       `INSERT INTO fin.recurring_template
          (tenant_id, id, description, kind, amount_cents,
@@ -205,7 +205,7 @@ describe('materializeRecurringEntries — job de materializacao', () => {
         `SELECT next_due_date::text FROM fin.recurring_template WHERE id = $1`,
         [s.templateMonthlyId]);
 
-      // next_due_date deve ter avancado (nao mais a data original)
+      // next_due_date deve ter avançado (não mais a data original)
       const nextDue = new Date(rows[0]!.next_due_date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -216,7 +216,7 @@ describe('materializeRecurringEntries — job de materializacao', () => {
   });
 
   it('nao duplica entry na segunda execucao (idempotency_key por template+data)', async () => {
-    // Roda novamente — nao deve gerar duplicata
+    // Roda novamente — não deve gerar duplicata
     const client = await jobsPool.connect();
     try {
       await client.query('BEGIN');
@@ -226,7 +226,7 @@ describe('materializeRecurringEntries — job de materializacao', () => {
       );
       await client.query('COMMIT');
 
-      // Nada gerado na segunda vez (next_due_date ja avancou)
+      // Nada gerado na segunda vez (next_due_date já avançou)
       expect(result.generated).toBe(0);
     } finally {
       client.release();

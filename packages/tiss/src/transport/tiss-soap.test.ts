@@ -318,7 +318,7 @@ describe('TissSoapTransport', () => {
 
     beforeAll(async () => {
       server = createServer((_req, _res) => {
-        // Proposital: nunca responde. Conexao fica aberta ate timeout.
+        // Proposital: nunca responde. Conexão fica aberta até timeout.
       });
       await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
       port = (server.address() as { port: number }).port;
@@ -375,8 +375,8 @@ describe('TissSoapTransport', () => {
       expect(result.ok).toBe(false);
       if (result.ok) return;
       expect(result.error.kind).toBe('timeout');
-      // A regra mais cara do documento: timeout em operacao unsafe NAO permite retry.
-      // retrySafe: false garante que o caller sabe que NAO pode reenviar.
+      // A regra mais cara do documento: timeout em operação unsafe NÃO permite retry.
+      // retrySafe: false garante que o caller sabe que NÃO pode reenviar.
       expect(result.error.retrySafe).toBe(false);
     }, 10_000);
 

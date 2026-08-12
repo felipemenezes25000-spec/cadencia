@@ -50,9 +50,9 @@ describe('Clock', () => {
     const monoDepois = systemClock.monotonicMs();
 
     expect(voltas).toBeGreaterThan(0);
-    expect(monoDepois - monoAntes).toBeGreaterThanOrEqual(2);   // avanca de verdade
-    // performance.now() conta a partir do inicio do processo; Date.now() conta a partir
-    // de 1970. Se alguem trocar monotonicMs por Date.now(), esta linha quebra na hora.
+    expect(monoDepois - monoAntes).toBeGreaterThanOrEqual(2);   // avança de verdade
+    // performance.now() conta a partir do início do processo; Date.now() conta a partir
+    // de 1970. Se alguém trocar monotonicMs por Date.now(), esta linha quebra na hora.
     expect(monoDepois).toBeLessThan(wallAntes);
   });
 });

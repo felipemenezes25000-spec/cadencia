@@ -27,7 +27,7 @@ export interface CashFlowProjection {
  * - Entries com due_date futuro e status=pendente (projetado): receitas e despesas previstas
  *
  * Agrupado por semana (date_trunc('week', data)) com saldo acumulado via window function.
- * O filtro por bank_account_id e opcional: se ausente, mostra todos os lancamentos da clinica.
+ * O filtro por bank_account_id é opcional: se ausente, mostra todos os lançamentos da clínica.
  */
 export async function getCashFlowProjection(
   tx: TxClient,

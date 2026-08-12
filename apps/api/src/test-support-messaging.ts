@@ -80,7 +80,7 @@ export async function semearSessaoMensageria(
        VALUES ($1, $2, 'whatsapp', 'Clinica Teste', '+5511999999999', 'verified')`,
       [tenantId, channelIdentityId]);
 
-    // Template para testes de automacao
+    // Template para testes de automação
     await c.query(
       `INSERT INTO msg.template
          (tenant_id, id, channel_identity_id, channel, name, category,

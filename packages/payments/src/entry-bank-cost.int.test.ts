@@ -147,11 +147,11 @@ describe('fin.entry — colunas bank_account_id e cost_center_id', () => {
         `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
          VALUES ($1, $2, 'Outro Tenant BC', '77ABC88901DE32')`,
         [outroTenantId, `ot2-${outroTenantId}`]);
-      // A conta padrao do tenant JA EXISTE: `trg_tenant_default_bank_account`
+      // A conta padrão do tenant JÁ EXISTE: `trg_tenant_default_bank_account`
       // provisiona uma no INSERT de app.tenant. Inserir outra com is_default
-      // estoura `ux_bank_account_default` (uma padrao por tenant) — e o erro
+      // estoura `ux_bank_account_default` (uma padrão por tenant) — e o erro
       // aparecia como se o teste do FK composto estivesse quebrado, quando o
-      // produto estava certo e o cenario e que era impossivel de montar.
+      // produto estava certo e o cenário é que era impossível de montar.
       const { rows: alheia } = await c.query<{ id: UuidV7 }>(
         `SELECT id::text FROM fin.bank_account
           WHERE tenant_id = $1 AND is_default LIMIT 1`,

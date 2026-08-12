@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { appPool, jobsPool } from '@cadencia/db';
 import { resolveCid10At, loadCid10Competencia, parseCid10Csv } from './cid10';
 
-// Cenario: a CID-10 e recarregada em 2025 e a descricao de J45 muda. Um
-// atendimento de 2024 tem que continuar resolvendo a descricao de 2024.
+// Cenário: a CID-10 é recarregada em 2025 e a descrição de J45 muda. Um
+// atendimento de 2024 tem que continuar resolvendo a descrição de 2024.
 beforeAll(async () => {
   await jobsPool().query(`DELETE FROM ref.cid10_term WHERE codigo IN ('J45','I10','A00')`);
   await loadCid10Competencia(jobsPool(), {

@@ -1,20 +1,20 @@
 /**
  * Carrega um release da CID-11 (ICD-11 MMS) da API da OMS para `ref.cid11_term`.
  *
- * POR QUE ISTO E UM SCRIPT E NAO UMA MIGRATION:
- * o catalogo tem dezenas de milhares de entidades e vem de fora. Migration que
+ * POR QUE ISTO É UM SCRIPT E NÃO UMA MIGRATION:
+ * o catálogo tem dezenas de milhares de entidades e vem de fora. Migration que
  * depende de rede falha no deploy quando a OMS estiver fora do ar, e um deploy
- * que trava por causa de terminologia e um deploy que ninguem faz na sexta.
+ * que trava por causa de terminologia é um deploy que ninguém faz na sexta.
  *
  * CREDENCIAIS: registro gratuito em https://icd.who.int/icdapi -> "View API
- * access key(s)". Duas variaveis de ambiente:
+ * access key(s)". Duas variáveis de ambiente:
  *
  *   ICD_CLIENT_ID=...
  *   ICD_CLIENT_SECRET=...
  *
- * Alternativa sem credencial: a OMS publica a propria API como container
+ * Alternativa sem credencial: a OMS publica a própria API como container
  * (`whoicd/icd-api`). Suba localmente e aponte ICD_BASE_URL para ele — o que
- * tambem e a forma correta de rodar isto em producao, para nao depender do
+ * também é a forma correta de rodar isto em produção, para não depender do
  * servidor da OMS no meio de um atendimento.
  *
  * Uso:
@@ -42,7 +42,7 @@ function lerOpcoes(argv: readonly string[]): Opcoes {
 }
 
 /**
- * `2025-01` -> `202501`, que e o formato de `competencia` char(6) — o mesmo da
+ * `2025-01` -> `202501`, que é o formato de `competencia` char(6) — o mesmo da
  * CID-10 e do TUSS. Uniformizar aqui evita que `clin.diagnosis.terminology_version`
  * tenha um formato por terminologia.
  */
@@ -55,8 +55,8 @@ function competenciaDoRelease(release: string): string {
 }
 
 /**
- * Token so quando o destino exige. Instancia local nao autentica — ver
- * `icd-endpoint.ts`. Devolver string vazia mantem o resto do script sem `if`.
+ * Token só quando o destino exige. Instância local não autentica — ver
+ * `icd-endpoint.ts`. Devolver string vazia mantém o resto do script sem `if`.
  */
 async function obterToken(): Promise<string> {
   if (!exigeOauth(BASE)) return '';
@@ -82,9 +82,9 @@ async function obterToken(): Promise<string> {
 
 /**
  * A URI que a OMS devolve nos campos `child` aponta sempre para `id.who.int`,
- * mesmo quando a resposta veio da instancia local. Seguir esse endereco cru
+ * mesmo quando a resposta veio da instância local. Seguir esse endereço cru
  * jogaria a carga inteira de volta no servidor da OMS — exatamente o que subir o
- * container evita. Trocar o host mantem a travessia dentro de casa.
+ * container evita. Trocar o host mantém a travessia dentro de casa.
  */
 function noEndpointConfigurado(url: string): string {
   try {
@@ -103,7 +103,7 @@ async function buscar(url: string, token: string): Promise<unknown> {
     headers: {
       ...(token === '' ? {} : { authorization: `Bearer ${token}` }),
       accept: 'application/json',
-      'accept-language': 'pt',        // A OMS publica a CID-11 em portugues.
+      'accept-language': 'pt',        // A OMS publica a CID-11 em português.
       'api-version': 'v2',
     },
   });
@@ -111,22 +111,22 @@ async function buscar(url: string, token: string): Promise<unknown> {
   return r.json();
 }
 
-/** Requisicoes simultaneas contra a API da OMS. */
+/** Requisições simultâneas contra a API da OMS. */
 const CONCORRENCIA = 8;
 
 /**
- * Desce a arvore da linearizacao a partir de um capitulo.
+ * Desce a árvore da linearização a partir de um capítulo.
  *
- * Iterativo com pilha explicita, e nao recursivo: a MMS tem mais de 30 mil
- * entidades e alguns ramos passam de 10 niveis. Recursao esbarraria na pilha do
- * Node no meio da carga, deixando o catalogo pela metade.
+ * Iterativo com pilha explícita, e não recursivo: a MMS tem mais de 30 mil
+ * entidades e alguns ramos passam de 10 níveis. Recursão esbarraria na pilha do
+ * Node no meio da carga, deixando o catálogo pela metade.
  *
- * E com CONCORRENCIA LIMITADA. Uma requisicao por vez levava horas — a arvore e
- * larga, nao profunda, e o gargalo e a latencia de ida e volta ate Genebra, nao
+ * E com CONCORRENCIA LIMITADA. Uma requisição por vez levava horas — a árvore é
+ * larga, não profunda, e o gargalo é a latência de ida e volta até Genebra, não
  * o processamento. Oito trabalhadores derrubam isso para minutos.
  *
- * O limite existe: sem teto, a primeira camada dispararia mil requisicoes de uma
- * vez e a OMS responderia 429 — e o catalogo pela metade e pior que nenhum,
+ * O limite existe: sem teto, a primeira camada dispararia mil requisições de uma
+ * vez e a OMS responderia 429 — e o catálogo pela metade é pior que nenhum,
  * porque a busca passa a devolver menos sem nada indicar isso na tela.
  */
 async function descer(
@@ -136,7 +136,7 @@ async function descer(
   let pilha = [...raizes];
 
   while (pilha.length > 0) {
-    // Fatia do tamanho da concorrencia: o resto volta para a pilha junto com os
+    // Fatia do tamanho da concorrência: o resto volta para a pilha junto com os
     // filhos descobertos nesta rodada.
     const lote = pilha.splice(0, CONCORRENCIA).filter((u) => {
       if (vistos.has(u)) return false;   // A MMS tem entidade com mais de um pai.
@@ -173,10 +173,10 @@ async function main(): Promise<void> {
   const vistos = new Set<string>();
   const linhas: EntidadeIcd11[] = [];
   for (const cap of capitulos) {
-    // O rotulo sai do PROPRIO capitulo, nao da posicao na lista. A CID-11 tem
-    // 28 capitulos, e os dois ultimos sao 'V' (funcionalidade) e 'X' (codigos
-    // de extensao) — letras. Numerar por posicao os gravaria como '27' e '28',
-    // dois capitulos que nao existem.
+    // O rótulo sai do PRÓPRIO capítulo, não da posição na lista. A CID-11 tem
+    // 28 capítulos, e os dois últimos são 'V' (funcionalidade) e 'X' (códigos
+    // de extensão) — letras. Numerar por posição os gravaria como '27' e '28',
+    // dois capítulos que não existem.
     const no = await buscar(cap, token) as { code?: unknown };
     const rotulo = typeof no.code === 'string' && no.code !== '' ? no.code : null;
     await descer([cap], rotulo, token, vistos, linhas);
@@ -192,9 +192,9 @@ async function main(): Promise<void> {
   if (url === undefined || url === '') throw new Error('DATABASE_URL_JOBS ausente');
   const pool = new Pool({ connectionString: url, max: 1 });
   try {
-    // Vigencia aberta a direita: o proximo release fecha esta com um UPDATE
-    // explicito. Fechar aqui, adivinhando quando a OMS publica de novo, deixaria
-    // o catalogo sem termo valido no intervalo entre a data chutada e o release
+    // Vigência aberta a direita: o próximo release fecha esta com um UPDATE
+    // explícito. Fechar aqui, adivinhando quando a OMS publica de novo, deixaria
+    // o catálogo sem termo válido no intervalo entre a data chutada e o release
     // seguinte — e a busca voltaria vazia sem nada explicar.
     const n = await loadCid11Release(pool, {
       competencia,

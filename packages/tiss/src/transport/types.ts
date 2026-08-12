@@ -3,8 +3,8 @@ import type {
 } from '@cadencia/integrations';
 
 /**
- * sec 7.5 — TissTransport. Arquivo hoje, SOAP depois. NUNCA constroi XML.
- * O transporte so move bytes. A construcao do XML vive em tiss/serializer.
+ * sec 7.5 — TissTransport. Arquivo hoje, SOAP depois. NUNCA constrói XML.
+ * O transporte só move bytes. A construção do XML vive em tiss/serializer.
  */
 
 export type TissSubmissionReceipt =

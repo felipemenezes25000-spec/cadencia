@@ -35,10 +35,10 @@ describe('registry de transports TISS', () => {
   it('factory de tiss-arquivo cria transport com mode "arquivo"', () => {
     const factory = getTransportFactory('tiss-arquivo')! as (opts: import('./tiss-arquivo').TissArquivoOptions) => import('./types').TissTransport;
     const transport = factory({
-      // Import no topo, e nao `require` aqui dentro: o require so funcionava
-      // enquanto o barril de @cadencia/storage nao tinha import relativo em
+      // Import no topo, e não `require` aqui dentro: o require só funcionava
+      // enquanto o barril de @cadencia/storage não tinha import relativo em
       // runtime. Bastou o pacote ganhar um adaptador para a interop CJS parar
-      // de resolver — e o erro apontava para o pacote, nao para o teste.
+      // de resolver — e o erro apontava para o pacote, não para o teste.
       storage: new InMemoryStorageAdapter(),
       tissVersion: '4.01.00',
     });

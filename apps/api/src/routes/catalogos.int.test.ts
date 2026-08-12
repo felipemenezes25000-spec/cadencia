@@ -6,9 +6,9 @@ import { auth, semearSessao, type SementeSessao } from '../test-support';
 let s: SementeSessao;
 
 /**
- * Termos com vigencia FECHADA e distinta: e o unico jeito de provar que a busca
- * respeita a data do evento em vez de devolver "o que vale hoje". Os codigos sao
- * inventados de proposito (Z99.*, tabela 98) para nao colidir com carga real.
+ * Termos com vigência FECHADA e distinta: é o único jeito de provar que a busca
+ * respeita a data do evento em vez de devolver "o que vale hoje". Os códigos são
+ * inventados de propósito (Z99.*, tabela 98) para não colidir com carga real.
  */
 beforeAll(async () => {
   s = await semearSessao({ role: 'profissional' });
@@ -20,8 +20,8 @@ beforeAll(async () => {
             ('Z99.1', 'Dependencia de respirador — texto revisado 2026', 21,
              daterange('2026-01-01','infinity'), '202601')
      ON CONFLICT DO NOTHING`);
-  // CID-11 com codigo sintetico ('ZZ...'), fora de qualquer faixa real: o
-  // catalogo de verdade vem da OMS pelo script de ingestao.
+  // CID-11 com código sintético ('ZZ...'), fora de qualquer faixa real: o
+  // catálogo de verdade vem da OMS pelo script de ingestão.
   await j.query(
     `INSERT INTO ref.cid11_term (uri, codigo, descricao, capitulo, vigencia, competencia)
      VALUES ('http://id.who.int/icd/entity/999000001', 'ZZ90',
@@ -74,10 +74,10 @@ describe('catalogos de referencia', () => {
       itens: { codigo: string; uri: string; capitulo: string | null;
                competencia: string }[] }).itens[0];
     expect(item?.codigo).toBe('ZZ90');
-    // Sem a URI, quem grava o diagnostico so teria o codigo — que a OMS pode
+    // Sem a URI, quem grava o diagnóstico só teria o código — que a OMS pode
     // recodificar no release seguinte, apagando o rastro da entidade.
     expect(item?.uri).toBe('http://id.who.int/icd/entity/999000001');
-    // Capitulo e TEXTO na CID-11: os capitulos V e X sao letras.
+    // Capítulo é TEXTO na CID-11: os capítulos V e X são letras.
     expect(item?.capitulo).toBe('01');
     expect(item?.competencia).toBe('202701');
     await app.close();
@@ -85,7 +85,7 @@ describe('catalogos de referencia', () => {
 
   it('GET /v1/catalogos/cid11 respeita a data do evento como a CID-10', async () => {
     const app = await buildApp();
-    // O termo so vale a partir de 2027, quando a CID-11 entra em uso no Brasil.
+    // O termo só vale a partir de 2027, quando a CID-11 entra em uso no Brasil.
     const antes = await app.inject({
       method: 'GET', url: '/v1/catalogos/cid11?termo=ZZ90&data=2026-06-01', ...auth(s) });
     expect((antes.json() as { itens: unknown[] }).itens).toEqual([]);
@@ -104,9 +104,9 @@ describe('catalogos de referencia', () => {
     const app = await buildApp();
     const r = await app.inject({
       method: 'GET', url: '/v1/catalogos/cid?termo=respirador', ...auth(s) });
-    // Nao existe lookup de terminologia sem data do evento (§3.9, decisao
-    // irreversivel 11). Deixar `data` opcional com default de hoje e o bug que
-    // so aparece meses depois, num lote rejeitado.
+    // Não existe lookup de terminologia sem data do evento (§3.9, decisão
+    // irreversível 11). Deixar `data` opcional com default de hoje é o bug que
+    // só aparece meses depois, num lote rejeitado.
     expect(r.statusCode).toBe(400);
     await app.close();
   });
@@ -147,10 +147,10 @@ describe('versao da terminologia', () => {
     const itens = (r.json() as {
       itens: { codigo: string; competencia: string }[] }).itens;
 
-    // `clin.diagnosis.terminology_version` e obrigatorio e existe para responder
-    // "qual CID valia quando este diagnostico foi feito". Sem a competencia
-    // vindo do catalogo, quem monta o payload teria que inventar a versao — e
-    // versao inventada e pior do que versao ausente numa pericia.
+    // `clin.diagnosis.terminology_version` é obrigatório e existe para responder
+    // "qual CID valia quando este diagnóstico foi feito". Sem a competência
+    // vindo do catálogo, quem monta o payload teria que inventar a versão — e
+    // versão inventada é pior do que versão ausente numa perícia.
     expect(itens.length).toBeGreaterThan(0);
     expect(itens[0]?.competencia).toMatch(/^\d{6}$/);
     await app.close();

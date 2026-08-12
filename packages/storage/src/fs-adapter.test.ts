@@ -20,8 +20,8 @@ describe('FsStorageAdapter', () => {
     const dados = new Uint8Array([0, 255, 10, 13, 26, 127]);
     await a.put('anexos/x.bin', dados, 'application/octet-stream');
     const lido = await a.get('anexos/x.bin');
-    // Bytes de controle (0x00, 0x0d, 0x1a) sao onde leitura em modo texto
-    // corrompe silenciosamente. Anexo clinico tem que voltar identico.
+    // Bytes de controle (0x00, 0x0d, 0x1a) são onde leitura em modo texto
+    // corrompe silenciosamente. Anexo clínico tem que voltar idêntico.
     expect(lido).toEqual(dados);
   });
 
@@ -33,8 +33,8 @@ describe('FsStorageAdapter', () => {
 
   it('recusa chave que escapa da raiz', async () => {
     const a = new FsStorageAdapter(raiz());
-    // `../` numa chave vinda de requisicao leria qualquer arquivo do servidor.
-    // A chave e opaca por contrato, mas a defesa mora aqui e nao na confianca.
+    // `../` numa chave vinda de requisição leria qualquer arquivo do servidor.
+    // A chave é opaca por contrato, mas a defesa mora aqui e não na confiança.
     await expect(a.get('../../etc/passwd')).rejects.toThrow(/chave/i);
     await expect(a.put('../fuga', new Uint8Array([1]), 'x')).rejects.toThrow(/chave/i);
   });
@@ -44,7 +44,7 @@ describe('FsStorageAdapter', () => {
     await a.put('k', new Uint8Array([1, 2]), 'x');
     await a.delete('k');
     expect(await a.exists('k')).toBe(false);
-    // Apagar de novo nao explode: purga da LGPD roda mais de uma vez.
+    // Apagar de novo não explode: purga da LGPD roda mais de uma vez.
     await a.delete('k');
   });
 });

@@ -9,26 +9,26 @@ export interface DailyRollupResult {
 /**
  * Materializa fin.daily_rollup a partir de fin.entry.
  *
- * Roda diariamente apos o fechamento do dia. Agrega lancamentos por
+ * Roda diariamente após o fechamento do dia. Agrega lançamentos por
  * tenant_id, clinic_id, dia, base (competencia/caixa), kind e status.
  *
- * NAO existe fin.payment — usa fin.entry (00-CONTRATOS.md §3.6).
- * A coluna e amount_cents bigint, NAO amount numeric (§3.7).
+ * NÃO existe fin.payment — usa fin.entry (00-CONTRATOS.md §3.6).
+ * A coluna é amount_cents bigint, NÃO amount numeric (§3.7).
  */
 export async function materializeDailyRollup(
   opts: { dia?: string } = {},
 ): Promise<DailyRollupResult> {
-  // Se nao especificado, processar o dia anterior NO FUSO DO FILTRO.
+  // Se não especificado, processar o dia anterior NO FUSO DO FILTRO.
   //
   // Era `(clock_timestamp() - interval '1 day')::date`, avaliado no fuso da
-  // SESSAO — que e UTC. Os filtros abaixo, porem, convertem `paid_at` e
+  // SESSÃO — que é UTC. Os filtros abaixo, porém, convertem `paid_at` e
   // `created_at` para America/Sao_Paulo antes de comparar. As duas datas
-  // discordam todo dia entre 21h e meia-noite de Sao Paulo, quando UTC ja virou
-  // e Sao Paulo nao: a janela pedia 09/08 e as linhas do dia diziam 08/08.
+  // discordam todo dia entre 21h e meia-noite de São Paulo, quando UTC já virou
+  // e São Paulo não: a janela pedia 09/08 e as linhas do dia diziam 08/08.
   //
-  // Consequencia em producao: um job agendado para as 23h — horario natural de
-  // fechamento do caixa — agregaria o dia ERRADO toda noite, em silencio. O
-  // rollup nao fica vazio, fica deslocado, que e pior: o numero existe e esta
+  // Consequência em produção: um job agendado para as 23h — horário natural de
+  // fechamento do caixa — agregaria o dia ERRADO toda noite, em silêncio. O
+  // rollup não fica vazio, fica deslocado, que é pior: o número existe e está
   // errado.
   const diaQuery = opts.dia !== undefined
     ? `$1::date`

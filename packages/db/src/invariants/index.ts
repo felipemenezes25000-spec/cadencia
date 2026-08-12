@@ -20,12 +20,12 @@ export interface InvariantResult {
 
 export interface RunInvariantsOptions {
   /**
-   * Conexao do papel `api`. Sem ela o invariante 10 e PULADO: a matriz cruzada
-   * semeia dois tenants de sonda, e semear nao e coisa que se faz em producao sem
+   * Conexão do papel `api`. Sem ela o invariante 10 é PULADO: a matriz cruzada
+   * semeia dois tenants de sonda, e semear não é coisa que se faz em produção sem
    * quem executa ter pedido.
    */
   api?: Client;
-  /** Defasagem maxima da trilha, em minutos (invariante 9). */
+  /** Defasagem máxima da trilha, em minutos (invariante 9). */
   auditMaxLagMinutes?: number;
 }
 
@@ -41,7 +41,7 @@ function ok(number: number, name: string, violations: string[]): InvariantResult
 
 /**
  * Os 10 invariantes da §3.13 contra QUALQUER banco: o local, o do CI, o staging e o
- * restaurado pelo ensaio da Task 48. Os nove primeiros so leem catalogo — nenhum
+ * restaurado pelo ensaio da Task 48. Os nove primeiros só leem catálogo — nenhum
  * deles escreve linha nenhuma.
  */
 export async function runAllInvariants(

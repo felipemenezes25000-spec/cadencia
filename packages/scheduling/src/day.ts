@@ -11,18 +11,18 @@ export interface DayCounters {
 
 export interface DayQuery {
   readonly clinicId: string;
-  readonly dia: string;                  // AAAA-MM-DD no fuso da clinica
+  readonly dia: string;                  // AAAA-MM-DD no fuso da clínica
   readonly professionalId?: string;
   readonly status?: AppointmentStatus;
 }
 
 /**
- * §3.8 e §5.3 — contadores do dia por CONSULTA VIVA sobre indice parcial,
- * NUNCA matview. Contador defasado e lido como "travou", que e exatamente a
+ * §3.8 e §5.3 — contadores do dia por CONSULTA VIVA sobre índice parcial,
+ * NUNCA matview. Contador defasado é lido como "travou", que é exatamente a
  * queixa que o produto existe para resolver. Alvo publicado: < 20 ms.
  *
- * `agendados` e o TOTAL do dia (todo mundo que esta na fila), nao o subconjunto
- * ainda em status 'agendado' — e o numero que a recepcao le como "quantos hoje".
+ * `agendados` é o TOTAL do dia (todo mundo que está na fila), não o subconjunto
+ * ainda em status 'agendado' — é o número que a recepção lê como "quantos hoje".
  */
 export async function dayCounters(tx: TxClient, q: DayQuery): Promise<DayCounters> {
   const { rows } = await tx.query<{
@@ -70,7 +70,7 @@ export interface QueueRow {
 /**
  * A fila do dia. Traz os quatro SINAIS que a linha mostra (§5.3): cadastro
  * preliminar, 1a vez, teleconsulta e encaixe. O `encounterId` diz se o
- * atendimento ja foi aberto — e o que decide entre "Abrir atendimento" e
+ * atendimento já foi aberto — é o que decide entre "Abrir atendimento" e
  * "Continuar".
  */
 export async function dayQueue(tx: TxClient, q: DayQuery): Promise<QueueRow[]> {

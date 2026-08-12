@@ -1,15 +1,15 @@
 /**
  * Invariante de CI (§3.13 item 8, §3.9): terminologia se resolve pela DATA DO
- * EVENTO. Nenhuma leitura de relogio pode aparecer em codigo de terminologia --
+ * EVENTO. Nenhuma leitura de relógio pode aparecer em código de terminologia --
  * nem no TypeScript de `catalogs`, nem no SQL das migrations de `ref`/`tiss`,
  * nem no TypeScript de `tiss` (que gera queries para tiss.*).
  *
- * clock_timestamp() continua permitido: e a fonte de tempo de created_at, que
- * registra QUANDO a linha foi gravada, nao a competencia consultada.
+ * clock_timestamp() continua permitido: é a fonte de tempo de created_at, que
+ * registra QUANDO a linha foi gravada, não a competência consultada.
  *
- * O verificador NAO distingue codigo de comentario, de proposito: mencionar o
+ * O verificador NÃO distingue código de comentário, de propósito: mencionar o
  * token em prosa dentro de packages/catalogs/** ou de migration de ref/tiss
- * tambem reprova. Escreva "o relogio de quem executa", nunca o token literal.
+ * também reprova. Escreva "o relógio de quem executa", nunca o token literal.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,19 +46,19 @@ export function findClockUsages(
   return achados;
 }
 
-/** Varre a arvore a partir do diretorio corrente (o vitest roda na raiz). */
+/** Varre a árvore a partir do diretório corrente (o vitest roda na raiz). */
 export function collectTerminologyFiles(
   raiz: string = process.cwd(),
 ): { path: string; content: string }[] {
   const out: { path: string; content: string }[] = [];
   const visitar = (dir: string): void => {
     for (const nome of readdirSync(dir)) {
-      // `.claude` guarda os worktrees de agente — o repositorio dentro do
-      // repositorio. Hoje os globs ancorados em `^packages/` ja nao casam com
-      // `.claude/worktrees/<nome>/packages/...`, entao a varredura sobrevive por
-      // acidente da ancoragem. O lint irmao (session-guc) NAO teve essa sorte e
-      // reprovou a si mesmo atraves de uma copia sua. Pular explicitamente custa
-      // uma palavra e nao depende de ninguem lembrar de ancorar o proximo glob.
+      // `.claude` guarda os worktrees de agente — o repositório dentro do
+      // repositório. Hoje os globs ancorados em `^packages/` já não casam com
+      // `.claude/worktrees/<nome>/packages/...`, então a varredura sobrevive por
+      // acidente da ancoragem. O lint irmão (session-guc) NÃO teve essa sorte e
+      // reprovou a si mesmo através de uma cópia sua. Pular explicitamente custa
+      // uma palavra e não depende de ninguém lembrar de ancorar o próximo glob.
       if (['node_modules', '.git', 'dist', '.next', 'coverage', '.claude'].includes(nome)) continue;
       const p = join(dir, nome);
       if (statSync(p).isDirectory()) { visitar(p); continue; }

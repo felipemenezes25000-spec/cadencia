@@ -12,9 +12,9 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 const GuiaResumoSchema = z.object({
   guiaId: z.string().uuid(),
   encounterId: z.string().uuid(),
-  // O ID, e nao so o nome: quem monta lote precisa dele. Sem isto a tela "A
+  // O ID, e não só o nome: quem monta lote precisa dele. Sem isto a tela "A
   // faturar" tinha o nome da operadora para exibir e nada para ENVIAR, e
-  // acabava mandando `operadoraId: null` na criacao do lote.
+  // acabava mandando `operadoraId: null` na criação do lote.
   operadoraId: z.string().uuid(),
   operadoraNome: z.string(),
   registroAns: z.string(),
@@ -24,9 +24,9 @@ const GuiaResumoSchema = z.object({
   dataAtendimento: z.string(),
   codigoProcedimento: z.string(),
   // O nome do procedimento vem da TUSS VIGENTE NA DATA DO ATENDIMENTO, nunca da
-  // vigente hoje (§3.9 e decisao irreversivel 11). A ANS altera descricao entre
-  // competencias, e uma guia de marco reapresentada em julho com o texto de
-  // julho e exatamente o lote que volta glosado meses depois.
+  // vigente hoje (§3.9 e decisão irreversível 11). A ANS altera descrição entre
+  // competências, e uma guia de março reapresentada em julho com o texto de
+  // julho é exatamente o lote que volta glosado meses depois.
   nomeProcedimento: z.string(),
   valorProcedimento: z.number(),
   loteId: z.string().uuid().nullable(),
@@ -113,17 +113,17 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
     }
     if (q.cursor !== undefined) {
       /**
-       * O cursor tem de usar a MESMA chave da ordenacao.
+       * O cursor tem de usar a MESMA chave da ordenação.
        *
        * A lista ordena por `(data_atendimento DESC, created_at DESC)` e o cursor
-       * filtrava so `created_at <`. Como `data_atendimento` e a chave primaria
-       * da ordem, as duas nao coincidem: uma guia lancada hoje para um
+       * filtrava só `created_at <`. Como `data_atendimento` é a chave primária
+       * da ordem, as duas não coincidem: uma guia lançada hoje para um
        * atendimento de semana passada tem `created_at` alto e
-       * `data_atendimento` baixo. Ela aparece tarde na ordem mas e cortada cedo
-       * pelo filtro — some da paginacao inteira. E guia que some da tela "A
-       * faturar" e guia que ninguem fatura.
+       * `data_atendimento` baixo. Ela aparece tarde na ordem mas é cortada cedo
+       * pelo filtro — some da paginação inteira. E guia que some da tela "A
+       * faturar" é guia que ninguém fatura.
        *
-       * Comparacao de TUPLA resolve com a semantica exata da ordem. O cursor
+       * Comparação de TUPLA resolve com a semântica exata da ordem. O cursor
        * carrega os dois campos separados por '|'.
        */
       const [dataCursor, criadoCursor] = q.cursor.split('|');
@@ -330,7 +330,7 @@ export async function guiaRoutes(app: FastifyInstance): Promise<void> {
       campoAlterado: string; valorAnterior: string;
       valorNovo: string; motivo: string };
 
-    // Verificar que a guia existe e esta ativa
+    // Verificar que a guia existe e está ativa
     const { rowCount } = await tx.query(
       `SELECT 1 FROM tiss.encounter_guia_consulta
         WHERE id = $1 AND live = true`,

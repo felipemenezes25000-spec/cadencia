@@ -34,7 +34,7 @@ export interface CreatedAppointment {
   readonly avisos: readonly ('horario_bloqueado')[];
 }
 
-/** 23P01 = exclusion_violation. E o SQLSTATE do encaixe negado e da sala ocupada. */
+/** 23P01 = exclusion_violation. É o SQLSTATE do encaixe negado e da sala ocupada. */
 const EXCLUSION_VIOLATION = '23P01';
 
 function sqlstateDe(e: unknown): string {
@@ -65,7 +65,7 @@ export async function createAppointment(
     if (fim === undefined) return err({ kind: 'duracao_desconhecida' });
   }
 
-  // Bloqueio AVISA, nao impede: quem decide encaixar sobre o almoco e a recepcao,
+  // Bloqueio AVISA, não impede: quem decide encaixar sobre o almoço é a recepção,
   // com a pessoa na frente. Software que impede vira caderno na mesa.
   const bloq = await tx.query<{ bloqueado: boolean }>(
     `SELECT sched.is_blocked($1, $2::timestamptz, $3::timestamptz) AS bloqueado`,
@@ -106,7 +106,7 @@ export async function createAppointment(
     if (sqlstateDe(e) === EXCLUSION_VIOLATION) {
       if (restricaoDe(e) === 'ex_appointment_sala') return err({ kind: 'sala_ocupada' });
       // encaixePossivel diz para a tela oferecer "Encaixar mesmo assim" em vez de
-      // um erro seco. E o gesto que a recepcao brasileira faz o dia inteiro.
+      // um erro seco. É o gesto que a recepção brasileira faz o dia inteiro.
       return err({ kind: 'horario_ocupado', encaixePossivel: true });
     }
     throw e;
@@ -120,7 +120,7 @@ export interface MoveInput {
   readonly roomId?: string | null;
 }
 
-/** Arrastar na agenda. Mantem a DURACAO e recalcula a data no fuso da unidade. */
+/** Arrastar na agenda. Mantém a DURAÇÃO e recalcula a data no fuso da unidade. */
 export async function moveAppointment(
   tx: TxClient, i: MoveInput,
 ): Promise<Result<{ appointmentId: string; startsAt: string; endsAt: string;
@@ -169,7 +169,7 @@ export async function setStatus(
 ): Promise<Result<{ appointmentId: string; status: AppointmentStatus }, SchedulingFailure>> {
   const coluna = CARIMBO[i.status];
   // O nome da coluna vem de um mapa fechado sobre o tipo, nunca da entrada:
-  // interpolar identificador vindo do cliente e injecao de SQL.
+  // interpolar identificador vindo do cliente é injeção de SQL.
   const setExtra = coluna === null ? '' : `, ${coluna} = clock_timestamp()`;
   const { rowCount } = await tx.query(
     `UPDATE sched.appointment

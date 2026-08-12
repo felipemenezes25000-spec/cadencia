@@ -12,7 +12,7 @@ function adminUrl(): string {
   return url;
 }
 
-/** Assina o payload com o segredo padrao do FakeMessagingProvider. */
+/** Assina o payload com o segredo padrão do FakeMessagingProvider. */
 function sign(payload: string): string {
   return 'sha256=' + createHmac('sha256', 'fake-whatsapp-secret')
     .update(payload).digest('hex');
@@ -20,7 +20,7 @@ function sign(payload: string): string {
 
 let tenantId: string;
 let channelIdentityId: string;
-/** Telefone unico do negocio para este run — evita colisao entre runs. */
+/** Telefone único do negócio para este run — evita colisão entre runs. */
 let businessPhone: string;
 
 /** Monta payload no formato WhatsApp Cloud API com metadata. */
@@ -50,7 +50,7 @@ beforeAll(async () => {
   channelIdentityId = uuidv7();
   const clinicId = uuidv7();
 
-  // Gerar telefone unico por run para evitar colisao com runs anteriores
+  // Gerar telefone único por run para evitar colisão com runs anteriores
   const suffix = tenantId.replace(/-/g, '').replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '0');
   businessPhone = `+5511${suffix}`;
 
@@ -139,7 +139,7 @@ describe('webhook de mensageria', () => {
 
     expect(r.statusCode).toBe(200);
 
-    // A conversa deve ter sido criada com o tenant correto, nao o injetado
+    // A conversa deve ter sido criada com o tenant correto, não o injetado
     const { rows } = await jobsPool().query<{ tenant_id: string }>(
       `SELECT tenant_id FROM msg.conversation
         WHERE channel_identity_id = $1 AND remote_phone = '+5511966665555'`,

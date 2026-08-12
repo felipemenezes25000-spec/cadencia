@@ -26,11 +26,11 @@ export interface AddedGuia {
 }
 
 /**
- * Adiciona uma guia a um lote em rascunho. Validacoes:
- * - Lote existe e esta em rascunho
- * - Guia existe e esta com live=true
+ * Adiciona uma guia a um lote em rascunho. Validações:
+ * - Lote existe e está em rascunho
+ * - Guia existe e está com live=true
  * - Guia pertence a mesma operadora do lote
- * - Guia nao esta em outro lote (indice unico garante, mas validamos antes)
+ * - Guia não está em outro lote (índice único garante, mas validamos antes)
  */
 export async function addGuiaToLote(
   tx: TxClient,
@@ -78,7 +78,7 @@ export async function addGuiaToLote(
     return err({ kind: 'guia_operadora_divergente' });
   }
 
-  // 3. Verifica se guia ja esta em outro lote
+  // 3. Verifica se guia já está em outro lote
   const { rows: existeRows } = await tx.query<{ lote_id: string }>(
     `SELECT lote_id FROM tiss.lote_guia WHERE guia_id = $1`,
     [i.guiaId],
@@ -87,7 +87,7 @@ export async function addGuiaToLote(
     return err({ kind: 'guia_ja_em_lote', loteId: existeRows[0]!.lote_id });
   }
 
-  // 4. Calcula proximo sequencial_item
+  // 4. Calcula próximo sequencial_item
   const { rows: seqRows } = await tx.query<{ max_seq: number | null }>(
     `SELECT MAX(sequencial_item) AS max_seq
        FROM tiss.lote_guia WHERE lote_id = $1`,
@@ -95,7 +95,7 @@ export async function addGuiaToLote(
   );
   const nextSeq = (seqRows[0]?.max_seq ?? 0) + 1;
 
-  // 5. Insere o vinculo
+  // 5. Insere o vínculo
   await tx.query(
     `INSERT INTO tiss.lote_guia (lote_id, guia_id, sequencial_item)
      VALUES ($1, $2, $3)`,
@@ -103,7 +103,7 @@ export async function addGuiaToLote(
   );
 
   // 6. Atualiza contadores no lote
-  // valor_procedimento e numeric(12,2) na guia; convertemos para centavos
+  // valor_procedimento é numeric(12,2) na guia; convertemos para centavos
   const valorCents = Math.round(Number(guia.valor_procedimento) * 100);
   const newCount = lote.guia_count + 1;
   const newTotal = Number(lote.total_value_cents) + valorCents;
@@ -146,7 +146,7 @@ export async function removeGuiaFromLote(
     return err({ kind: 'lote_nao_rascunho', status: lote.status });
   }
 
-  // 2. Remove o vinculo e pega o valor da guia
+  // 2. Remove o vínculo e pega o valor da guia
   const { rows: guiaRows } = await tx.query<{ valor_procedimento: string }>(
     `DELETE FROM tiss.lote_guia lg
       USING tiss.encounter_guia_consulta g

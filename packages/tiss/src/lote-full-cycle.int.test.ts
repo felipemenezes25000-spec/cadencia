@@ -65,7 +65,7 @@ async function semearCiclo(): Promise<SementeCiclo> {
        VALUES ($1, $2, '326305', 'Meridiano Ciclo', '66XYZ00005DE05', '3.05', true, $3)`,
       [s.tenantId, s.operadoraId, s.userId]);
 
-    // Tres encounters e tres guias
+    // Três encounters e três guias
     for (let idx = 0; idx < 3; idx++) {
       const encId = uuidv7();
       const verId = uuidv7();
@@ -145,7 +145,7 @@ describe('ciclo completo do lote TISS', () => {
       expect(addResult.value.sequencialItem).toBe(idx + 1);
     }
 
-    // Verifica contadores apos as 3 guias
+    // Verifica contadores após as 3 guias
     const lastAdd = await withTenantTx(actor, async (tx) => {
       const { rows } = await tx.query<{ guia_count: number; total_value_cents: string }>(
         `SELECT guia_count, total_value_cents FROM tiss.lote WHERE id = $1`, [loteId],
@@ -165,9 +165,9 @@ describe('ciclo completo do lote TISS', () => {
     expect(readyResult.value.guiaCount).toBe(3);
     expect(readyResult.value.totalValueCents).toBe(60000);
 
-    // 3b. Nao pode adicionar guia a lote pronto (ja nao esta em rascunho)
-    // Esta verificacao usa uma guia que nao existe, mas o erro retornado
-    // sera 'lote_nao_rascunho' porque a validacao de status vem primeiro.
+    // 3b. Não pode adicionar guia a lote pronto (já não está em rascunho)
+    // Esta verificação usa uma guia que não existe, mas o erro retornado
+    // será 'lote_nao_rascunho' porque a validação de status vem primeiro.
     const addAfterReady = await withTenantTx(actor, (tx) =>
       addGuiaToLote(tx, { loteId, guiaId: uuidv7() }),
     );
@@ -188,7 +188,7 @@ describe('ciclo completo do lote TISS', () => {
     if (!sentResult.ok) return;
     expect(sentResult.value.protocoloOperadora).toBe('PROT-CICLO-001');
 
-    // 4b. Nao pode cancelar lote enviado
+    // 4b. Não pode cancelar lote enviado
     const cancelAfterSent = await withTenantTx(actor, (tx) =>
       cancelLote(tx, loteId),
     );

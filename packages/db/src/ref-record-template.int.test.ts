@@ -2,10 +2,10 @@ import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { appPool, closePools } from './index';
 
-// `appPool` roda como app_rw, que so tem SELECT no catalogo: uma tentativa de
-// INSERT por ali morreria em 42501 antes de chegar ao indice. Para provar que
-// quem barra a segunda versao corrente e o indice, escreve-se pela conexao
-// administrativa — mesmo padrao de roles.int.test.ts e tx.int.test.ts.
+// `appPool` roda como app_rw, que só tem SELECT no catálogo: uma tentativa de
+// INSERT por ali morreria em 42501 antes de chegar ao índice. Para provar que
+// quem barra a segunda versão corrente é o índice, escreve-se pela conexão
+// administrativa — mesmo padrão de roles.int.test.ts e tx.int.test.ts.
 let admin: Pool;
 
 describe('ref.record_template', () => {

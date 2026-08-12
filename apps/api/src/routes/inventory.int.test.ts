@@ -94,13 +94,13 @@ describe('rotas de movimentacao de estoque', () => {
     expect(body.movementId).toBeTruthy();
     // 20 do saldo inicial + 30 da entrada.
     //
-    // Este numero era 30, com um comentario explicando que o saldo inicial "nao
-    // e contabilizado pelo trigger" — o teste registrava o defeito em vez de
-    // reprova-lo. `current_stock` e derivado: o trigger da migration 0101 soma
-    // TODOS os movimentos e sobrescreve a coluna. Saldo inicial gravado so na
-    // coluna, sem movimento, era apagado pela primeira movimentacao — as 20
-    // gazes sumiam do sistema no primeiro uso. Agora o cadastro abre o razao
-    // com um `ajuste`, e coluna e razao contam a mesma historia.
+    // Este número era 30, com um comentário explicando que o saldo inicial "não
+    // é contabilizado pelo trigger" — o teste registrava o defeito em vez de
+    // reprová-lo. `current_stock` é derivado: o trigger da migration 0101 soma
+    // TODOS os movimentos e sobrescreve a coluna. Saldo inicial gravado só na
+    // coluna, sem movimento, era apagado pela primeira movimentação — as 20
+    // gazes sumiam do sistema no primeiro uso. Agora o cadastro abre o razão
+    // com um `ajuste`, e coluna e razão contam a mesma história.
     expect(body.newStock).toBe(50);
     await app.close();
   });
@@ -118,7 +118,7 @@ describe('rotas de movimentacao de estoque', () => {
     });
     expect(r.statusCode).toBe(201);
     const body = r.json() as { movementId: string; newStock: number };
-    // 20 (saldo inicial) + 30 (entrada) - 5 (saida) = 45
+    // 20 (saldo inicial) + 30 (entrada) - 5 (saída) = 45
     expect(body.newStock).toBe(45);
     await app.close();
   });
@@ -128,7 +128,7 @@ describe('alertas de estoque', () => {
   it('GET /v1/stock-alerts retorna produtos abaixo do minimo', async () => {
     const app = await buildApp();
 
-    // Criar produto com estoque abaixo do minimo
+    // Criar produto com estoque abaixo do mínimo
     await app.inject({
       method: 'POST', url: '/v1/products', ...auth(fin),
       payload: { name: 'Seringa 5ml', sku: 'SER-5ML', unit: 'un', minStock: 100, currentStock: 3 },
@@ -153,7 +153,7 @@ describe('alertas de estoque', () => {
     });
     expect(r.statusCode).toBe(200);
     const body = r.json() as { itens: Array<{ name: string }> };
-    // Nao pode conter os produtos do tenant fin
+    // Não pode conter os produtos do tenant fin
     expect(body.itens.every((i) => i.name !== 'Seringa 5ml')).toBe(true);
     await app.close();
   });

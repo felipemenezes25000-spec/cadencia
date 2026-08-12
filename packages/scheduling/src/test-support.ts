@@ -1,10 +1,10 @@
-// Semeia tenant, clinica, usuario de recepcao, vinculo, profissional, paciente,
-// um procedimento de 30 minutos e um bloqueio de almoco para os testes de
-// integracao da agenda.
+// Semeia tenant, clínica, usuário de recepção, vínculo, profissional, paciente,
+// um procedimento de 30 minutos e um bloqueio de almoço para os testes de
+// integração da agenda.
 //
-// Roda com a conexao ADMINISTRATIVA pelo mesmo motivo de
-// packages/emr/src/test-support.ts: cria o tenant, que e a raiz do isolamento e
-// nao tem transacao de negocio capaz de cria-lo — `app_rw` so tem SELECT em
+// Roda com a conexão ADMINISTRATIVA pelo mesmo motivo de
+// packages/emr/src/test-support.ts: cria o tenant, que é a raiz do isolamento e
+// não tem transação de negócio capaz de criá-lo — `app_rw` só tem SELECT em
 // app.tenant (0007).
 import { Pool } from 'pg';
 import { uuidv7 } from '@cadencia/kernel';
@@ -33,8 +33,8 @@ export async function semearAgenda(): Promise<SementeAgenda> {
   const c = await admin.connect();
   try {
     await c.query('BEGIN');
-    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros digitos hex de
-    // um uuidv7 sao `ms >> 16`, um balde de ~65 segundos, entao duas semeaduras
+    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros dígitos hex de
+    // um uuidv7 são `ms >> 16`, um balde de ~65 segundos, então duas semeaduras
     // da mesma rodada cairiam no mesmo slug e a segunda quebraria em
     // tenant_slug_key (23505).
     await c.query(
@@ -60,7 +60,7 @@ export async function semearAgenda(): Promise<SementeAgenda> {
     await c.query(
       `INSERT INTO sched.procedure (tenant_id, id, code, nome, cor, duracao_min, valor_centavos)
        VALUES ($1, $2, 'CONS', 'Consulta', '#2f5fd0', 30, 25000)`, [s.tenantId, s.procedureId]);
-    // Almoco das 15h as 16h UTC de 2026-10-06: o horario que o teste do aviso usa.
+    // Almoço das 15h as 16h UTC de 2026-10-06: o horário que o teste do aviso usa.
     await c.query(
       `INSERT INTO sched.block
          (tenant_id, id, professional_id, clinic_id, starts_at, ends_at, kind, motivo, created_by)

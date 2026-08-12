@@ -435,7 +435,7 @@ describe('modelo de dados tiss.recurso_glosa e tiss.recurso_glosa_item', () => {
     });
   });
 
-  // -- RLS: tenant B nao ve recurso do tenant A ----------------------
+  // -- RLS: tenant B não vê recurso do tenant A ----------------------
 
   it('recurso de outro tenant e invisivel via RLS', async () => {
     const recursoId = uuidv7();

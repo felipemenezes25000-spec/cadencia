@@ -55,7 +55,7 @@ describe('o registro vigente e um CONJUNTO', () => {
     const { rows } = await withTenantTx(actor, (tx) => tx.query<{ n: string }>(
       `SELECT count(*) AS n FROM audit.event
         WHERE event_type = 'PATIENT_RECORD_READ' AND entity_id = $1`, [s.patientId]));
-    // Tres chamadas, uma janela: UM evento.
+    // Três chamadas, uma janela: UM evento.
     expect(Number(rows[0]?.n)).toBe(1);
   });
 

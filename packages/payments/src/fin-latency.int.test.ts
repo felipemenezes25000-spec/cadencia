@@ -81,7 +81,7 @@ beforeAll(async () => {
     clinicId: s.clinicId, requestId: uuidv7(),
   };
 
-  // Semear ~240 lancamentos para simular um mes de clinica
+  // Semear ~240 lançamentos para simular um mês de clínica
   await withTenantTx(actor, async (tx) => {
     const values: string[] = [];
     const params: unknown[] = [s.professionalId, s.clinicId, s.paymentMethodId, s.bankAccountId];
@@ -127,9 +127,9 @@ describe('latencia — painel financeiro e extrato', () => {
     const duracao = performance.now() - inicio;
 
     expect(r.lines.length).toBe(240);
-    // A transacao inteira (preambulo + query + commit) deve ficar abaixo de 50ms.
-    // O alvo real e < 1ms para o rollup; o extrato com window function e mais pesado
-    // mas 50ms e conservador.
+    // A transação inteira (preâmbulo + query + commit) deve ficar abaixo de 50ms.
+    // O alvo real é < 1ms para o rollup; o extrato com window function é mais pesado
+    // mas 50ms é conservador.
     expect(duracao).toBeLessThan(50);
   });
 

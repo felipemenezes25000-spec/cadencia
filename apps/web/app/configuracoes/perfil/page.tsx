@@ -77,14 +77,14 @@ export default function PaginaPerfil() {
             </div>
             <div>
               <dt className="text-xs text-text-muted">MFA</dt>
-              <dd className="font-medium">{usuario.mfaCadastrado ? 'Ativo' : 'Nao configurado'}</dd>
+              <dd className="font-medium">{usuario.mfaCadastrado ? 'Ativo' : 'Não configurado'}</dd>
             </div>
           </dl>
         </div>
       </section>
 
       <section className="grid gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Seguranca</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Segurança</h2>
         <div className="rounded-xl border border-line bg-surface p-5 grid gap-6">
           <TrocaDeSenha aoTrocar={trocarSenha} />
           <hr className="border-line" />
@@ -130,7 +130,7 @@ export default function PaginaPerfil() {
       <section>
         <Botao variante="perigo" iconeEsquerda={SignOut} carregando={saindo}
           onClick={() => { setSaindo(true); void sair(); }}>
-          Sair da sessao
+          Sair da sessão
         </Botao>
       </section>
     </div>

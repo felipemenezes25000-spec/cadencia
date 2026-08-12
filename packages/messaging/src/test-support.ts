@@ -1,11 +1,11 @@
 // packages/messaging/src/test-support.ts
 //
-// Semeia tenant, clinica, usuario, vinculo, paciente com telefone, identidade de
-// canal e template para os testes de integracao da mensageria.
+// Semeia tenant, clínica, usuário, vínculo, paciente com telefone, identidade de
+// canal e template para os testes de integração da mensageria.
 //
-// Roda com a conexao ADMINISTRATIVA pelo mesmo motivo de
-// packages/scheduling/src/test-support.ts: cria o tenant, que e a raiz do
-// isolamento e nao tem transacao de negocio capaz de cria-lo — app_rw so tem
+// Roda com a conexão ADMINISTRATIVA pelo mesmo motivo de
+// packages/scheduling/src/test-support.ts: cria o tenant, que é a raiz do
+// isolamento e não tem transação de negócio capaz de criá-lo — app_rw só tem
 // SELECT em app.tenant (0007).
 import { Pool } from 'pg';
 import { uuidv7 } from '@cadencia/kernel';

@@ -3,9 +3,9 @@ import { Pool } from 'pg';
 import { closePools } from '../src/index';
 
 /**
- * O expurgo legal e a unica excecao ao append-only clinico. Estes testes existem
- * para provar que ela e ESTREITA: o que garante o produto nao e a funcionalidade
- * de apagar, e a impossibilidade de apagar errado.
+ * O expurgo legal é a única exceção ao append-only clínico. Estes testes existem
+ * para provar que ela é ESTREITA: o que garante o produto não é a funcionalidade
+ * de apagar, é a impossibilidade de apagar errado.
  */
 let admin: Pool;
 let tenantId = '';
@@ -114,8 +114,8 @@ describe('expurgo legal §3.10', () => {
     const { rows: v } = await admin.query<{ value_text: string | null }>(
       `SELECT value_text FROM clin.encounter_field_value WHERE id = $1`,
       [recente.valorId]);
-    // O conteudo continua la. Apagar dentro do prazo e o erro que nao tem
-    // desfazer, e a janela e calculada no banco justamente para nenhum chamador
+    // O conteúdo continua lá. Apagar dentro do prazo é o erro que não tem
+    // desfazer, e a janela é calculada no banco justamente para nenhum chamador
     // conseguir encurtar.
     expect(v[0]!.value_text).toBe('conteudo clinico sensivel');
   });
@@ -134,8 +134,8 @@ describe('expurgo legal §3.10', () => {
          FROM clin.encounter_field_value WHERE id = $1`, [antigo.valorId]);
     expect(v[0]!.value_text).toBeNull();
     expect(v[0]!.purged_at).not.toBeNull();
-    // A LINHA sobrevive: quem consulta depois ve que existiu um valor e quando
-    // ele foi destruido. Apagar a linha quebraria a cadeia e apagaria a prova de
+    // A LINHA sobrevive: quem consulta depois vê que existiu um valor e quando
+    // ele foi destruído. Apagar a linha quebraria a cadeia e apagaria a prova de
     // que o expurgo foi feito dentro da lei.
     expect(v[0]!.label_snapshot).toBe('Evolucao');
   });
@@ -166,8 +166,8 @@ describe('expurgo legal §3.10', () => {
     try {
       await c.query('BEGIN');
       await c.query(`SELECT set_config('app.expurgo_legal','on',true)`);
-      // Este e o ataque que importa: fingir conformidade. Se passasse, a
-      // auditoria acreditaria que o dado sumiu enquanto ele continua legivel.
+      // Este é o ataque que importa: fingir conformidade. Se passasse, a
+      // auditoria acreditaria que o dado sumiu enquanto ele continua legível.
       await expect(c.query(
         `UPDATE clin.encounter_field_value SET purged_at = clock_timestamp()
           WHERE id = $1`, [antigo.valorId]))
@@ -208,8 +208,8 @@ describe('expurgo legal §3.10', () => {
       `SELECT purged_at FROM clin.encounter_field_value WHERE id = $1`,
       [antigo.valorId]);
 
-    // A data do expurgo e o que a clinica apresenta se questionada. Reescrever a
-    // cada rodada do job faria parecer que o dado sobreviveu ate ontem.
+    // A data do expurgo é o que a clínica apresenta se questionada. Reescrever a
+    // cada rodada do job faria parecer que o dado sobreviveu até ontem.
     expect(b[0]!.purged_at).toEqual(a[0]!.purged_at);
   });
 });

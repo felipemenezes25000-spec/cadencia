@@ -5,7 +5,7 @@ import PgBoss from 'pg-boss';
 /**
  * Despachante de outbox — polling a cada 5s.
  *
- * Le eventos pendentes da tabela unica app.outbox (NAO existem
+ * Lê eventos pendentes da tabela única app.outbox (NÃO existem
  * msg.outbox_event nem fin.outbox_event — ver 00-CONTRATOS.md §3.2),
  * marca como despachado e enfileira o job correspondente no pg-boss.
  */
@@ -17,9 +17,9 @@ export interface DispatchResult {
 /**
  * Quantos eventos um ciclo reivindica.
  *
- * Constante e nao parametro: o valor certo depende da cadencia do polling (5 s)
- * e do custo de um envio ao pg-boss, nao de quem chama. Cem por ciclo sao 1200
- * por minuto — muito acima do que a clinica produz — e mantem pequena a janela
+ * Constante e não parâmetro: o valor certo depende da cadência do polling (5 s)
+ * e do custo de um envio ao pg-boss, não de quem chama. Cem por ciclo são 1200
+ * por minuto — muito acima do que a clínica produz — e mantém pequena a janela
  * entre "marcado como despachado" e "de fato na fila".
  */
 const LOTE_POR_CICLO = 100;
@@ -28,27 +28,27 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
   let dispatched = 0;
   let errors = 0;
 
-  // Despachar eventos pendentes da tabela unica app.outbox.
+  // Despachar eventos pendentes da tabela única app.outbox.
   // O papel jobs tem BYPASSRLS e GRANT SELECT, UPDATE (migration 0070).
-  // Filtra por dispatched_at IS NULL (pendente) e attempts < 5 (nao dead-letter).
+  // Filtra por dispatched_at IS NULL (pendente) e attempts < 5 (não dead-letter).
   //
-  // Tres coisas que o UPDATE direto nao tinha:
+  // Três coisas que o UPDATE direto não tinha:
   //
-  // 1. LIMITE. Sem ele, um acumulo de eventos — worker parado meia hora, carga
-  //    de importacao — era reivindicado INTEIRO num unico statement, que commita
-  //    sozinho. Se o processo morresse na metade do laco de envio, todos os
+  // 1. LIMITE. Sem ele, um acúmulo de eventos — worker parado meia hora, carga
+  //    de importação — era reivindicado INTEIRO num único statement, que commita
+  //    sozinho. Se o processo morresse na metade do laço de envio, todos os
   //    eventos restantes ficavam com `dispatched_at` preenchido e nunca chegavam
-  //    a fila: perda silenciosa proporcional ao tamanho do acumulo. Com lote de
-  //    100, o prejuizo de uma queda e no maximo 100 eventos, e o ciclo de 5 s
+  //    à fila: perda silenciosa proporcional ao tamanho do acúmulo. Com lote de
+  //    100, o prejuízo de uma queda é no máximo 100 eventos, e o ciclo de 5 s
   //    esvazia a fila do mesmo jeito.
   //
-  // 2. ORDEM. Sem `ORDER BY`, a entrega saia na ordem fisica das linhas. Evento
-  //    de dominio tem ordem: APPOINTMENT_CANCELLED chegando antes do
+  // 2. ORDEM. Sem `ORDER BY`, a entrega saía na ordem física das linhas. Evento
+  //    de domínio tem ordem: APPOINTMENT_CANCELLED chegando antes do
   //    APPOINTMENT_CREATED correspondente manda a mensagem errada ao paciente.
   //
   // 3. SKIP LOCKED. Dois workers rodando ao mesmo tempo — durante um deploy, por
-  //    exemplo — nao brigam mais pela mesma linha: o segundo pula o que o
-  //    primeiro reservou em vez de ficar bloqueado ate o commit dele.
+  //    exemplo — não brigam mais pela mesma linha: o segundo pula o que o
+  //    primeiro reservou em vez de ficar bloqueado até o commit dele.
   const { rows: events } = await jobsPool().query<{
     id: string; event_type: string; aggregate_id: string;
     payload: Record<string, unknown>; tenant_id: string;
@@ -79,7 +79,7 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
       });
       dispatched += 1;
     } catch {
-      // Reverter dispatched_at para retry no proximo ciclo
+      // Reverter dispatched_at para retry no próximo ciclo
       await jobsPool().query(
         `UPDATE app.outbox
             SET dispatched_at = NULL,
@@ -106,6 +106,6 @@ function resolveQueue(eventType: string): string {
   if (eventType === 'PAYMENT_RECEIVED') return 'payments.payment_received';
   if (eventType === 'PAYMENT_LINK_CREATED') return 'payments.payment_link_created';
 
-  // Fallback generico
+  // Fallback genérico
   return `outbox.${eventType.toLowerCase()}`;
 }

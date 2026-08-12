@@ -46,8 +46,8 @@ describe('listagem de pacientes', () => {
     const nomes = (r.json() as { itens: { displayName: string }[] })
       .itens.map((x) => x.displayName);
 
-    // A tela de Pacientes e uma LISTA, nao um combobox: chegar nela e ver a base
-    // vazia ate digitar algo faz o produto parecer quebrado.
+    // A tela de Pacientes é uma LISTA, não um combobox: chegar nela e ver a base
+    // vazia até digitar algo faz o produto parecer quebrado.
     expect(nomes.length).toBeGreaterThan(0);
     expect(nomes).toContain('Amanda Beltrao Cruz');
     expect(nomes).not.toContain('Inativo Silva');

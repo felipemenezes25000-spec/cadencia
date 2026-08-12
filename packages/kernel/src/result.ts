@@ -1,8 +1,8 @@
 /**
- * Result<T, E> — erro ESPERADO e valor de retorno, nao excecao.
- * O formato { ok: true, value } / { ok: false, error } e o mesmo de
- * ProviderResult (secao 7 da spec): um unico vocabulario de resultado no sistema.
- * Excecao fica reservada para bug nosso — o que precisa aparecer no Sentry.
+ * Result<T, E> — erro ESPERADO é valor de retorno, não exceção.
+ * O formato { ok: true, value } / { ok: false, error } é o mesmo de
+ * ProviderResult (seção 7 da spec): um único vocabulário de resultado no sistema.
+ * Exceção fica reservada para bug nosso — o que precisa aparecer no Sentry.
  */
 export type Ok<T> = { readonly ok: true; readonly value: T };
 export type Err<E> = { readonly ok: false; readonly error: E };
@@ -41,8 +41,8 @@ export function unwrapOr<T, E>(result: Result<T, E>, fallback: T): T {
 }
 
 /**
- * Usar SO quando a falha for impossivel por construcao. A excecao sobe para o Sentry.
- * Erro que JA e excecao sobe pela mesma instancia: embrulhar um ValidationError
+ * Usar SÓ quando a falha for impossível por construção. A exceção sobe para o Sentry.
+ * Erro que JÁ é exceção sobe pela mesma instância: embrulhar um ValidationError
  * jogaria fora o httpStatus 422 e o handler devolveria 500.
  */
 export function unwrapOrThrow<T, E>(result: Result<T, E>): T {
@@ -50,7 +50,7 @@ export function unwrapOrThrow<T, E>(result: Result<T, E>): T {
   throw result.error instanceof Error ? result.error : new Error(String(result.error));
 }
 
-/** Todos os erros de uma vez: formulario nao mostra um campo errado por vez. */
+/** Todos os erros de uma vez: formulário não mostra um campo errado por vez. */
 export function collect<T, E>(results: readonly Result<T, E>[]): Result<T[], E[]> {
   const values: T[] = [];
   const errors: E[] = [];

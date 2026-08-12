@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import type { RefreshLogEntry } from './types';
 
 /**
- * Nomes das matviews no schema rpt. Cada uma tem uma funcao
+ * Nomes das matviews no schema rpt. Cada uma tem uma função
  * rpt.refresh_<nome>() SECURITY DEFINER pertencente a rpt_owner.
  */
 export const MATVIEW_NAMES = [
@@ -21,11 +21,11 @@ function isMatviewName(name: string): name is MatviewName {
 }
 
 /**
- * Executa o refresh de uma matview chamando a funcao SECURITY DEFINER
+ * Executa o refresh de uma matview chamando a função SECURITY DEFINER
  * correspondente. Deve ser chamado pelo worker usando o jobsPool (papel jobs).
  *
- * §3.8: NUNCA full refresh em horario comercial. O worker configura a
- * frequencia e o horario de execucao via pg-boss.
+ * §3.8: NUNCA full refresh em horário comercial. O worker configura a
+ * frequência e o horário de execução via pg-boss.
  */
 export async function refreshMatview(pool: Pool, name: MatviewName): Promise<void> {
   if (!isMatviewName(name)) {
@@ -35,7 +35,7 @@ export async function refreshMatview(pool: Pool, name: MatviewName): Promise<voi
 }
 
 /**
- * Retorna o refresh mais recente de cada matview, ordenado por horario
+ * Retorna o refresh mais recente de cada matview, ordenado por horário
  * decrescente. Usado pela API para exibir "dados ate HH:MM" na tela.
  */
 export async function getLatestRefresh(pool: Pool): Promise<RefreshLogEntry[]> {

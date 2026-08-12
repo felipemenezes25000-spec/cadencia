@@ -10,9 +10,9 @@ import type {
   RecursoGlosaInput,
 } from './types';
 
-// Teste de compilacao: garante que os tipos sao atribuiveis e que campos
-// obrigatorios e opcionais estao corretos. Se o tipo mudar de forma
-// incompativel, o teste de compilacao falha.
+// Teste de compilação: garante que os tipos são atribuíveis e que campos
+// obrigatórios e opcionais estão corretos. Se o tipo mudar de forma
+// incompatível, o teste de compilação falha.
 
 describe('tipos de entrada do serializador TISS', () => {
   it('LoteConsultaInput aceita lote valido com todos os campos obrigatorios', () => {
@@ -59,7 +59,7 @@ describe('tipos de entrada do serializador TISS', () => {
       guias: [guia],
     };
 
-    // Se compilou e criou sem erro de tipo, o contrato esta correto.
+    // Se compilou e criou sem erro de tipo, o contrato está correto.
     expect(lote.guias).toHaveLength(1);
     expect(lote.cabecalho.versaoPadrao).toBe('4.01.00');
   });

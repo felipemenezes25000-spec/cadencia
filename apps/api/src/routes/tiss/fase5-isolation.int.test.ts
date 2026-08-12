@@ -39,7 +39,7 @@ beforeAll(async () => {
                'arquivo', $3)`,
       [a.tenantId, operadoraIdA, a.userId]);
 
-    // Encounter version — prerequisito para guia, glosa e recurso
+    // Encounter version — pré-requisito para guia, glosa e recurso
     versionIdA = uuidv7();
     await c.query(
       `INSERT INTO clin.encounter_version
@@ -51,7 +51,7 @@ beforeAll(async () => {
                decode(repeat('00', 32), 'hex'), 'v1')`,
       [a.tenantId, versionIdA, a.encounterId, a.userId, a.professionalId]);
 
-    // Guia — prerequisito para glosa
+    // Guia — pré-requisito para glosa
     const guiaIdA = uuidv7();
     await c.query(
       `INSERT INTO tiss.encounter_guia_consulta
@@ -282,7 +282,7 @@ describe('isolamento multi-tenant — rotas TISS Fase 5', () => {
     });
     expect(r2.statusCode).toBe(200);
 
-    // Nao pode aceitar glosa
+    // Não pode aceitar glosa
     const r3 = await app.inject({
       method: 'POST',
       url: `/v1/tiss/glosas/${glosaIdA}/aceitar`,
@@ -291,7 +291,7 @@ describe('isolamento multi-tenant — rotas TISS Fase 5', () => {
     });
     expect(r3.statusCode).toBe(403);
 
-    // Nao pode criar recurso
+    // Não pode criar recurso
     const r4 = await app.inject({
       method: 'POST', url: '/v1/tiss/recursos', ...auth(recLocal),
       payload: {

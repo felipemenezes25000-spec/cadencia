@@ -18,18 +18,18 @@ function HojeInner() {
   const { clinicId, csrfToken, vinculoAtivo } = useSessao();
   const [filtro, setFiltro] = useQueryState('faceta', parseAsStringLiteral(FILTROS));
   const FUSO = vinculoAtivo.timezone;
-  // "Hoje" e o hoje DA CLINICA. `toISOString()` da a data em UTC, entao no
-  // Brasil (UTC-3) a tela virava de dia as 21h: a recepcao perdia de vista as
-  // consultas que ainda faltavam atender, tres horas antes da meia-noite.
+  // "Hoje" é o hoje DA CLÍNICA. `toISOString()` dá a data em UTC, então no
+  // Brasil (UTC-3) a tela virava de dia às 21h: a recepção perdia de vista as
+  // consultas que ainda faltavam atender, três horas antes da meia-noite.
   const dia = diaNaClinica(new Date().toISOString(), FUSO);
 
   /**
    * Abre o atendimento da linha da fila.
    *
-   * Se ja existe encontro, ENTRA nele. Criar um segundo para o mesmo
-   * agendamento partiria o registro do dia em duas versoes seladas distintas, e
-   * nenhuma delas seria "a consulta" — o que quebra a leitura do prontuario e a
-   * cobranca. Por isso o `encounterId` da fila manda, e nao o botao.
+   * Se já existe encontro, ENTRA nele. Criar um segundo para o mesmo
+   * agendamento partiria o registro do dia em duas versões seladas distintas, e
+   * nenhuma delas seria "a consulta" — o que quebra a leitura do prontuário e a
+   * cobrança. Por isso o `encounterId` da fila manda, e não o botão.
    */
   async function abrirAtendimento(l: LinhaDaFila): Promise<void> {
     if (l.encounterId !== null) { router.push(`/atendimento/${l.encounterId}`); return; }
@@ -43,8 +43,8 @@ function HojeInner() {
 
   return (
     <>
-      {/* O `+` flutua sobre a tela: e acao de criacao, nao conteudo do dia, e
-          por isso nao entra no fluxo da fila. */}
+      {/* O `+` flutua sobre a tela: é ação de criação, não conteúdo do dia, e
+          por isso não entra no fluxo da fila. */}
       <div className="fixed bottom-6 right-6 z-20 md:bottom-8 md:right-8">
         <AtalhosDeCriacao />
       </div>
@@ -85,9 +85,9 @@ export default function PaginaHoje() {
  * Faceta da tela -> valor do enum `status` da rota.
  *
  * 'agendados' devolvia STRING VAZIA, e a rota valida `status` com
- * `z.enum([...])`: `&status=` nao casa com nenhum membro e a requisicao morria
- * em 400. Como a tela nao trata a rejeicao, ela continuava exibindo o resultado
- * do filtro anterior — clicar em "Agendados" parecia nao fazer nada, ou pior,
+ * `z.enum([...])`: `&status=` não casa com nenhum membro e a requisição morria
+ * em 400. Como a tela não trata a rejeição, ela continuava exibindo o resultado
+ * do filtro anterior — clicar em "Agendados" parecia não fazer nada, ou pior,
  * mostrava a lista de outra faceta como se fosse essa.
  */
 function mapa(f: FiltroDoDia): string {

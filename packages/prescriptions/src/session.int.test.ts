@@ -8,7 +8,7 @@ import { semearPrescricao } from './test-support';
 
 afterAll(async () => { await closePools(); });
 
-/** Provider espiao: guarda o que recebeu e devolve uma sessao valida. */
+/** Provider espião: guarda o que recebeu e devolve uma sessão válida. */
 function espiao() {
   const recebido: { professional?: unknown; patient?: unknown } = {};
   const provider = {
@@ -58,8 +58,8 @@ describe('sessao do prescritor', () => {
 
     expect(r.ok).toBe(true);
     // A Memed identifica o prescritor pelo CPF (external_id). Mandar string
-    // vazia faz o parceiro recusar a sessao inteira — e a receita nao abre para
-    // um medico que existe, tem CRM e esta com o paciente na sala.
+    // vazia faz o parceiro recusar a sessão inteira — e a receita não abre para
+    // um médico que existe, tem CRM e está com o paciente na sala.
     expect((recebido.professional as { cpf: string }).cpf).toBe(cpf);
     expect((recebido.professional as { council: string }).council).toBe('CRM');
   });

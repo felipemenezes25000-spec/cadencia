@@ -10,10 +10,10 @@ beforeAll(async () => {
   s = await semearAtendimento();
   actor = { kind: 'user', tenantId: s.tenantId, userId: s.userId, clinicId: s.clinicId,
             requestId: uuidv7() };
-  // Rebaixa o paciente para preliminar: e o estado real de quem foi agendado
-  // pelo telefone com nome e um canal, e ainda nao passou pelo check-in.
-  // A escrita vai por withTenantTx e nao pelo appPool: clin.patient tem RLS
-  // FORCE, e fora da transacao de tenant o UPDATE nao levanta erro — ele
+  // Rebaixa o paciente para preliminar: é o estado real de quem foi agendado
+  // pelo telefone com nome e um canal, e ainda não passou pelo check-in.
+  // A escrita vai por withTenantTx e não pelo appPool: clin.patient tem RLS
+  // FORCE, e fora da transação de tenant o UPDATE não levanta erro — ele
   // simplesmente casa zero linhas, e o teste passaria a medir outra coisa.
   await definirCadastro('preliminar', null);
 });

@@ -12,24 +12,24 @@ interface Vaga {
 }
 
 /**
- * A pagina que o PACIENTE ve.
+ * A página que o PACIENTE vê.
  *
- * Unica tela do produto para quem nao tem conta, e a unica que roda fora do
- * contexto de sessao. Tudo aqui e otimizado para uma pessoa no celular, com
- * pressa, que nao conhece o sistema: tres passos, nenhum jargao, e nenhum campo
- * a mais do que o necessario para marcar.
+ * Única tela do produto para quem não tem conta, e a única que roda fora do
+ * contexto de sessão. Tudo aqui é otimizado para uma pessoa no celular, com
+ * pressa, que não conhece o sistema: três passos, nenhum jargão, e nenhum campo
+ * a mais do que o necessário para marcar.
  *
- * Nao ha CPF, nao ha data de nascimento, nao ha convenio. O cadastro nasce
- * preliminar e a recepcao completa depois — porque quem esta no celular ou
+ * Não há CPF, não há data de nascimento, não há convênio. O cadastro nasce
+ * preliminar e a recepção completa depois — porque quem está no celular ou
  * desiste, ou inventa, e cadastro inventado vira paciente duplicado.
  */
 
 /**
- * Hora no fuso DA CLINICA, nunca no do aparelho.
+ * Hora no fuso DA CLÍNICA, nunca no do aparelho.
  *
  * Sem `timeZone`, o Intl usa o fuso do navegador. O paciente que abre o link de
- * uma clinica de Sao Paulo estando em Portugal via 19:00 onde a agenda diz
- * 14:00 — e marcava confiando no numero errado. Quem manda e o relogio de onde
+ * uma clínica de São Paulo estando em Portugal via 19:00 onde a agenda diz
+ * 14:00 — e marcava confiando no número errado. Quem manda é o relógio de onde
  * o atendimento acontece.
  */
 function hora(iso: string, fuso: string): string {
@@ -44,7 +44,7 @@ function diaLegivel(d: string): string {
   }).format(new Date(`${d}T12:00:00`));
 }
 
-/** Os proximos 14 dias. Agenda aberta demais convida a marcar e esquecer. */
+/** Os próximos 14 dias. Agenda aberta demais convida a marcar e esquecer. */
 function proximosDias(): string[] {
   const hoje = new Date();
   return Array.from({ length: 14 }, (_, i) => {
@@ -71,7 +71,7 @@ export default function PaginaAgendarOnline() {
   const [buscando, setBuscando] = useState(false);
   const [marcando, setMarcando] = useState(false);
   const [pronto, setPronto] = useState<Vaga | null>(null);
-  // Ate a primeira busca responder nao ha horario na tela, entao o valor
+  // Até a primeira busca responder não há horário na tela, então o valor
   // inicial nunca chega a ser exibido.
   const [fuso, setFuso] = useState('America/Sao_Paulo');
 
@@ -82,12 +82,12 @@ export default function PaginaAgendarOnline() {
       .then((r) => {
         if (!vivo) return;
         setProcedimentos(r.itens);
-        // Ja seleciona o primeiro: uma tela que abre pedindo escolha antes de
-        // mostrar qualquer horario parece formulario. Abrir com algo escolhido
-        // e mostrando horarios parece agenda.
+        // Já seleciona o primeiro: uma tela que abre pedindo escolha antes de
+        // mostrar qualquer horário parece formulário. Abrir com algo escolhido
+        // e mostrando horários parece agenda.
         setProcedureId((atual) => (atual === '' ? r.itens[0]?.procedureId ?? '' : atual));
       })
-      .catch(() => { if (vivo) setErro('Nao foi possivel carregar os servicos.'); });
+      .catch(() => { if (vivo) setErro('Não foi possível carregar os serviços.'); });
     return () => { vivo = false; };
   }, [clinicId]);
 
@@ -104,7 +104,7 @@ export default function PaginaAgendarOnline() {
       setVagas(r.itens);
       setFuso(r.timezone);
     } catch {
-      setErro('Nao foi possivel carregar os horarios. Tente de novo.');
+      setErro('Não foi possível carregar os horários. Tente de novo.');
     } finally {
       setBuscando(false);
     }
@@ -131,14 +131,14 @@ export default function PaginaAgendarOnline() {
       });
       setPronto(escolhida);
     } catch (e) {
-      // 409 e o caso comum aqui: alguem pegou a vaga no meio do preenchimento.
+      // 409 é o caso comum aqui: alguém pegou a vaga no meio do preenchimento.
       // Dizer "erro" faria a pessoa achar que o sistema quebrou; o que ela
-      // precisa e escolher outro horario, com a lista ja atualizada.
+      // precisa é escolher outro horário, com a lista já atualizada.
       if (e instanceof ApiError && e.status === 409) {
-        setErro('Alguem acabou de marcar esse horario. Escolha outro.');
+        setErro('Alguém acabou de marcar esse horário. Escolha outro.');
         void buscar();
       } else {
-        setErro('Nao foi possivel marcar. Tente de novo.');
+        setErro('Não foi possível marcar. Tente de novo.');
       }
     } finally {
       setMarcando(false);
@@ -151,12 +151,12 @@ export default function PaginaAgendarOnline() {
         <div className="rounded-[var(--r-md)] border border-line bg-surface p-6 text-center">
           <h1 className="mb-2 text-lg font-semibold text-text">Consulta marcada</h1>
           <p className="text-sm text-text">
-            {diaLegivel(dia)} as <strong>{hora(pronto.inicio, fuso)}</strong>
+            {diaLegivel(dia)} às <strong>{hora(pronto.inicio, fuso)}</strong>
             <br />com {pronto.professionalNome}
           </p>
           <p className="mt-4 text-sm text-text-muted">
-            Guarde este horario. A clinica pode entrar em contato pelo telefone
-            que voce informou.
+            Guarde este horário. A clínica pode entrar em contato pelo telefone
+            que você informou.
           </p>
         </div>
       </main>
@@ -169,12 +169,12 @@ export default function PaginaAgendarOnline() {
     <main className="mx-auto max-w-md p-6">
       <h1 className="mb-1 text-lg font-semibold text-text">Marcar consulta</h1>
       <p className="mb-6 text-sm text-text-muted">
-        Escolha o dia e o horario. Leva menos de um minuto.
+        Escolha o dia e o horário. Leva menos de um minuto.
       </p>
 
       {procedimentos.length > 0 && (
         <label className="mb-4 grid gap-1.5">
-          <span className="text-sm font-medium text-text">Servico</span>
+          <span className="text-sm font-medium text-text">Serviço</span>
           <select value={procedureId} onChange={(e) => setProcedureId(e.target.value)}
             className={entrada}>
             {procedimentos.map((p) => (
@@ -200,11 +200,11 @@ export default function PaginaAgendarOnline() {
       )}
 
       <section className="mb-6">
-        <h2 className="mb-2 text-sm font-medium text-text">Horarios livres</h2>
+        <h2 className="mb-2 text-sm font-medium text-text">Horários livres</h2>
         {buscando && <p className="text-sm text-text-muted">Buscando…</p>}
         {!buscando && vagas.length === 0 && (
           <p className="text-sm text-text-muted">
-            Nenhum horario livre neste dia. Tente outro.
+            Nenhum horário livre neste dia. Tente outro.
           </p>
         )}
         <div className="grid grid-cols-3 gap-2">
@@ -253,11 +253,11 @@ export default function PaginaAgendarOnline() {
           >
             {marcando ? 'Marcando…' : `Marcar ${hora(escolhida.inicio, fuso)}`}
           </button>
-          {/* Sem CPF, sem data de nascimento, sem convenio: o cadastro nasce
-              preliminar e a recepcao completa. Pedir tudo aqui faz a pessoa
+          {/* Sem CPF, sem data de nascimento, sem convênio: o cadastro nasce
+              preliminar e a recepção completa. Pedir tudo aqui faz a pessoa
               desistir ou inventar — e dado inventado vira paciente duplicado. */}
           <p className="text-xs text-text-muted">
-            Pedimos so o essencial. O resto a clinica confirma na recepcao.
+            Pedimos só o essencial. O resto a clínica confirma na recepção.
           </p>
         </section>
       )}

@@ -80,7 +80,7 @@ beforeAll(async () => {
     clinicId: s.clinicId, requestId: uuidv7(),
   };
 
-  // Semear lancamentos: um pago (realizado) e um pendente (projetado)
+  // Semear lançamentos: um pago (realizado) e um pendente (projetado)
   await withTenantTx(actor, async (tx) => {
     // Receita paga ontem
     await tx.query(

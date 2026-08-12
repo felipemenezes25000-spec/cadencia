@@ -39,7 +39,7 @@ describe('lista de espera', () => {
     const app = await buildApp();
     const t = await semearSessao({ role: 'recepcao' });
 
-    // Dois pacientes distintos: o indice unico impede duas entradas ativas para
+    // Dois pacientes distintos: o índice único impede duas entradas ativas para
     // o mesmo par paciente/profissional.
     const normal = await app.inject({
       method: 'POST', url: '/v1/agenda/lista-espera', ...auth(t),
@@ -70,7 +70,7 @@ describe('lista de espera', () => {
       payload: { patientId: t.patientId, professionalId: t.professionalId } });
 
     expect(primeira.statusCode).toBe(201);
-    // Fila com a mesma pessoa duas vezes nao e fila: e a recepcao ligando duas
+    // Fila com a mesma pessoa duas vezes não é fila: é a recepção ligando duas
     // vezes para a mesma paciente e ela achando que perdeu a vaga.
     expect(segunda.statusCode).toBe(409);
     expect(segunda.json()).toMatchObject({ erro: 'ja_na_fila' });

@@ -91,8 +91,8 @@ describe('emissao de guia SP/SADT', () => {
     });
     expect(r.statusCode).toBe(201);
     const body = r.json() as { valorTotalCentavos: number; numeroGuiaPrestador: string };
-    // 2 x 45,00 = 90,00. O total nao e recebido do cliente: e somado dos itens,
-    // porque guia que diverge dos proprios itens e a glosa mais boba.
+    // 2 x 45,00 = 90,00. O total não é recebido do cliente: é somado dos itens,
+    // porque guia que diverge dos próprios itens é a glosa mais boba.
     expect(body.valorTotalCentavos).toBe(9000);
     expect(body.numeroGuiaPrestador).toBeTruthy();
     await app.close();
@@ -124,8 +124,8 @@ describe('emissao de guia SP/SADT', () => {
         procedimentos: [PROC],
       },
     });
-    // Pedido de exame em nome de um medico que nao pediu e o comeco de uma
-    // glosa por procedimento nao justificado — quando nao de coisa pior.
+    // Pedido de exame em nome de um médico que não pediu é o começo de uma
+    // glosa por procedimento não justificado — quando não de coisa pior.
     expect(r.statusCode).toBe(403);
     await app.close();
   });
@@ -139,7 +139,7 @@ describe('emissao de guia SP/SADT', () => {
         caraterAtendimento: '1', tipoAtendimento: '04', procedimentos: [],
       },
     });
-    // Guia vazia e ACEITA pela operadora e nao paga nada.
+    // Guia vazia é ACEITA pela operadora e não paga nada.
     expect(r.statusCode).toBe(400);
     await app.close();
   });
@@ -152,7 +152,7 @@ describe('emissao de guia SP/SADT', () => {
         encounterId: medico.encounterId,
         caraterAtendimento: '1',
         // `dm_tipoAtendimento` = {01,02,03,04,08,09,10,13,23}. '05' parece
-        // plausivel e nao existe — recusar aqui evita o lote inteiro voltar.
+        // plausível e não existe — recusar aqui evita o lote inteiro voltar.
         tipoAtendimento: '05',
         procedimentos: [PROC],
       },
@@ -201,7 +201,7 @@ describe('emissao de guia SP/SADT', () => {
         caraterAtendimento: '1', tipoAtendimento: '04', procedimentos: [PROC],
       },
     });
-    // Emitir criaria uma guia que nunca sera enviada e ficaria pendente para
+    // Emitir criaria uma guia que nunca será enviada e ficaria pendente para
     // sempre na lista de faturamento.
     expect(r.statusCode).toBe(422);
     expect((r.json() as { erro: string }).erro)

@@ -1,11 +1,11 @@
 /**
- * Automacoes pos-atendimento: acompanhamento e NPS.
+ * Automações pós-atendimento: acompanhamento e NPS.
  *
- * Pos-consulta: trigger `encounter_finalized`, template de acompanhamento
- * enviado N minutos apos finalizacao (tipicamente 24h = 1440 min).
+ * Pós-consulta: trigger `encounter_finalized`, template de acompanhamento
+ * enviado N minutos após finalização (tipicamente 24h = 1440 min).
  *
- * NPS: trigger `nps_due`, template com escala 0-10 enviado N minutos apos
- * finalizacao (tipicamente 7 dias = 10080 min). A resposta do paciente e
+ * NPS: trigger `nps_due`, template com escala 0-10 enviado N minutos após
+ * finalização (tipicamente 7 dias = 10080 min). A resposta do paciente é
  * parseada e gravada em `msg.nps_response` pelo worker.
  */
 
@@ -22,7 +22,7 @@ export interface EncounterFinalizedPayload {
   readonly professionalName: string;
   readonly clinicId: string;
   readonly clinicTimezone: string;
-  /** Instante UTC da finalizacao. */
+  /** Instante UTC da finalização. */
   readonly finalizedAt: string;
 }
 

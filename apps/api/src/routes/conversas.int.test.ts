@@ -76,14 +76,14 @@ describe('caixa de conversas', () => {
 
     const comPaciente = itens.find((x) => x.conversationId === conversaComPaciente);
     expect(comPaciente?.patientName).toBe(s.patientNome);
-    // A previa e a ULTIMA mensagem, nao a primeira: a caixa e lida de cima para
-    // baixo e o que importa e o estado atual da conversa.
+    // A prévia é a ÚLTIMA mensagem, não a primeira: a caixa é lida de cima para
+    // baixo e o que importa é o estado atual da conversa.
     expect(comPaciente?.lastMessageBody).toBe('Confirmo sim, obrigada');
     expect(comPaciente?.lastMessageDirection).toBe('inbound');
     expect(comPaciente?.unreadCount).toBe(1);
 
-    // Numero sem paciente vinculado existe e e comum: quem escreve pela
-    // primeira vez ainda nao esta no cadastro.
+    // Número sem paciente vinculado existe e é comum: quem escreve pela
+    // primeira vez ainda não está no cadastro.
     const anonima = itens.find((x) => x.conversationId === conversaAnonima);
     expect(anonima?.patientName).toBeNull();
     expect(anonima?.unreadCount).toBe(2);
@@ -110,8 +110,8 @@ describe('caixa de conversas', () => {
       pendencias: string[];
       historicoAgendamentos: unknown[];
     };
-    // O painel lateral da conversa existe para a recepcao responder sem trocar
-    // de tela: sem agenda e pendencia, ela abriria o cadastro em outra aba.
+    // O painel lateral da conversa existe para a recepção responder sem trocar
+    // de tela: sem agenda e pendência, ela abriria o cadastro em outra aba.
     expect(Array.isArray(d.pendencias)).toBe(true);
     expect(Array.isArray(d.historicoAgendamentos)).toBe(true);
 

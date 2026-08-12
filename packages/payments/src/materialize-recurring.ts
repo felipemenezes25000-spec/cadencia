@@ -26,17 +26,17 @@ interface TemplateRow {
 /**
  * Materializa entries a partir de templates recorrentes ativos cujo
  * next_due_date <= hoje + 30 dias. Roda como `jobs` (BYPASSRLS), sem
- * withTenantTx. Idempotencia garantida por idempotency_key unico
- * (template_id + due_date). Avanca next_due_date conforme a frequencia.
+ * withTenantTx. Idempotência garantida por idempotency_key único
+ * (template_id + due_date). Avança next_due_date conforme a frequência.
  *
- * REGRA: ends_at < next_due_date => template nao gera mais. Template
- * inativo (active=false) e ignorado.
+ * REGRA: ends_at < next_due_date => template não gera mais. Template
+ * inativo (active=false) é ignorado.
  */
 export async function materializeRecurringEntries(
   tx: TxClient,
   tenantId: string,
 ): Promise<MaterializeResult> {
-  // Obtem "agora" do Postgres, nao do relogio local
+  // Obtém "agora" do Postgres, não do relógio local
   const dbNow = (await tx.query<{ now: string }>(`SELECT current_date::text AS now`)).rows[0]!.now;
 
   // Busca templates ativos com next_due_date no horizonte de 30 dias
@@ -60,7 +60,7 @@ export async function materializeRecurringEntries(
   for (const tpl of templates) {
     let currentDue = tpl.next_due_date;
 
-    // Gera entries para todas as datas pendentes ate hoje + 30 dias
+    // Gera entries para todas as datas pendentes até hoje + 30 dias
     while (true) {
       const dueDateObj = new Date(currentDue + 'T12:00:00Z');
       const horizonObj = parseDateMidday(dbNow);
@@ -75,10 +75,10 @@ export async function materializeRecurringEntries(
         if (dueDateObj.getTime() > endsAtObj.getTime()) break;
       }
 
-      // Idempotency key: garante que o mesmo template+data nao gera duplicata
+      // Idempotency key: garante que o mesmo template+data não gera duplicata
       const idempotencyKey = `recurring-${tpl.id}-${currentDue}`;
 
-      // Tenta inserir; se a key ja existe, pula (ON CONFLICT DO NOTHING)
+      // Tenta inserir; se a key já existe, pula (ON CONFLICT DO NOTHING)
       const entryId = uuidv7();
       const { rowCount } = await tx.query(
         `INSERT INTO fin.entry
@@ -115,11 +115,11 @@ export async function materializeRecurringEntries(
         skipped++;
       }
 
-      // Avanca para o proximo vencimento
+      // Avança para o próximo vencimento
       currentDue = advanceDueDate(currentDue, tpl.frequency, tpl.day_of_month);
     }
 
-    // Atualiza next_due_date do template para o proximo vencimento nao materializado
+    // Atualiza next_due_date do template para o próximo vencimento não materializado
     let nextDue = tpl.next_due_date;
     const horizonCheck = parseDateMidday(dbNow);
     horizonCheck.setUTCDate(horizonCheck.getUTCDate() + 30);
@@ -147,7 +147,7 @@ export async function materializeRecurringEntries(
 }
 
 /**
- * Avanca a data de vencimento conforme a frequencia.
+ * Avança a data de vencimento conforme a frequência.
  * Para monthly, respeita day_of_month quando informado.
  */
 function advanceDueDate(
@@ -167,7 +167,7 @@ function advanceDueDate(
     case 'monthly': {
       d.setUTCMonth(d.getUTCMonth() + 1);
       if (dayOfMonth !== null) {
-        // Ajusta para o dia correto; se o mes nao tem esse dia, usa o ultimo
+        // Ajusta para o dia correto; se o mês não tem esse dia, usa o último
         const targetDay = Math.min(dayOfMonth, daysInMonth(d.getUTCFullYear(), d.getUTCMonth()));
         d.setUTCDate(targetDay);
       }

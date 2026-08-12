@@ -4,15 +4,15 @@ import { z } from 'zod';
 import { rota } from '../guard';
 
 /**
- * O NPS da clinica.
+ * O NPS da clínica.
  *
- * `msg.nps_response` recebia resposta desde a Fase 2 e ninguem conseguia ler: a
- * automacao pos-consulta perguntava, o paciente respondia, e o dado ficava.
+ * `msg.nps_response` recebia resposta desde a Fase 2 e ninguém conseguia ler: a
+ * automação pós-consulta perguntava, o paciente respondia, e o dado ficava.
  *
- * O indice segue a definicao padrao — %promotores menos %detratores, com os
- * neutros contando so no denominador. Nao e media de nota: media esconde
- * polarizacao, e a clinica que tem metade dos pacientes encantados e metade
- * irritada precisa saber disso, nao ver "nota 7".
+ * O índice segue a definição padrão — %promotores menos %detratores, com os
+ * neutros contando só no denominador. Não é média de nota: média esconde
+ * polarização, e a clínica que tem metade dos pacientes encantados e metade
+ * irritada precisa saber disso, não ver "nota 7".
  */
 export async function npsRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -37,9 +37,9 @@ export async function npsRoutes(app: FastifyInstance): Promise<void> {
         }),
       },
     },
-    // Sob `report.read`: NPS e indicador de gestao. A recepcao, que e quem mais
-    // aparece nos comentarios ruins, nao precisa — e nao deveria — ler a
-    // avaliacao individual do proprio atendimento.
+    // Sob `report.read`: NPS é indicador de gestão. A recepção, que é quem mais
+    // aparece nos comentários ruins, não precisa — e não deveria — ler a
+    // avaliação individual do próprio atendimento.
   }, rota('report.read', async (tx, _ctx, req) => {
     const q = req.query as { dias?: number };
     const dias = q.dias ?? 90;
@@ -60,7 +60,7 @@ export async function npsRoutes(app: FastifyInstance): Promise<void> {
     const promotores = Number(t?.promotores ?? 0);
     const detratores = Number(t?.detratores ?? 0);
 
-    // Sem resposta nenhuma o NPS e zero POR AUSENCIA, e nao por empate. Quem le
+    // Sem resposta nenhuma o NPS é zero POR AUSÊNCIA, e não por empate. Quem lê
     // precisa olhar `respostas` junto — por isso ele vai na mesma carga.
     const nps = respostas === 0
       ? 0
@@ -84,8 +84,8 @@ export async function npsRoutes(app: FastifyInstance): Promise<void> {
       promotores,
       neutros: Number(t?.neutros ?? 0),
       detratores,
-      // O comentario e o que diz O QUE consertar. A nota sozinha so avisa que
-      // ha algo errado.
+      // O comentário é o que diz O QUE consertar. A nota sozinha só avisa que
+      // há algo errado.
       comentarios: coment.map((c) => ({
         score: c.score, comentario: c.comment, em: c.em,
       })),

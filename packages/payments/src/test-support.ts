@@ -73,7 +73,7 @@ export async function semearPagamento(): Promise<SementePagamento> {
       [s.appointmentId, s.tenantId, s.patientId, s.professionalId,
        s.clinicId, procedureId, s.userId]);
 
-    // Categoria e metodos de pagamento
+    // Categoria e métodos de pagamento
     await c.query(
       `INSERT INTO fin.category (tenant_id, id, name, kind)
        VALUES ($1, $2, 'Consulta', 'receita')`,
@@ -101,7 +101,7 @@ export async function semearPagamento(): Promise<SementePagamento> {
 }
 
 // ---------------------------------------------------------------------------
-// Seed para testes de payment link, webhook e conciliacao (Task 34)
+// Seed para testes de payment link, webhook e conciliação (Task 34)
 // ---------------------------------------------------------------------------
 
 export interface SementeFinanceiro {

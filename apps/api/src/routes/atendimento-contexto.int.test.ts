@@ -11,15 +11,15 @@ beforeAll(async () => {
   s = await semearSessao({ role: 'profissional' });
   const a = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
   try {
-    // Nascimento e sexo do paciente: a tela mostra IDADE, e idade so existe se
-    // houver data. Sem isso o cabecalho do prontuario fica mudo.
+    // Nascimento e sexo do paciente: a tela mostra IDADE, e idade só existe se
+    // houver data. Sem isso o cabeçalho do prontuário fica mudo.
     await a.query(
       `UPDATE clin.patient SET birth_date = date '1985-03-12', sex_at_birth = 'F'
         WHERE tenant_id = $1 AND id = $2`,
       [s.tenantId, s.patientId]);
 
-    // Uma prescricao anterior — a fonte honesta de "medicamentos em uso" e o que
-    // foi de fato prescrito, nao um campo de texto que ninguem mantem.
+    // Uma prescrição anterior — a fonte honesta de "medicamentos em uso" é o que
+    // foi de fato prescrito, não um campo de texto que ninguém mantém.
     const prescId = uuidv7();
     const canceladaId = uuidv7();
     await a.query(
@@ -72,15 +72,15 @@ describe('contexto do atendimento', () => {
     expect(c.paciente.nascimento).toBe('1985-03-12');
     expect(c.paciente.sexo).toBe('F');
 
-    // Uma prescricao viva e uma cancelada. So a viva conta: mostrar medicamento
-    // de receita cancelada como "em uso" e pior do que nao mostrar nada — o
-    // medico prescreve interacao contra um remedio que o paciente nao toma.
+    // Uma prescrição viva e uma cancelada. Só a viva conta: mostrar medicamento
+    // de receita cancelada como "em uso" é pior do que não mostrar nada — o
+    // médico prescreve interação contra um remédio que o paciente não toma.
     expect(c.medicamentos).toHaveLength(1);
     expect(c.medicamentos[0]?.nome).toBe('Losartana 50mg');
     expect(c.medicamentos[0]?.posologia).toBe('1 comprimido pela manha');
 
-    // Alergias vem do campo estruturado do prontuario. Nao ha nenhuma aqui, e
-    // vazio e a resposta certa — nao ausencia da chave.
+    // Alergias vêm do campo estruturado do prontuário. Não há nenhuma aqui, e
+    // vazio é a resposta certa — não ausência da chave.
     expect(c.alergias).toEqual([]);
 
     expect(typeof c.inicio).toBe('string');
@@ -97,7 +97,7 @@ describe('contexto do atendimento', () => {
         `UPDATE sched.appointment SET procedure_id = $3
           WHERE tenant_id = $1 AND id = $2`,
         [s.tenantId, s.appointmentId, s.procedureId]);
-      // O valor sugerido so existe se o encontro souber de qual agendamento veio.
+      // O valor sugerido só existe se o encontro souber de qual agendamento veio.
       await a.query(
         `UPDATE clin.encounter SET appointment_id = $3
           WHERE tenant_id = $1 AND id = $2`,
@@ -109,10 +109,10 @@ describe('contexto do atendimento', () => {
       method: 'GET', url: `/v1/atendimentos/${s.encounterId}/contexto`, ...auth(s) });
 
     expect(r.statusCode).toBe(200);
-    // `valor_centavos` e bigint, e node-postgres devolve bigint como STRING para
-    // nao perder precisao. Sem conversao explicita o schema de resposta rejeita
-    // e a rota devolve 500 — falha que so aparece quando o procedimento tem
-    // preco, e nao quando ele e nulo.
+    // `valor_centavos` é bigint, e node-postgres devolve bigint como STRING para
+    // não perder precisão. Sem conversão explícita o schema de resposta rejeita
+    // e a rota devolve 500 — falha que só aparece quando o procedimento tem
+    // preço, e não quando ele é nulo.
     const c = r.json() as { valorSugeridoCentavos: unknown };
     expect(c.valorSugeridoCentavos).toBe(25000);
 
@@ -133,8 +133,8 @@ describe('contexto do atendimento', () => {
     const recepcao = await semearSessao({ role: 'recepcao' });
     const r = await app.inject({
       method: 'GET', url: `/v1/atendimentos/${recepcao.encounterId}/contexto`, ...auth(recepcao) });
-    // Medicamento em uso e dado clinico. Quem agenda nao precisa dele para
-    // agendar, e prontuario aberto por padrao e vazamento por padrao.
+    // Medicamento em uso é dado clínico. Quem agenda não precisa dele para
+    // agendar, e prontuário aberto por padrão é vazamento por padrão.
     expect(r.statusCode).toBe(403);
     await app.close();
   });

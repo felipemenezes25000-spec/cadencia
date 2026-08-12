@@ -6,16 +6,16 @@ import { reprojectGuiaOnAmend, type ReprojectAction } from '@cadencia/tiss';
 /**
  * Consome `ENCOUNTER_AMENDED` do outbox e reprojeta a guia TISS.
  *
- * Quando o prontuario e retificado, a guia de convenio derivada dele fica
+ * Quando o prontuário é retificado, a guia de convênio derivada dele fica
  * desatualizada: o CID que mudou, o procedimento que mudou, o valor que mudou.
  * `clin.finalize_encounter` emite `ENCOUNTER_AMENDED` justamente para disparar a
- * correcao, e `resolveQueue` ja roteava o evento para `tiss.encounter_amended`.
+ * correção, e `resolveQueue` já roteava o evento para `tiss.encounter_amended`.
  *
  * O que faltava era ESTE consumidor. Sem ele o despachante marcava o evento como
- * despachado, empurrava para uma fila que ninguem escutava e o evento sumia: a
- * guia continuava com o conteudo antigo e ia para a operadora assim. E o mesmo
- * defeito que ja tinha acontecido com `create_payment_link` — fila existindo sem
- * ouvinte nao levanta erro em lugar nenhum, so para de funcionar em silencio.
+ * despachado, empurrava para uma fila que ninguém escutava e o evento sumia: a
+ * guia continuava com o conteúdo antigo e ia para a operadora assim. É o mesmo
+ * defeito que já tinha acontecido com `create_payment_link` — fila existindo sem
+ * ouvinte não levanta erro em lugar nenhum, só para de funcionar em silêncio.
  */
 
 export interface ReprojetarGuiaInput {
@@ -41,13 +41,13 @@ export async function reprojetarGuiaTiss(
 
   return withTenantTx(actor, async (tx) => {
     /**
-     * A versao vem do `head_version_id`, nao do evento.
+     * A versão vem do `head_version_id`, não do evento.
      *
      * O payload de `ENCOUNTER_AMENDED` (migration 0120) leva encounterId,
-     * patientId, professionalId, versionNo e kind — nao leva o id da versao.
-     * Buscar o head aqui e melhor do que reescrever a funcao de 250 linhas so
-     * para acrescentar um campo, e e o valor CERTO: a guia espelha o estado
-     * vigente do prontuario, que e exatamente o que o head aponta.
+     * patientId, professionalId, versionNo e kind — não leva o id da versão.
+     * Buscar o head aqui é melhor do que reescrever a função de 250 linhas só
+     * para acrescentar um campo, e é o valor CERTO: a guia espelha o estado
+     * vigente do prontuário, que é exatamente o que o head aponta.
      */
     const { rows } = await tx.query<{ head_version_id: string | null }>(
       `SELECT head_version_id FROM clin.encounter WHERE id = $1`,

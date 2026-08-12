@@ -7,15 +7,15 @@ import type { Client } from 'pg';
 import { connectAs, connectSuperuser } from './helpers/pg';
 import { SecurityAuditChannel } from '../src/security';
 
-// Tenant NOVO a cada execucao, pela mesma razao ja documentada em
-// channel-b.int.test.ts: audit.event e append-only e nenhum afterAll consegue
+// Tenant NOVO a cada execução, pela mesma razão já documentada em
+// channel-b.int.test.ts: audit.event é append-only e nenhum afterAll consegue
 // limpar o que este teste grava — o trigger no_mutate recusa o DELETE. Com
 // tenant fixo, os eventos da rodada anterior sobrevivem, `contarLeituras`
-// devolve 4 em vez de 1 e as marcas de audit.read_dedup ainda estao dentro da
-// janela de 5 minutos: a suite passa exatamente UMA vez, num banco recem-criado
-// (verificado — na segunda rodada 4 dos 8 testes falham). A saida nao e limpar,
-// e sim isolar: cada rodada conta sob um tenant que so ela conhece, e a chave de
-// audit.read_dedup comeca por tenant_id, entao a deduplicacao tambem nasce limpa.
+// devolve 4 em vez de 1 e as marcas de audit.read_dedup ainda estão dentro da
+// janela de 5 minutos: a suite passa exatamente UMA vez, num banco recém-criado
+// (verificado — na segunda rodada 4 dos 8 testes falham). A saída não é limpar,
+// e sim isolar: cada rodada conta sob um tenant que só ela conhece, e a chave de
+// audit.read_dedup começa por tenant_id, então a deduplicação também nasce limpa.
 const TENANT = randomUUID();
 const MEDICO = '0192f8a0-0000-7000-8000-000000000501';
 const OUTRO_MEDICO = '0192f8a0-0000-7000-8000-000000000502';
@@ -113,8 +113,8 @@ describe('auditoria de leitura: um evento por (usuario, paciente, caso de uso) e
   it('passados os 5 minutos da janela, a leitura volta a gerar evento', async () => {
     const antes = await contarLeituras(root, PACIENTE, MEDICO);
 
-    // Envelhece a marca da deduplicacao em 6 minutos: e o equivalente
-    // deterministico de esperar a janela expirar.
+    // Envelhece a marca da deduplicação em 6 minutos: é o equivalente
+    // determinístico de esperar a janela expirar.
     const marca = await root.query(
       `UPDATE audit.read_dedup
           SET last_logged_at = last_logged_at - interval '6 minutes'
@@ -122,8 +122,8 @@ describe('auditoria de leitura: um evento por (usuario, paciente, caso de uso) e
           AND use_case = 'emr.open_record'`,
       [TENANT, MEDICO, PACIENTE],
     );
-    // Garante que o teste esta de fato envelhecendo a marca certa, e nao
-    // passando por acidente porque o UPDATE nao pegou nenhuma linha.
+    // Garante que o teste está de fato envelhecendo a marca certa, e não
+    // passando por acidente porque o UPDATE não pegou nenhuma linha.
     expect(marca.rowCount).toBe(1);
 
     const res = await app.query<{ id: string | null }>(

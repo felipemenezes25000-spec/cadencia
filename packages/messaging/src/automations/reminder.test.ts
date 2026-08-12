@@ -74,7 +74,7 @@ describe('scheduleReminders', () => {
   });
 
   it('descarta lembrete cujo instante ja passou (startAfter no passado)', () => {
-    // Consulta ja aconteceu: starts_at no passado
+    // Consulta já aconteceu: starts_at no passado
     const passado = { ...APPOINTMENT_DATA, startsAt: '2020-01-01T11:00:00.000Z' };
     const nowMs = new Date('2026-10-01T00:00:00.000Z').getTime();
     const result = scheduleReminders(passado, [REGRA_24H], nowMs);

@@ -9,16 +9,16 @@ function erroDominio(kind: string, status: number): never {
 }
 
 /**
- * Compartilhar o prontuario de um paciente com outro profissional.
+ * Compartilhar o prontuário de um paciente com outro profissional.
  *
- * A politica RESTRICTIVE `clinical_scope` em `clin.encounter` so libera o
+ * A política RESTRICTIVE `clinical_scope` em `clin.encounter` só libera o
  * atendimento para quem o atendeu, para quem tem escopo amplo, ou para quem
  * consta em `clin.record_share`. Sem esta rota a terceira porta existia no banco
- * e nao existia no produto: o colega via 404 e nao havia como liberar — o que
- * parece defeito e e, na verdade, a garantia funcionando sem interruptor.
+ * e não existia no produto: o colega via 404 e não havia como liberar — o que
+ * parece defeito e é, na verdade, a garantia funcionando sem interruptor.
  *
- * O motivo e obrigatorio porque a pergunta que a auditoria faz nao e "quem
- * acessou", e sim "por que este medico viu este paciente".
+ * O motivo é obrigatório porque a pergunta que a auditoria faz não é "quem
+ * acessou", e sim "por que este médico viu este paciente".
  */
 export async function compartilhamentoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -28,7 +28,7 @@ export async function compartilhamentoRoutes(app: FastifyInstance): Promise<void
       body: z.object({
         patientId: z.string().uuid(),
         granteeProfessionalId: z.string().uuid(),
-        // Minimo real, nao decorativo: "ok" cumpre a coluna e nao explica nada.
+        // Mínimo real, não decorativo: "ok" cumpre a coluna e não explica nada.
         reason: z.string().trim().min(5).max(500),
         expiraEm: z.string().datetime().optional(),
       }),
@@ -125,9 +125,9 @@ export async function compartilhamentoRoutes(app: FastifyInstance): Promise<void
     },
   }, rota('record.share', async (tx, _ctx, req, reply) => {
     const p = req.params as { id: string };
-    // UPDATE e nao DELETE: quem teve acesso e por quanto tempo e material de
+    // UPDATE e não DELETE: quem teve acesso e por quanto tempo é material de
     // auditoria. Apagar a linha apagaria a resposta de "quem viu este
-    // prontuario em marco".
+    // prontuário em março".
     const { rowCount } = await tx.query(
       `UPDATE clin.record_share
           SET revoked_at = clock_timestamp()

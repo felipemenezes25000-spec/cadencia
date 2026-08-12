@@ -1,15 +1,15 @@
 /**
  * Converte string JavaScript (UTF-16 interno) para ISO-8859-1 byte array.
  *
- * O padrao TISS exige encoding ISO-8859-1 no XML. Caracteres fora do range
- * 0x00-0xFF sao substituidos por '?' (0x3F) e cada substituicao gera um
+ * O padrão TISS exige encoding ISO-8859-1 no XML. Caracteres fora do range
+ * 0x00-0xFF são substituídos por '?' (0x3F) e cada substituição gera um
  * warning com o code point original. NUNCA silencio: o chamador deve logar
  * ou rejeitar o lote se houver warnings.
  */
 export interface EncodeResult {
   /** Bytes em ISO-8859-1. */
   readonly bytes: Uint8Array;
-  /** Um warning por caractere substituido, com posicao e code point. */
+  /** Um warning por caractere substituído, com posição e code point. */
   readonly warnings: readonly string[];
 }
 
@@ -20,7 +20,7 @@ export function encodeIso8859(input: string): EncodeResult {
   let i = 0;
   while (i < input.length) {
     const code = input.codePointAt(i)!;
-    // Avanca 2 unidades UTF-16 se for surrogate pair (code > 0xFFFF)
+    // Avança 2 unidades UTF-16 se for surrogate pair (code > 0xFFFF)
     const advance = code > 0xFFFF ? 2 : 1;
 
     if (code <= 0xFF) {

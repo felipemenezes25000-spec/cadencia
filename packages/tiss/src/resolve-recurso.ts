@@ -21,7 +21,7 @@ export interface ResolveRecursoResult {
 }
 
 // ---------------------------------------------------------------------------
-// Funcao principal
+// Função principal
 // ---------------------------------------------------------------------------
 
 /**
@@ -29,9 +29,9 @@ export interface ResolveRecursoResult {
  *
  * - deferido:   todas as glosas vinculadas transitam para `revertida`
  * - indeferido: todas as glosas vinculadas transitam para `aceita`
- * - parcial:    cada item e marcado individualmente (deferido -> revertida, nao -> aceita)
+ * - parcial:    cada item é marcado individualmente (deferido -> revertida, não -> aceita)
  *
- * Design §3.9 — recurso de glosa sempre cita a versao usada.
+ * Design §3.9 — recurso de glosa sempre cita a versão usada.
  * O recurso precisa estar em status `enviado` para ser resolvido.
  */
 export async function resolveRecurso(
@@ -40,7 +40,7 @@ export async function resolveRecurso(
   resultado: ResolveResult,
   resolvedBy: string,
 ): Promise<Result<ResolveRecursoResult, ResolveRecursoFailure>> {
-  // 1. Busca o recurso e valida que esta em status enviado
+  // 1. Busca o recurso e valida que está em status enviado
   const { rows: recursoRows } = await tx.query<{ id: string; status: string }>(
     `SELECT id, status FROM tiss.recurso_glosa WHERE id = $1 FOR UPDATE`,
     [recursoId],
@@ -55,7 +55,7 @@ export async function resolveRecurso(
     return err({ kind: 'transicao_invalida', statusAtual: recurso.status });
   }
 
-  // 2. Atualiza o status do recurso (resolved_at obrigatorio por ck_recurso_glosa_resolved_at)
+  // 2. Atualiza o status do recurso (resolved_at obrigatório por ck_recurso_glosa_resolved_at)
   await tx.query(
     `UPDATE tiss.recurso_glosa
         SET status = $2::tiss.recurso_glosa_status,
@@ -92,7 +92,7 @@ export async function resolveRecurso(
       [recursoId, resolvedBy],
     );
   } else {
-    // parcial: cada item e marcado individualmente
+    // parcial: cada item é marcado individualmente
     if (!resultado.itens || resultado.itens.length === 0) {
       return err({ kind: 'itens_obrigatorios_para_parcial' });
     }

@@ -16,21 +16,21 @@ export interface SerializeLoteSadtResult {
 const MAX_GUIAS = 100;
 
 /**
- * Valor do item: unitario x quantidade, com reducao/acrescimo.
+ * Valor do item: unitário x quantidade, com redução/acréscimo.
  *
  * DERIVADO, nunca recebido. Aceitar um total vindo de fora deixaria a guia
- * divergir dos proprios itens — e "soma dos itens diferente do valor informado"
- * e o motivo de glosa mais bobo e mais frequente que existe.
+ * divergir dos próprios itens — e "soma dos itens diferente do valor informado"
+ * é o motivo de glosa mais bobo e mais frequente que existe.
  *
- * O arredondamento e para o centavo mais proximo porque o fator de reducao
- * (0.5, 0.7) produz fracao de centavo, e a operadora compara com duas casas.
+ * O arredondamento é para o centavo mais próximo porque o fator de redução
+ * (0.5, 0.7) produz fração de centavo, e a operadora compara com duas casas.
  */
 function valorDoItem(p: ProcedimentoSadtInput): number {
   const fator = p.reducaoAcrescimo ?? 1;
   return Math.round(p.valorUnitarioCentavos * p.quantidadeExecutada * fator);
 }
 
-/** `ct_contratadoDados` e um CHOICE: exatamente um identificador. */
+/** `ct_contratadoDados` é um CHOICE: exatamente um identificador. */
 function emitContratado(xml: XmlBuilder, c: ContratadoSadtInput): void {
   if (c.cnpjContratado !== undefined && c.cnpjContratado !== '') {
     xml.tag('ans:cnpjContratado', c.cnpjContratado);
@@ -51,7 +51,7 @@ function emitProfissional(
   xml.optionalTag('ans:nomeProfissional', p.nome);
   xml.tag('ans:conselhoProfissional', p.conselhoProfissional);
   xml.tag('ans:numeroConselhoProfissional', p.numeroConselho);
-  // Codigo IBGE, nao sigla — ver `uf-ibge.ts`.
+  // Código IBGE, não sigla — ver `uf-ibge.ts`.
   xml.tag('ans:UF', p.ufConselho);
   xml.tag('ans:CBOS', p.cbos);
   xml.close(tag);
@@ -73,7 +73,7 @@ function emitProcedimento(xml: XmlBuilder, p: ProcedimentoSadtInput): void {
   xml.tag('ans:quantidadeExecutada', String(p.quantidadeExecutada));
   xml.optionalTag('ans:viaAcesso', p.viaAcesso);
   xml.optionalTag('ans:tecnicaUtilizada', p.tecnicaUtilizada);
-  // `st_decimal3-2`: obrigatorio mesmo quando nao ha reducao — 1.00 e o neutro.
+  // `st_decimal3-2`: obrigatório mesmo quando não há redução — 1.00 é o neutro.
   xml.tag('ans:reducaoAcrescimo', (p.reducaoAcrescimo ?? 1).toFixed(2));
   xml.tag('ans:valorUnitario', valorDecimal(p.valorUnitarioCentavos));
   xml.tag('ans:valorTotal', valorDecimal(valorDoItem(p)));
@@ -152,7 +152,7 @@ function emitGuiaSadt(xml: XmlBuilder, g: GuiaSadtInput): void {
 /**
  * Serializa um lote de guias SP/SADT em XML ISO-8859-1, conforme TISS 4.03.00.
  *
- * Funcao PURA: dados entram, bytes saem. Sem banco, sem relogio, sem I/O — o
+ * Função PURA: dados entram, bytes saem. Sem banco, sem relógio, sem I/O — o
  * que permite o teste validar o resultado contra o XSD oficial sem subir nada.
  */
 export function serializeLoteSadt(input: LoteSadtInput): SerializeLoteSadtResult {
@@ -166,7 +166,7 @@ export function serializeLoteSadt(input: LoteSadtInput): SerializeLoteSadtResult
     throw new Error(`lote com ${guias.length} guias excede o maximo de ${MAX_GUIAS}`);
   }
 
-  // O hash do padrao e calculado sobre os dados, nao sobre o XML montado.
+  // O hash do padrão é calculado sobre os dados, não sobre o XML montado.
   const hash = computeTissHash(cabecalho, numeroLote, guias);
 
   const xml = new XmlBuilder();

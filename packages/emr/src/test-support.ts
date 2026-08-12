@@ -1,7 +1,7 @@
-// Semeia tenant, clinica, usuario, vinculo, profissional, paciente e dois
-// atendimentos (um em rascunho, um finalizado) para os testes de integracao do
-// emr. Roda com a conexao ADMINISTRATIVA porque cria o tenant — que e a raiz do
-// isolamento e nao existe transacao de negocio capaz de cria-lo: `app_rw` so tem
+// Semeia tenant, clínica, usuário, vínculo, profissional, paciente e dois
+// atendimentos (um em rascunho, um finalizado) para os testes de integração do
+// emr. Roda com a conexão ADMINISTRATIVA porque cria o tenant — que é a raiz do
+// isolamento e não existe transação de negócio capaz de criá-lo: `app_rw` só tem
 // SELECT em app.tenant (0007) e o papel `jobs` nunca recebeu GRANT em
 // app.professional, clin.patient nem clin.encounter.
 import { Pool } from 'pg';
@@ -35,8 +35,8 @@ export async function semearAtendimento(): Promise<Semente> {
   const c = await admin.connect();
   try {
     await c.query('BEGIN');
-    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros digitos hex de
-    // um uuidv7 sao `ms >> 16`, um balde de ~65 segundos, entao duas semeaduras
+    // O slug leva o uuid INTEIRO, nunca um prefixo: os 8 primeiros dígitos hex de
+    // um uuidv7 são `ms >> 16`, um balde de ~65 segundos, então duas semeaduras
     // da mesma rodada cairiam no mesmo slug e a segunda quebraria em
     // tenant_slug_key (23505).
     await c.query(
@@ -64,7 +64,7 @@ export async function semearAtendimento(): Promise<Semente> {
        VALUES ($1, $2, 'Maria Souza Lima', 'completo', '1988-03-14')`,
       [s.tenantId, s.patientId]);
 
-    // Definicao minima de prontuario: um texto, um composto e uma busca de tabela.
+    // Definição mínima de prontuário: um texto, um composto e uma busca de tabela.
     await c.query(
       `INSERT INTO clin.record_section (tenant_id, id, code, label, ordinal)
        VALUES ($1, $2, 'consulta', 'Consulta', 1)`, [s.tenantId, s.sectionId]);
@@ -89,12 +89,12 @@ export async function semearAtendimento(): Promise<Semente> {
        VALUES ($1, $2, $3, 'cid', 'CID-10', 'busca_tabela', 'CID10', 3)`,
       [s.tenantId, s.fieldCidId, s.sectionId]);
 
-    // `outroEncounterId` nasce em rascunho como o primeiro: e o SEGUNDO
-    // atendimento finalizavel do mesmo paciente, necessario para exercitar
-    // regra que cruza atendimentos (superar versao alheia, por exemplo).
-    // `finalizedEncounterId` nao serve para isso: nasce finalizado e sem
-    // versao nenhuma, e o CHECK `version_no = 1 <=> kind = 'original'` impede
-    // criar a primeira versao dele por adendo.
+    // `outroEncounterId` nasce em rascunho como o primeiro: é o SEGUNDO
+    // atendimento finalizável do mesmo paciente, necessário para exercitar
+    // regra que cruza atendimentos (superar versão alheia, por exemplo).
+    // `finalizedEncounterId` não serve para isso: nasce finalizado e sem
+    // versão nenhuma, e o CHECK `version_no = 1 <=> kind = 'original'` impede
+    // criar a primeira versão dele por adendo.
     for (const [id, status] of
          [[s.encounterId, 'rascunho'], [s.outroEncounterId, 'rascunho'],
           [s.finalizedEncounterId, 'finalizado']] as const) {

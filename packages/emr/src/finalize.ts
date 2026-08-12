@@ -17,12 +17,12 @@ export interface FinalizeInput {
   readonly findings: readonly FindingSnapshot[];
   readonly procedures: readonly ProcedureSnapshot[];
   /**
-   * NAO existe `ai` aqui de proposito.
+   * NÃO existe `ai` aqui de propósito.
    *
-   * O registro de assistencia por IA e escrito durante o atendimento e vive em
-   * `clin.ai_assistance`; a finalizacao apenas o reivindica. Aceitar a lista de
+   * O registro de assistência por IA é escrito durante o atendimento e vive em
+   * `clin.ai_assistance`; a finalização apenas o reivindica. Aceitar a lista de
    * quem chama daria ao cliente o poder de decidir o que entra no hash de um
-   * documento que a assinatura qualificada assina — e, na pratica, so servia
+   * documento que a assinatura qualificada assina — e, na prática, só servia
    * para divergir do que o banco realmente sela.
    */
   readonly incompleto?: boolean;
@@ -72,10 +72,10 @@ function montarPayloadSql(i: FinalizeInput): string {
       value_bool: f.value.slot === 'value_bool' ? f.value.bool : null,
       value_date: f.value.slot === 'value_date' ? f.value.date : null,
       value_ts: f.value.slot === 'value_ts' ? f.value.ts : null,
-      // A chave e OMITIDA quando o slot nao e value_json — `undefined` some no
-      // JSON.stringify. Os outros slots podem ir como null porque a funcao os le
-      // com `->>`, que devolve SQL NULL para JSON null; value_json e lido com
-      // `->`, que devolveria o jsonb 'null' — nao-nulo para num_nonnulls, e a
+      // A chave é OMITIDA quando o slot não é value_json — `undefined` some no
+      // JSON.stringify. Os outros slots podem ir como null porque a função os lê
+      // com `->>`, que devolve SQL NULL para JSON null; value_json é lido com
+      // `->`, que devolveria o jsonb 'null' — não-nulo para num_nonnulls, e a
       // linha morreria no CHECK de exatamente um valor preenchido (0034).
       value_json: f.value.slot === 'value_json' ? f.value.json : undefined,
       value_ref_source: f.value.slot === 'value_ref_code' ? f.value.source : null,
@@ -108,8 +108,8 @@ async function selar(
     return err({ kind: 'atendimento_nao_esta_em_rascunho' });
   }
 
-  // §5.5 — a divida de dados do cadastro preliminar e cobrada AQUI, que e o
-  // momento em que os dados sao de fato obrigatorios. Exigir na hora errada e o
+  // §5.5 — a dívida de dados do cadastro preliminar é cobrada AQUI, que é o
+  // momento em que os dados são de fato obrigatórios. Exigir na hora errada é o
   // que faz a recepcionista digitar 000.000.000-00.
   if (kind === 'original') {
     const faltando: string[] = [];
@@ -121,16 +121,16 @@ async function selar(
   }
 
   /**
-   * A versao superada tem de ser DESTE atendimento.
+   * A versão superada tem de ser DESTE atendimento.
    *
    * `clin.finalize_encounter` apaga o bit `live` de diagnosis, observation,
-   * finding e procedure filtrando so por `version_id` — nao confere o
-   * `encounter_id`. Sem esta guarda, uma anulacao aberta no atendimento A que
-   * aponte `supersedesVersionId` para a versao vigente do atendimento B faz o
+   * finding e procedure filtrando só por `version_id` — não confere o
+   * `encounter_id`. Sem esta guarda, uma anulação aberta no atendimento A que
+   * aponte `supersedesVersionId` para a versão vigente do atendimento B faz o
    * registro de B sumir da leitura, sem que uma linha de B tenha sido tocada e
-   * com o status 'anulado' gravado em A. Os ids de versao de todos os
-   * atendimentos do paciente saem na leitura do prontuario, entao o valor
-   * necessario esta a um passo de quem tem acesso legitimo.
+   * com o status 'anulado' gravado em A. Os ids de versão de todos os
+   * atendimentos do paciente saem na leitura do prontuário, então o valor
+   * necessário está a um passo de quem tem acesso legítimo.
    */
   if (supersedes !== null) {
     const sup = await tx.query<{ encounter_id: string }>(
@@ -141,20 +141,20 @@ async function selar(
   }
 
   /**
-   * As linhas de IA do hash sao as que o banco vai selar, nao as que o cliente
+   * As linhas de IA do hash são as que o banco vai selar, não as que o cliente
    * mandou.
    *
    * `clin.finalize_encounter` reivindica toda `clin.ai_assistance` do
-   * atendimento que ainda esta com `version_id IS NULL` — essas linhas nascem
-   * durante a consulta, na rota de transcricao, e o cliente nem as conhece: o
+   * atendimento que ainda está com `version_id IS NULL` — essas linhas nascem
+   * durante a consulta, na rota de transcrição, e o cliente nem as conhece: o
    * front manda `ai: []` sempre. Fazer o hash sobre o array do cliente selava
-   * `[]` enquanto a verificacao re-derivava as linhas reais, entao
-   * `verifyVersionHash` acusava adulteracao em TODO atendimento que usou IA —
-   * um alarme de integridade disparando em prontuario integro, que e a maneira
-   * mais rapida de ensinar todo mundo a ignorar o alarme.
+   * `[]` enquanto a verificação re-derivava as linhas reais, então
+   * `verifyVersionHash` acusava adulteração em TODO atendimento que usou IA —
+   * um alarme de integridade disparando em prontuário íntegro, que é a maneira
+   * mais rápida de ensinar todo mundo a ignorar o alarme.
    *
-   * A projecao e identica a de `verifyVersionHash` de proposito: as duas pontas
-   * do hash tem de ler a mesma coisa da mesma forma.
+   * A projeção é idêntica a de `verifyVersionHash` de propósito: as duas pontas
+   * do hash têm de ler a mesma coisa da mesma forma.
    */
   const aiASelar = await tx.query<AiSnapshot>(
     `SELECT provider, model_id AS "modelId", model_version AS "modelVersion", purpose,
@@ -175,7 +175,7 @@ async function selar(
     kind,
     supersedesVersionId: supersedes,
     justificativa,
-    authorUserId: '',            // preenchido abaixo pelo banco, ver comentario
+    authorUserId: '',            // preenchido abaixo pelo banco, ver comentário
     authorProfessionalId: cab.professional_id,
     cosignerProfessionalId: null,
     incompleto: i.incompleto ?? false,
@@ -183,8 +183,8 @@ async function selar(
     findings: i.findings, procedures: i.procedures, ai: aiASelar.rows,
   };
 
-  // author_user_id vem do GUC dentro da transacao: e a mesma fonte que a funcao
-  // do banco usa, e por isso a re-derivacao em verifyVersionHash bate.
+  // author_user_id vem do GUC dentro da transação: é a mesma fonte que a função
+  // do banco usa, e por isso a re-derivação em verifyVersionHash bate.
   const quem = await tx.query<{ uid: string; pid: string }>(
     `SELECT app.current_user_id()::text AS uid, app.current_professional_id()::text AS pid`);
   const comAutor: VersionSnapshot = {
@@ -214,8 +214,8 @@ export async function amendEncounter(
   tx: TxClient, i: AmendInput,
 ): Promise<Result<{ versionId: string; versionNo: number }, FinalizeFailure>> {
   if (i.kind === 'adendo') {
-    // Adendo e bloco ADICIONAL, nunca substituto: nao supera ninguem, e por isso
-    // o head_version_id nao se move. E o que impede o hemograma que chegou dois
+    // Adendo é bloco ADICIONAL, nunca substituto: não supera ninguém, e por isso
+    // o head_version_id não se move. É o que impede o hemograma que chegou dois
     // dias depois de sumir da tela na consulta seguinte.
     if (i.supersedesVersionId !== null) return err({ kind: 'adendo_nao_supera' });
     return selar(tx, i, 'adendo', null, i.justificativa);
@@ -226,9 +226,9 @@ export async function amendEncounter(
 }
 
 /**
- * Re-deriva o payload canonico das linhas SELADAS e compara com o content_hash
- * persistido. E a contraparte da decisao de nao calcular o hash no banco:
- * conteudo imutavel + re-derivacao = hash errado detectavel para sempre.
+ * Re-deriva o payload canônico das linhas SELADAS e compara com o content_hash
+ * persistido. É a contraparte da decisão de não calcular o hash no banco:
+ * conteúdo imutável + re-derivação = hash errado detectável para sempre.
  */
 export async function verifyVersionHash(
   tx: TxClient, versionId: string,

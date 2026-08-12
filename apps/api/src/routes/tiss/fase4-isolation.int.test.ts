@@ -138,7 +138,7 @@ describe('isolamento multi-tenant — rotas TISS (Fase 4)', () => {
 
   it('convenios do paciente A nao aparecem no tenant B', async () => {
     const app = await buildApp();
-    // Tenant B tenta listar convenios do paciente de A — retorna vazio por RLS
+    // Tenant B tenta listar convênios do paciente de A — retorna vazio por RLS
     const r = await app.inject({
       method: 'GET',
       url: `/v1/tiss/pacientes/${a.patientId}/convenios`,
@@ -215,7 +215,7 @@ describe('isolamento multi-tenant — rotas TISS (Fase 4)', () => {
     });
     expect(r1.statusCode).toBe(200);
 
-    // Nao pode criar operadora
+    // Não pode criar operadora
     const r2 = await app.inject({
       method: 'POST', url: '/v1/tiss/operadoras', ...auth(medicoLocal),
       payload: {
@@ -226,7 +226,7 @@ describe('isolamento multi-tenant — rotas TISS (Fase 4)', () => {
     });
     expect(r2.statusCode).toBe(403);
 
-    // Nao pode criar lote
+    // Não pode criar lote
     const r3 = await app.inject({
       method: 'POST', url: '/v1/tiss/lotes', ...auth(medicoLocal),
       payload: { operadoraId: operadoraIdA },
@@ -246,7 +246,7 @@ describe('isolamento multi-tenant — rotas TISS (Fase 4)', () => {
     });
     expect(r1.statusCode).toBe(200);
 
-    // Nao pode enviar lote (tiss.lote.send exige admin_clinico ou financeiro)
+    // Não pode enviar lote (tiss.lote.send exige admin_clinico ou financeiro)
     const r2 = await app.inject({
       method: 'POST', url: `/v1/tiss/lotes/${loteIdA}/enviar`, ...auth(recepLocal),
     });

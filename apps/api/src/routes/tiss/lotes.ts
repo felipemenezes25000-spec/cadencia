@@ -37,13 +37,13 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     const b = req.body as { operadoraId: string };
     const id = uuidv7();
 
-    // Verificar que a operadora existe e esta ativa; pegar tiss_version
+    // Verificar que a operadora existe e está ativa; pegar tiss_version
     const { rows: opRows } = await tx.query<{ tiss_version: string }>(
       `SELECT tiss_version FROM tiss.operadora WHERE id = $1 AND active = true`,
       [b.operadoraId]);
     if (opRows.length === 0) erroDominio('operadora_nao_encontrada', 404);
 
-    // Alocar numero sequencial do lote (auto-provisionante por operadora)
+    // Alocar número sequencial do lote (auto-provisionante por operadora)
     const { rows: numRows } = await tx.query<{ n: string }>(
       `SELECT tiss.next_lote_number(app.require_tenant_id(), $1) AS n`,
       [b.operadoraId]);
@@ -73,7 +73,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     const p = req.params as { id: string };
     const b = req.body as { guiaIds: string[] };
 
-    // Verificar que o lote existe e esta em rascunho
+    // Verificar que o lote existe e está em rascunho
     const { rows: loteRows } = await tx.query<{
       status: string; operadora_id: string; guia_count: number; total_value_cents: string;
     }>(
@@ -83,7 +83,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     if (loteRows.length === 0) erroDominio('lote_nao_encontrado', 404);
     if (loteRows[0]!.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
 
-    // Guarda simetrica a de `/guias-sadt`: `guiasTISS` e um `choice` na norma,
+    // Guarda simétrica a de `/guias-sadt`: `guiasTISS` é um `choice` na norma,
     // e a operadora recusa o lote inteiro se vier consulta junto com SADT.
     const { rowCount: temSadt } = await tx.query(
       `SELECT 1 FROM tiss.lote_guia_sadt WHERE lote_id = $1 LIMIT 1`, [p.id]);
@@ -97,7 +97,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     let totalCents = Number(lote.total_value_cents);
 
     for (const guiaId of b.guiaIds) {
-      // Verificar que a guia existe, esta ativa e e da mesma operadora
+      // Verificar que a guia existe, está ativa e é da mesma operadora
       const { rows: guiaRows } = await tx.query<{
         operadora_id: string; valor_procedimento: string;
       }>(
@@ -108,18 +108,18 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
       if (guiaRows.length === 0) continue;
       if (guiaRows[0]!.operadora_id !== lote.operadora_id) continue;
 
-      // Verificar se guia ja esta em algum lote
+      // Verificar se guia já está em algum lote
       const { rowCount: jaVinculada } = await tx.query(
         `SELECT 1 FROM tiss.lote_guia WHERE guia_id = $1`, [guiaId]);
       if (jaVinculada !== null && jaVinculada > 0) continue;
 
-      // Calcular proximo sequencial_item
+      // Calcular próximo sequencial_item
       const { rows: seqRows } = await tx.query<{ max_seq: number | null }>(
         `SELECT MAX(sequencial_item) AS max_seq
            FROM tiss.lote_guia WHERE lote_id = $1`, [p.id]);
       const nextSeq = (seqRows[0]?.max_seq ?? 0) + 1;
 
-      // Inserir vinculo na tabela de juncao
+      // Inserir vínculo na tabela de junção
       await tx.query(
         `INSERT INTO tiss.lote_guia (lote_id, guia_id, sequencial_item)
          VALUES ($1, $2, $3)`,
@@ -144,10 +144,10 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
   /**
    * Anexa guias SP/SADT ao lote.
    *
-   * Rota separada, e nao um campo `tipo` na de cima, porque as tabelas de
-   * vinculo sao duas: `tiss.lote_guia` tem FK para a guia de consulta e
-   * `tiss.lote_guia_sadt` para a de SADT. Isso torna o lote MISTO impossivel de
-   * montar — que e o que a norma exige, ja que `guiasTISS` e um `choice` e a
+   * Rota separada, e não um campo `tipo` na de cima, porque as tabelas de
+   * vínculo são duas: `tiss.lote_guia` tem FK para a guia de consulta e
+   * `tiss.lote_guia_sadt` para a de SADT. Isso torna o lote MISTO impossível de
+   * montar — que é o que a norma exige, já que `guiasTISS` é um `choice` e a
    * operadora recusa o lote inteiro se vier consulta junto com SADT.
    */
   r.post('/v1/tiss/lotes/:id/guias-sadt', {
@@ -170,8 +170,8 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     const lote = loteRows[0]!;
     if (lote.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
 
-    // Um lote que ja tem guia de consulta nao pode receber SADT. As FKs
-    // impedem a linha errada, mas nao a MISTURA — que so as duas tabelas
+    // Um lote que já tem guia de consulta não pode receber SADT. As FKs
+    // impedem a linha errada, mas não a MISTURA — que só as duas tabelas
     // juntas revelam.
     const { rowCount: temConsulta } = await tx.query(
       `SELECT 1 FROM tiss.lote_guia WHERE lote_id = $1 LIMIT 1`, [p.id]);
@@ -202,8 +202,8 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
          VALUES ($1, $2, $3)`,
         [p.id, guiaId, (seqRows[0]?.max_seq ?? 0) + 1]);
 
-      // O valor da guia SADT e a SOMA dos itens, calculada no banco. Nao ha
-      // coluna de total na guia justamente para nao poder divergir dos itens.
+      // O valor da guia SADT é a SOMA dos itens, calculada no banco. Não há
+      // coluna de total na guia justamente para não poder divergir dos itens.
       const { rows: valorRows } = await tx.query<{ total: string }>(
         `SELECT coalesce(sum(
                   round(valor_unitario * quantidade_executada * reducao_acrescimo, 2)
@@ -235,7 +235,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
   }, rota('tiss.lote.manage', async (tx, _ctx, req) => {
     const p = req.params as { id: string; guiaId: string };
 
-    // Verificar que o lote esta em rascunho
+    // Verificar que o lote está em rascunho
     const { rows: loteRows } = await tx.query<{
       status: string; guia_count: number; total_value_cents: string;
     }>(
@@ -244,7 +244,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     if (loteRows.length === 0) erroDominio('lote_nao_encontrado', 404);
     if (loteRows[0]!.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
 
-    // Remover vinculo e recuperar valor da guia para atualizar contadores
+    // Remover vínculo e recuperar valor da guia para atualizar contadores
     const { rows: removidas } = await tx.query<{ valor_procedimento: string }>(
       `DELETE FROM tiss.lote_guia lg
         USING tiss.encounter_guia_consulta g
@@ -415,7 +415,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
   }, rota('tiss.lote.send', async (tx, ctx, req) => {
     const p = req.params as { id: string };
 
-    // Verificar que o lote esta em rascunho e tem guias
+    // Verificar que o lote está em rascunho e tem guias
     const { rows: loteRows } = await tx.query<{
       status: string; operadora_id: string; numero_lote: string; guia_count: number;
     }>(
@@ -425,11 +425,11 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     if (loteRows[0]!.status !== 'rascunho') erroDominio('lote_nao_rascunho', 422);
     if (loteRows[0]!.guia_count === 0) erroDominio('lote_sem_guias', 422);
 
-    // Transicionar para pronto (envio efetivo e assincrono via worker)
+    // Transicionar para pronto (envio efetivo é assíncrono via worker)
     await tx.query(
       `UPDATE tiss.lote SET status = 'pronto' WHERE id = $1`, [p.id]);
 
-    // Enfileirar no outbox para serializacao XML + transport
+    // Enfileirar no outbox para serialização XML + transport
     await tx.query(
       `SELECT app.enqueue_outbox('tiss_lote_send', $1::uuid,
                jsonb_build_object(
@@ -473,13 +473,13 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
     }
     if (prevStatus === 'cancelado') erroDominio('lote_ja_cancelado', 422);
 
-    // Liberar guias do lote — as DUAS tabelas de juncao.
+    // Liberar guias do lote — as DUAS tabelas de junção.
     //
     // `tiss.lote_guia_sadt` (migration 0152) nasceu depois desta rota e ficou de
     // fora do cancelamento. O efeito: a guia SP/SADT continuava vinculada a um
-    // lote cancelado para sempre. Como a montagem de lote so aceita guia sem
-    // vinculo, aquela guia nao entrava em nenhum lote novo — ficava invisivel
-    // para o faturamento, sem erro em lugar nenhum, e o servico prestado nunca
+    // lote cancelado para sempre. Como a montagem de lote só aceita guia sem
+    // vínculo, aquela guia não entrava em nenhum lote novo — ficava invisível
+    // para o faturamento, sem erro em lugar nenhum, e o serviço prestado nunca
     // era cobrado da operadora.
     await tx.query(
       `DELETE FROM tiss.lote_guia WHERE lote_id = $1`, [p.id]);
@@ -512,10 +512,10 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
       `SELECT numero_lote FROM tiss.lote WHERE id = $1`, [p.id]);
     if (rows.length === 0) erroDominio('lote_nao_encontrado', 404);
 
-    // Serializado sob demanda a partir das guias, e nao lido de um arquivo
-    // guardado: enquanto o lote nao foi enviado, as guias ainda podem mudar, e
-    // um XML congelado antes disso descreveria um lote que nao existe mais.
-    // Depois do envio, `xml_hash_md5` prova que o conteudo nao mudou.
+    // Serializado sob demanda a partir das guias, e não lido de um arquivo
+    // guardado: enquanto o lote não foi enviado, as guias ainda podem mudar, e
+    // um XML congelado antes disso descreveria um lote que não existe mais.
+    // Depois do envio, `xml_hash_md5` prova que o conteúdo não mudou.
     const { xml, warnings, quantidadeDeGuias } = await gerarXmlDoLote(tx, p.id)
       .catch((e: unknown) => {
         const dominio = (e as { dominio?: string }).dominio;
@@ -524,7 +524,7 @@ export async function loteRoutes(app: FastifyInstance): Promise<void> {
         throw e;
       });
 
-    // Caractere fora do ISO-8859-1 vira '?' no arquivo. Avisar no cabecalho
+    // Caractere fora do ISO-8859-1 vira '?' no arquivo. Avisar no cabeçalho
     // deixa rastro sem barrar o download — quem confere o lote antes de enviar
     // precisa VER o arquivo para decidir se o nome truncado importa.
     if (warnings.length > 0) {

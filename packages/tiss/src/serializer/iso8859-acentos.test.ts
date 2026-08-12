@@ -3,10 +3,10 @@ import { serializeLoteConsulta } from './serialize-lote-consulta';
 import type { LoteConsultaInput } from './types';
 
 /**
- * Teste dedicado: caracteres acentuados do portugues brasileiro sao
- * preservados na ida (UTF-16 -> ISO-8859-1) e na volta (decodificacao).
- * Este e o teste que garante que nomes de pacientes, observacoes e
- * enderecos nao perdem acentos no XML TISS.
+ * Teste dedicado: caracteres acentuados do português brasileiro são
+ * preservados na ida (UTF-16 -> ISO-8859-1) e na volta (decodificação).
+ * Este é o teste que garante que nomes de pacientes, observações e
+ * endereços não perdem acentos no XML TISS.
  */
 
 function loteComAcentos(observacao: string): LoteConsultaInput {
@@ -73,11 +73,11 @@ describe('preservacao de acentos ISO-8859-1 no XML TISS', () => {
       const { xml, warnings } = serializeLoteConsulta(loteComAcentos(obs));
       expect(warnings).toEqual([]);
 
-      // Decodifica e verifica que o caractere acentuado aparece na saida
+      // Decodifica e verifica que o caractere acentuado aparece na saída
       const text = new TextDecoder('iso-8859-1').decode(xml);
       expect(text).toContain(char);
 
-      // Verifica que o byte correto esta presente no array
+      // Verifica que o byte correto está presente no array
       const bytes = Array.from(xml);
       expect(bytes).toContain(expectedByte);
     });
@@ -96,14 +96,14 @@ describe('preservacao de acentos ISO-8859-1 no XML TISS', () => {
     const fraseComEmoji = 'Paciente bem ❤ pressão normal';
     const { xml, warnings } = serializeLoteConsulta(loteComAcentos(fraseComEmoji));
 
-    // U+2764 (coracao) nao existe em ISO-8859-1
+    // U+2764 (coração) não existe em ISO-8859-1
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain('U+2764');
 
-    // Mas os acentos validos (a com til) foram preservados
+    // Mas os acentos válidos (a com til) foram preservados
     const text = new TextDecoder('iso-8859-1').decode(xml);
     expect(text).toContain('pressão');
-    // O emoji foi substituido por ?
+    // O emoji foi substituído por ?
     expect(text).toContain('Paciente bem ? pressão normal');
   });
 });

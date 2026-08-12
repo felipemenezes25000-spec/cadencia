@@ -32,8 +32,8 @@ export default function PaginaEstoque() {
             minimo: p.minStock,
             unidade: p.unit,
             ultimaMovimentacao: p.createdAt,
-            // O alerta e derivado aqui e tambem existe em /v1/stock-alerts. A
-            // regra e a mesma (abaixo do minimo) e mora no banco; esta linha so
+            // O alerta é derivado aqui e também existe em /v1/stock-alerts. A
+            // regra é a mesma (abaixo do mínimo) e mora no banco; esta linha só
             // evita uma segunda chamada para pintar a listagem.
             alertaBaixo: p.currentStock <= p.minStock,
             ...(p.sku === null ? {} : { categoria: p.sku }),

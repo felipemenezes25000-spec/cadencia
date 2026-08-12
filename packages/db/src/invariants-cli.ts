@@ -4,7 +4,7 @@ import { apiClient, catalogPool, closeCatalogPool } from './invariants/catalog';
 import { runAllInvariants } from './invariants/index';
 
 /**
- * pnpm db:invariants              — os 9 invariantes de catalogo, so leitura
+ * pnpm db:invariants              — os 9 invariantes de catálogo, só leitura
  * pnpm db:invariants --with-crud  — mais a matriz CRUD cruzada (semeia dois tenants de sonda)
  */
 const envPath = resolve(process.cwd(), '.env');

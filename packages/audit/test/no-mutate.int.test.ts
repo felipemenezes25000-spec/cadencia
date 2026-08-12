@@ -3,16 +3,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
 import { connectAs, connectSuperuser } from './helpers/pg';
 
-// Tenant NOVO a cada execucao, e nao uma constante.
+// Tenant NOVO a cada execução, e não uma constante.
 //
-// Este teste prova que audit.event e append-only — o que significa que ele nao
-// pode limpar o que escreve: o proprio trigger que ele verifica recusa o DELETE
-// do afterAll. Com tenant_id fixo, a linha da execucao anterior sobrevive, a
+// Este teste prova que audit.event é append-only — o que significa que ele não
+// pode limpar o que escreve: o próprio trigger que ele verifica recusa o DELETE
+// do afterAll. Com tenant_id fixo, a linha da execução anterior sobrevive, a
 // contagem cresce a cada rodada (1, 2, 3...) e o teste passa exatamente UMA vez,
-// num banco recem-criado, falhando para sempre depois.
+// num banco recém-criado, falhando para sempre depois.
 //
-// A saida nao e limpar, e sim isolar: cada rodada escreve sob um tenant que so
-// ela conhece. As linhas antigas continuam la, como devem, e nao interferem.
+// A saída não é limpar, e sim isolar: cada rodada escreve sob um tenant que só
+// ela conhece. As linhas antigas continuam lá, como devem, e não interferem.
 const TENANT = randomUUID();
 
 describe('audit.event e append-only por trigger, nao por convencao', () => {
@@ -77,7 +77,7 @@ describe('audit.event e append-only por trigger, nao por convencao', () => {
     );
     expect(res.rows[0]?.tgname).toBe('no_mutate');
     // pg_get_triggerdef normaliza a ordem dos eventos: a migration escreve
-    // `BEFORE UPDATE OR DELETE` e o catalogo devolve `BEFORE DELETE OR UPDATE`.
+    // `BEFORE UPDATE OR DELETE` e o catálogo devolve `BEFORE DELETE OR UPDATE`.
     expect(res.rows[0]?.def).toContain('BEFORE DELETE OR UPDATE');
   });
 });

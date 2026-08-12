@@ -110,7 +110,7 @@ export async function semearSessao(
                (clock_timestamp() AT TIME ZONE 'America/Sao_Paulo')::date)`,
       [tenantId, encounterId, patientId, professionalId, clinicId]);
 
-    // Tenant B — para testar vinculo cruzado
+    // Tenant B — para testar vínculo cruzado
     await c.query(
       `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
        VALUES ($1, $2, 'Clinica B', '22222222000191')`,
@@ -150,12 +150,12 @@ export async function semearSessao(
 /**
  * Um SEGUNDO profissional dentro do MESMO tenant e da mesma unidade.
  *
- * `semearSessao` sempre cria um tenant novo, o que e certo para isolamento mas
- * inutil para testar o que separa dois medicos da mesma clinica: a politica
- * RESTRICTIVE `clinical_scope`. Entre tenants a RLS ja barra por outro caminho,
+ * `semearSessao` sempre cria um tenant novo, o que é certo para isolamento mas
+ * inútil para testar o que separa dois médicos da mesma clínica: a política
+ * RESTRICTIVE `clinical_scope`. Entre tenants a RLS já barra por outro caminho,
  * e o teste passaria sem provar nada.
  *
- * Serve para compartilhamento de prontuario, quebra-vidro e transferencia.
+ * Serve para compartilhamento de prontuário, quebra-vidro e transferência.
  */
 export async function semearColega(
   dono: SementeSessao, opts: { role?: Role } = {},

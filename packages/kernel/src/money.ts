@@ -46,10 +46,10 @@ export function sum(values: readonly Money[]): Money {
 }
 
 /**
- * Rateio que NAO cria nem perde centavo: a soma das partes e sempre o valor
- * original. Repasse medico, parcelamento e split de recebimento passam por aqui.
- * A sobra vai para o maior resto; empate resolve pelo indice.
- * Nao existe multiply() de proposito: 70% e allocate(m, [70, 30])[0].
+ * Rateio que NÃO cria nem perde centavo: a soma das partes é sempre o valor
+ * original. Repasse médico, parcelamento e split de recebimento passam por aqui.
+ * A sobra vai para o maior resto; empate resolve pelo índice.
+ * Não existe multiply() de propósito: 70% é allocate(m, [70, 30])[0].
  */
 export function allocate(money: Money, ratios: readonly number[]): Money[] {
   if (ratios.length === 0) {

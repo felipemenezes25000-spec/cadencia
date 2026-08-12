@@ -252,13 +252,13 @@ describe('a lista precisa carregar o que o RECURSO exige', () => {
       pacienteNome: string; encounterVersionId: string | null }[] }).itens;
     expect(itens.length).toBeGreaterThan(0);
 
-    // Sem `encounterVersionId` nao da para abrir recurso: `POST /v1/tiss/recursos`
-    // exige a versao do atendimento. A tela teria a glosa na mao e nada com que
-    // recorrer — e glosa nao recorrida no prazo vira perda definitiva.
+    // Sem `encounterVersionId` não dá para abrir recurso: `POST /v1/tiss/recursos`
+    // exige a versão do atendimento. A tela teria a glosa na mão e nada com que
+    // recorrer — e glosa não recorrida no prazo vira perda definitiva.
     expect(itens[0]).toHaveProperty('encounterVersionId');
-    // Codigo sozinho ("1707") nao diz nada a quem redige a justificativa.
+    // Código sozinho ("1707") não diz nada a quem redige a justificativa.
     expect(itens[0]).toHaveProperty('descricaoGlosa');
-    // O nome do paciente e como o faturista confere se a glosa e daquele caso.
+    // O nome do paciente é como o faturista confere se a glosa é daquele caso.
     expect(itens[0]?.pacienteNome).toBeTruthy();
 
     await app.close();

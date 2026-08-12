@@ -32,9 +32,9 @@ const PayloadClinico = z.object({
     codeSystem: z.string(), code: z.string(), displaySnapshot: z.string(),
     terminologyVersion: z.string(), isPrincipal: z.boolean() })),
   observations: z.array(z.object({
-    // `clin.observation.field_id` e NOT NULL. Sem este campo no schema, o zod
+    // `clin.observation.field_id` é NOT NULL. Sem este campo no schema, o zod
     // removia o que o cliente mandava e o INSERT estourava 23502 — qualquer
-    // atendimento com peso ou pressao arterial devolvia 500.
+    // atendimento com peso ou pressão arterial devolvia 500.
     fieldId: z.string().uuid(),
     observationCode: z.string(), valueNum: z.string(), unit: z.string().nullable(),
     componentOrdinal: z.number().int() })),
@@ -190,8 +190,8 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
   }, rota('encounter.read', async (tx, _ctx, req) => {
     const p = req.params as { id: string };
 
-    // A RLS ja restringe ao tenant da sessao. Um id de outro tenant nao vira
-    // "200 com campos vazios": nao ha linha, e a resposta e 404.
+    // A RLS já restringe ao tenant da sessão. Um id de outro tenant não vira
+    // "200 com campos vazios": não há linha, e a resposta é 404.
     const { rows: base } = await tx.query<{
       status: 'rascunho' | 'finalizado' | 'anulado';
       inicio: string;
@@ -231,26 +231,26 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
     if (e === undefined) erroDominio('atendimento_nao_encontrado', 404);
 
     /**
-     * §3.7 — acesso a conteudo clinico registra ANTES de devolver.
+     * §3.7 — acesso a conteúdo clínico registra ANTES de devolver.
      *
-     * O que vem abaixo e prontuario: alergias, medicamentos em uso e historico
+     * O que vem abaixo é prontuário: alergias, medicamentos em uso e histórico
      * de atendimentos do paciente. Nenhuma rota da API chamava `audit.log_read`
-     * — a unica coisa que chama sao `clin.read_encounter` e
-     * `clin.read_patient_record` (migration 0040), e essas duas so aparecem em
-     * teste. Na pratica a trilha de LEITURA clinica estava vazia em producao, e
-     * e justamente ela que responde "quem abriu o prontuario deste paciente".
+     * — a única coisa que chama são `clin.read_encounter` e
+     * `clin.read_patient_record` (migration 0040), e essas duas só aparecem em
+     * teste. Na prática a trilha de LEITURA clínica estava vazia em produção, e
+     * é justamente ela que responde "quem abriu o prontuário deste paciente".
      *
-     * A funcao ja deduplica por (usuario, paciente, caso de uso) numa janela de
-     * 5 minutos, entao chamar em toda abertura de tela nao inflaciona a trilha.
+     * A função já deduplica por (usuário, paciente, caso de uso) numa janela de
+     * 5 minutos, então chamar em toda abertura de tela não inflaciona a trilha.
      */
     await tx.query(`SELECT audit.log_read('encounter_read', $1)`, [e.patient_id]);
 
     // ── alergias ────────────────────────────────────────────────────────────
-    // Campo `alergias` do template de referencia (0026), kind `texto_curto`.
-    // Sao lidos os valores de TODAS as versoes vivas do paciente, nao so a
-    // deste atendimento: alergia registrada ha dois anos continua valendo hoje.
-    // O texto sai inteiro, sem quebrar por virgula — "Dipirona, Penicilina" foi
-    // o que o medico escreveu, e inventar a separacao inventa o registro.
+    // Campo `alergias` do template de referência (0026), kind `texto_curto`.
+    // São lidos os valores de TODAS as versões vivas do paciente, não só a
+    // deste atendimento: alergia registrada há dois anos continua valendo hoje.
+    // O texto sai inteiro, sem quebrar por vírgula — "Dipirona, Penicilina" foi
+    // o que o médico escreveu, e inventar a separação inventa o registro.
     const { rows: alergias } = await tx.query<{ valor: string }>(
       `SELECT DISTINCT ON (lower(btrim(v.value_text)))
               btrim(v.value_text) AS valor
@@ -267,10 +267,10 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
       [e.patient_id]);
 
     // ── medicamentos em uso ─────────────────────────────────────────────────
-    // A fonte e o que foi PRESCRITO, nao um campo de texto que ninguem mantem.
-    // Receita cancelada nao entra: exibir remedio de receita cancelada como "em
-    // uso" e pior que nao exibir nada — o medico checa interacao contra um
-    // medicamento que o paciente nao toma.
+    // A fonte é o que foi PRESCRITO, não um campo de texto que ninguém mantém.
+    // Receita cancelada não entra: exibir remédio de receita cancelada como "em
+    // uso" é pior que não exibir nada — o médico checa interação contra um
+    // medicamento que o paciente não toma.
     const { rows: medicamentos } = await tx.query<{
       nome: string; posologia: string; prescrito_em: string;
     }>(
@@ -285,10 +285,10 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
         LIMIT 20`,
       [e.patient_id]);
 
-    // ── ultimos atendimentos ────────────────────────────────────────────────
-    // So finalizados. Rascunho de outro dia e consulta que ninguem fechou, nao
-    // e historico — mostrar como historico faz o medico contar uma consulta que
-    // talvez nao tenha acontecido.
+    // ── últimos atendimentos ────────────────────────────────────────────────
+    // Só finalizados. Rascunho de outro dia é consulta que ninguém fechou, não
+    // é histórico — mostrar como histórico faz o médico contar uma consulta que
+    // talvez não tenha acontecido.
     const { rows: ultimos } = await tx.query<{
       id: string; data: string; procedimento: string | null;
     }>(
@@ -327,10 +327,10 @@ export async function encounterRoutes(app: FastifyInstance): Promise<void> {
         encounterId: x.id, data: x.data, procedimento: x.procedimento,
       })),
       procedimentoNome: e.procedimento,
-      // `valor_centavos` e bigint, e node-postgres devolve bigint como STRING
-      // para nao perder precisao em valores acima de 2^53. Centavos nunca chegam
-      // la (2^53 centavos sao 90 trilhoes de reais), entao a conversao e segura
-      // — o que nao e seguro e mandar string onde o contrato diz numero.
+      // `valor_centavos` é bigint, e node-postgres devolve bigint como STRING
+      // para não perder precisão em valores acima de 2^53. Centavos nunca chegam
+      // lá (2^53 centavos são 90 trilhões de reais), então a conversão é segura
+      // — o que não é seguro é mandar string onde o contrato diz número.
       valorSugeridoCentavos: e.valor_centavos === null ? null : Number(e.valor_centavos),
     };
   }));

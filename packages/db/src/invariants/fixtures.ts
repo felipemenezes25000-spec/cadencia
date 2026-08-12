@@ -1,9 +1,9 @@
 import type { Queryable } from '../queryable';
 
 /**
- * Dois tenants de sonda, com ids fixos e formato de UUIDv7 (versao 7, variante 10xx).
- * Sao literais de proposito: uma matriz de isolamento tem que ser reproduzivel byte
- * a byte. Todos os INSERT usam ON CONFLICT DO NOTHING — semear duas vezes e no-op.
+ * Dois tenants de sonda, com ids fixos e formato de UUIDv7 (versão 7, variante 10xx).
+ * São literais de propósito: uma matriz de isolamento tem que ser reproduzível byte
+ * a byte. Todos os INSERT usam ON CONFLICT DO NOTHING — semear duas vezes é no-op.
  */
 export const CRUD_TENANT_A = '01930000-0000-7000-8000-0000000ca001';
 export const CRUD_TENANT_B = '01930000-0000-7000-8000-0000000ca002';
@@ -12,14 +12,14 @@ export const CRUD_CLINIC_B = '01930000-0000-7000-8000-0000000ca012';
 export const CRUD_PATIENT_A = '01930000-0000-7000-8000-0000000ca021';
 export const CRUD_PATIENT_B = '01930000-0000-7000-8000-0000000ca022';
 
-/** CNPJ alfanumerico da IN RFB 2.229/2024: 12 alfanumericos + 2 digitos. */
+/** CNPJ alfanumérico da IN RFB 2.229/2024: 12 alfanuméricos + 2 dígitos. */
 const CNPJ_A = '12ABC34501DE35';
 const CNPJ_B = '98XYZ76509FG21';
 
 /**
- * Semeia os dois tenants pela conexao administrativa, que ignora RLS de proposito.
- * As linhas COMMITAM: a conexao do papel `api` precisa enxerga-las para que o
- * "zero linhas" da matriz signifique "a policy filtrou", e nao "nao havia nada la".
+ * Semeia os dois tenants pela conexão administrativa, que ignora RLS de propósito.
+ * As linhas COMMITAM: a conexão do papel `api` precisa enxergá-las para que o
+ * "zero linhas" da matriz signifique "a policy filtrou", e não "não havia nada lá".
  */
 export async function seedTwoTenants(db: Queryable): Promise<void> {
   await db.query(

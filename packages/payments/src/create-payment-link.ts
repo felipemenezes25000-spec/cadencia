@@ -10,10 +10,10 @@ export interface CreatePaymentLinkInput {
   readonly expiresInMinutes?: number;
   readonly providerId: string;
   /**
-   * Quem PEDIU o link. Obrigatorio quando a criacao roda fora de uma requisicao
-   * de usuario — no consumidor do outbox, `app.current_user_id()` e NULL porque
-   * o ator e o sistema, e `created_by` e NOT NULL de proposito: link de cobranca
-   * sem autor identificado e cobranca que ninguem responde por.
+   * Quem PEDIU o link. Obrigatório quando a criação roda fora de uma requisição
+   * de usuário — no consumidor do outbox, `app.current_user_id()` é NULL porque
+   * o ator é o sistema, e `created_by` é NOT NULL de propósito: link de cobrança
+   * sem autor identificado é cobrança que ninguém responde por.
    */
   readonly createdBy?: string;
 }
@@ -31,7 +31,7 @@ export async function createPaymentLink(
   providerCtx: ProviderCtx,
   input: CreatePaymentLinkInput,
 ): Promise<Result<PaymentLinkCreated, NotFoundError | UnavailableError>> {
-  // Verificar que o entry existe e esta pendente
+  // Verificar que o entry existe e está pendente
   const { rows: entryRows } = await tx.query<{ status: string; amount_cents: string }>(
     `SELECT status, amount_cents::text FROM fin.entry WHERE id = $1`,
     [input.entryId],
@@ -41,7 +41,7 @@ export async function createPaymentLink(
       'lancamento financeiro nao encontrado'));
   }
 
-  // Verificar se ja existe link pendente para este entry
+  // Verificar se já existe link pendente para este entry
   const { rows: existingRows } = await tx.query<{ id: string; url: string; provider_link_id: string }>(
     `SELECT id, url, provider_link_id FROM fin.payment_link
       WHERE entry_id = $1 AND status = 'pending'`,

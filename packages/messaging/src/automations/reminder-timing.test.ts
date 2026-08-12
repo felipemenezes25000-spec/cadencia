@@ -26,9 +26,9 @@ describe('computeReminderInstant', () => {
   });
 
   it('respeita horario de verao: consulta em novembro quando SP esta em UTC-2', () => {
-    // Brasil: horario de verao (se vigente) muda SP para UTC-2
-    // Em 2026, Brasil NAO tem horario de verao (abolido em 2019).
-    // Mas testamos com fuso que TEM (ex: America/New_York para validar a logica).
+    // Brasil: horário de verão (se vigente) muda SP para UTC-2
+    // Em 2026, Brasil NÃO tem horário de verão (abolido em 2019).
+    // Mas testamos com fuso que TEM (ex: America/New_York para validar a lógica).
     // 2026-03-09 09:00 EDT (UTC-4) = 2026-03-09 13:00 UTC
     const startsAtUtc = '2026-03-09T13:00:00.000Z';
     const timezone = 'America/New_York';
@@ -36,10 +36,10 @@ describe('computeReminderInstant', () => {
 
     const result = computeReminderInstant(startsAtUtc, timezone, offsetMinutes);
 
-    // Em 2026, DST dos EUA comeca em 8/mar as 02:00 AM.
-    // Entao dia 8/mar as 09:00 JA e EDT (UTC-4), nao EST.
+    // Em 2026, DST dos EUA começa em 8/mar as 02:00 AM.
+    // Então dia 8/mar as 09:00 JÁ é EDT (UTC-4), não EST.
     // dia 9/mar 09:00 EDT = 13:00 UTC
-    // dia 8/mar 09:00 EDT = 13:00 UTC (DST ja entrou as 02:00)
+    // dia 8/mar 09:00 EDT = 13:00 UTC (DST já entrou as 02:00)
     expect(result).toBe('2026-03-08T13:00:00.000Z');
   });
 

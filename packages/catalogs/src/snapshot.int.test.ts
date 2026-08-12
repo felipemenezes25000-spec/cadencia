@@ -46,7 +46,7 @@ describe('display_snapshot', () => {
     });
 
     // ...e o atendimento de 2024, resolvido DEPOIS da carga, devolve byte a byte
-    // o mesmo snapshot de antes. E isto que a impressao de 2035 tem que mostrar.
+    // o mesmo snapshot de antes. É isto que a impressão de 2035 tem que mostrar.
     const reaberto = await resolveCid10At(appPool(), 'E11', '2024-08-03');
     expect(reaberto.ok).toBe(true);
     if (!reaberto.ok) return;

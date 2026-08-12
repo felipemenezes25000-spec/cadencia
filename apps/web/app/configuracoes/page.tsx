@@ -16,10 +16,10 @@ interface Clinica {
 }
 
 const FUSOS = [
-  ['America/Sao_Paulo', 'Brasilia (UTC-3)'],
+  ['America/Sao_Paulo', 'Brasília (UTC-3)'],
   ['America/Manaus', 'Manaus (UTC-4)'],
-  ['America/Cuiaba', 'Cuiaba (UTC-4)'],
-  ['America/Belem', 'Belem (UTC-3)'],
+  ['America/Cuiaba', 'Cuiabá (UTC-4)'],
+  ['America/Belem', 'Belém (UTC-3)'],
   ['America/Fortaleza', 'Fortaleza (UTC-3)'],
   ['America/Recife', 'Recife (UTC-3)'],
   ['America/Rio_Branco', 'Rio Branco (UTC-5)'],
@@ -70,13 +70,13 @@ export default function PaginaConfiguracoes() {
         method: 'PUT', body, clinicId, csrfToken });
       setClinica(c);
       setCnes(c.cnes ?? ''); setCnpj(c.cnpj ?? '');
-      setAviso({ tipo: 'ok', texto: 'Configuracoes salvas.' });
+      setAviso({ tipo: 'ok', texto: 'Configurações salvas.' });
     } catch (e) {
       setAviso({
         tipo: 'erro',
         texto: e instanceof ApiError && e.codigo === 'fuso_invalido'
-          ? 'Fuso horario invalido.'
-          : 'Nao foi possivel salvar.',
+          ? 'Fuso horário inválido.'
+          : 'Não foi possível salvar.',
       });
     } finally {
       setSalvando(false);
@@ -130,7 +130,7 @@ export default function PaginaConfiguracoes() {
           </label>
 
           <label className="grid gap-1.5">
-            <span className="text-sm font-medium">Fuso horario</span>
+            <span className="text-sm font-medium">Fuso horário</span>
             <select
               value={timezone} onChange={(e) => setTimezone(e.target.value)}
               disabled={!podeEditar}
@@ -142,7 +142,7 @@ export default function PaginaConfiguracoes() {
             </select>
             <span className="text-xs text-text-muted">
               Decide a data de todo agendamento, recibo e lote. Mudar aqui muda
-              como o dia e fechado.
+              como o dia é fechado.
             </span>
           </label>
 

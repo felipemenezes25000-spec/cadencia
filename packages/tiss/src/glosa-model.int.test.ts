@@ -43,7 +43,7 @@ async function semearGlosa(): Promise<SementeGlosa> {
   try {
     await c.query('BEGIN');
 
-    // --- tenant, clinica, usuario, membership, profissional, paciente ---
+    // --- tenant, clínica, usuário, membership, profissional, paciente ---
     await c.query(
       `INSERT INTO app.tenant (id, slug, razao_social, cnpj)
        VALUES ($1, $2, 'Clinica Glosa Teste', '33ABC44556DE77')`,
@@ -199,7 +199,7 @@ describe('modelo de dados tiss.glosa', () => {
     await closePools();
   });
 
-  // -- INSERT valido --
+  // -- INSERT válido --
 
   it('insere glosa com todos os campos obrigatorios', async () => {
     const glosaId = uuidv7();
@@ -261,7 +261,7 @@ describe('modelo de dados tiss.glosa', () => {
     ).rejects.toThrow(/check/i);
   });
 
-  // -- CHECK resolved_at / resolved_by consistencia --
+  // -- CHECK resolved_at / resolved_by consistência --
 
   it('rejeita glosa pendente com resolved_at preenchido', async () => {
     await expect(
@@ -343,7 +343,7 @@ describe('modelo de dados tiss.glosa', () => {
     ).rejects.toThrow(/foreign key/i);
   });
 
-  // -- RLS: tenant B nao ve glosa do tenant A --
+  // -- RLS: tenant B não vê glosa do tenant A --
 
   it('glosa de outro tenant e invisivel via RLS', async () => {
     // Insere glosa no tenant A (via admin, sem RLS)

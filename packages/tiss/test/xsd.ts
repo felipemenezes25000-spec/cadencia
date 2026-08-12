@@ -6,17 +6,17 @@ import {
 } from 'libxml2-wasm';
 
 /**
- * Validacao do XML gerado contra o XSD OFICIAL da ANS.
+ * Validação do XML gerado contra o XSD OFICIAL da ANS.
  *
- * Ate agora o repositorio tinha um `tissV4_01_00.xsd` de 3 KB escrito a mao, com
+ * Até agora o repositório tinha um `tissV4_01_00.xsd` de 3 KB escrito a mão, com
  * `xs:string` em todo campo — um schema que aceitaria praticamente qualquer
- * coisa. E o teste que o usava dependia do binario `xmllint`, ausente na maquina
- * e no CI, entao rodava sempre PULADO. Duas camadas de validacao aparente e zero
- * de validacao real.
+ * coisa. E o teste que o usava dependia do binário `xmllint`, ausente na máquina
+ * e no CI, então rodava sempre PULADO. Duas camadas de validação aparente e zero
+ * de validação real.
  *
- * Aqui o schema e o publicado pela ANS (`schemas/4.03.00/`, 240 KB entre tipos
- * simples e complexos) e o validador e o proprio libxml2 compilado para WASM —
- * sem binario externo, entao o teste EXECUTA, no Windows e no CI.
+ * Aqui o schema é o publicado pela ANS (`schemas/4.03.00/`, 240 KB entre tipos
+ * simples e complexos) e o validador é o próprio libxml2 compilado para WASM —
+ * sem binário externo, então o teste EXECUTA, no Windows e no CI.
  */
 
 const DIR_SCHEMAS = resolve(import.meta.dirname, '../schemas/4.03.00');
@@ -24,10 +24,10 @@ const RAIZ = resolve(DIR_SCHEMAS, 'tissV4_03_00.xsd');
 
 /**
  * O XSD raiz faz `include` de outros quatro arquivos por caminho relativo.
- * Dentro do WASM nao existe o sistema de arquivos do host, entao a resolucao
- * passa por um provedor que le do disco de verdade. Sem isto, o libxml2 carrega
- * so o arquivo raiz e valida contra um schema mutilado — que aceitaria demais,
- * repetindo em silencio o defeito do XSD de amostra.
+ * Dentro do WASM não existe o sistema de arquivos do host, então a resolução
+ * passa por um provedor que lê do disco de verdade. Sem isto, o libxml2 carrega
+ * só o arquivo raiz e valida contra um schema mutilado — que aceitaria demais,
+ * repetindo em silêncio o defeito do XSD de amostra.
  */
 let provedorRegistrado = false;
 
@@ -72,14 +72,14 @@ function obterValidador(): XsdValidator {
 
 export interface ResultadoXsd {
   readonly valido: boolean;
-  /** Uma linha por violacao, na ordem em que o libxml2 as encontrou. */
+  /** Uma linha por violação, na ordem em que o libxml2 as encontrou. */
   readonly erros: readonly string[];
 }
 
 /**
  * Valida bytes de XML TISS contra o XSD 4.03.00 da ANS.
  *
- * Recebe `Uint8Array` e nao `string` de proposito: o TISS exige ISO-8859-1, e
+ * Recebe `Uint8Array` e não `string` de propósito: o TISS exige ISO-8859-1, e
  * converter para string UTF-16 antes de validar esconderia justamente os erros
  * de encoding que a operadora rejeitaria.
  */

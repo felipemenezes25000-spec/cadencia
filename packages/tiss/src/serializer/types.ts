@@ -1,36 +1,36 @@
 /**
  * Tipos de entrada do serializador XML TISS.
  *
- * Estes tipos sao PUROS — sem dependencia de banco, sem I/O. Representam
- * exatamente os dados necessarios para gerar o XML de um lote de guias de
- * consulta conforme padrao TISS 4.01.00 (Componente Organizacional).
+ * Estes tipos são PUROS — sem dependência de banco, sem I/O. Representam
+ * exatamente os dados necessários para gerar o XML de um lote de guias de
+ * consulta conforme padrão TISS 4.01.00 (Componente Organizacional).
  *
  * Os campos espelham a tabela tiss.encounter_guia_consulta (design §3.9)
  * e o XSD ans:mensagemTISS > prestadorParaOperadora > loteGuias >
  * guiaConsulta.
  */
 
-/** Cabecalho do lote TISS — tag <ans:cabecalho>. */
+/** Cabeçalho do lote TISS — tag <ans:cabecalho>. */
 export interface CabecalhoInput {
-  /** Versao do padrao, ex: '4.01.00'. */
+  /** Versão do padrão, ex: '4.01.00'. */
   readonly versaoPadrao: string;
-  /** Registro ANS da operadora destino, 6 digitos. */
+  /** Registro ANS da operadora destino, 6 dígitos. */
   readonly registroANS: string;
-  /** Data de geracao do lote, formato 'YYYY-MM-DD'. */
+  /** Data de geração do lote, formato 'YYYY-MM-DD'. */
   readonly dataGeracao: string;
-  /** Hora de geracao do lote, formato 'HH:MM:SS'. */
+  /** Hora de geração do lote, formato 'HH:MM:SS'. */
   readonly horaGeracao: string;
-  /** Numero sequencial da transacao, unico por prestador. */
+  /** Número sequencial da transação, único por prestador. */
   readonly sequencialTransacao: string;
 }
 
 /** Dados do contratado executante — tag <ans:dadosContratado>. */
 export interface ContratadoInput {
-  /** Codigo do prestador na operadora. Exatamente um dos tres identificadores. */
+  /** Código do prestador na operadora. Exatamente um dos três identificadores. */
   readonly codigoPrestadorNaOperadora?: string;
   readonly cpfContratado?: string;
   readonly cnpjContratado?: string;
-  /** CNES do estabelecimento, 7 digitos. */
+  /** CNES do estabelecimento, 7 dígitos. */
   readonly cnes: string;
 }
 
@@ -38,9 +38,9 @@ export interface ContratadoInput {
 export interface ProfissionalExecutanteInput {
   /** Nome, opcional na norma (`nomeProfissional`, minOccurs=0). */
   readonly nome?: string;
-  /** Conselho profissional do executante, 2 digitos (ex: '06' = CRM). */
+  /** Conselho profissional do executante, 2 dígitos (ex: '06' = CRM). */
   readonly conselhoProfissional: string;
-  /** Numero do registro no conselho. */
+  /** Número do registro no conselho. */
   readonly numeroConselho: string;
   /** UF do conselho, 2 letras. */
   readonly ufConselho: string;
@@ -53,68 +53,68 @@ export interface GuiaConsultaInput {
   /**
    * Registro ANS da operadora, repetido no `cabecalhoConsulta` de CADA guia.
    *
-   * Parece redundante com o `destino` do envelope e nao e: a operadora
+   * Parece redundante com o `destino` do envelope e não é: a operadora
    * desmembra o lote e cada guia segue sozinha pelo processamento dela.
    */
   readonly registroANSOperadora: string;
-  /** Numero da guia atribuido pelo prestador, unico por operadora. */
+  /** Número da guia atribuído pelo prestador, único por operadora. */
   readonly numeroGuiaPrestador: string;
-  /** Numero da guia atribuido pela operadora (autorizacao), opcional. */
+  /** Número da guia atribuído pela operadora (autorização), opcional. */
   readonly numeroGuiaOperadora?: string;
-  /** Numero da carteira do beneficiario na operadora. */
+  /** Número da carteira do beneficiário na operadora. */
   readonly numeroCarteira: string;
-  /** Indica se e atendimento a recem-nascido. */
+  /** Indica se é atendimento a recém-nascido. */
   readonly atendimentoRN: boolean;
   /** Dados do contratado (prestador). */
   readonly contratado: ContratadoInput;
   /** Profissional que executou o procedimento. */
   readonly profissionalExecutante: ProfissionalExecutanteInput;
-  /** Indicacao de acidente: '0' nao, '1' trabalho, '2' transito, '9' outros. */
+  /** Indicação de acidente: '0' não, '1' trabalho, '2' trânsito, '9' outros. */
   readonly indicacaoAcidente: '0' | '1' | '2' | '9';
   /** Regime de atendimento: '01' ambulatorial, etc. */
   readonly regimeAtendimento: string;
-  /** Saude ocupacional, opcional. */
+  /** Saúde ocupacional, opcional. */
   readonly saudeOcupacional?: string;
   /** Cobertura especial, opcional. */
   readonly coberturaEspecial?: string;
   /** Data do atendimento, formato 'YYYY-MM-DD'. Nunca derivada de timestamp. */
   readonly dataAtendimento: string;
-  /** Tipo de consulta: '1' primeira, '2' retorno, '3' pre-natal, '4' por encaminhamento. */
+  /** Tipo de consulta: '1' primeira, '2' retorno, '3' pré-natal, '4' por encaminhamento. */
   readonly tipoConsulta: '1' | '2' | '3' | '4';
   /** Tabela de procedimento (ex: '22' TUSS). CHECK <> '18' (particular). */
   readonly codigoTabela: string;
-  /** Codigo do procedimento na tabela. */
+  /** Código do procedimento na tabela. */
   readonly codigoProcedimento: string;
   /** Valor do procedimento em centavos inteiros (Money.cents). */
   readonly valorProcedimentoCentavos: number;
-  /** Observacao opcional, ate 500 caracteres. */
+  /** Observação opcional, até 500 caracteres. */
   readonly observacao?: string;
 }
 
 /** Entrada completa para serializar um lote de guias de consulta. */
 export interface LoteConsultaInput {
-  /** Cabecalho do lote. */
+  /** Cabeçalho do lote. */
   readonly cabecalho: CabecalhoInput;
-  /** Registro ANS da operadora destino, 6 digitos. */
+  /** Registro ANS da operadora destino, 6 dígitos. */
   readonly registroANS: string;
-  /** Numero do lote, unico por prestador+operadora. */
+  /** Número do lote, único por prestador+operadora. */
   readonly numeroLote: string;
-  /** Guias do lote. Minimo 1, maximo 100. */
+  /** Guias do lote. Mínimo 1, máximo 100. */
   readonly guias: readonly GuiaConsultaInput[];
 }
 
 /* ── SP/SADT ───────────────────────────────────────────────────────────────
  *
- * Guia de Servico Profissional / Servico Auxiliar de Diagnostico e Terapia: e
- * a guia de exame, procedimento e terapia — tudo que nao e consulta simples nem
- * internacao. Na pratica e a guia que mais fatura numa clinica.
+ * Guia de Serviço Profissional / Serviço Auxiliar de Diagnóstico e Terapia: é
+ * a guia de exame, procedimento e terapia — tudo que não é consulta simples nem
+ * internação. Na prática é a guia que mais fatura numa clínica.
  */
 
 /** Um procedimento executado — tipo `ct_procedimentoExecutadoSadt`. */
 export interface ProcedimentoSadtInput {
-  /** Ordem do item na guia, comecando em 1. */
+  /** Ordem do item na guia, começando em 1. */
   readonly sequencialItem: number;
-  /** Data de execucao, 'YYYY-MM-DD'. Pode diferir da data da guia. */
+  /** Data de execução, 'YYYY-MM-DD'. Pode diferir da data da guia. */
   readonly dataExecucao: string;
   readonly horaInicial?: string;
   readonly horaFinal?: string;
@@ -123,11 +123,11 @@ export interface ProcedimentoSadtInput {
   readonly descricaoProcedimento: string;
   readonly quantidadeExecutada: number;
   /**
-   * Fator de reducao ou acrescimo, ex.: 0.5 para segundo procedimento na mesma
-   * via de acesso. Ausente vale 1.00 — que e o caso comum.
+   * Fator de redução ou acréscimo, ex.: 0.5 para segundo procedimento na mesma
+   * via de acesso. Ausente vale 1.00 — que é o caso comum.
    */
   readonly reducaoAcrescimo?: number;
-  /** Valor unitario em centavos. O total do item e derivado, nunca recebido. */
+  /** Valor unitário em centavos. O total do item é derivado, nunca recebido. */
   readonly valorUnitarioCentavos: number;
   readonly viaAcesso?: string;
   readonly tecnicaUtilizada?: string;
@@ -147,7 +147,7 @@ export interface GuiaSadtInput {
   readonly numeroGuiaPrestador: string;
   /** Guia principal a que esta se vincula, quando houver. */
   readonly guiaPrincipal?: string;
-  /** Autorizacao previa da operadora, quando o procedimento exigiu. */
+  /** Autorização prévia da operadora, quando o procedimento exigiu. */
   readonly autorizacao?: {
     readonly numeroGuiaOperadora?: string;
     readonly dataAutorizacao: string;
@@ -160,11 +160,11 @@ export interface GuiaSadtInput {
   readonly nomeContratadoSolicitante: string;
   readonly profissionalSolicitante: ProfissionalExecutanteInput;
   readonly dataSolicitacao?: string;
-  /** Carater: '1' eletivo, '2' urgencia/emergencia. */
+  /** Caráter: '1' eletivo, '2' urgência/emergência. */
   readonly caraterAtendimento: '1' | '2';
   readonly indicacaoClinica?: string;
   readonly contratadoExecutante: ContratadoSadtInput;
-  /** Tipo de atendimento, dominio `dm_tipoAtendimento` (ex.: '05' exame). */
+  /** Tipo de atendimento, domínio `dm_tipoAtendimento` (ex.: '05' exame). */
   readonly tipoAtendimento: string;
   readonly indicacaoAcidente: '0' | '1' | '2' | '9';
   readonly tipoConsulta?: '1' | '2' | '3' | '4';
@@ -179,54 +179,54 @@ export interface LoteSadtInput {
   readonly cabecalho: CabecalhoInput;
   readonly registroANS: string;
   readonly numeroLote: string;
-  /** Minimo 1, maximo 100 — `maxOccurs="100"` no XSD. */
+  /** Mínimo 1, máximo 100 — `maxOccurs="100"` no XSD. */
   readonly guias: readonly GuiaSadtInput[];
 }
 
 /** Um item de recurso de glosa individual — tag <ans:itemRecursoGlosa>. */
 export interface ItemRecursoGlosaInput {
-  /** Numero sequencial do item dentro do recurso. */
+  /** Número sequencial do item dentro do recurso. */
   readonly sequencialItem: string;
   /** Data do atendimento original, formato 'YYYY-MM-DD'. */
   readonly dataAtendimento: string;
-  /** Numero da guia referenciada pelo recurso (guia do prestador). */
+  /** Número da guia referenciada pelo recurso (guia do prestador). */
   readonly numeroGuiaPrestador: string;
-  /** Numero da guia atribuido pela operadora, opcional. */
+  /** Número da guia atribuído pela operadora, opcional. */
   readonly numeroGuiaOperadora?: string;
-  /** Codigo do procedimento TUSS contestado. */
+  /** Código do procedimento TUSS contestado. */
   readonly codigoProcedimento: string;
-  /** Codigo da glosa atribuido pela operadora (tabela TUSS de motivo de glosa). */
+  /** Código da glosa atribuído pela operadora (tabela TUSS de motivo de glosa). */
   readonly codigoGlosa: string;
   /** Valor recursado em centavos inteiros (Money.cents). */
   readonly valorRecursadoCentavos: number;
-  /** Justificativa textual do prestador para o recurso, ate 500 caracteres. */
+  /** Justificativa textual do prestador para o recurso, até 500 caracteres. */
   readonly justificativa: string;
 }
 
 /** Dados do prestador contratado para o recurso — tag <ans:dadosContratado>. */
 export interface ContratadoRecursoInput {
-  /** Codigo do prestador na operadora. Exatamente um dos tres identificadores. */
+  /** Código do prestador na operadora. Exatamente um dos três identificadores. */
   readonly codigoPrestadorNaOperadora?: string;
   readonly cpfContratado?: string;
   readonly cnpjContratado?: string;
-  /** CNES do estabelecimento, 7 digitos. */
+  /** CNES do estabelecimento, 7 dígitos. */
   readonly cnes: string;
 }
 
 /** Entrada completa para serializar um recurso de glosa TISS. */
 export interface RecursoGlosaInput {
-  /** Cabecalho do XML TISS. Reutiliza o mesmo tipo do lote. */
+  /** Cabeçalho do XML TISS. Reutiliza o mesmo tipo do lote. */
   readonly cabecalho: CabecalhoInput;
-  /** Registro ANS da operadora destino, 6 digitos. */
+  /** Registro ANS da operadora destino, 6 dígitos. */
   readonly registroANS: string;
-  /** Numero do lote original que sofreu a glosa. */
+  /** Número do lote original que sofreu a glosa. */
   readonly numeroLoteOriginal: string;
-  /** Numero do recurso de glosa, unico por prestador. */
+  /** Número do recurso de glosa, único por prestador. */
   readonly numeroRecursoGlosa: string;
   /** Dados do prestador contratado. */
   readonly contratado: ContratadoRecursoInput;
-  /** Itens do recurso. Minimo 1. */
+  /** Itens do recurso. Mínimo 1. */
   readonly itens: readonly ItemRecursoGlosaInput[];
-  /** ID da versao do encounter usada para gerar o recurso (§3.9). Nao vai no XML, mas e obrigatorio no input. */
+  /** ID da versão do encounter usada para gerar o recurso (§3.9). Não vai no XML, mas é obrigatório no input. */
   readonly encounterVersionId: string;
 }

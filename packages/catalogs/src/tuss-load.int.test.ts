@@ -69,7 +69,7 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
     expect(result.updated).toBe(0);
     expect(result.unchanged).toBe(0);
 
-    // Verificar que os termos estao em ref.tuss_term
+    // Verificar que os termos estão em ref.tuss_term
     const { rows } = await admin.query<{ cnt: string }>(
       `SELECT count(*)::text AS cnt FROM ref.tuss_term
         WHERE competencia = '202701'
@@ -77,7 +77,7 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
     );
     expect(Number(rows[0]!.cnt)).toBe(3);
 
-    // Verificar que staging foi limpa apos o merge
+    // Verificar que staging foi limpa após o merge
     const { rows: stagingRows } = await admin.query<{ cnt: string }>(
       `SELECT count(*)::text AS cnt FROM ref.tuss_staging`,
     );
@@ -160,9 +160,9 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
   });
 
   it('tuss_at nao retorna termo fora da vigencia', async () => {
-    // tuss_at retorna composite (RETURNS ref.tuss_term, nao SETOF),
-    // entao sempre devolve 1 linha (NULL quando nao ha match).
-    // Verificamos que o campo termo e null.
+    // tuss_at retorna composite (RETURNS ref.tuss_term, não SETOF),
+    // então sempre devolve 1 linha (NULL quando não há match).
+    // Verificamos que o campo termo é null.
     const { rows } = await admin.query<{ termo: string | null }>(
       `SELECT termo FROM ref.tuss_at($1::smallint, $2, $3::date)`,
       [TAB_PROCEDIMENTOS, '99990010', '2026-06-01'],
@@ -171,8 +171,8 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
   });
 
   it('registra erro no log quando staging tem vigencia sobreposta com tuss_term existente de outra competencia', async () => {
-    // Carregar competencia 202703 com vigencia que NAO sobrepoe a 202701
-    // (a 202701 vai ate 2029-01-01, a 202703 comeca em 2029-01-01)
+    // Carregar competência 202703 com vigência que NÃO sobrepõe a 202701
+    // (a 202701 vai até 2029-01-01, a 202703 começa em 2029-01-01)
     const result = await loadTussCompetenciaSafe(jobsPool, {
       competencia: '202703',
       vigenciaFrom: '2029-01-01',
@@ -206,8 +206,8 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
     });
 
     expect(result.status).toBe('success');
-    // 99 novos + 99990030 ja inserido na Task 10 = 100 no batch, mas 99990030 nao
-    // esta no batch de 100 — sao 100 codigos novos da faixa 80000001..80000100
+    // 99 novos + 99990030 já inserido na Task 10 = 100 no batch, mas 99990030 não
+    // está no batch de 100 — são 100 códigos novos da faixa 80000001..80000100
     expect(result.inserted).toBe(100);
     expect(result.updated).toBe(0);
     expect(result.unchanged).toBe(0);
@@ -253,7 +253,7 @@ describe('loadTussCompetenciaSafe — carga bimestral TUSS com staging', () => {
         WHERE competencia IN ('202701','202703')
           AND status = 'success'`,
     );
-    // Deve ter pelo menos as execucoes das tasks anteriores
+    // Deve ter pelo menos as execuções das tasks anteriores
     expect(Number(rows[0]!.cnt)).toBeGreaterThanOrEqual(4);
   });
 });

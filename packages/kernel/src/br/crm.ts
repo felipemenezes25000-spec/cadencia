@@ -13,10 +13,10 @@ export const UFS: readonly Uf[] = [
 ];
 
 /**
- * CRM. NAO existe digito verificador nacional para registro de conselho: a
- * identidade e o par (numero, UF), e a validacao real e a consulta ao CFM.
- * Aqui garantimos so forma e UF existente — inventar DV rejeitaria medico
- * legitimo, e o numero do conselho vai na guia TISS e no documento assinado.
+ * CRM. NÃO existe dígito verificador nacional para registro de conselho: a
+ * identidade é o par (numero, UF), e a validação real é a consulta ao CFM.
+ * Aqui garantimos só forma e UF existente — inventar DV rejeitaria médico
+ * legítimo, e o número do conselho vai na guia TISS e no documento assinado.
  */
 export interface Crm {
   readonly numero: string;

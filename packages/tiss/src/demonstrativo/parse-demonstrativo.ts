@@ -1,18 +1,18 @@
 // packages/tiss/src/demonstrativo/parse-demonstrativo.ts
 
 /**
- * Parser PURO e deterministico de XML de demonstrativo TISS.
+ * Parser PURO e determinístico de XML de demonstrativo TISS.
  *
  * Recebe o XML em bytes ISO-8859-1 (como retornado por TissTransport.fetchDemonstrativo),
  * decodifica para string e extrai os campos estruturados. Sem I/O, sem side-effects.
  *
- * O parser usa extracao por regex para o subset limitado do XSD TISS — DOMParser
- * nao existe em Node.js e uma dependencia de parser XML completo e desnecessaria
- * para o formato previsivel e bem definido do demonstrativo TISS 4.01.00.
+ * O parser usa extração por regex para o subset limitado do XSD TISS — DOMParser
+ * não existe em Node.js e uma dependência de parser XML completo é desnecessária
+ * para o formato previsível e bem definido do demonstrativo TISS 4.01.00.
  */
 
 // ---------------------------------------------------------------------------
-// Tipos de saida
+// Tipos de saída
 // ---------------------------------------------------------------------------
 
 export interface ParsedDemonstrativoGlosa {
@@ -44,7 +44,7 @@ export interface ParsedDemonstrativo {
 }
 
 // ---------------------------------------------------------------------------
-// Utilidade de decodificacao
+// Utilidade de decodificação
 // ---------------------------------------------------------------------------
 
 /**
@@ -59,12 +59,12 @@ export function decodeIso8859(bytes: Uint8Array): string {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de extracao XML por regex
+// Helpers de extração XML por regex
 // ---------------------------------------------------------------------------
 
 /**
- * Extrai o conteudo texto de uma tag folha (sem filhos).
- * Retorna undefined se a tag nao for encontrada.
+ * Extrai o conteúdo texto de uma tag folha (sem filhos).
+ * Retorna undefined se a tag não for encontrada.
  * O regex aceita tags com ou sem atributos.
  */
 function extractTag(xml: string, tag: string): string | undefined {
@@ -75,12 +75,12 @@ function extractTag(xml: string, tag: string): string | undefined {
 }
 
 /**
- * Extrai todos os blocos de conteudo de tags container (com filhos).
- * Usa match lazy para evitar capturar tags irmas.
+ * Extrai todos os blocos de conteúdo de tags container (com filhos).
+ * Usa match lazy para evitar capturar tags irmãs.
  *
- * LIMITACAO: nao suporta tags identicas aninhadas (ex: <a><a>...</a></a>).
- * O formato TISS nao tem tags identicas aninhadas, entao esta limitacao
- * e aceitavel para este parser de subset.
+ * LIMITAÇÃO: não suporta tags idênticas aninhadas (ex: <a><a>...</a></a>).
+ * O formato TISS não tem tags idênticas aninhadas, então esta limitação
+ * é aceitável para este parser de subset.
  */
 function extractAllBlocks(xml: string, tag: string): string[] {
   const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -94,7 +94,7 @@ function extractAllBlocks(xml: string, tag: string): string[] {
 }
 
 /**
- * Converte valor monetario no formato TISS (reais com 2 decimais) para centavos inteiros.
+ * Converte valor monetário no formato TISS (reais com 2 decimais) para centavos inteiros.
  * Ex: '150.00' -> 15000, '0.99' -> 99, '' -> 0
  */
 function parseReaisToCentavos(valor: string): number {
@@ -114,15 +114,15 @@ function parseReaisToCentavos(valor: string): number {
 /**
  * Parseia XML de demonstrativo TISS (ISO-8859-1) em estrutura tipada.
  *
- * Funcao PURA e DETERMINISTICA. Recebe bytes ISO-8859-1, decodifica,
- * extrai os campos do demonstrativo de analise de conta ou de pagamento.
+ * Função PURA e DETERMINÍSTICA. Recebe bytes ISO-8859-1, decodifica,
+ * extrai os campos do demonstrativo de análise de conta ou de pagamento.
  *
- * Lanca Error se o XML nao contiver nenhum dos dois tipos de demonstrativo.
+ * Lança Error se o XML não contiver nenhum dos dois tipos de demonstrativo.
  */
 export function parseDemonstrativoXml(xml: Uint8Array): ParsedDemonstrativo {
   const text = decodeIso8859(xml);
 
-  // Detecta tipo pela presenca da tag container
+  // Detecta tipo pela presença da tag container
   const isAnalise = text.includes('<ans:demonstrativoAnaliseConta');
   const isPagamento = text.includes('<ans:demonstrativoPagamento');
 
@@ -144,13 +144,13 @@ export function parseDemonstrativoXml(xml: Uint8Array): ParsedDemonstrativo {
   }
   const demo = demoBlocks[0]!;
 
-  // Cabecalho — extraido de dentro do bloco demonstrativo, nao da mensagem TISS
+  // Cabeçalho — extraído de dentro do bloco demonstrativo, não da mensagem TISS
   const registroANS = extractTag(demo, 'ans:registroANS') ?? '';
   const numeroDemonstrativo = extractTag(demo, 'ans:numeroDemonstrativo') ?? '';
   const dataProcessamento = extractTag(demo, 'ans:dataProcessamento') ?? '';
   const numeroProtocolo = extractTag(demo, 'ans:numeroProtocolo') ?? '';
 
-  // Itens (guias) — cada <ans:guiaCabecalho> e um item
+  // Itens (guias) — cada <ans:guiaCabecalho> é um item
   const guiaBlocks = extractAllBlocks(demo, 'ans:guiaCabecalho');
   const itens: ParsedDemonstrativoItem[] = guiaBlocks.map(parseGuiaBlock);
 

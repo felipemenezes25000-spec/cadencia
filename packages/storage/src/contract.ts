@@ -3,7 +3,7 @@
  *
  * Mora fora do `index` porque os adaptadores precisam dele e o `index` os
  * reexporta — importar o barril de dentro de um adaptador fecha um ciclo que o
- * `arch:check` reprova, com razao: barril que depende do que ele exporta faz a
+ * `arch:check` reprova, com razão: barril que depende do que ele exporta faz a
  * ordem de carga virar detalhe de sorte.
  */
 export interface StorageAdapter {

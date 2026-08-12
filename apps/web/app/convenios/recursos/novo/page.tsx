@@ -23,10 +23,10 @@ interface GlosaDaApi {
 /**
  * Abrir recurso a partir das glosas escolhidas na tela de glosas.
  *
- * A tela de glosas ja empurrava para `/convenios/recursos?glosas=...` — rota que
- * nao existia, entao selecionar glosas e clicar em recorrer dava 404. Glosa nao
- * recorrida dentro do prazo da operadora vira perda definitiva, e o formulario
- * estava pronto e testado esperando esta pagina.
+ * A tela de glosas já empurrava para `/convenios/recursos?glosas=...` — rota que
+ * não existia, então selecionar glosas e clicar em recorrer dava 404. Glosa não
+ * recorrida dentro do prazo da operadora vira perda definitiva, e o formulário
+ * estava pronto e testado esperando esta página.
  */
 function NovoRecursoInner() {
   const router = useRouter();
@@ -51,13 +51,13 @@ function NovoRecursoInner() {
           guiaNumero: g.numeroGuiaPrestador,
           pacienteNome: g.pacienteNome,
           codigoGlosa: g.codigoGlosa,
-          // Codigo sem texto acontece: nem toda operadora manda a descricao.
-          // Mostrar o codigo cru e melhor que uma linha vazia.
-          descricaoGlosa: g.descricaoGlosa ?? `codigo ${g.codigoGlosa}`,
+          // Código sem texto acontece: nem toda operadora manda a descrição.
+          // Mostrar o código cru é melhor que uma linha vazia.
+          descricaoGlosa: g.descricaoGlosa ?? `código ${g.codigoGlosa}`,
           valorGlosadoCentavos: g.valorGlosadoCents,
         })));
       })
-      .catch(() => { if (vivo) setErro('Nao foi possivel carregar as glosas.'); });
+      .catch(() => { if (vivo) setErro('Não foi possível carregar as glosas.'); });
     return () => { vivo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.get('glosas'), clinicId, csrfToken]);
@@ -69,18 +69,18 @@ function NovoRecursoInner() {
     const primeira = brutas[0];
     if (primeira === undefined) { setErro('Nenhuma glosa carregada.'); return; }
 
-    // Um recurso e de UMA operadora e de UMA versao de atendimento. Misturar
-    // operadoras num recurso so faria o XML sair para a operadora errada.
+    // Um recurso é de UMA operadora e de UMA versão de atendimento. Misturar
+    // operadoras num recurso só faria o XML sair para a operadora errada.
     if (brutas.some((g) => g.operadoraId !== primeira.operadoraId)) {
-      setErro('As glosas selecionadas sao de operadoras diferentes. '
+      setErro('As glosas selecionadas são de operadoras diferentes. '
         + 'Abra um recurso por operadora.');
       return;
     }
     if (primeira.encounterVersionId === null) {
-      // Sem versao de atendimento nao ha o que anexar como prova. Recorrer assim
-      // seria mandar contestacao sem o registro que a sustenta.
-      setErro('Esta glosa nao esta ligada a um atendimento finalizado. '
-        + 'Sem isso nao ha registro clinico para sustentar o recurso.');
+      // Sem versão de atendimento não há o que anexar como prova. Recorrer assim
+      // seria mandar contestação sem o registro que a sustenta.
+      setErro('Esta glosa não está ligada a um atendimento finalizado. '
+        + 'Sem isso não há registro clínico para sustentar o recurso.');
       return;
     }
 
@@ -95,9 +95,9 @@ function NovoRecursoInner() {
         clinicId, csrfToken,
       });
 
-      // Os itens entram um a um, com a justificativa especifica de cada glosa.
-      // O valor recursado e o valor glosado: recorrer de menos do que foi
-      // glosado deixa dinheiro na mesa sem ninguem perceber.
+      // Os itens entram um a um, com a justificativa específica de cada glosa.
+      // O valor recursado é o valor glosado: recorrer de menos do que foi
+      // glosado deixa dinheiro na mesa sem ninguém perceber.
       for (const item of dados.glosas) {
         const g = brutas.find((x) => x.glosaId === item.glosaId);
         if (g === undefined) continue;
@@ -114,7 +114,7 @@ function NovoRecursoInner() {
 
       router.push(`/convenios/recursos/${criado.recursoId}`);
     } catch {
-      setErro('Nao foi possivel abrir o recurso.');
+      setErro('Não foi possível abrir o recurso.');
     }
   }, [brutas, clinicId, csrfToken, router]);
 

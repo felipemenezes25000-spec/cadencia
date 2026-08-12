@@ -2,10 +2,10 @@ import { ValidationError } from '../errors';
 import { err, ok, type Result } from '../result';
 
 /**
- * CNS — Cartao Nacional de Saude, 15 digitos.
- * Definitivo comeca com 1 ou 2 (derivado do PIS/PASEP); provisorio com 7, 8 ou 9.
- * Em ambos os casos a soma dos digitos ponderada por (15 - posicao) e
- * divisivel por 11 — o DV foi construido para isso.
+ * CNS — Cartão Nacional de Saúde, 15 dígitos.
+ * Definitivo começa com 1 ou 2 (derivado do PIS/PASEP); provisório com 7, 8 ou 9.
+ * Em ambos os casos a soma dos dígitos ponderada por (15 - posição) é
+ * divisível por 11 — o DV foi construído para isso.
  */
 export type Cns = string & { readonly __brand: 'Cns' };
 

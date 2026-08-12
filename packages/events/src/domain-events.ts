@@ -1,11 +1,11 @@
 // packages/events/src/domain-events.ts
 
 /**
- * §7.1 — Eventos de dominio tipados.
+ * §7.1 — Eventos de domínio tipados.
  *
- * Cada evento e um objeto imutavel com cinco campos obrigatorios.
- * O pacote exporta SO tipos e constantes — sem comportamento, sem
- * dependencias de runtime. Quem consome e o outbox (L0) e o worker (L3).
+ * Cada evento é um objeto imutável com cinco campos obrigatórios.
+ * O pacote exporta SÓ tipos e constantes — sem comportamento, sem
+ * dependências de runtime. Quem consome é o outbox (L0) e o worker (L3).
  */
 
 // ---------------------------------------------------------------------------
@@ -41,7 +41,7 @@ export interface DomainEventBase<T extends EventType, P> {
   readonly tenantId: string;
   /** Identificador do agregado de origem (appointment, encounter, payment, etc.) */
   readonly aggregateId: string;
-  /** ISO 8601 UTC com ms — fonte de tempo e clock_timestamp() do Postgres */
+  /** ISO 8601 UTC com ms — fonte de tempo é clock_timestamp() do Postgres */
   readonly occurredAt: string;
   readonly payload: P;
 }
@@ -74,7 +74,7 @@ export interface EncounterAmendedPayload {
   readonly patientId: string;
   readonly professionalId: string;
   readonly versionNo: number;
-  /** 'retificacao' ou 'adendo' — o handler de reprojecao usa para decidir o fluxo */
+  /** 'retificacao' ou 'adendo' — o handler de reprojeção usa para decidir o fluxo */
   readonly kind: 'retificacao' | 'adendo';
 }
 
@@ -144,7 +144,7 @@ export type RepasseClosed = DomainEventBase<'REPASSE_CLOSED', RepasseClosedPaylo
 export type RecurringEntryMaterialized = DomainEventBase<'RECURRING_ENTRY_MATERIALIZED', RecurringEntryMaterializedPayload>;
 
 // ---------------------------------------------------------------------------
-// Uniao discriminada
+// União discriminada
 // ---------------------------------------------------------------------------
 
 export type DomainEvent =

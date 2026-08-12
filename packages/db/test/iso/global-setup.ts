@@ -8,8 +8,8 @@ import {
 } from '@testcontainers/postgresql';
 import { seedDoisTenants } from './seed';
 import { impressaoDigitalDoTenantB } from './impressao-digital';
-// O Vitest 4 removeu `GlobalSetupContext`: o global setup recebe o proprio
-// TestProject, que expoe o mesmo `provide` usado abaixo.
+// O Vitest 4 removeu `GlobalSetupContext`: o global setup recebe o próprio
+// TestProject, que expõe o mesmo `provide` usado abaixo.
 import type { TestProject } from 'vitest/node';
 
 declare module 'vitest' {
@@ -65,10 +65,10 @@ export default async function setup({ provide }: TestProject) {
   await admin.query(`ALTER ROLE api LOGIN PASSWORD 'api'`);
   await admin.query(`GRANT CONNECT ON DATABASE cadencia TO api`);
 
-  // §3.1 torna `api` NOINHERIT: sem assumir app_rw a conexao nao tem GRANT nenhum e
+  // §3.1 torna `api` NOINHERIT: sem assumir app_rw a conexão não tem GRANT nenhum e
   // nenhuma policy `TO app_rw` se aplica — tudo daria 42501. `options=-c role=app_rw`
-  // faz o proprio servidor entrar em `SET ROLE app_rw` a cada conexao nova, o que vale
-  // igualmente para o Client do harness e para o Pool do withTenantTx, sem codigo extra.
+  // faz o próprio servidor entrar em `SET ROLE app_rw` a cada conexão nova, o que vale
+  // igualmente para o Client do harness e para o Pool do withTenantTx, sem código extra.
   const apiUrl =
     `postgresql://api:api@${container.getHost()}:${container.getPort()}/cadencia` +
     `?options=-c%20role%3Dapp_rw`;
@@ -79,7 +79,7 @@ export default async function setup({ provide }: TestProject) {
   provide('isoApiUrl', apiUrl);
 
   return async () => {
-    // T7 — canario. A suite inteira rodou como tenant A. Nada do tenant B pode
+    // T7 — canário. A suite inteira rodou como tenant A. Nada do tenant B pode
     // ter mudado: nem linha nova, nem coluna alterada, nem linha removida.
     const conferencia = new Client({ connectionString: adminUrl });
     await conferencia.connect();
@@ -93,7 +93,7 @@ export default async function setup({ provide }: TestProject) {
 
     if (depois !== impressaoAntes) {
       // O Vitest 4 apenas LOGA o erro do teardown ('error during close') e ainda
-      // sai com codigo 0. Sem esta linha o canario viraria decoracao: o pre-push
+      // sai com código 0. Sem esta linha o canário viraria decoração: o pre-push
       // imprimiria o alarme e deixaria o push passar assim mesmo.
       process.exitCode = 1;
       throw new Error(

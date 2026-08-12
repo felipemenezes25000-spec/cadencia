@@ -4,8 +4,8 @@ import { CRUD_TENANT_A } from './fixtures';
 import { runAllInvariants } from './index';
 
 beforeAll(async () => {
-  // O invariante 9 exige trilha com evento. Um `pnpm db:migrate` recem-rodado ainda
-  // nao tem nenhum, e o runner reprovaria por um motivo que nao e o deste teste.
+  // O invariante 9 exige trilha com evento. Um `pnpm db:migrate` recém-rodado ainda
+  // não tem nenhum, e o runner reprovaria por um motivo que não é o deste teste.
   const client = await catalogPool().connect();
   try {
     await client.query('BEGIN');

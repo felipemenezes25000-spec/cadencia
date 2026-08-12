@@ -2,11 +2,11 @@ import type { Client } from 'pg';
 import * as F from './fixtures';
 
 /**
- * Dois tenants reais e conflitantes de proposito:
- * - Aurora (A): rede com unidade em Sao Paulo e em Manaus. Ana e admin_clinico em
- *   SP e apenas profissional em Manaus. Carla e recepcao (nao e profissional).
+ * Dois tenants reais e conflitantes de propósito:
+ * - Aurora (A): rede com unidade em São Paulo e em Manaus. Ana é admin_clinico em
+ *   SP e apenas profissional em Manaus. Carla é recepcao (não é profissional).
  * - Boreal (B): unidade em Rio Branco, com o MESMO CPF cadastrado que o tenant A.
- * Roda como superusuario, antes de qualquer teste, uma unica vez.
+ * Roda como superusuário, antes de qualquer teste, uma única vez.
  */
 export async function seedDoisTenants(admin: Client): Promise<void> {
   await admin.query(
@@ -81,7 +81,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PATIENT_B_MARCOS, F.CPF_VALIDO],
   );
 
-  // Bruno nao e admin: so enxerga identificador de paciente compartilhado com ele.
+  // Bruno não é admin: só enxerga identificador de paciente compartilhado com ele.
   await admin.query(
     `INSERT INTO clin.record_share
        (tenant_id, id, patient_id, grantee_professional_id,
@@ -91,9 +91,9 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PROF_A_BRUNO, F.PROF_A_ANA],
   );
 
-  // O tenant B PRECISA de linha aqui tambem: o teste "o seed realmente criou linha do
-  // tenant B em toda tabela multi-tenant" descobre as tabelas do catalogo, e sem esta
-  // linha o T1 passaria a toa em clin.record_share — nao ha o que vazar.
+  // O tenant B PRECISA de linha aqui também: o teste "o seed realmente criou linha do
+  // tenant B em toda tabela multi-tenant" descobre as tabelas do catálogo, e sem esta
+  // linha o T1 passaria a toa em clin.record_share — não há o que vazar.
   await admin.query(
     `INSERT INTO clin.record_share
        (tenant_id, id, patient_id, grantee_professional_id,
@@ -102,12 +102,12 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_B, F.SHARE_B_MARCOS_PARA_DIEGO, F.PATIENT_B_MARCOS, F.PROF_B_DIEGO],
   );
 
-  // ── Definicao de prontuario ────────────────────────────────────────────────
+  // ── Definição de prontuário ────────────────────────────────────────────────
   //
   // clin.record_section e clin.record_field nasceram na Task 4 da Fase 1. Como
   // toda tabela multi-tenant, precisam de linha do tenant B: sem ela o teste meta
   // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
-  // reprova, e o T1 passaria a toa nelas — nao haveria o que vazar.
+  // reprova, e o T1 passaria a toa nelas — não haveria o que vazar.
   await admin.query(
     `INSERT INTO clin.record_section (tenant_id, id, code, label, ordinal) VALUES
        ($1, $3, 'sinais_vitais', 'Sinais vitais', 1),
@@ -125,8 +125,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SECTION_A_SINAIS_VITAIS, F.SECTION_B_SINAIS_VITAIS],
   );
 
-  // 'PA' e um campo COMPOSTO: um campo, DUAS observacoes. clin.record_field_component
-  // nasceu na Task 5 da Fase 1 e tambem e multi-tenant — precisa de linha do tenant B.
+  // 'PA' é um campo COMPOSTO: um campo, DUAS observações. clin.record_field_component
+  // nasceu na Task 5 da Fase 1 e também é multi-tenant — precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO clin.record_field
        (tenant_id, id, section_id, code, label, kind, is_reportable, ordinal, generation) VALUES
@@ -149,8 +149,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.FIELD_A_PA, F.FIELD_B_PA],
   );
 
-  // O layout do prontuario e POR PROFISSIONAL: clin.record_layout_item nasceu na
-  // Task 6 da Fase 1 e tambem e multi-tenant — precisa de linha do tenant B, senao
+  // O layout do prontuário é POR PROFISSIONAL: clin.record_layout_item nasceu na
+  // Task 6 da Fase 1 e também é multi-tenant — precisa de linha do tenant B, senão
   // o teste meta reprova e o T1 passaria a toa nela.
   await admin.query(
     `INSERT INTO clin.record_layout_item
@@ -166,7 +166,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   // clin.encounter nasceu na Task 9 da Fase 1. Como toda tabela multi-tenant,
   // precisa de linha do tenant B: sem ela o teste meta ("o seed realmente criou
   // linha do tenant B em toda tabela multi-tenant") reprova, e o T1 passaria a toa.
-  // occurred_date vem de app.local_date com o fuso da CLINICA, nunca de um cast.
+  // occurred_date vem de app.local_date com o fuso da CLÍNICA, nunca de um cast.
   await admin.query(
     `INSERT INTO clin.encounter
        (tenant_id, id, patient_id, professional_id, clinic_id, occurred_at, occurred_date)
@@ -181,11 +181,11 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
   );
 
-  // clin.encounter_draft nasceu na Task 10 da Fase 1 e e a UNICA superficie
-  // mutavel do sistema. Como toda tabela multi-tenant, precisa de linha do tenant
+  // clin.encounter_draft nasceu na Task 10 da Fase 1 e é a ÚNICA superfície
+  // mutável do sistema. Como toda tabela multi-tenant, precisa de linha do tenant
   // B: sem ela o teste meta ("o seed realmente criou linha do tenant B em toda
-  // tabela multi-tenant") reprova, e o T1 passaria a toa. rev fica no padrao 1 —
-  // e o banco, nao o seed, quem conduz a revisao.
+  // tabela multi-tenant") reprova, e o T1 passaria a toa. rev fica no padrão 1 —
+  // é o banco, não o seed, quem conduz a revisão.
   await admin.query(
     `INSERT INTO clin.encounter_draft (tenant_id, encounter_id, payload, updated_by) VALUES
        ($1, $3, '{"queixa":"cefaleia ha 3 dias"}'::jsonb, $5),
@@ -194,12 +194,12 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // clin.encounter_version nasceu na Task 14 da Fase 1: a versao e a unidade
-  // assinavel do registro. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
-  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai
-  // como superusuario: app_rw NAO tem INSERT nesta tabela, de proposito.
-  // version_no 1 obriga kind = 'original'; prev_hash fica NULL porque e o elo
+  // clin.encounter_version nasceu na Task 14 da Fase 1: a versão é a unidade
+  // assinável do registro. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senão o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A inserção vai
+  // como superusuário: app_rw NÃO tem INSERT nesta tabela, de propósito.
+  // version_no 1 obriga kind = 'original'; prev_hash fica NULL porque é o elo
   // inicial da cadeia de hash daquele atendimento.
   await admin.query(
     `INSERT INTO clin.encounter_version
@@ -214,16 +214,16 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PROF_A_ANA, F.PROF_B_DIEGO],
   );
 
-  // clin.encounter_field_value nasceu na Task 15 da Fase 1 e e PARTICIONADA por
+  // clin.encounter_field_value nasceu na Task 15 da Fase 1 e é PARTICIONADA por
   // finalized_at. Como toda tabela multi-tenant, precisa de linha do tenant B,
-  // senao o teste meta ("o seed realmente criou linha do tenant B em toda tabela
-  // multi-tenant") reprova e o T1 passaria a toa. A insercao vai como
-  // superusuario: app_rw NAO tem INSERT nesta tabela, de proposito.
+  // senão o teste meta ("o seed realmente criou linha do tenant B em toda tabela
+  // multi-tenant") reprova e o T1 passaria a toa. A inserção vai como
+  // superusuário: app_rw NÃO tem INSERT nesta tabela, de propósito.
   //
-  // finalized_at vem da PROPRIA versao, nunca de um literal: e a chave de
-  // particao, e copiar o valor da versao e o que garante que o valor cai na mesma
-  // faixa que o registro assinado. label_snapshot congela 'Peso' — se a clinica
-  // renomear o campo amanha, este atendimento continua mostrando o que o medico viu.
+  // finalized_at vem da PRÓPRIA versão, nunca de um literal: é a chave de
+  // partição, e copiar o valor da versão é o que garante que o valor cai na mesma
+  // faixa que o registro assinado. label_snapshot congela 'Peso' — se a clínica
+  // renomear o campo amanhã, este atendimento continua mostrando o que o médico viu.
   await admin.query(
     `INSERT INTO clin.encounter_field_value
        (tenant_id, id, version_id, finalized_at, field_id, field_generation,
@@ -240,14 +240,14 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // As quatro tabelas de primeira classe nasceram na Task 16 da Fase 1. Como toda
-  // tabela multi-tenant, precisam de linha do tenant B, senao o teste meta ("o seed
+  // tabela multi-tenant, precisam de linha do tenant B, senão o teste meta ("o seed
   // realmente criou linha do tenant B em toda tabela multi-tenant") reprova e o T1
-  // passaria a toa. A insercao vai como superusuario: app_rw so tem SELECT nelas.
+  // passaria a toa. A inserção vai como superusuário: app_rw só tem SELECT nelas.
   //
-  // encounter_id, patient_id, professional_id, clinic_id e occurred_date sao lidos
-  // do PROPRIO atendimento em vez de repetidos como literal: sao colunas
-  // desnormalizadas, e copiar da origem e o que impede o seed de inventar uma
-  // combinacao que o sistema real nunca produziria.
+  // encounter_id, patient_id, professional_id, clinic_id e occurred_date são lidos
+  // do PRÓPRIO atendimento em vez de repetidos como literal: são colunas
+  // desnormalizadas, e copiar da origem é o que impede o seed de inventar uma
+  // combinação que o sistema real nunca produziria.
   await admin.query(
     `INSERT INTO clin.diagnosis
        (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
@@ -300,7 +300,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // TUSS exige `tabela`: o CHECK da migration 0035 amarra code_system = 'TUSS' a
-  // tabela IS NOT NULL. 22 e a tabela de procedimentos e eventos em saude.
+  // tabela IS NOT NULL. 22 é a tabela de procedimentos e eventos em saúde.
   await admin.query(
     `INSERT INTO clin.procedure
        (tenant_id, id, encounter_id, version_id, patient_id, professional_id,
@@ -320,16 +320,16 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
   );
 
-  // clin.ai_assistance nasceu na Task 17 da Fase 1: o apoio por IA e parte do
-  // prontuario, nao um log paralelo. Como toda tabela multi-tenant, precisa de
-  // linha do tenant B, senao o teste meta ("o seed realmente criou linha do tenant
-  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai
-  // como superusuario: app_rw so tem SELECT nela.
+  // clin.ai_assistance nasceu na Task 17 da Fase 1: o apoio por IA é parte do
+  // prontuário, não um log paralelo. Como toda tabela multi-tenant, precisa de
+  // linha do tenant B, senão o teste meta ("o seed realmente criou linha do tenant
+  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A inserção vai
+  // como superusuário: app_rw só tem SELECT nela.
   //
-  // encounter_id e patient_id sao lidos do PROPRIO atendimento em vez de repetidos
-  // como literal, no mesmo espirito das tabelas de primeira classe. Os dois hashes
-  // sao sha256 de verdade porque o CHECK exige 32 bytes; o output fica em texto
-  // legivel porque a auditoria de alucinacao precisa ler o que a IA escreveu.
+  // encounter_id e patient_id são lidos do PRÓPRIO atendimento em vez de repetidos
+  // como literal, no mesmo espírito das tabelas de primeira classe. Os dois hashes
+  // são sha256 de verdade porque o CHECK exige 32 bytes; o output fica em texto
+  // legível porque a auditoria de alucinação precisa ler o que a IA escreveu.
   await admin.query(
     `INSERT INTO clin.ai_assistance
        (tenant_id, id, encounter_id, version_id, patient_id, purpose, risk_class,
@@ -353,20 +353,20 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // clin.encounter_billing nasceu na Task 24 da Fase 1: os campos da guia de
-  // consulta sao capturados NO atendimento, com o modulo tiss ainda inexistente.
-  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste
+  // consulta são capturados NO atendimento, com o módulo tiss ainda inexistente.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senão o teste
   // meta ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
   // reprova e o T1 passaria a toa.
   //
-  // cnes vem da CLINICA e conselho/numero/uf/cbos vem do PROFISSIONAL do proprio
-  // atendimento, nunca repetidos como literal: sao exatamente os tipos de origem,
-  // e copiar da origem e o que prova que a projecao nao precisa converter nada.
-  // data_atendimento vem de e.occurred_date — a data do evento no fuso da clinica,
+  // cnes vem da CLÍNICA e conselho/numero/uf/cbos vêm do PROFISSIONAL do próprio
+  // atendimento, nunca repetidos como literal: são exatamente os tipos de origem,
+  // e copiar da origem é o que prova que a projeção não precisa converter nada.
+  // data_atendimento vem de e.occurred_date — a data do evento no fuso da clínica,
   // nunca um cast de occurred_at.
   //
-  // Aurora atende por convenio: tem registro_ans, carteirinha e EXATAMENTE um
+  // Aurora atende por convênio: tem registro_ans, carteirinha e EXATAMENTE um
   // identificador de prestador. Boreal atende particular: sem registro_ans e sem
-  // carteirinha, que e o que o CHECK amarra um ao outro.
+  // carteirinha, que é o que o CHECK amarra um ao outro.
   await admin.query(
     `INSERT INTO clin.encounter_billing
        (tenant_id, id, encounter_id, operadora_nome, registro_ans, numero_carteira,
@@ -393,11 +393,11 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // clin.signature nasceu na Task 42 da Fase 1: os bytes que fazem o documento
-  // sobreviver a nos e ao PSC. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
-  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A insercao vai como
-  // superusuario: app_rw so tem SELECT e INSERT nesta tabela, e o trigger
-  // no_mutate bloqueia UPDATE de colunas de conteudo e DELETE.
+  // sobreviver a nós e ao PSC. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senão o teste meta ("o seed realmente criou linha do tenant B em
+  // toda tabela multi-tenant") reprova e o T1 passaria a toa. A inserção vai como
+  // superusuário: app_rw só tem SELECT e INSERT nesta tabela, e o trigger
+  // no_mutate bloqueia UPDATE de colunas de conteúdo e DELETE.
   await admin.query(
     `INSERT INTO clin.signature
        (tenant_id, id, subject_kind, subject_id, canonical_key, canonical_version,
@@ -420,11 +420,11 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // clin.document nasceu na Task 44 da Fase 1: o documento nato-digital. Como
-  // toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // toda tabela multi-tenant, precisa de linha do tenant B, senão o teste meta
   // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
-  // reprova e o T1 passaria a toa. A insercao vai como superusuario.
+  // reprova e o T1 passaria a toa. A inserção vai como superusuário.
   //
-  // encounter_id e version_id sao opcionais (um documento pode existir fora de
+  // encounter_id e version_id são opcionais (um documento pode existir fora de
   // atendimento), mas no seed preenchemos para cobrir o FK composite.
   await admin.query(
     `INSERT INTO clin.document
@@ -447,14 +447,14 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SIGNATURE_A_JOANA, F.SIGNATURE_B_MARCOS],
   );
 
-  // clin.attachment nasceu na Task 47 da Fase 1: o anexo clinico com chave opaca
-  // e referencia de chave de dados para crypto-shredding. Como toda tabela
-  // multi-tenant, precisa de linha do tenant B, senao o teste meta ("o seed
+  // clin.attachment nasceu na Task 47 da Fase 1: o anexo clínico com chave opaca
+  // e referência de chave de dados para crypto-shredding. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senão o teste meta ("o seed
   // realmente criou linha do tenant B em toda tabela multi-tenant") reprova e o
-  // T1 passaria a toa. A insercao vai como superusuario.
+  // T1 passaria a toa. A inserção vai como superusuário.
   //
-  // storage_key e um UUID opaco (NGS1.06.01): o caminho no objeto NAO revela o
-  // conteudo. original_name mora no banco, sob RLS. sha256 e 32 bytes de verdade
+  // storage_key é um UUID opaco (NGS1.06.01): o caminho no objeto NÃO revela o
+  // conteúdo. original_name mora no banco, sob RLS. sha256 é 32 bytes de verdade
   // porque o CHECK exige octet_length = 32.
   await admin.query(
     `INSERT INTO clin.attachment
@@ -477,10 +477,10 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // clin.record_export nasceu na Task 48 da Fase 1: a exportacao do prontuario
-  // e uma ENTIDADE (ECF.18), nao um efeito colateral. version_ids, attachment_ids
+  // clin.record_export nasceu na Task 48 da Fase 1: a exportação do prontuário
+  // é uma ENTIDADE (ECF.18), não um efeito colateral. version_ids, attachment_ids
   // e document_ids congelam o CONJUNTO exportado. receipt_json guarda o recibo
-  // indissociavel. Como toda tabela multi-tenant, precisa de linha do tenant B.
+  // indissociável. Como toda tabela multi-tenant, precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO clin.record_export
        (tenant_id, id, patient_id, requested_by, requester_kind, version_ids,
@@ -504,8 +504,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // clin.prescription nasceu na Task 53 da Fase 1: persistimos do NOSSO lado
-  // id, link, codigo, PDF e bytes assinados desde a primeira prescricao. Itens
-  // normalizados em tabela propria, nao um blob do parceiro.
+  // id, link, código, PDF e bytes assinados desde a primeira prescrição. Itens
+  // normalizados em tabela própria, não um blob do parceiro.
   await admin.query(
     `INSERT INTO clin.prescription
        (tenant_id, id, patient_id, professional_id, clinic_id, encounter_id,
@@ -535,12 +535,12 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PRESCRIPTION_A_JOANA, F.PRESCRIPTION_B_MARCOS],
   );
 
-  // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendencias
-  // quando o PSC nao responde. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // clin.signature_pending nasceu na Task 43 da Fase 1: a fila de pendências
+  // quando o PSC não responde. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senão o teste meta ("o seed realmente criou linha do tenant B em
   // toda tabela multi-tenant") reprova e o T1 passaria a toa.
   //
-  // subject_id usa gen_random_uuid() porque nao ha FK: a mesma tabela serve
+  // subject_id usa gen_random_uuid() porque não há FK: a mesma tabela serve
   // encounter_version, document e prescription.
   await admin.query(
     `INSERT INTO clin.signature_pending
@@ -557,8 +557,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // app.outbox nasceu na Task 2 da Fase 2: o outbox transacional garante que o
-  // evento so existe se o efeito de dominio existir. Como toda tabela multi-tenant,
-  // precisa de linha do tenant B, senao o teste meta ("o seed realmente criou
+  // evento só existe se o efeito de domínio existir. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B, senão o teste meta ("o seed realmente criou
   // linha do tenant B em toda tabela multi-tenant") reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO app.outbox
@@ -573,13 +573,13 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   //
   // As quatro tabelas de `audit` nasceram nas Tasks 25-31, DEPOIS deste seed. Sem
   // linha do tenant B aqui, o teste meta ("o seed realmente criou linha do tenant B
-  // em toda tabela multi-tenant") reprova — e reprova com razao: sem linha de B, o
-  // T1 passaria a toa nessas tabelas, porque nao havia o que vazar.
+  // em toda tabela multi-tenant") reprova — e reprova com razão: sem linha de B, o
+  // T1 passaria a toa nessas tabelas, porque não havia o que vazar.
   //
-  // A insercao vai direto, como superusuario. A policy `writer` de audit.event so
-  // permite INSERT ao audit_owner, e a RLS e FORCADA — mas FORCE sujeita o DONO da
-  // tabela, nao o superusuario, que continua com bypass. O trigger no_mutate recusa
-  // UPDATE e DELETE para todo mundo, e nao interfere no INSERT.
+  // A inserção vai direto, como superusuário. A policy `writer` de audit.event só
+  // permite INSERT ao audit_owner, e a RLS é FORÇADA — mas FORCE sujeita o DONO da
+  // tabela, não o superusuário, que continua com bypass. O trigger no_mutate recusa
+  // UPDATE e DELETE para todo mundo, e não interfere no INSERT.
 
   await admin.query(
     `INSERT INTO audit.event
@@ -602,8 +602,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS],
   );
 
-  // Selo de um dia ja fechado. chain_hash e prev_chain_hash sao bytea arbitrarios:
-  // a verificacao de cadeia tem teste proprio; aqui a linha existe para o T1 ter o
+  // Selo de um dia já fechado. chain_hash e prev_chain_hash são bytea arbitrários:
+  // a verificação de cadeia tem teste próprio; aqui a linha existe para o T1 ter o
   // que tentar ler do tenant alheio.
   await admin.query(
     `INSERT INTO audit.seal
@@ -621,8 +621,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B],
   );
 
-  // fin.category nasceu na Task 24 da Fase 2: categorias de lancamento financeiro.
-  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // fin.category nasceu na Task 24 da Fase 2: categorias de lançamento financeiro.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senão o teste meta
   // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant") reprova
   // e o T1 passaria a toa.
   await admin.query(
@@ -632,8 +632,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B, F.CATEGORY_A, F.CATEGORY_B],
   );
 
-  // fin.payment_method nasceu na Task 24 da Fase 2: metodos de pagamento do tenant.
-  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste meta
+  // fin.payment_method nasceu na Task 24 da Fase 2: métodos de pagamento do tenant.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senão o teste meta
   // ("o seed realmente criou linha do tenant B em toda tabela multi-tenant") reprova
   // e o T1 passaria a toa.
   await admin.query(
@@ -643,8 +643,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B, F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
   );
 
-  // fin.entry nasceu na Task 25 da Fase 2: lancamento financeiro. Como toda tabela
-  // multi-tenant, precisa de linha do tenant B, senao o teste meta ("o seed realmente
+  // fin.entry nasceu na Task 25 da Fase 2: lançamento financeiro. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senão o teste meta ("o seed realmente
   // criou linha do tenant B em toda tabela multi-tenant") reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO fin.entry
@@ -663,7 +663,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PAYMENT_METHOD_A, F.PAYMENT_METHOD_B],
   );
 
-  // fin.receipt_counter nasceu na Task 25 da Fase 2: sequencia de recibo por tenant.
+  // fin.receipt_counter nasceu na Task 25 da Fase 2: sequência de recibo por tenant.
   // Como toda tabela multi-tenant, precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO fin.receipt_counter (tenant_id, next_value) VALUES
@@ -672,7 +672,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B],
   );
 
-  // fin.receipt nasceu na Task 25 da Fase 2: recibo vinculado ao lancamento.
+  // fin.receipt nasceu na Task 25 da Fase 2: recibo vinculado ao lançamento.
   // Como toda tabela multi-tenant, precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO fin.receipt (tenant_id, id, entry_id, receipt_number) VALUES
@@ -683,10 +683,10 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENTRY_A, F.ENTRY_B],
   );
 
-  // fin.daily_rollup nasceu na Task 26 da Fase 2: resumo diario do financeiro com
-  // duas bases (competencia e caixa). Como toda tabela multi-tenant, precisa de
-  // linha do tenant B, senao o teste meta ("o seed realmente criou linha do tenant
-  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A PK e composta
+  // fin.daily_rollup nasceu na Task 26 da Fase 2: resumo diário do financeiro com
+  // duas bases (competência e caixa). Como toda tabela multi-tenant, precisa de
+  // linha do tenant B, senão o teste meta ("o seed realmente criou linha do tenant
+  // B em toda tabela multi-tenant") reprova e o T1 passaria a toa. A PK é composta
   // sem coluna id; o sentinel UUID substitui NULL em category_id.
   await admin.query(
     `INSERT INTO fin.daily_rollup
@@ -699,8 +699,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // fin.payment_link nasceu na Task 32 da Fase 2: vincula um link do PSP a um
-  // lancamento financeiro. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // lançamento financeiro. Como toda tabela multi-tenant, precisa de linha do
+  // tenant B, senão o teste meta ("o seed realmente criou linha do tenant B em
   // toda tabela multi-tenant") reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO fin.payment_link
@@ -717,7 +717,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // fin.webhook_event nasceu na Task 39 da Fase 2: evento bruto do PSP. Como toda
-  // tabela multi-tenant, precisa de linha do tenant B, senao o teste meta reprova
+  // tabela multi-tenant, precisa de linha do tenant B, senão o teste meta reprova
   // e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO fin.webhook_event
@@ -727,9 +727,9 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B, F.WEBHOOK_EVENT_A, F.WEBHOOK_EVENT_B],
   );
 
-  // fin.reconciliation_log nasceu na Task 32 da Fase 2: divergencias detectadas
-  // pela conciliacao. Como toda tabela multi-tenant, precisa de linha do tenant B,
-  // senao o teste meta reprova e o T1 passaria a toa.
+  // fin.reconciliation_log nasceu na Task 32 da Fase 2: divergências detectadas
+  // pela conciliação. Como toda tabela multi-tenant, precisa de linha do tenant B,
+  // senão o teste meta reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO fin.reconciliation_log
        (tenant_id, id, reconciled_date, provider_payment_id, entry_id, kind,
@@ -746,7 +746,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   // ── Agenda (sched) ─────────────────────────────────────────────────────────
   //
   // As tabelas sched.* nasceram na Fase 1 (Tasks 37-41). Como toda tabela
-  // multi-tenant, precisam de linha do tenant B, senao o teste meta reprova
+  // multi-tenant, precisam de linha do tenant B, senão o teste meta reprova
   // e o T1 passaria a toa.
 
   await admin.query(
@@ -810,9 +810,9 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.SCHED_PROCEDURE_A, F.SCHED_PROCEDURE_B],
   );
 
-  // closed_at e close_reason preenchidos de proposito: a entrada ja "saiu da fila"
-  // para nao interferir nos testes de 25-waitlist que criam os proprios candidatos.
-  // O indice parcial ux_waitlist_ativa so cobre closed_at IS NULL.
+  // closed_at e close_reason preenchidos de propósito: a entrada já "saiu da fila"
+  // para não interferir nos testes de 25-waitlist que criam os próprios candidatos.
+  // O índice parcial ux_waitlist_ativa só cobre closed_at IS NULL.
   await admin.query(
     `INSERT INTO sched.waitlist
        (tenant_id, id, patient_id, clinic_id, procedure_id, created_by,
@@ -918,8 +918,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
 
   // ── Financeiro Fase 3 ─────────────────────────────────────────────────────
   //
-  // As tabelas fin.* da Fase 3 (contas bancarias, centros de custo, fornecedores,
-  // parcelamento, recorrencia, transferencia, split, repasse). Como toda tabela
+  // As tabelas fin.* da Fase 3 (contas bancárias, centros de custo, fornecedores,
+  // parcelamento, recorrência, transferência, split, repasse). Como toda tabela
   // multi-tenant, precisam de linha do tenant B.
 
   await admin.query(
@@ -936,8 +936,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B, F.FIN_SUPPLIER_A, F.FIN_SUPPLIER_B],
   );
 
-  // Segunda conta bancaria por tenant (a primeira, "Caixa Geral", foi criada
-  // pelo trigger de provisioning na migration 0088). Necessaria para fin.transfer
+  // Segunda conta bancária por tenant (a primeira, "Caixa Geral", foi criada
+  // pelo trigger de provisioning na migration 0088). Necessária para fin.transfer
   // que exige from <> to.
   await admin.query(
     `INSERT INTO fin.bank_account
@@ -947,7 +947,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B, F.BANK_ACCOUNT_2_A, F.BANK_ACCOUNT_2_B],
   );
 
-  // Lancamentos extras para a transferencia (debito e credito).
+  // Lançamentos extras para a transferência (débito e crédito).
   await admin.query(
     `INSERT INTO fin.entry
        (tenant_id, id, kind, professional_id, clinic_id, description,
@@ -988,8 +988,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
   );
 
-  // A transferencia precisa de from <> to e de dois lancamentos (debito e credito).
-  // O "Caixa Geral" (criado pelo trigger) e a origem; a segunda conta e o destino.
+  // A transferência precisa de from <> to e de dois lançamentos (débito e crédito).
+  // O "Caixa Geral" (criado pelo trigger) é a origem; a segunda conta é o destino.
   // Usamos subquery para pegar o id da conta default (gen_random_uuid pelo trigger).
   await admin.query(
     `INSERT INTO fin.transfer
@@ -1068,7 +1068,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // O trigger fn_update_current_stock atualiza inv.product.current_stock
-  // apos cada INSERT em stock_movement.
+  // após cada INSERT em stock_movement.
   await admin.query(
     `INSERT INTO inv.stock_movement
        (tenant_id, id, product_id, kind, quantity, reason,
@@ -1092,8 +1092,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // tiss.operadora nasceu na Task 1 da Fase 4: cadastro da operadora de plano de
-  // saude por tenant. Como toda tabela multi-tenant, precisa de linha do tenant B,
-  // senao o teste meta ("o seed realmente criou linha do tenant B em toda tabela
+  // saúde por tenant. Como toda tabela multi-tenant, precisa de linha do tenant B,
+  // senão o teste meta ("o seed realmente criou linha do tenant B em toda tabela
   // multi-tenant") reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO tiss.operadora
@@ -1106,7 +1106,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // tiss.contrato nasceu na Task 2 da Fase 4: vinculo operadora x prestador.
+  // tiss.contrato nasceu na Task 2 da Fase 4: vínculo operadora x prestador.
   // Como toda tabela multi-tenant, precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO tiss.contrato
@@ -1120,7 +1120,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // tiss.paciente_convenio nasceu na Task 3 da Fase 4: vinculo paciente x operadora
+  // tiss.paciente_convenio nasceu na Task 3 da Fase 4: vínculo paciente x operadora
   // (carteirinha). Como toda tabela multi-tenant, precisa de linha do tenant B.
   await admin.query(
     `INSERT INTO tiss.paciente_convenio
@@ -1137,14 +1137,14 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // tiss.encounter_guia_consulta nasceu na Fase 4 (bloco 03, migration 0115):
-  // guia de consulta TISS como projecao do atendimento. Como toda tabela
-  // multi-tenant, precisa de linha do tenant B, senao o teste meta reprova e o
-  // T1 passaria a toa. A insercao vai como superusuario.
+  // guia de consulta TISS como projeção do atendimento. Como toda tabela
+  // multi-tenant, precisa de linha do tenant B, senão o teste meta reprova e o
+  // T1 passaria a toa. A inserção vai como superusuário.
   //
-  // Os campos do prestador (cnes, conselho, numero, uf, cbos) vem do
-  // PROFISSIONAL e da CLINICA do atendimento, nunca repetidos como literal.
+  // Os campos do prestador (cnes, conselho, numero, uf, cbos) vêm do
+  // PROFISSIONAL e da CLÍNICA do atendimento, nunca repetidos como literal.
   // data_atendimento vem de e.occurred_date. numero_guia_prestador usa um
-  // literal porque o seed nao passa pela funcao de contador.
+  // literal porque o seed não passa pela função de contador.
   await admin.query(
     `INSERT INTO tiss.encounter_guia_consulta
        (tenant_id, id, encounter_id, encounter_version_id, operadora_id,
@@ -1183,7 +1183,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
 
   // tiss.guia_ajuste nasceu na Fase 4 (bloco 03, migration 0116): ajuste de
   // faturamento append-only. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta reprova e o T1 passaria a toa.
+  // tenant B, senão o teste meta reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO tiss.guia_ajuste
        (tenant_id, id, guia_id, campo_alterado, valor_anterior, valor_novo,
@@ -1201,7 +1201,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
 
   // tiss.guia_counter nasceu na Fase 4 (bloco 03, migration 0117): contador de
   // numero_guia_prestador por tenant. next_value = 3 porque o seed consome DOIS
-  // numeros: o '1' da guia de consulta e o '2' da guia SP/SADT, mais abaixo.
+  // números: o '1' da guia de consulta e o '2' da guia SP/SADT, mais abaixo.
   await admin.query(
     `INSERT INTO tiss.guia_counter (tenant_id, next_value) VALUES
        ($1, 3),
@@ -1209,9 +1209,9 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
     [F.TENANT_A, F.TENANT_B],
   );
 
-  // tiss.guia_pendencia nasceu na Fase 4 (bloco 05, migration 0120): pendencia
-  // criada quando guia pertence a lote ja enviado e o prontuario e retificado.
-  // Como toda tabela multi-tenant, precisa de linha do tenant B, senao o teste
+  // tiss.guia_pendencia nasceu na Fase 4 (bloco 05, migration 0120): pendência
+  // criada quando guia pertence a lote já enviado e o prontuário é retificado.
+  // Como toda tabela multi-tenant, precisa de linha do tenant B, senão o teste
   // meta ("o seed realmente criou linha do tenant B em toda tabela multi-tenant")
   // reprova e o T1 passaria a toa.
   await admin.query(
@@ -1227,12 +1227,12 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // tiss.lote_number_counter nasceu na Fase 4 (bloco 06, migration 0121):
-  // contador de numero de lote por operadora. Como toda tabela multi-tenant,
+  // contador de número de lote por operadora. Como toda tabela multi-tenant,
   // precisa de linha do tenant B.
   //
-  // next_value = 3 porque o seed consome DOIS numeros de lote: o '1' do lote de
-  // consulta e o '2' do lote de SP/SADT, mais abaixo. Contador que nao reflete o
-  // que ja foi gasto entrega numero repetido na primeira criacao real.
+  // next_value = 3 porque o seed consome DOIS números de lote: o '1' do lote de
+  // consulta e o '2' do lote de SP/SADT, mais abaixo. Contador que não reflete o
+  // que já foi gasto entrega número repetido na primeira criação real.
   await admin.query(
     `INSERT INTO tiss.lote_number_counter
        (tenant_id, operadora_id, next_value) VALUES
@@ -1243,7 +1243,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
 
   // tiss.lote nasceu na Fase 4 (bloco 06, migration 0121): agrupamento de guias
   // para envio a operadora. Como toda tabela multi-tenant, precisa de linha do
-  // tenant B, senao o teste meta ("o seed realmente criou linha do tenant B em
+  // tenant B, senão o teste meta ("o seed realmente criou linha do tenant B em
   // toda tabela multi-tenant") reprova e o T1 passaria a toa.
   await admin.query(
     `INSERT INTO tiss.lote
@@ -1257,9 +1257,9 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // tiss.lote_guia nasceu na Fase 4 (bloco 06, migration 0122): juncao
+  // tiss.lote_guia nasceu na Fase 4 (bloco 06, migration 0122): junção
   // many-to-many entre lote e guia de consulta com ordem. Como toda tabela
-  // multi-tenant, precisa de linha do tenant B, senao o teste meta reprova e
+  // multi-tenant, precisa de linha do tenant B, senão o teste meta reprova e
   // o T1 passaria a toa.
   await admin.query(
     `INSERT INTO tiss.lote_guia
@@ -1274,20 +1274,20 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   // ── Fase 4, blocos 07-09 — SP/SADT, retorno, glosa e recurso ─────────────
   //
   // Nove tabelas multi-tenant tinham linha do tenant A e NENHUMA do tenant B.
-  // O canario de 04-t1-t2 ("o seed realmente criou linha do tenant B em toda
-  // tabela multi-tenant") reprovava, e reprovava com razao: sem linha do B, o
-  // T1 daquelas tabelas passava por vacuidade — nao existia dado alheio para
-  // vazar, entao a RLS nunca chegou a ser exercitada ali. Sao justamente as
-  // tabelas de valor a receber e de contestacao de glosa.
+  // O canário de 04-t1-t2 ("o seed realmente criou linha do tenant B em toda
+  // tabela multi-tenant") reprovava, e reprovava com razão: sem linha do B, o
+  // T1 daquelas tabelas passava por vacuidade — não existia dado alheio para
+  // vazar, então a RLS nunca chegou a ser exercitada ali. São justamente as
+  // tabelas de valor a receber e de contestação de glosa.
   //
-  // Onde um CHECK tem dois ramos, o seed usa um em cada tenant de proposito:
-  // demonstrativo A e 'pagamento' (exige data_pagamento) e B e 'analise' (exige
-  // data_pagamento nula); a guia SADT de A vai sem autorizacao e a de B com
-  // senha e data. Assim uma linha nao passa a valer pela outra.
+  // Onde um CHECK tem dois ramos, o seed usa um em cada tenant de propósito:
+  // demonstrativo A é 'pagamento' (exige data_pagamento) e B é 'analise' (exige
+  // data_pagamento nula); a guia SADT de A vai sem autorização e a de B com
+  // senha e data. Assim uma linha não passa a valer pela outra.
 
-  // tiss.encounter_guia_sadt (migration 0151): guia de servico profissional /
-  // SADT projetada do atendimento. Os dados do prestador saem da CLINICA e do
-  // PROFISSIONAL do atendimento, nunca repetidos como literal — mesmo padrao da
+  // tiss.encounter_guia_sadt (migration 0151): guia de serviço profissional /
+  // SADT projetada do atendimento. Os dados do prestador saem da CLÍNICA e do
+  // PROFISSIONAL do atendimento, nunca repetidos como literal — mesmo padrão da
   // guia de consulta.
   await admin.query(
     `INSERT INTO tiss.encounter_guia_sadt
@@ -1330,8 +1330,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
   );
 
   // tiss.encounter_guia_sadt_item (migration 0151): os procedimentos da guia
-  // SADT. `codigo_tabela` nunca e '18' (CHECK): 18 e a tabela de pacotes, que
-  // nao se detalha item a item.
+  // SADT. `codigo_tabela` nunca é '18' (CHECK): 18 é a tabela de pacotes, que
+  // não se detalha item a item.
   await admin.query(
     `INSERT INTO tiss.encounter_guia_sadt_item
        (tenant_id, guia_id, sequencial_item, data_execucao, codigo_tabela,
@@ -1349,8 +1349,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.ENCOUNTER_A_JOANA, F.ENCOUNTER_B_MARCOS],
   );
 
-  // Lote SO de SP/SADT. Ver o comentario de LOTE_SADT_A em fixtures.ts: o XSD
-  // trata `guiasTISS` como choice, entao lote nao mistura consulta com SADT.
+  // Lote SÓ de SP/SADT. Ver o comentário de LOTE_SADT_A em fixtures.ts: o XSD
+  // trata `guiasTISS` como choice, então lote não mistura consulta com SADT.
   await admin.query(
     `INSERT INTO tiss.lote
        (tenant_id, id, operadora_id, numero_lote, tiss_version, created_by) VALUES
@@ -1362,7 +1362,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // tiss.lote_guia_sadt (migration 0152): juncao lote x guia SADT.
+  // tiss.lote_guia_sadt (migration 0152): junção lote x guia SADT.
   await admin.query(
     `INSERT INTO tiss.lote_guia_sadt
        (tenant_id, lote_id, guia_id, sequencial_item) VALUES
@@ -1396,7 +1396,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
 
   // tiss.demonstrativo_item (migration 0124): a linha do demonstrativo que
   // corresponde a uma guia. `glosa_codigo` e `glosa_descricao` andam juntos —
-  // o CHECK aceita os dois nulos ou os dois preenchidos, nunca um so.
+  // o CHECK aceita os dois nulos ou os dois preenchidos, nunca um só.
   await admin.query(
     `INSERT INTO tiss.demonstrativo_item
        (tenant_id, id, demonstrativo_id, guia_id, numero_guia_prestador,
@@ -1413,7 +1413,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.GUIA_CONSULTA_A, F.GUIA_CONSULTA_B],
   );
 
-  // tiss.glosa (migration 0125): o valor recusado, ja individualizado. Status
+  // tiss.glosa (migration 0125): o valor recusado, já individualizado. Status
   // 'contestada' nos dois porque cada um recebe um recurso logo abaixo — o
   // CHECK exige resolved_at/resolved_by NULOS fora de 'aceita'/'revertida'.
   await admin.query(
@@ -1431,8 +1431,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.VERSION_A_JOANA_ORIGINAL, F.VERSION_B_MARCOS_ORIGINAL],
   );
 
-  // tiss.recurso_glosa (migration 0126): a contestacao. 'rascunho' satisfaz os
-  // tres CHECKs de estado de uma vez — sent_at, protocolo_operadora e
+  // tiss.recurso_glosa (migration 0126): a contestação. 'rascunho' satisfaz os
+  // três CHECKs de estado de uma vez — sent_at, protocolo_operadora e
   // resolved_at todos nulos.
   await admin.query(
     `INSERT INTO tiss.recurso_glosa
@@ -1452,7 +1452,7 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
 
-  // tiss.recurso_glosa_item (migration 0126): a glosa especifica que o recurso
+  // tiss.recurso_glosa_item (migration 0126): a glosa específica que o recurso
   // contesta, com o valor pedido de volta.
   await admin.query(
     `INSERT INTO tiss.recurso_glosa_item
@@ -1468,8 +1468,8 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.GLOSA_A, F.GLOSA_B],
   );
 
-  // tiss.recurso_number_counter (migration 0126): contador de numero de recurso
-  // por operadora. next_value = 2 porque o recurso '1' acima ja foi consumido.
+  // tiss.recurso_number_counter (migration 0126): contador de número de recurso
+  // por operadora. next_value = 2 porque o recurso '1' acima já foi consumido.
   await admin.query(
     `INSERT INTO tiss.recurso_number_counter
        (tenant_id, operadora_id, next_value) VALUES

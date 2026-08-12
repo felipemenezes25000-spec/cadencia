@@ -1,7 +1,7 @@
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-// DATABASE_URL_ADMIN, nao DATABASE_URL: o papel `api` so passa a existir na
+// DATABASE_URL_ADMIN, não DATABASE_URL: o papel `api` só passa a existir na
 // migration 0001, e este teste roda antes de qualquer migration.
 const DATABASE_URL_ADMIN =
   process.env['DATABASE_URL_ADMIN'] ?? 'postgres://postgres@localhost:5433/cadencia';
@@ -36,17 +36,17 @@ describe('cluster local de desenvolvimento', () => {
   });
 
   it('nao tem pg_partman disponivel na imagem, e a ausencia e uma decisao registrada, nao um esquecimento', async () => {
-    // pg_partman e a SETIMA extensao da secao 2.3 e NAO acompanha a imagem oficial
-    // (nao e contrib). A Fase 0 cria as particoes com DDL declarativa nativa, escrita
-    // a mao na migration; a manutencao automatica por pg_partman entra junto com a
-    // imagem propria.
+    // pg_partman é a SÉTIMA extensão da seção 2.3 e NÃO acompanha a imagem oficial
+    // (não é contrib). A Fase 0 cria as partições com DDL declarativa nativa, escrita
+    // a mão na migration; a manutenção automática por pg_partman entra junto com a
+    // imagem própria.
     //
-    // Consulta pg_available_extensions (o que a IMAGEM oferece), nao pg_extension
-    // (o que esta INSTALADO): CREATE EXTENSION pg_partman e fisicamente impossivel
-    // sem os arquivos da extensao na imagem, entao um teste contra pg_extension
-    // nunca falharia pelo motivo que declara. Este teste falha no dia em que alguem
-    // trocar postgres:18 por uma imagem propria que traga pg_partman — que e quando
-    // o dev diverge de producao e a decisao precisa ser revisitada conscientemente.
+    // Consulta pg_available_extensions (o que a IMAGEM oferece), não pg_extension
+    // (o que está INSTALADO): CREATE EXTENSION pg_partman é fisicamente impossível
+    // sem os arquivos da extensão na imagem, então um teste contra pg_extension
+    // nunca falharia pelo motivo que declara. Este teste falha no dia em que alguém
+    // trocar postgres:18 por uma imagem própria que traga pg_partman — que é quando
+    // o dev diverge de produção e a decisão precisa ser revisitada conscientemente.
     const result = await client.query<{ name: string }>(
       "SELECT name FROM pg_available_extensions WHERE name = 'pg_partman'",
     );
@@ -70,7 +70,7 @@ describe('cluster local de desenvolvimento', () => {
   it('pg_stat_statements esta pre-carregado (shared_preload_libraries), nao so instalado', async () => {
     // CREATE EXTENSION pg_stat_statements sem shared_preload_libraries cria a view
     // vazia, silenciosamente, sem erro. Este teste garante que a config exigida no
-    // command do docker-compose.yml continua de pe, e nao so a extensao instalada.
+    // command do docker-compose.yml continua de pé, e não só a extensão instalada.
     const preloaded = await scalar("SELECT current_setting('shared_preload_libraries') AS v");
     expect(preloaded.split(',').map((s) => s.trim())).toContain('pg_stat_statements');
   });

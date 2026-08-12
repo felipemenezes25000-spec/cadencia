@@ -63,7 +63,7 @@ describe('invariante 8 — os cinco erros que so aparecem meses depois', () => {
 
   it('reprova o valor atendimento em app.consent_type — bloquear atendimento esperando aceite contraria o art. 11 II f', async () => {
     const violacoes = await inRollbackTx(async (c) => {
-      // DDL e transacional: o tipo nasce e morre dentro desta transacao.
+      // DDL é transacional: o tipo nasce e morre dentro desta transação.
       await c.query('DROP TYPE IF EXISTS app.consent_type');
       await c.query("CREATE TYPE app.consent_type AS ENUM ('marketing','pesquisa','compartilhamento','atendimento')");
       return ddlLintViolations(c);

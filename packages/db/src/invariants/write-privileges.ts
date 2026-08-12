@@ -4,9 +4,9 @@ import { catalogPool, closeCatalogPool } from './catalog';
 import { PRIVILEGES_FILE, readEffectiveGrants, writeDeclaredGrants } from './inv07-privileges';
 
 /**
- * `pnpm db:privileges` — regrava packages/db/privileges.json a partir do catalogo.
- * O arquivo gerado e RASCUNHO: ele descreve o estado atual do banco. O que o
- * invariante 7 garante daqui em diante e que ninguem muda esse estado sem revisao.
+ * `pnpm db:privileges` — regrava packages/db/privileges.json a partir do catálogo.
+ * O arquivo gerado é RASCUNHO: ele descreve o estado atual do banco. O que o
+ * invariante 7 garante daqui em diante é que ninguém muda esse estado sem revisão.
  */
 const envPath = resolve(process.cwd(), '.env');
 if (existsSync(envPath)) {

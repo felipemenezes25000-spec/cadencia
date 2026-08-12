@@ -1,10 +1,10 @@
 /**
- * Handler de confirmacao de agendamento.
+ * Handler de confirmação de agendamento.
  *
- * Recebe os dados do agendamento JA RESOLVIDOS (por L3/worker) e as regras de
- * automacao do tenant. Retorna as entradas de outbox a serem enfileiradas.
+ * Recebe os dados do agendamento JÁ RESOLVIDOS (por L3/worker) e as regras de
+ * automação do tenant. Retorna as entradas de outbox a serem enfileiradas.
  *
- * O messaging NAO importa scheduling — a composicao e pelo worker/L3.
+ * O messaging NÃO importa scheduling — a composição é pelo worker/L3.
  */
 
 export type AutomationTrigger =

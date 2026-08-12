@@ -6,10 +6,10 @@ export interface AlertJobResult {
 }
 
 /**
- * Job diario de alerta de estoque. Roda com o papel `jobs` (BYPASSRLS),
- * NAO usa withTenantTx. Varre todos os tenants:
- * 1. Cria alerta para produtos com current_stock < min_stock que nao tem alerta aberto.
- * 2. Resolve alertas cujo produto voltou ao nivel (current_stock >= min_stock).
+ * Job diário de alerta de estoque. Roda com o papel `jobs` (BYPASSRLS),
+ * NÃO usa withTenantTx. Varre todos os tenants:
+ * 1. Cria alerta para produtos com current_stock < min_stock que não têm alerta aberto.
+ * 2. Resolve alertas cujo produto voltou ao nível (current_stock >= min_stock).
  * 3. Enfileira evento STOCK_LOW no outbox para cada alerta criado.
  */
 export async function runStockAlertJob(jobsPool: Pool): Promise<AlertJobResult> {
@@ -20,7 +20,7 @@ export async function runStockAlertJob(jobsPool: Pool): Promise<AlertJobResult> 
   try {
     await c.query('BEGIN');
 
-    // 1. Criar alertas para produtos abaixo do minimo sem alerta aberto
+    // 1. Criar alertas para produtos abaixo do mínimo sem alerta aberto
     const { rows: newAlerts } = await c.query<{
       tenant_id: string; product_id: string;
       product_name: string; current_stock: string; min_stock: string;
@@ -60,7 +60,7 @@ export async function runStockAlertJob(jobsPool: Pool): Promise<AlertJobResult> 
          Number(alert.current_stock), Number(alert.min_stock)]);
     }
 
-    // 3. Resolver alertas cujo produto voltou ao nivel
+    // 3. Resolver alertas cujo produto voltou ao nível
     const { rowCount: resolvedCount } = await c.query(
       `UPDATE inv.stock_alert a
           SET resolved_at = clock_timestamp()

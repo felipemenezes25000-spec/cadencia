@@ -32,9 +32,9 @@ describe('anexos do prontuario', () => {
     const a = r.json() as {
       attachmentId: string; sha256: string; sizeBytes: number };
     expect(a.sizeBytes).toBe(PDF.length);
-    // O hash e calculado no SERVIDOR, sobre os bytes que chegaram. Aceitar um
-    // hash enviado pelo cliente seria aceitar a afirmacao de quem envia sobre o
-    // proprio arquivo — e o anexo e prova clinica.
+    // O hash é calculado no SERVIDOR, sobre os bytes que chegaram. Aceitar um
+    // hash enviado pelo cliente seria aceitar a afirmação de quem envia sobre o
+    // próprio arquivo — e o anexo é prova clínica.
     expect(a.sha256).toMatch(/^[0-9a-f]{64}$/);
 
     await app.close();
@@ -69,7 +69,7 @@ describe('anexos do prontuario', () => {
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('application/pdf');
     // Byte a byte igual ao que subiu: anexo que volta diferente do que entrou
-    // nao serve como prova de nada.
+    // não serve como prova de nada.
     expect(Buffer.from(r.rawPayload).equals(PDF)).toBe(true);
 
     await app.close();
@@ -80,7 +80,7 @@ describe('anexos do prontuario', () => {
     const r = await app.inject({
       method: 'POST', url: '/v1/anexos',
       payload: corpo({ conteudoBase64: '' }), ...auth(s) });
-    // CHECK (size_bytes > 0) no banco. Recusar aqui devolve erro de validacao
+    // CHECK (size_bytes > 0) no banco. Recusar aqui devolve erro de validação
     // em vez de 500 vindo do Postgres.
     expect(r.statusCode).toBe(400);
     await app.close();
@@ -106,7 +106,7 @@ describe('anexos do prontuario', () => {
     const r = await app.inject({
       method: 'GET', url: `/v1/pacientes/${recepcao.patientId}/anexos`,
       ...auth(recepcao) });
-    // Resultado de exame e dado clinico. Quem agenda nao precisa dele.
+    // Resultado de exame é dado clínico. Quem agenda não precisa dele.
     expect(r.statusCode).toBe(403);
     await app.close();
   });

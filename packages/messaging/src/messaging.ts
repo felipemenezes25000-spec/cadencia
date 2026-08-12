@@ -56,7 +56,7 @@ export async function resolveConversation(
   // 3. Criar conversa nova.
   let patientId: string | null = i.patientId ?? null;
 
-  // Se patientId nao foi fornecido, tenta lookup pelo telefone do paciente.
+  // Se patientId não foi fornecido, tenta lookup pelo telefone do paciente.
   if (patientId === null) {
     const paciente = await tx.query<{ id: string }>(
       `SELECT id FROM clin.patient
@@ -152,7 +152,7 @@ export async function receiveInbound(
   if (ci.rows.length === 0) return err({ kind: 'canal_nao_encontrado' });
 
   // 2. Gravar payload bruto em inbound_event — ANTES de qualquer parse.
-  //    Parser bugado nao perde mensagem de paciente.
+  //    Parser bugado não perde mensagem de paciente.
   const eventId = uuidv7();
   await tx.query(
     `INSERT INTO msg.inbound_event

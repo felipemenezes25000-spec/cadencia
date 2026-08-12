@@ -2,13 +2,13 @@ import type { TxClient } from '@cadencia/db';
 import type { VariationSnapshot } from './variation-types';
 
 /**
- * Persiste o snapshot de variacao em rpt.variation_snapshot via o papel `jobs`.
- * Esta funcao roda no worker (L3), NAO no caminho de requisicao.
- * Usa INSERT ... ON CONFLICT para upsert: se o par de periodos ja foi computado,
+ * Persiste o snapshot de variação em rpt.variation_snapshot via o papel `jobs`.
+ * Esta função roda no worker (L3), NÃO no caminho de requisição.
+ * Usa INSERT ... ON CONFLICT para upsert: se o par de períodos já foi computado,
  * atualiza o resultado.
  *
- * IMPORTANTE: usa a tabela rpt.variation_snapshot diretamente (nao a view
- * app_rpt), porque esta funcao roda como `jobs` (BYPASSRLS) no worker.
+ * IMPORTANTE: usa a tabela rpt.variation_snapshot diretamente (não a view
+ * app_rpt), porque esta função roda como `jobs` (BYPASSRLS) no worker.
  */
 export async function persistVariationSnapshot(
   tx: TxClient,
@@ -32,8 +32,8 @@ export async function persistVariationSnapshot(
 }
 
 /**
- * Le o ultimo snapshot de variacao via app_rpt (view security_barrier).
- * Usada pelo caminho de requisicao (api), roda sob RLS.
+ * Lê o último snapshot de variação via app_rpt (view security_barrier).
+ * Usada pelo caminho de requisição (api), roda sob RLS.
  */
 export async function readVariationSnapshot(
   tx: TxClient,

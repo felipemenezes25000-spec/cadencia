@@ -9,14 +9,14 @@ import { useSessao } from '../../../src/sessao';
 /**
  * A agenda do dia em papel.
  *
- * Existe porque a clinica imprime. Recepcao com a folha no balcao, medico com a
- * lista no bolso entre uma sala e outra, e o dia em que a internet cai — que e
+ * Existe porque a clínica imprime. Recepção com a folha no balcão, médico com a
+ * lista no bolso entre uma sala e outra, e o dia em que a internet cai — que é
  * justamente o dia em que a agenda impressa salva o expediente.
  *
- * O que sai no papel e deliberadamente MENOS do que a tela: horario, paciente,
- * profissional e procedimento. Convenio, telefone e observacao ficam de fora —
- * papel de agenda circula pela clinica, fica em cima de mesa e vai para o lixo
- * comum. Cada campo a mais e um dado de paciente exposto sem controle.
+ * O que sai no papel é deliberadamente MENOS do que a tela: horário, paciente,
+ * profissional e procedimento. Convênio, telefone e observação ficam de fora —
+ * papel de agenda circula pela clínica, fica em cima de mesa e vai para o lixo
+ * comum. Cada campo a mais é um dado de paciente exposto sem controle.
  */
 
 function horaLocal(iso: string, fuso: string): string {
@@ -48,11 +48,11 @@ function ImprimirInner() {
       `/v1/agenda/dia?dia=${dia}`, { clinicId, csrfToken })
       .then((r) => {
         if (!vivo) return;
-        // Cancelado nao entra no papel: quem le a folha quer saber quem VEM.
+        // Cancelado não entra no papel: quem lê a folha quer saber quem VEM.
         setFila(r.fila.filter((l) => l.status !== 'cancelado'));
         setCarregando(false);
       })
-      .catch(() => { if (vivo) { setErro('Nao foi possivel carregar a agenda.'); setCarregando(false); } });
+      .catch(() => { if (vivo) { setErro('Não foi possível carregar a agenda.'); setCarregando(false); } });
     return () => { vivo = false; };
   }, [dia, clinicId, csrfToken]);
 
@@ -97,7 +97,7 @@ function ImprimirInner() {
               <th className="py-2 pr-3">Paciente</th>
               <th className="py-2 pr-3">Profissional</th>
               <th className="py-2 pr-3">Procedimento</th>
-              <th className="py-2">Situacao</th>
+              <th className="py-2">Situação</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +105,7 @@ function ImprimirInner() {
               <tr
                 key={l.appointmentId}
                 // `break-inside-avoid`: uma linha partida entre duas folhas faz
-                // o horario ficar numa pagina e o nome na outra.
+                // o horário ficar numa página e o nome na outra.
                 className="break-inside-avoid border-b border-line last:border-b-0"
               >
                 <td className="py-2 pr-3 font-mono tabular-nums">
@@ -122,9 +122,9 @@ function ImprimirInner() {
       )}
 
       <footer className="mt-6 border-t border-line pt-3 text-xs text-text-muted">
-        {/* Sem carimbo de hora da impressao: a folha circula e vai para o lixo
-            comum, entao ela carrega o minimo. A data do dia ja esta no topo. */}
-        Documento interno. Contem dado de paciente — descarte com cuidado.
+        {/* Sem carimbo de hora da impressão: a folha circula e vai para o lixo
+            comum, então ela carrega o mínimo. A data do dia já está no topo. */}
+        Documento interno. Contém dado de paciente — descarte com cuidado.
       </footer>
     </div>
   );

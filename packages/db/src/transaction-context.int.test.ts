@@ -12,9 +12,9 @@ beforeAll(async () => {
   admin = new Pool({ connectionString: process.env.DATABASE_URL_ADMIN, max: 1 });
   api = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
 
-  // Tabela-sonda: existe so para provar o NOINHERIT do papel `api`. O GRANT vai
-  // para app_rw e NAO para api — que e exatamente a situacao de toda tabela do
-  // sistema. Sem SET LOCAL ROLE app_rw, `api` nao le nada.
+  // Tabela-sonda: existe só para provar o NOINHERIT do papel `api`. O GRANT vai
+  // para app_rw e NÃO para api — que é exatamente a situação de toda tabela do
+  // sistema. Sem SET LOCAL ROLE app_rw, `api` não lê nada.
   await admin.query('CREATE TABLE IF NOT EXISTS public.noinherit_probe (id int PRIMARY KEY)');
   await admin.query('GRANT USAGE ON SCHEMA public TO app_rw');
   await admin.query('GRANT SELECT ON public.noinherit_probe TO app_rw');
@@ -26,7 +26,7 @@ afterAll(async () => {
   await api.end();
 });
 
-/** Abre transacao no papel api, aplica o contexto pedido e devolve o cliente. */
+/** Abre transação no papel api, aplica o contexto pedido e devolve o cliente. */
 async function beginAs(
   ctx: { tenantId?: string; userId?: string; clinicId?: string; actorKind: string },
 ): Promise<PoolClient> {
@@ -62,7 +62,7 @@ describe('leitura de GUC com nullif (§3.2)', () => {
   it('sem o nullif, a mesma leitura levantaria 22P02 e abortaria a transacao do worker', async () => {
     const client = await beginAs({ tenantId: TENANT, actorKind: 'system' });
     try {
-      // Prova direta do motivo do nullif. Este e o SQL que o desenho original tinha.
+      // Prova direta do motivo do nullif. Este é o SQL que o desenho original tinha.
       await expect(
         client.query(`SELECT current_setting('app.user_id', true)::uuid`),
       ).rejects.toMatchObject({ code: '22P02' });
@@ -124,7 +124,7 @@ describe('schemas e extensoes', () => {
     expect(owners).toEqual({
       app: 'app_owner', clin: 'app_owner', fin: 'app_owner', id: 'app_owner',
       ref: 'app_owner', rpt: 'rpt_owner', tiss: 'app_owner',
-      // A trilha nasce na 0009 e o schema e de audit_owner: nem app_owner o possui.
+      // A trilha nasce na 0009 e o schema é de audit_owner: nem app_owner o possui.
       audit: 'audit_owner',
     });
   });

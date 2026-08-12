@@ -26,8 +26,8 @@ const BASE: LoteSadtInput = {
     },
     caraterAtendimento: '1',
     contratadoExecutante: { cnpjContratado: '12345678000199', cnes: '1234567' },
-    // `dm_tipoAtendimento` nao e sequencial: {01,02,03,04,08,09,10,13,23}.
-    // '05' parece plausivel e nao existe — o schema pega.
+    // `dm_tipoAtendimento` não é sequencial: {01,02,03,04,08,09,10,13,23}.
+    // '05' parece plausível e não existe — o schema pega.
     tipoAtendimento: '04',
     indicacaoAcidente: '9',
     regimeAtendimento: '01',
@@ -71,7 +71,7 @@ describe('lote SP/SADT', () => {
     });
     const texto = new TextDecoder('iso-8859-1').decode(xml);
     // 2 x 45,00 + 1 x 30,00 = 120,00. Aceitar um total vindo de fora deixaria a
-    // guia divergir dos proprios itens — a glosa mais comum e a mais boba.
+    // guia divergir dos próprios itens — a glosa mais comum e a mais boba.
     expect(texto).toContain('<ans:valorTotalGeral>120.00</ans:valorTotalGeral>');
     expect(texto).toContain('<ans:valorProcedimentos>120.00</ans:valorProcedimentos>');
   });
@@ -92,8 +92,8 @@ describe('lote SP/SADT', () => {
     const { warnings } = serializeLoteSadt({
       ...BASE,
       guias: [{ ...BASE.guias[0]!,
-        // Travessao tipografico nao existe em ISO-8859-1. Vem de texto colado
-        // do Word, que e como metade dos nomes de clinica sao cadastrados.
+        // Travessão tipográfico não existe em ISO-8859-1. Vem de texto colado
+        // do Word, que é como metade dos nomes de clínica são cadastrados.
         nomeContratadoSolicitante: 'Clínica Aurora — Ipiranga' }],
     });
     // Trocar por '?' calado poria o nome errado na guia. O aviso deixa a

@@ -5,8 +5,8 @@ import { serializeRecursoGlosa } from './serialize-recurso-glosa';
 import type { RecursoGlosaInput } from './types';
 
 /**
- * Recurso de glosa de amostra DETERMINISTICO — os mesmos dados sempre, para
- * que o snapshot byte a byte seja reproduzivel. Nenhum campo depende de relogio.
+ * Recurso de glosa de amostra DETERMINÍSTICO — os mesmos dados sempre, para
+ * que o snapshot byte a byte seja reproduzível. Nenhum campo depende de relógio.
  */
 function recursoAmostraDeterministico(): RecursoGlosaInput {
   return {
@@ -58,20 +58,20 @@ describe('snapshot byte a byte do recurso de glosa', () => {
     expect(warnings).toEqual([]);
 
     if (!existsSync(FIXTURE_PATH)) {
-      // Primeira execucao: cria o snapshot
+      // Primeira execução: cria o snapshot
       if (!existsSync(FIXTURE_DIR)) {
         mkdirSync(FIXTURE_DIR, { recursive: true });
       }
       writeFileSync(FIXTURE_PATH, xml);
       // eslint-disable-next-line no-console
       console.log(`Snapshot criado: ${FIXTURE_PATH} (${xml.byteLength} bytes)`);
-      // NAO falha na primeira execucao — o snapshot acabou de ser criado.
+      // NÃO falha na primeira execução — o snapshot acabou de ser criado.
     }
 
     const expected = new Uint8Array(readFileSync(FIXTURE_PATH));
     expect(xml.byteLength).toBe(expected.byteLength);
 
-    // Comparacao byte a byte com diagnostico util
+    // Comparação byte a byte com diagnóstico útil
     for (let i = 0; i < xml.byteLength; i++) {
       if (xml[i] !== expected[i]) {
         const context = new TextDecoder('iso-8859-1').decode(
@@ -91,7 +91,7 @@ describe('snapshot byte a byte do recurso de glosa', () => {
     const text = new TextDecoder('iso-8859-1').decode(xml);
     expect(text).toContain('<?xml version="1.0" encoding="ISO-8859-1"?>');
     expect(text).toContain('</ans:mensagemTISS>');
-    // Verifica que o acento em "indicacao" foi preservado em ISO-8859-1
+    // Verifica que o acento em "indicação" foi preservado em ISO-8859-1
     expect(text).toContain('indicação');
   });
 

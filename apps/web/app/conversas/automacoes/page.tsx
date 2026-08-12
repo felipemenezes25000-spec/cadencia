@@ -19,32 +19,32 @@ interface RegraDaApi {
 interface TemplateDaApi { templateId: string; name: string }
 
 /**
- * Os gatilhos, em portugues de recepcao.
+ * Os gatilhos, em português de recepção.
  *
- * A API fala `APPOINTMENT_CREATED`; quem configura a clinica fala "quando marca
- * a consulta". Traduzir na borda mantem o dominio estavel e a tela legivel —
+ * A API fala `APPOINTMENT_CREATED`; quem configura a clínica fala "quando marca
+ * a consulta". Traduzir na borda mantém o domínio estável e a tela legível —
  * mostrar a constante crua faria a recepcionista ter medo de mexer.
  */
 const GATILHOS: Record<string, { nome: string; descricao: string }> = {
   APPOINTMENT_CREATED: {
-    nome: 'Confirmacao de agendamento',
-    descricao: 'Assim que a consulta e marcada, o paciente recebe os dados.',
+    nome: 'Confirmação de agendamento',
+    descricao: 'Assim que a consulta é marcada, o paciente recebe os dados.',
   },
   APPOINTMENT_REMINDER: {
     nome: 'Lembrete da consulta',
-    descricao: 'Antes do horario, para reduzir falta.',
+    descricao: 'Antes do horário, para reduzir falta.',
   },
   APPOINTMENT_CANCELLED: {
     nome: 'Aviso de cancelamento',
-    descricao: 'Quando a consulta e desmarcada.',
+    descricao: 'Quando a consulta é desmarcada.',
   },
   ENCOUNTER_FINALIZED: {
-    nome: 'Pos-consulta',
-    descricao: 'Depois do atendimento fechado, com orientacoes e pesquisa.',
+    nome: 'Pós-consulta',
+    descricao: 'Depois do atendimento fechado, com orientações e pesquisa.',
   },
 };
 
-/** "-1440" e um dia ANTES; "60" e uma hora depois. Minuto cru nao se le. */
+/** "-1440" é um dia ANTES; "60" é uma hora depois. Minuto cru não se lê. */
 function timingLegivel(minutos: number): string {
   if (minutos === 0) return 'na hora';
   const abs = Math.abs(minutos);
@@ -80,7 +80,7 @@ export default function PaginaAutomacoes() {
         nome: g?.nome ?? x.trigger,
         descricao: g?.descricao ?? '',
         // Template apagado ou de outro canal: mostra o que se sabe em vez de
-        // ficar em branco, senao a regra parece quebrada quando so falta nome.
+        // ficar em branco, senão a regra parece quebrada quando só falta nome.
         templateNome: nomeDoTemplate.get(x.templateId) ?? 'template sem nome',
         canal: (x.channel === 'sms' || x.channel === 'email' ? x.channel : 'whatsapp'),
         timing: timingLegivel(x.timingOffsetMinutes),
@@ -94,8 +94,8 @@ export default function PaginaAutomacoes() {
       <AutomacoesDeConversa
         carregar={carregar}
         aoAlternarAtiva={async (automationId, novoEstado) => {
-          // A API grava a regra INTEIRA, nao um campo. Reenviar so `active`
-          // apagaria gatilho, template e timing — entao lemos a regra vigente e
+          // A API grava a regra INTEIRA, não um campo. Reenviar só `active`
+          // apagaria gatilho, template e timing — então lemos a regra vigente e
           // devolvemos ela com o interruptor trocado.
           const atuais = await apiFetch<{ itens: RegraDaApi[] }>(
             '/v1/messaging/automations', { clinicId, csrfToken });

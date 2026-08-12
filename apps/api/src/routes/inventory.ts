@@ -1,12 +1,12 @@
 // apps/api/src/routes/inventory.ts
 //
-// Rotas de estoque: produtos, movimentacoes e alertas.
+// Rotas de estoque: produtos, movimentações e alertas.
 // Leitura: inventory.read. Escrita: inventory.write.
 //
-// DIVERGENCIA: o plano usa clinic_id no INSERT de produto e resulting_stock/created_by
+// DIVERGÊNCIA: o plano usa clinic_id no INSERT de produto e resulting_stock/created_by
 // no stock_movement. O schema real (migrations 0100-0101) usa tenant_id com DEFAULT,
 // moved_by, reference_type, e um trigger que recalcula current_stock a partir dos
-// movimentos. A implementacao segue o schema real.
+// movimentos. A implementação segue o schema real.
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -65,18 +65,18 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
       [id, b.name, b.sku ?? null, b.unit, b.minStock, b.currentStock]);
 
     /**
-     * O saldo inicial precisa existir como MOVIMENTO, nao so como coluna.
+     * O saldo inicial precisa existir como MOVIMENTO, não só como coluna.
      *
-     * `inv.product.current_stock` e um valor derivado: o trigger
+     * `inv.product.current_stock` é um valor derivado: o trigger
      * `trg_update_current_stock` (migration 0101) recalcula a coluna com
-     * `SUM` sobre TODOS os movimentos do produto e sobrescreve o que estava la.
-     * Gravar o saldo inicial so na coluna deixava o produto fora do razao — e o
+     * `SUM` sobre TODOS os movimentos do produto e sobrescreve o que estava lá.
+     * Gravar o saldo inicial só na coluna deixava o produto fora do razão — e o
      * PRIMEIRO movimento apagava esse saldo: produto criado com 100 unidades,
-     * uma saida de 5, e a soma dos movimentos da -5, que vira o novo estoque.
+     * uma saída de 5, e a soma dos movimentos dá -5, que vira o novo estoque.
      * Cem unidades somem do sistema no primeiro uso.
      *
-     * Registrando a abertura como `ajuste`, a coluna e o razao passam a contar
-     * a mesma historia, e o inventario tem de onde reconstruir o saldo.
+     * Registrando a abertura como `ajuste`, a coluna e o razão passam a contar
+     * a mesma história, e o inventário tem de onde reconstruir o saldo.
      */
     if (b.currentStock > 0) {
       await tx.query(
@@ -175,7 +175,7 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
     return { productId: b.productId };
   }));
 
-  // ── POST /v1/stock-movements — registrar movimentacao ─────────────────
+  // ── POST /v1/stock-movements — registrar movimentação ─────────────────
   r.post('/v1/stock-movements', {
     schema: {
       body: z.object({
@@ -196,12 +196,12 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
       productId: string; quantity: number; kind: string; reason: string };
     const id = uuidv7();
 
-    // Verificar se produto existe antes de inserir movimentacao
+    // Verificar se produto existe antes de inserir movimentação
     const { rowCount: exists } = await tx.query(
       `SELECT 1 FROM inv.product WHERE id = $1`, [b.productId]);
     if (exists === 0) erroDominio('produto_nao_encontrado', 404);
 
-    // Para saida, verificar se ha estoque suficiente
+    // Para saída, verificar se há estoque suficiente
     if (b.kind === 'saida') {
       const { rows: stockRows } = await tx.query<{ current_stock: string }>(
         `SELECT current_stock::text FROM inv.product WHERE id = $1`, [b.productId]);
@@ -209,7 +209,7 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
       if (cs < b.quantity) erroDominio('estoque_insuficiente', 422);
     }
 
-    // Inserir movimentacao — o trigger recalcula current_stock
+    // Inserir movimentação — o trigger recalcula current_stock
     const referenceType = b.kind === 'entrada' ? 'compra' : 'uso_atendimento';
     await tx.query(
       `INSERT INTO inv.stock_movement
@@ -226,7 +226,7 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
     return { movementId: id, newStock };
   }));
 
-  // ── GET /v1/stock-alerts — produtos abaixo do minimo ──────────────────
+  // ── GET /v1/stock-alerts — produtos abaixo do mínimo ──────────────────
   r.get('/v1/stock-alerts', {
     schema: {
       response: { 200: z.object({ itens: z.array(StockAlertSchema) }) },
@@ -256,12 +256,12 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
   }));
 
   /**
-   * O HISTORICO de movimentacao. So havia POST: dava para registrar entrada e
-   * saida e nao dava para ver o que aconteceu.
+   * O HISTÓRICO de movimentação. Só havia POST: dava para registrar entrada e
+   * saída e não dava para ver o que aconteceu.
    *
-   * Sem isso, "temos 85 caixas" e um numero sem origem — ninguem consegue dizer
-   * se a diferenca veio de uso, perda ou erro de contagem, e a primeira suspeita
-   * numa clinica sempre recai sobre pessoas.
+   * Sem isso, "temos 85 caixas" é um número sem origem — ninguém consegue dizer
+   * se a diferença veio de uso, perda ou erro de contagem, e a primeira suspeita
+   * numa clínica sempre recai sobre pessoas.
    */
   r.get('/v1/stock-movements', {
     schema: {
@@ -310,8 +310,8 @@ export async function inventoryRoutes(app: FastifyInstance): Promise<void> {
         productId: x.product_id,
         productNome: x.produto,
         kind: x.kind,
-        // `quantity` e numeric: node-postgres devolve string para nao perder
-        // casas. Meia caixa existe, entao Number e nao parseInt.
+        // `quantity` é numeric: node-postgres devolve string para não perder
+        // casas. Meia caixa existe, então Number e não parseInt.
         quantity: Number(x.quantity),
         reason: x.reason,
         referenceType: x.reference_type,

@@ -2,12 +2,12 @@ import { createHash } from 'node:crypto';
 import { ValidationError } from './errors';
 
 /**
- * Serializacao canonica JCS (RFC 8785) + pre-normalizacao Unicode NFC.
+ * Serialização canônica JCS (RFC 8785) + pré-normalização Unicode NFC.
  *
- * ESTA VERSAO NUNCA MUDA. O content_hash de clin.encounter_version e a
+ * ESTA VERSÃO NUNCA MUDA. O content_hash de clin.encounter_version e a
  * assinatura ICP-Brasil cobrem exatamente estes bytes, e o acervo tem guarda
  * de 20 anos. Se um dia for preciso outro comportamento, cria-se 'jcs-2' e o
- * verificador de 'jcs-1' permanece no repositorio para sempre.
+ * verificador de 'jcs-1' permanece no repositório para sempre.
  */
 export const CANONICAL_VERSION = 'jcs-1';
 
@@ -35,7 +35,7 @@ function serializeString(value: string): string {
       case 0x22: out += '\\"'; break;
       case 0x5c: out += '\\\\'; break;
       default:
-        // Escape minimo: fora dos controles, o caractere sai literal em UTF-8.
+        // Escape mínimo: fora dos controles, o caractere sai literal em UTF-8.
         out += code < 0x20 ? `\\u${code.toString(16).padStart(4, '0')}` : value[index];
     }
   }
@@ -67,7 +67,7 @@ function serialize(value: JsonValue): string {
       seen.add(key);
       entries.push([key, rawValue]);
     }
-    // RFC 8785: ordem por unidade de codigo UTF-16 da chave ja normalizada.
+    // RFC 8785: ordem por unidade de código UTF-16 da chave já normalizada.
     entries.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
     return `{${entries.map(([key, item]) => `${serializeString(key)}:${serialize(item)}`).join(',')}}`;
   }
@@ -83,7 +83,7 @@ export function canonicalBytes(value: JsonValue): Buffer {
   return Buffer.from(canonicalize(value), 'utf8');
 }
 
-/** SHA-256 dos bytes canonicos: 32 bytes, o mesmo que vai em content_hash bytea. */
+/** SHA-256 dos bytes canônicos: 32 bytes, o mesmo que vai em content_hash bytea. */
 export function canonicalHash(value: JsonValue): Buffer {
   return createHash('sha256').update(canonicalBytes(value)).digest();
 }

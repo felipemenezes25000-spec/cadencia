@@ -49,7 +49,7 @@ export interface UpdatePacienteConvenioInput {
 }
 
 // ---------------------------------------------------------------------------
-// Operacoes
+// Operações
 // ---------------------------------------------------------------------------
 
 export async function createPacienteConvenio(

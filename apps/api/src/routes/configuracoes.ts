@@ -7,14 +7,14 @@ import { exportReport, type ExportFormat } from '@cadencia/reports';
 import { rota } from '../guard';
 
 /**
- * Configuracoes da unidade e da equipe.
+ * Configurações da unidade e da equipe.
  *
- * A leitura da EQUIPE nao pode sair de `app.membership` direto: a policy daquela
- * tabela (migration 0007) so deixa o dono ler o proprio vinculo, e por um motivo
- * bom — ela e a raiz da confianca e uma policy mais larga abriria a porta que a
- * RLS inteira existe para fechar. Quem lista a equipe e uma leitura por
+ * A leitura da EQUIPE não pode sair de `app.membership` direto: a policy daquela
+ * tabela (migration 0007) só deixa o dono ler o próprio vínculo, e por um motivo
+ * bom — ela é a raiz da confiança e uma policy mais larga abriria a porta que a
+ * RLS inteira existe para fechar. Quem lista a equipe é uma leitura por
  * `id_login`, o mesmo caminho estreito do login (migration 0132), com o tenant
- * vindo do contexto e nao do cliente.
+ * vindo do contexto e não do cliente.
  */
 
 const ClinicaSchema = z.object({
@@ -77,7 +77,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
       nome: string; timezone: string; cnes?: string; cnpj?: string };
 
     // O fuso decide a data de TODO evento persistido (§10 item 10). Validar
-    // contra o catalogo do proprio Postgres, e nao contra uma lista nossa, e o
+    // contra o catálogo do próprio Postgres, e não contra uma lista nossa, é o
     // que garante que `app.local_date` vai aceitar o mesmo valor depois.
     const { rows: fuso } = await tx.query<{ existe: boolean }>(
       `SELECT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = $1) AS existe`,
@@ -109,7 +109,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
     };
   }));
 
-  // ── Clinicas do tenant ──────────────────────────────────────────────────
+  // ── Clínicas do tenant ──────────────────────────────────────────────────
 
   r.get('/v1/configuracoes/clinicas', {
     schema: {
@@ -292,7 +292,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
     }
   }));
 
-  // ── Revogacao ────────────────────────────────────────────────────────────
+  // ── Revogação ────────────────────────────────────────────────────────────
 
   r.delete('/v1/configuracoes/equipe/:userId/role/:role', {
     schema: {
@@ -339,7 +339,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
     return { ok: true as const };
   }));
 
-  // ── Desativacao de MFA por admin ─────────────────────────────────────────
+  // ── Desativação de MFA por admin ─────────────────────────────────────────
 
   r.delete('/v1/configuracoes/equipe/:userId/mfa', {
     schema: {
@@ -386,7 +386,7 @@ export async function configuracaoRoutes(app: FastifyInstance): Promise<void> {
     return { ok: true as const };
   }));
 
-  // ── Edicao de papel ─────────────────────────────────────────────────────
+  // ── Edição de papel ─────────────────────────────────────────────────────
 
   r.put('/v1/configuracoes/equipe/:userId/role', {
     schema: {

@@ -23,16 +23,16 @@ export type ReprojectError = {
 // ---------------------------------------------------------------------------
 
 /**
- * Regra de reprojecao apos retificacao ou adendo (design S3.9):
+ * Regra de reprojeção após retificação ou adendo (design S3.9):
  *
  * 1. Busca a guia VIVA do atendimento.
- * 2. Se nao existe guia -> retorna no_guia (atendimento particular ou guia
+ * 2. Se não existe guia -> retorna no_guia (atendimento particular ou guia
  *    nunca foi projetada).
- * 3. Verifica se a guia pertence a um lote JA ENVIADO:
+ * 3. Verifica se a guia pertence a um lote JÁ ENVIADO:
  *    - Se pertence a lote enviado (status IN ('enviado','retornado')) ->
- *      cria pendencia em tiss.guia_pendencia (tipo='reprojecao_pos_envio').
- *    - Se NAO pertence a lote enviado (nenhum lote, ou lote rascunho/pronto) ->
- *      marca a guia antiga como live=false e projeta nova guia da nova versao.
+ *      cria pendência em tiss.guia_pendencia (tipo='reprojecao_pos_envio').
+ *    - Se NÃO pertence a lote enviado (nenhum lote, ou lote rascunho/pronto) ->
+ *      marca a guia antiga como live=false e projeta nova guia da nova versão.
  */
 export async function reprojectGuiaOnAmend(
   tx: TxClient,
@@ -54,10 +54,10 @@ export async function reprojectGuiaOnAmend(
 
   const guiaId = guias[0]!.id;
 
-  // 2) Verificar se a guia pertence a um lote ja enviado.
-  // tiss.lote_guia e tiss.lote sao criados pelo bloco 06 (migrations futuras).
+  // 2) Verificar se a guia pertence a um lote já enviado.
+  // tiss.lote_guia e tiss.lote são criados pelo bloco 06 (migrations futuras).
   // Usa to_regclass para verificar se a tabela existe antes de consultar,
-  // evitando erro quando as migrations de lote ainda nao foram aplicadas.
+  // evitando erro quando as migrations de lote ainda não foram aplicadas.
   let loteEnviado = false;
   const { rows: tableCheck } = await tx.query<{ exists: boolean }>(
     `SELECT to_regclass('tiss.lote_guia') IS NOT NULL AS exists`,
@@ -79,7 +79,7 @@ export async function reprojectGuiaOnAmend(
       && ['enviado', 'retornado'].includes(loteRows[0]!.lote_status);
   }
 
-  // 3a) Lote ja enviado -> criar pendencia
+  // 3a) Lote já enviado -> criar pendência
   if (loteEnviado) {
     const { rows: pendencia } = await tx.query<{ id: string }>(
       `INSERT INTO tiss.guia_pendencia
@@ -105,7 +105,7 @@ export async function reprojectGuiaOnAmend(
     [guiaId],
   );
 
-  // Projetar nova guia da nova versao
+  // Projetar nova guia da nova versão
   const projecao = await projectGuiaConsulta(tx, encounterId, encounterVersionId);
   if (!projecao.ok) {
     return err({
@@ -124,20 +124,20 @@ export async function reprojectGuiaOnAmend(
   /**
    * O lote em montagem passa a apontar para a guia NOVA.
    *
-   * Este ramo so roda quando o lote ainda nao foi enviado (rascunho ou pronto) —
-   * lote enviado vira pendencia la em cima. Mas o vinculo em `tiss.lote_guia`
+   * Este ramo só roda quando o lote ainda não foi enviado (rascunho ou pronto) —
+   * lote enviado vira pendência lá em cima. Mas o vínculo em `tiss.lote_guia`
    * continuava apontando para a guia que acabou de virar `live = false`. O lote
-   * seguia com o mesmo numero de itens e, na hora de gerar o XML, levava para a
-   * operadora a versao ANTIGA do atendimento — exatamente a que a retificacao
-   * corrigiu. A correcao clinica existia no prontuario e nao chegava na cobranca.
+   * seguia com o mesmo número de itens e, na hora de gerar o XML, levava para a
+   * operadora a versão ANTIGA do atendimento — exatamente a que a retificação
+   * corrigiu. A correção clínica existia no prontuário e não chegava na cobrança.
    *
-   * `sequencial_item` e preservado: e a posicao no lote, nao identidade da
-   * guia, e renumerar mexeria em itens que a operadora ja pode ter visto.
+   * `sequencial_item` é preservado: é a posição no lote, não identidade da
+   * guia, e renumerar mexeria em itens que a operadora já pode ter visto.
    *
-   * DELETE + INSERT e nao UPDATE porque `app_rw` tem exatamente SELECT, INSERT e
-   * DELETE em `tiss.lote_guia` (migration 0122) — o vinculo e criado ou
+   * DELETE + INSERT e não UPDATE porque `app_rw` tem exatamente SELECT, INSERT e
+   * DELETE em `tiss.lote_guia` (migration 0122) — o vínculo é criado ou
    * desfeito, nunca mutado no lugar. O CTE faz os dois no mesmo comando: apagar
-   * antes de inserir e obrigatorio, senao as duas linhas coexistiriam e
+   * antes de inserir é obrigatório, senão as duas linhas coexistiriam e
    * violariam o UNIQUE (tenant_id, lote_id, sequencial_item).
    */
   if (tableCheck[0]?.exists) {

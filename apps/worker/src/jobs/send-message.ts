@@ -27,7 +27,7 @@ export async function sendMessage(
   };
 
   return withTenantTx(actor, async (tx) => {
-    // Ler a mensagem (coluna real: body_text, nao body)
+    // Ler a mensagem (coluna real: body_text, não body)
     const { rows: msgRows } = await tx.query<{
       body_text: string; conversation_id: string;
     }>(
@@ -41,8 +41,8 @@ export async function sendMessage(
 
     const msg = msgRows[0]!;
 
-    // Ler a conversa para obter o destinatario e a channel_identity
-    // Coluna real: remote_phone (nao remote_address)
+    // Ler a conversa para obter o destinatário e a channel_identity
+    // Coluna real: remote_phone (não remote_address)
     const { rows: convRows } = await tx.query<{
       remote_phone: string; channel_identity_id: string;
     }>(
@@ -84,7 +84,7 @@ export async function sendMessage(
     });
 
     if (resultado.ok) {
-      // Coluna real: external_id (nao provider_message_id)
+      // Coluna real: external_id (não provider_message_id)
       await tx.query(
         `UPDATE msg.message
             SET status = 'sent', external_id = $2, sent_at = clock_timestamp()
@@ -94,10 +94,10 @@ export async function sendMessage(
                providerMessageId: resultado.value.providerMessageId };
     }
 
-    // Timeout em operacao unsafe: estado indeterminado.
-    // O schema msg.message nao tem status 'indeterminate', apenas
+    // Timeout em operação unsafe: estado indeterminado.
+    // O schema msg.message não tem status 'indeterminate', apenas
     // queued|sent|delivered|read|failed. Mantemos como 'failed' e
-    // registramos para reconciliacao manual.
+    // registramos para reconciliação manual.
     await tx.query(
       `UPDATE msg.message SET status = 'failed' WHERE id = $1`,
       [input.messageId]);

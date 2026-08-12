@@ -24,15 +24,15 @@ export interface BankStatement {
 }
 
 /**
- * Extrato por conta bancaria. Retorna linhas ordenadas por data de pagamento
- * com saldo corrente via window function. O saldo e DERIVADO — nunca campo
+ * Extrato por conta bancária. Retorna linhas ordenadas por data de pagamento
+ * com saldo corrente via window function. O saldo é DERIVADO — nunca campo
  * atualizado. Receitas somam, despesas subtraem.
  *
- * O saldo corrente (running balance) e calculado com:
+ * O saldo corrente (running balance) é calculado com:
  *   SUM(CASE WHEN kind='receita' THEN amount_cents ELSE -amount_cents END)
  *   OVER (ORDER BY paid_at, id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
  *
- * A ordenacao inclui id para desempate determinista.
+ * A ordenação inclui id para desempate determinista.
  */
 export async function getBankStatement(
   tx: TxClient,

@@ -11,7 +11,7 @@ beforeAll(async () => {
   s = await semearAgenda();
   actor = { kind: 'user', tenantId: s.tenantId, userId: s.userId, clinicId: s.clinicId,
             requestId: uuidv7() };
-  // Amanha, sem confirmacao: entra em "confirmacoes sem resposta".
+  // Amanhã, sem confirmação: entra em "confirmações sem resposta".
   await withTenantTx(actor, (tx) => createAppointment(tx, {
     patientId: s.patientId, professionalId: s.professionalId, clinicId: s.clinicId,
     procedureId: s.procedureId,

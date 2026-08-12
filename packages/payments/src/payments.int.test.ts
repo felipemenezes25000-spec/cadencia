@@ -116,14 +116,14 @@ describe('fluxo completo: link de pagamento, webhook, rollup e conciliacao', () 
       kind: 'system', tenantId: s.tenantId,
       reason: 'rollup-noturno', requestId: uuidv7(),
     };
-    // Primeiro calculo: nao havia rollup antes, entao old_total e 0
+    // Primeiro cálculo: não havia rollup antes, então old_total é 0
     const r = await withTenantTx(jobActor, (tx) =>
       refreshDailyRollup(tx, s.tenantId, s.clinicId, '2026-08-04'),
     );
     // O rollup deve conter dados agora
     expect(r.newTotal).toBeGreaterThanOrEqual(0);
 
-    // Segundo calculo: recalcula — nao deve haver divergencia
+    // Segundo cálculo: recalcula — não deve haver divergência
     const r2 = await withTenantTx(jobActor, (tx) =>
       refreshDailyRollup(tx, s.tenantId, s.clinicId, '2026-08-04'),
     );
@@ -149,7 +149,7 @@ describe('fluxo completo: link de pagamento, webhook, rollup e conciliacao', () 
       }),
     );
     expect(r.settlementsProcessed).toBeGreaterThanOrEqual(0);
-    // divergencias podem ou nao existir dependendo do estado do fake
+    // divergências podem ou não existir dependendo do estado do fake
     expect(typeof r.divergencesFound).toBe('number');
   });
 
@@ -168,7 +168,7 @@ describe('fluxo completo: link de pagamento, webhook, rollup e conciliacao', () 
       tx.query<{ fee_cents: string | null }>(
         `SELECT fee_cents::text FROM fin.payment_link WHERE id = $1`, [linkId]),
     );
-    // A taxa pode ter sido atualizada pelo webhook ou pela conciliacao
+    // A taxa pode ter sido atualizada pelo webhook ou pela conciliação
     expect(rows[0]).toBeDefined();
   });
 });

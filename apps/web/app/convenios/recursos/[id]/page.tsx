@@ -33,9 +33,9 @@ function reais(centavos: number): string {
 /**
  * O recurso de glosa aberto: item a item, com a justificativa de cada um.
  *
- * A lista de recursos ja empurrava para esta URL, que nao existia — tanto
- * "editar" quanto "ver resultado" davam 404. Recurso que nao abre e recurso que
- * nao se acompanha, e glosa nao recorrida no prazo vira perda definitiva.
+ * A lista de recursos já empurrava para esta URL, que não existia — tanto
+ * "editar" quanto "ver resultado" davam 404. Recurso que não abre é recurso que
+ * não se acompanha, e glosa não recorrida no prazo vira perda definitiva.
  */
 export default function PaginaDetalheRecurso() {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +51,7 @@ export default function PaginaDetalheRecurso() {
       setR(await apiFetch<RecursoDaApi>(
         `/v1/tiss/recursos/${id}`, { clinicId, csrfToken }));
     } catch {
-      setErro('Nao foi possivel abrir o recurso.');
+      setErro('Não foi possível abrir o recurso.');
     }
   }, [id, clinicId, csrfToken]);
 
@@ -97,9 +97,9 @@ export default function PaginaDetalheRecurso() {
                   {reais(i.valorRecursadoCents)}
                 </td>
                 <td className="px-4 py-2.5">
-                  {/* `null` e "a operadora ainda nao respondeu", que e diferente
+                  {/* `null` é "a operadora ainda não respondeu", que é diferente
                       de indeferido. Mostrar vazio faria os dois parecerem iguais
-                      e ninguem cobraria a resposta. */}
+                      e ninguém cobraria a resposta. */}
                   {i.resultado ?? <span className="text-text-muted">aguardando</span>}
                 </td>
               </tr>
@@ -127,11 +127,11 @@ export default function PaginaDetalheRecurso() {
               void apiFetch(`/v1/tiss/recursos/${id}/enviar`,
                 { method: 'POST', clinicId, csrfToken })
                 .then(carregar)
-                .catch(() => setErro('Nao foi possivel enviar o recurso.'))
+                .catch(() => setErro('Não foi possível enviar o recurso.'))
                 .finally(() => setEnviando(false));
             }}
           >
-            {enviando ? 'Enviando…' : 'Enviar a operadora'}
+            {enviando ? 'Enviando…' : 'Enviar à operadora'}
           </Botao>
         )}
       </div>

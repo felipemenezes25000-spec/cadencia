@@ -23,7 +23,7 @@ describe('computeVariation', () => {
       void client.query('SET ROLE app_rw').catch(() => undefined);
     });
 
-    // Periodo A (junho 2026): 5 consultas a R$250 do profissional A, particular
+    // Período A (junho 2026): 5 consultas a R$250 do profissional A, particular
     for (let i = 0; i < 5; i++) {
       await criarAtendimentoComLancamento({
         tenantId: s.tenantId, clinicId: s.clinicId,
@@ -36,7 +36,7 @@ describe('computeVariation', () => {
         status: 'atendido', operadoraNome: null, pago: true,
       });
     }
-    // 1 falta no periodo A
+    // 1 falta no período A
     await criarAtendimentoComLancamento({
       tenantId: s.tenantId, clinicId: s.clinicId,
       patientId: s.patientIds[5]!,
@@ -48,7 +48,7 @@ describe('computeVariation', () => {
       status: 'faltou', operadoraNome: null, pago: false,
     });
 
-    // Periodo B (julho 2026): 3 consultas a R$250 + 2 retornos a R$100
+    // Período B (julho 2026): 3 consultas a R$250 + 2 retornos a R$100
     // do profissional A, particular
     for (let i = 0; i < 3; i++) {
       await criarAtendimentoComLancamento({
@@ -74,7 +74,7 @@ describe('computeVariation', () => {
         status: 'atendido', operadoraNome: null, pago: true,
       });
     }
-    // 3 faltas no periodo B
+    // 3 faltas no período B
     for (let i = 0; i < 3; i++) {
       await criarAtendimentoComLancamento({
         tenantId: s.tenantId, clinicId: s.clinicId,
@@ -105,13 +105,13 @@ describe('computeVariation', () => {
       );
     }, pool);
 
-    // Periodo A: 5 x R$250 = R$125.000 centavos = 125000
+    // Período A: 5 x R$250 = R$125.000 centavos = 125000
     expect(result.factors.total_a_cents).toBe(125000);
-    // Periodo B: 3 x R$250 + 2 x R$100 = R$950 = 95000
+    // Período B: 3 x R$250 + 2 x R$100 = R$950 = 95000
     expect(result.factors.total_b_cents).toBe(95000);
     // Delta: 95000 - 125000 = -30000
     expect(result.factors.delta_total_cents).toBe(-30000);
-    // PROPRIEDADE MATEMATICA: soma dos fatores = delta
+    // PROPRIEDADE MATEMÁTICA: soma dos fatores = delta
     expect(factorsAddUp(result.factors)).toBe(true);
   });
 
@@ -128,7 +128,7 @@ describe('computeVariation', () => {
     }, pool);
 
     // Faltas: A teve 1 falta (R$250), B teve 3 faltas (3 x R$250 = R$750)
-    // Diferenca = -(75000 - 25000) = -50000 centavos
+    // Diferença = -(75000 - 25000) = -50000 centavos
     expect(result.factors.faltas_cents).toBe(-50000);
   });
 
@@ -179,7 +179,7 @@ describe('computeVariation', () => {
         void client.query('SET ROLE app_rw').catch(() => undefined);
       });
 
-      // Periodo A (junho 2026): 3 consultas pagas + 1 glosa aceita de R$200
+      // Período A (junho 2026): 3 consultas pagas + 1 glosa aceita de R$200
       for (let i = 0; i < 3; i++) {
         await criarAtendimentoComLancamento({
           tenantId: sGlosa.tenantId, clinicId: sGlosa.clinicId,
@@ -200,7 +200,7 @@ describe('computeVariation', () => {
         valorGlosadoCents: 20000, dataAtendimento: '2026-06-15',
       });
 
-      // Periodo B (julho 2026): 3 consultas pagas, sem glosas
+      // Período B (julho 2026): 3 consultas pagas, sem glosas
       for (let i = 0; i < 3; i++) {
         await criarAtendimentoComLancamento({
           tenantId: sGlosa.tenantId, clinicId: sGlosa.clinicId,
@@ -232,14 +232,14 @@ describe('computeVariation', () => {
       }, poolGlosa);
 
       // Glosas: A teve R$200 aceita, B teve R$0
-      // Fator = -(0 - 20000) = +20000 (reducao de glosas e positivo)
+      // Fator = -(0 - 20000) = +20000 (redução de glosas é positivo)
       expect(result.factors.glosas_cents).toBe(20000);
-      // Propriedade matematica ainda vale
+      // Propriedade matemática ainda vale
       expect(factorsAddUp(result.factors)).toBe(true);
     });
 
     it('glosas no periodo B e nenhuma no A → fator negativo (glosas aumentaram)', async () => {
-      // Cenario: usar tenant separado para isolamento
+      // Cenário: usar tenant separado para isolamento
       const sInv = await semearVariacao();
       const poolInv = new Pool({
         connectionString: process.env['DATABASE_URL'],
@@ -250,7 +250,7 @@ describe('computeVariation', () => {
       });
 
       try {
-        // Periodo A (junho 2026): 3 consultas pagas, sem glosas
+        // Período A (junho 2026): 3 consultas pagas, sem glosas
         for (let i = 0; i < 3; i++) {
           await criarAtendimentoComLancamento({
             tenantId: sInv.tenantId, clinicId: sInv.clinicId,
@@ -264,7 +264,7 @@ describe('computeVariation', () => {
           });
         }
 
-        // Periodo B (julho 2026): 3 consultas pagas + 1 glosa aceita de R$150
+        // Período B (julho 2026): 3 consultas pagas + 1 glosa aceita de R$150
         for (let i = 0; i < 3; i++) {
           await criarAtendimentoComLancamento({
             tenantId: sInv.tenantId, clinicId: sInv.clinicId,
@@ -297,11 +297,11 @@ describe('computeVariation', () => {
         }, poolInv);
 
         // Glosas: A teve R$0, B teve R$150 aceita
-        // Fator = -(15000 - 0) = -15000 (aumento de glosas e negativo)
+        // Fator = -(15000 - 0) = -15000 (aumento de glosas é negativo)
         expect(result.factors.glosas_cents).toBe(-15000);
-        // Propriedade matematica: soma dos fatores = delta
+        // Propriedade matemática: soma dos fatores = delta
         expect(factorsAddUp(result.factors)).toBe(true);
-        // O fator "glosas nao recuperadas" esta destacado (nao absorvido pelo ticket)
+        // O fator "glosas não recuperadas" está destacado (não absorvido pelo ticket)
         expect(result.factors.glosas_cents).not.toBe(0);
       } finally {
         await poolInv.end();
@@ -309,7 +309,7 @@ describe('computeVariation', () => {
     });
 
     it('sem glosas em nenhum periodo → fator continua zero', async () => {
-      // Reutiliza o dataset original (s) que nao tem glosas
+      // Reutiliza o dataset original (s) que não tem glosas
       const actor: Actor = {
         kind: 'user', tenantId: s.tenantId, userId: s.userId,
         clinicId: s.clinicId, requestId: 'test-glosa-zero',

@@ -11,7 +11,7 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 }
 
 // ---------------------------------------------------------------------------
-// Parser minimo de demonstrativo TISS XML
+// Parser mínimo de demonstrativo TISS XML
 // ---------------------------------------------------------------------------
 
 interface DemoParsedItem {
@@ -156,7 +156,7 @@ export async function demonstrativoRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
-    // Validacao basica de campos (antes do RBAC, pois sao pre-condicoes)
+    // Validação básica de campos (antes do RBAC, pois são pré-condições)
     if (xmlBuffer === undefined || xmlBuffer.length === 0) {
       erroDominio('xml_ausente', 400);
     }
@@ -167,10 +167,10 @@ export async function demonstrativoRoutes(app: FastifyInstance): Promise<void> {
     const capturedXml = xmlBuffer;
     const capturedOpId = operadoraIdField;
 
-    // Delegar ao guard de RBAC + transacao; XML parsing ocorre DENTRO do guard
-    // para que RBAC negue antes de processar o XML (recepcao recebe 403)
+    // Delegar ao guard de RBAC + transação; XML parsing ocorre DENTRO do guard
+    // para que RBAC negue antes de processar o XML (recepção recebe 403)
     const handler = rota('tiss.demonstrativo.import', async (tx, _ctx) => {
-      // Parse XML somente apos RBAC aprovar
+      // Parse XML somente após RBAC aprovar
       const parsed = parseDemonstrativoXml(capturedXml);
 
       // Verificar que a operadora existe
@@ -238,7 +238,7 @@ export async function demonstrativoRoutes(app: FastifyInstance): Promise<void> {
     return handler(req, reply);
   });
 
-  // -- GET /v1/tiss/demonstrativos -- listar com paginacao -----------------
+  // -- GET /v1/tiss/demonstrativos -- listar com paginação -----------------
   r.get('/v1/tiss/demonstrativos', {
     schema: {
       querystring: z.object({

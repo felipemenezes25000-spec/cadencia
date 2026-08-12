@@ -211,7 +211,7 @@ describe('receiveInbound', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
 
-    // A conversa para o telefone do paciente ja existe (criada no describe anterior);
+    // A conversa para o telefone do paciente já existe (criada no describe anterior);
     // deve ter o patient_id vinculado.
     const { rows } = await withTenantTx(actor, (tx) => tx.query<{
       patient_id: string | null;

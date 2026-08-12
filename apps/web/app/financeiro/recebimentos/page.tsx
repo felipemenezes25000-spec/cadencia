@@ -16,10 +16,10 @@ interface ReciboDaApi {
 }
 
 /**
- * O banco distingue credito de debito; a tela de recibos nao — para quem confere
- * o caixa, os dois sao "cartao". A traducao mora aqui, na borda, e nao no
- * endpoint: outra tela (repasse, taxas) precisa da distincao e a perderia se a
- * API ja entregasse achatado.
+ * O banco distingue crédito de débito; a tela de recibos não — para quem confere
+ * o caixa, os dois são "cartão". A tradução mora aqui, na borda, e não no
+ * endpoint: outra tela (repasse, taxas) precisa da distinção e a perderia se a
+ * API já entregasse achatado.
  */
 const METODO: Record<ReciboDaApi['metodoKind'], MetodoRecibo> = {
   dinheiro: 'dinheiro',
@@ -53,8 +53,8 @@ export default function PaginaRecebimentos() {
           paidAt: x.emitidoEm,
         }));
 
-        // O filtro por paciente e do cliente porque a lista ja vem inteira e
-        // curta (um dia de caixa). Virar parametro de rota quando a clinica
+        // O filtro por paciente é do cliente porque a lista já vem inteira e
+        // curta (um dia de caixa). Virar parâmetro de rota quando a clínica
         // tiver volume que justifique paginar.
         const p = f.paciente?.trim().toLowerCase() ?? '';
         return p === '' ? linhas

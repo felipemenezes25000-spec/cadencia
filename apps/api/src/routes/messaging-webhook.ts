@@ -10,9 +10,9 @@ import { providers } from '../providers';
 /**
  * Webhook de parceiro de mensageria (WhatsApp/Meta).
  *
- * REGRAS CRITICAS:
- * 1. SEM autenticacao de sessao — valida assinatura do parceiro
- * 2. tenant_id NUNCA vem do request — e resolvido pela channel_identity
+ * REGRAS CRÍTICAS:
+ * 1. SEM autenticação de sessão — valida assinatura do parceiro
+ * 2. tenant_id NUNCA vem do request — é resolvido pela channel_identity
  * 3. Grava payload bruto em inbound_event ANTES de parsear
  */
 export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void> {
@@ -35,7 +35,7 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
         401: z.object({ erro: z.literal('assinatura_invalida') }),
       },
     },
-    // Sem pre-handler de sessao — webhook e publico
+    // Sem pre-handler de sessão — webhook é público
   }, async (req, reply) => {
     const channel = (req.params as { channel: string }).channel;
     const rawBody = req.body as Buffer;
@@ -55,7 +55,7 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
       return { accepted: true as const };
     }
 
-    // Extrair o telefone do negocio do metadata do payload (WhatsApp Cloud API)
+    // Extrair o telefone do negócio do metadata do payload (WhatsApp Cloud API)
     const parsed = JSON.parse(rawBody.toString('utf-8')) as {
       entry?: Array<{
         changes?: Array<{
@@ -66,13 +66,13 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
     const businessPhone =
       parsed?.entry?.[0]?.changes?.[0]?.value?.metadata?.display_phone_number;
     if (!businessPhone) {
-      // Sem metadata — nao conseguimos resolver o tenant; aceita silenciosamente
+      // Sem metadata — não conseguimos resolver o tenant; aceita silenciosamente
       return { accepted: true as const };
     }
 
     // Resolver tenant_id a partir da channel_identity no banco.
-    // A channel_identity e do PARCEIRO, nao do request.
-    // Usa jobsPool (BYPASSRLS) pois nao temos sessao de usuario.
+    // A channel_identity é do PARCEIRO, não do request.
+    // Usa jobsPool (BYPASSRLS) pois não temos sessão de usuário.
     const { rows: identityRows } = await jobsPool().query<{
       tenant_id: string; id: string;
     }>(
@@ -81,7 +81,7 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
       [businessPhone, channel]);
 
     if (identityRows.length === 0) {
-      // Numero nao reconhecido — ignorar, mas sem erro (o parceiro reenviaria)
+      // Número não reconhecido — ignorar, mas sem erro (o parceiro reenviaria)
       return { accepted: true as const };
     }
 
@@ -145,7 +145,7 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
     return { accepted: true as const };
   });
 
-  // GET para verificacao do webhook (WhatsApp exige)
+  // GET para verificação do webhook (WhatsApp exige)
   r.get('/v1/messaging/webhook/:channel', {
     schema: {
       params: z.object({ channel: z.enum(['whatsapp', 'sms']) }),
@@ -158,14 +158,14 @@ export async function messagingWebhookRoutes(app: FastifyInstance): Promise<void
   }, async (req, reply) => {
     const q = req.query as {
       'hub.mode'?: string; 'hub.verify_token'?: string; 'hub.challenge'?: string };
-    // Sem token configurado a resposta e SEMPRE 403.
+    // Sem token configurado a resposta é SEMPRE 403.
     //
     // Com o `?? ''` antigo, `WHATSAPP_VERIFY_TOKEN` ausente fazia o segredo
-    // esperado virar string vazia — e `hub.verify_token` e opcional no schema.
+    // esperado virar string vazia — e `hub.verify_token` é opcional no schema.
     // Bastava chamar `?hub.mode=subscribe&hub.verify_token=&hub.challenge=x`
     // para o handshake da Meta passar, ou seja, qualquer um registrava este
-    // endpoint no proprio app da Meta. Ambiente mal configurado tem de recusar,
-    // nao aceitar todo mundo.
+    // endpoint no próprio app da Meta. Ambiente mal configurado tem de recusar,
+    // não aceitar todo mundo.
     const verifyToken = process.env['WHATSAPP_VERIFY_TOKEN'];
     if (verifyToken !== undefined && verifyToken !== ''
         && q['hub.mode'] === 'subscribe'

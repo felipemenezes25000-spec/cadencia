@@ -18,15 +18,15 @@ export interface CreatedLote {
 
 /**
  * Cria um lote TISS em status rascunho para a operadora informada.
- * O numero do lote e gerado automaticamente via tiss.next_lote_number(),
- * que se auto-provisiona na primeira chamada. A versao TISS vem do
- * cadastro da operadora (a versao acordada, nao a versao vigente hoje).
+ * O número do lote é gerado automaticamente via tiss.next_lote_number(),
+ * que se auto-provisiona na primeira chamada. A versão TISS vem do
+ * cadastro da operadora (a versão acordada, não a versão vigente hoje).
  */
 export async function createLote(
   tx: TxClient,
   i: CreateLoteInput,
 ): Promise<Result<CreatedLote, CreateLoteFailure>> {
-  // 1. Busca a operadora para pegar tiss_version e validar que existe e esta ativa
+  // 1. Busca a operadora para pegar tiss_version e validar que existe e está ativa
   const { rows: opRows } = await tx.query<{
     id: string;
     tiss_version: string;
@@ -45,7 +45,7 @@ export async function createLote(
     return err({ kind: 'operadora_inativa' });
   }
 
-  // 2. Gera numero sequencial do lote para esta operadora
+  // 2. Gera número sequencial do lote para esta operadora
   const { rows: numRows } = await tx.query<{ n: string }>(
     `SELECT tiss.next_lote_number($1, $2) AS n`,
     [op.tenant_id, i.operadoraId],

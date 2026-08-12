@@ -18,8 +18,8 @@ const OperadoraSchema = z.object({
   transportMode: z.enum(['arquivo', 'webservice']),
   telefone: z.string().nullable(),
   email: z.string().nullable(),
-  // Quantos pacientes tem carteirinha desta operadora. E o numero que decide se
-  // vale a pena manter o contrato: operadora com dois pacientes e trabalho de
+  // Quantos pacientes têm carteirinha desta operadora. É o número que decide se
+  // vale a pena manter o contrato: operadora com dois pacientes é trabalho de
   // faturamento igual ao de uma com duzentos.
   totalPacientes: z.number().int(),
   active: z.boolean(),

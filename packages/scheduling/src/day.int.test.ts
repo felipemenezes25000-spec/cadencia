@@ -21,17 +21,17 @@ interface PlanoRaiz {
   readonly 'Execution Time': number;
 }
 
-/** Soma as linhas que os nos de varredura realmente leram. */
+/** Soma as linhas que os nós de varredura realmente leram. */
 function linhasVarridas(no: NoDoPlano): number {
   const proprias = no['Node Type'].includes('Scan') ? (no['Actual Rows'] ?? 0) : 0;
   return (no.Plans ?? []).reduce((acc, filho) => acc + linhasVarridas(filho), proprias);
 }
 
 /**
- * Sem ruido o teste de plano nao afirma nada: numa tabela vazia qualquer plano
- * custa zero e o planejador nem tem estatistica. Estes agendamentos ficam em
- * OUTRAS datas — sao o que um Seq Scan teria de varrer para chegar aos cinco do
- * dia. `encaixe` = true os isenta da restricao de exclusao por sobreposicao.
+ * Sem ruído o teste de plano não afirma nada: numa tabela vazia qualquer plano
+ * custa zero e o planejador nem tem estatística. Estes agendamentos ficam em
+ * OUTRAS datas — são o que um Seq Scan teria de varrer para chegar aos cinco do
+ * dia. `encaixe` = true os isenta da restrição de exclusão por sobreposição.
  */
 async function semearRuido(): Promise<void> {
   const admin = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
@@ -83,7 +83,7 @@ describe('o dia', () => {
     expect(r[0]?.primeiraVez).toBe(true);
     expect(r[0]?.displayName).toBe('Maria Souza Lima');
     // A fila mostra COM QUEM o paciente vai ser atendido. Sem o nome, a linha
-    // exibe o uuid do profissional — que nao diz nada para a recepcao.
+    // exibe o uuid do profissional — que não diz nada para a recepção.
     expect(r[0]?.professionalNome).toBeTruthy();
     expect(r[0]?.professionalNome).not.toMatch(/^[0-9a-f]{8}-/);
   });
@@ -110,13 +110,13 @@ describe('o dia', () => {
       });
       if (plano === undefined) throw new Error('EXPLAIN nao devolveu plano');
 
-      // Sem esta guarda as duas afirmacoes abaixo passariam numa tabela vazia
-      // sem dizer nada sobre o dia cheio de uma clinica de verdade.
+      // Sem esta guarda as duas afirmações abaixo passariam numa tabela vazia
+      // sem dizer nada sobre o dia cheio de uma clínica de verdade.
       expect(total).toBeGreaterThan(RUIDO_MINIMO);
 
       expect(JSON.stringify(plano)).not.toContain('"Seq Scan"');
-      // O que sobrevive a escala: as linhas lidas sao proporcionais ao FILTRO
-      // (os cinco do dia), nao ao tamanho da tabela.
+      // O que sobrevive a escala: as linhas lidas são proporcionais ao FILTRO
+      // (os cinco do dia), não ao tamanho da tabela.
       expect(linhasVarridas(plano.Plan)).toBeLessThan(50);
       expect(plano['Execution Time']).toBeLessThan(20);
     });

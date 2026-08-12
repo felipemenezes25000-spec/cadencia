@@ -1,10 +1,10 @@
 // packages/tiss/src/recurso-glosa/types.ts
 
 /**
- * Tipos do dominio de recurso de glosa TISS.
+ * Tipos do domínio de recurso de glosa TISS.
  *
- * O recurso de glosa e a contestacao formal do prestador contra glosas
- * aplicadas pela operadora em um demonstrativo de retorno. O ciclo de vida e:
+ * O recurso de glosa é a contestação formal do prestador contra glosas
+ * aplicadas pela operadora em um demonstrativo de retorno. O ciclo de vida é:
  * rascunho -> pronto -> enviado -> (deferido | indeferido | parcial)
  * Com desvio para 'indeterminado' em caso de timeout no envio (§7 design).
  */

@@ -2,37 +2,37 @@
 import { jobsPool } from '@cadencia/db';
 
 /**
- * O SELO DIARIO DA TRILHA.
+ * O SELO DIÁRIO DA TRILHA.
  *
- * A trilha de auditoria e append-only por REVOKE, o que impede que a aplicacao
- * apague uma linha. Nao impede, porem, que alguem com acesso ao banco reescreva
- * o passado. O que transforma REGISTRO em PROVA e o selo: uma vez por dia,
+ * A trilha de auditoria é append-only por REVOKE, o que impede que a aplicação
+ * apague uma linha. Não impede, porém, que alguém com acesso ao banco reescreva
+ * o passado. O que transforma REGISTRO em PROVA é o selo: uma vez por dia,
  * calcula-se o hash encadeado das linhas daquele dia e grava-se um resumo
  * assinado. Removida uma linha do meio, o encadeamento quebra e todo dia
- * posterior denuncia a alteracao.
+ * posterior denuncia a alteração.
  *
  * A maquinaria mora no banco (`audit.seal_day`, `audit.run_seal`), porque ela
- * precisa ler a trilha inteira de todos os tenants — e so `jobs`, o unico papel
- * com BYPASSRLS, enxerga isso. Este arquivo e o AGENDADOR: decide quais tenants
+ * precisa ler a trilha inteira de todos os tenants — e só `jobs`, o único papel
+ * com BYPASSRLS, enxerga isso. Este arquivo é o AGENDADOR: decide quais tenants
  * selar e registra o resultado.
  *
- * §9 lista "selo da auditoria falha em silencio" como risco que pode matar o
- * produto, com a observacao de que job que para nao faz barulho. Por isso
- * `vigiarSelo` existe e e chamado junto: ele transforma AUSENCIA de execucao em
- * alarme, que e o modo de falha que ninguem percebe sozinho.
+ * §9 lista "selo da auditoria falha em silêncio" como risco que pode matar o
+ * produto, com a observação de que job que para não faz barulho. Por isso
+ * `vigiarSelo` existe e é chamado junto: ele transforma AUSÊNCIA de execução em
+ * alarme, que é o modo de falha que ninguém percebe sozinho.
  */
 
 export interface SeloResult {
   readonly dia: string;
   readonly tenantsSelados: number;
   /**
-   * Adiado NAO e falha. `audit.run_seal` devolve 'adiado' com sqlstate 55006
-   * quando o lock nao esta disponivel — outra execucao esta selando o mesmo
-   * tenant. Contar isso como erro faria o alarme disparar por concorrencia
-   * normal, e alarme que grita a toa e alarme que ninguem le.
+   * Adiado NÃO é falha. `audit.run_seal` devolve 'adiado' com sqlstate 55006
+   * quando o lock não está disponível — outra execução está selando o mesmo
+   * tenant. Contar isso como erro faria o alarme disparar por concorrência
+   * normal, e alarme que grita à toa é alarme que ninguém lê.
    */
   readonly adiados: number;
-  /** Dia ja selado numa execucao anterior. Reexecutar e no-op, nao erro. */
+  /** Dia já selado numa execução anterior. Reexecutar é no-op, não erro. */
   readonly jaSelados: number;
   readonly falhas: number;
   readonly detalhes: readonly { tenantId: string; outcome: string }[];
@@ -47,9 +47,9 @@ export interface VigiaResult {
 /**
  * Sela o dia para todo tenant que teve movimento na trilha.
  *
- * Tenant sem evento nenhum NAO e selado, e isso e proposital: selo de dia vazio
- * ocuparia a cadeia com linhas que nao provam nada e faria o vigia relatar
- * sucesso para uma clinica que talvez esteja com a aplicacao fora do ar.
+ * Tenant sem evento nenhum NÃO é selado, e isso é proposital: selo de dia vazio
+ * ocuparia a cadeia com linhas que não provam nada e faria o vigia relatar
+ * sucesso para uma clínica que talvez esteja com a aplicação fora do ar.
  */
 export async function selarTrilha(opts: { dia?: string } = {}): Promise<SeloResult> {
   const pool = jobsPool();
@@ -61,13 +61,13 @@ export async function selarTrilha(opts: { dia?: string } = {}): Promise<SeloResu
     opts.dia !== undefined ? [opts.dia] : []);
   const dia = dias[0]!.dia;
 
-  // Quem JA tem selo do dia fica de fora da lista, e nao e tentado de novo.
+  // Quem JÁ tem selo do dia fica de fora da lista, e não é tentado de novo.
   //
-  // `audit.seal` tem PK (tenant_id, seal_date) e `audit.run_seal` nao trata o
+  // `audit.seal` tem PK (tenant_id, seal_date) e `audit.run_seal` não trata o
   // 23505: reexecutar registraria 'erro' em seal_run e o vigia acusaria falha
-  // por causa de um dia que esta selado corretamente. Filtrar aqui torna o job
-  // idempotente sem depender de casar a mensagem de erro do banco, que e a
-  // forma mais fragil de detectar qualquer coisa.
+  // por causa de um dia que está selado corretamente. Filtrar aqui torna o job
+  // idempotente sem depender de casar a mensagem de erro do banco, que é a
+  // forma mais frágil de detectar qualquer coisa.
   const { rows: tenants } = await pool.query<{ tenant_id: string }>(
     `SELECT DISTINCT e.tenant_id
        FROM audit.event e
@@ -90,8 +90,8 @@ export async function selarTrilha(opts: { dia?: string } = {}): Promise<SeloResu
 
   for (const t of tenants) {
     try {
-      // `audit.run_seal` ja grava em audit.seal_run — sucesso e fracasso ficam
-      // registrados no banco, nao apenas no log deste processo, que some.
+      // `audit.run_seal` já grava em audit.seal_run — sucesso e fracasso ficam
+      // registrados no banco, não apenas no log deste processo, que some.
       const { rows } = await pool.query<{ outcome: string }>(
         `SELECT audit.run_seal($1, $2::date) AS outcome`, [t.tenant_id, dia]);
       const outcome = rows[0]?.outcome ?? 'desconhecido';
@@ -100,8 +100,8 @@ export async function selarTrilha(opts: { dia?: string } = {}): Promise<SeloResu
       else if (outcome === 'adiado') adiados += 1;
       else falhas += 1;
     } catch (e) {
-      // Falha de um tenant nao pode abortar os outros: um selo perdido e ruim,
-      // todos os selos perdidos e o fim da garantia.
+      // Falha de um tenant não pode abortar os outros: um selo perdido é ruim,
+      // todos os selos perdidos é o fim da garantia.
       falhas += 1;
       detalhes.push({ tenantId: t.tenant_id, outcome: `erro: ${(e as Error).message}` });
     }
@@ -111,8 +111,8 @@ export async function selarTrilha(opts: { dia?: string } = {}): Promise<SeloResu
 }
 
 /**
- * Dead man's switch. Pergunta ao banco ha quanto tempo o selo nao roda e
- * devolve um status acionavel.
+ * Dead man's switch. Pergunta ao banco há quanto tempo o selo não roda e
+ * devolve um status acionável.
  */
 export async function vigiarSelo(
   opts: { atrasoMaximo?: string } = {},

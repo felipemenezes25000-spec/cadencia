@@ -85,16 +85,16 @@ async function readBilling(tx: TxClient, encounterId: string): Promise<BillingRo
 }
 
 // ---------------------------------------------------------------------------
-// Funcao principal
+// Função principal
 // ---------------------------------------------------------------------------
 
 /**
  * Projeta a guia de consulta TISS a partir do atendimento finalizado.
  *
  * - Atendimento particular (sem registro_ans): retorna ok({ kind: 'skipped' }).
- * - Dados obrigatorios ausentes: insere guia com status 'incompleta' e retorna
+ * - Dados obrigatórios ausentes: insere guia com status 'incompleta' e retorna
  *   err com lista de campos faltando.
- * - Procedimento nao vigente na TUSS: retorna err sem inserir guia.
+ * - Procedimento não vigente na TUSS: retorna err sem inserir guia.
  * - Tudo ok: insere guia com status 'completa' e retorna ok.
  */
 export async function projectGuiaConsulta(
@@ -102,10 +102,10 @@ export async function projectGuiaConsulta(
   encounterId: string,
   encounterVersionId: string,
 ): Promise<Result<ProjectionResult, ProjectionError>> {
-  // 1. Le encounter_billing
+  // 1. Lê encounter_billing
   const billing = await readBilling(tx, encounterId);
   if (billing === undefined) {
-    // Sem billing: nada a projetar (nao deveria acontecer, mas e seguro)
+    // Sem billing: nada a projetar (não deveria acontecer, mas é seguro)
     return ok({ kind: 'skipped' });
   }
 
@@ -123,7 +123,7 @@ export async function projectGuiaConsulta(
   );
   const operadora = opRows[0];
   if (operadora === undefined) {
-    // Operadora nao cadastrada — guia incompleta
+    // Operadora não cadastrada — guia incompleta
     return insertIncompleteGuia(tx, billing, encounterVersionId, encounterId, ['operadora_nao_cadastrada']);
   }
 
@@ -147,8 +147,8 @@ export async function projectGuiaConsulta(
   );
 
   // 6. Valida TUSS vigente na data do atendimento
-  // ref.tuss_at retorna RETURNS ref.tuss_term (nao SETOF), portanto sempre
-  // devolve exatamente uma linha — com colunas NULL quando nao ha termo vigente.
+  // ref.tuss_at retorna RETURNS ref.tuss_term (não SETOF), portanto sempre
+  // devolve exatamente uma linha — com colunas NULL quando não há termo vigente.
   const { rows: tussRows } = await tx.query<{ codigo: string | null }>(
     `SELECT codigo FROM ref.tuss_at($1::smallint, $2, $3::date)`,
     [billing.codigo_tabela, billing.codigo_procedimento, billing.data_atendimento],
@@ -162,7 +162,7 @@ export async function projectGuiaConsulta(
     });
   }
 
-  // 7. Verifica campos obrigatorios
+  // 7. Verifica campos obrigatórios
   const missingFields: string[] = [];
   if (!billing.numero_carteira) missingFields.push('numero_carteira');
   if (!billing.cnes) missingFields.push('cnes');
@@ -182,7 +182,7 @@ export async function projectGuiaConsulta(
     return insertIncompleteGuia(tx, billing, encounterVersionId, encounterId, missingFields);
   }
 
-  // 8. Gera numero da guia
+  // 8. Gera número da guia
   const { rows: guiaNumRows } = await tx.query<{ next_guia_number: string }>(
     `SELECT tiss.next_guia_number($1)`,
     [billing.tenant_id],
@@ -201,7 +201,7 @@ export async function projectGuiaConsulta(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de insercao
+// Helpers de inserção
 // ---------------------------------------------------------------------------
 
 async function insertGuia(
@@ -254,7 +254,7 @@ async function insertIncompleteGuia(
   _encounterId: string,
   missingFields: string[],
 ): Promise<Result<ProjectionResult, ProjectionError>> {
-  // Busca operadora para o INSERT. Se nao existir, usa placeholder.
+  // Busca operadora para o INSERT. Se não existir, usa placeholder.
   const { rows: opRows } = await tx.query<{ id: string }>(
     `SELECT id FROM tiss.operadora WHERE registro_ans = $1 LIMIT 1`,
     [billing.registro_ans],
@@ -262,7 +262,7 @@ async function insertIncompleteGuia(
   const operadoraId = opRows[0]?.id;
 
   if (operadoraId === undefined) {
-    // Sem operadora cadastrada nao da para inserir guia (FK obrigatoria)
+    // Sem operadora cadastrada não dá para inserir guia (FK obrigatória)
     return err({
       kind: 'dados_obrigatorios_ausentes',
       guiaId: '',
@@ -270,7 +270,7 @@ async function insertIncompleteGuia(
     });
   }
 
-  // Gera numero da guia mesmo para incompleta
+  // Gera número da guia mesmo para incompleta
   const { rows: guiaNumRows } = await tx.query<{ next_guia_number: string }>(
     `SELECT tiss.next_guia_number($1)`,
     [billing.tenant_id],

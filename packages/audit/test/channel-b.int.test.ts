@@ -8,20 +8,20 @@ import { connectAs, connectSuperuser, setContext } from './helpers/pg';
 import { logDomainEvent } from '../src/domain';
 import { SecurityAuditChannel } from '../src/security';
 
-// Tenant NOVO a cada execucao, pela mesma razao ja documentada em
-// no-mutate.int.test.ts: audit.event e append-only, entao nenhum afterAll
+// Tenant NOVO a cada execução, pela mesma razão já documentada em
+// no-mutate.int.test.ts: audit.event é append-only, então nenhum afterAll
 // consegue limpar o que este teste grava — o trigger no_mutate recusa o DELETE.
-// Com tenant_id constante, a negacao da rodada anterior sobrevive, a contagem
-// cresce (1, 2, 3...) e as assercoes de igualdade abaixo passam exatamente UMA
-// vez, num banco recem-criado, falhando para sempre depois.
+// Com tenant_id constante, a negação da rodada anterior sobrevive, a contagem
+// cresce (1, 2, 3...) e as asserções de igualdade abaixo passam exatamente UMA
+// vez, num banco recém-criado, falhando para sempre depois.
 //
-// A saida nao e limpar, e sim isolar: cada rodada conta sob um tenant que so ela
-// conhece. As linhas antigas continuam la, como a norma exige, sem interferir.
+// A saída não é limpar, e sim isolar: cada rodada conta sob um tenant que só ela
+// conhece. As linhas antigas continuam lá, como a norma exige, sem interferir.
 const TENANT = randomUUID();
 const USER = '0192f8a0-0000-7000-8000-000000000401';
 const PATIENT = '0192f8a0-0000-7000-8000-000000000402';
 
-/** DATABASE_URL e o papel `api`, NOINHERIT: e o mesmo caminho de producao. */
+/** DATABASE_URL é o papel `api`, NOINHERIT: é o mesmo caminho de produção. */
 function urlDaAplicacao(): string {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL ausente: rode `cp .env.example .env` e `pnpm db:up`');
@@ -54,7 +54,7 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
       await app.query('BEGIN');
       await setContext(app, { tenantId: TENANT, userId: USER, actorKind: 'user' });
 
-      // Canal A, na MESMA transacao que vai abortar.
+      // Canal A, na MESMA transação que vai abortar.
       await logDomainEvent(app, {
         eventType: 'ENCOUNTER_FINALIZE',
         entitySchema: 'clin',
@@ -63,7 +63,7 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
         meta: { version_no: 1, kind: 'original' },
       });
 
-      // Canal B, em conexao propria, fora da transacao.
+      // Canal B, em conexão própria, fora da transação.
       const resultado = await channel.record({
         eventType: 'RECORD_ACCESS_DENIED',
         outcome: 'negado',
@@ -93,9 +93,9 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
       [TENANT],
     );
 
-    // A negacao — que e o que o auditor procura — ficou.
+    // A negação — que é o que o auditor procura — ficou.
     expect(Number(negados.rows[0]?.n)).toBe(1);
-    // O evento de dominio da transacao abortada, nao.
+    // O evento de domínio da transação abortada, não.
     expect(Number(dominio.rows[0]?.n)).toBe(0);
   });
 
@@ -121,7 +121,7 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
   it('quando o banco recusa, o evento vai para o buffer em disco e nao se perde', async () => {
     const bufferPath = join(dir, 'offline.ndjson');
     const offline = new SecurityAuditChannel({
-      // porta 1: nao existe servidor. Simula banco indisponivel.
+      // porta 1: não existe servidor. Simula banco indisponível.
       connectionString: 'postgres://ninguem@127.0.0.1:1/cadencia',
       bufferPath,
     });
@@ -172,7 +172,7 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
         }),
       ).rejects.toMatchObject({ code: '23514', constraint: 'meta_sem_pii' });
 
-      // O ponto do teste: o conteudo clinico recusado pelo banco nao pode ter
+      // O ponto do teste: o conteúdo clínico recusado pelo banco não pode ter
       // sido gravado em texto claro no volume da task.
       expect(existsSync(bufferPath)).toBe(false);
     } finally {
@@ -232,9 +232,9 @@ describe('Canal B: o evento de acesso negado sobrevive ao rollback do negocio', 
       ),
     );
 
-    // Todos gravaram: o limite serializa, nao descarta.
+    // Todos gravaram: o limite serializa, não descarta.
     expect(resultados).toEqual(Array.from({ length: 6 }, () => 'gravado'));
-    // E o teto de 2 conexoes da §2.1 vale de verdade, nao so no campo do objeto.
+    // E o teto de 2 conexões da §2.1 vale de verdade, não só no campo do objeto.
     expect(channel.openConnections).toBeLessThanOrEqual(2);
     expect(channel.maxConnections).toBe(2);
 

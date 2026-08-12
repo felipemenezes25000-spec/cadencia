@@ -24,8 +24,8 @@ describe('ordenacao de nome de paciente', () => {
   });
 
   // pg_indexes.indexdef OMITE o "COLLATE" quando ele coincide com a collation da
-  // coluna, entao o texto do indexdef nao prova nada. A verdade esta em
-  // pg_index.indcollation, que e o que o planejador de fato usa.
+  // coluna, então o texto do indexdef não prova nada. A verdade está em
+  // pg_index.indcollation, que é o que o planejador de fato usa.
   it('o indice que serve a listagem carrega a MESMA collation', async () => {
     const { rows } = await appPool().query<{ attname: string; collname: string | null }>(
       `SELECT a.attname, co.collname

@@ -76,7 +76,7 @@ beforeAll(async () => {
     clinicId: s.clinicId, requestId: uuidv7(),
   };
 
-  // Semeia categoria e metodo de pagamento via transacao de negocio
+  // Semeia categoria e método de pagamento via transação de negócio
   await withTenantTx(actor, async (tx) => {
     await tx.query(
       `INSERT INTO fin.category (tenant_id, id, name, kind)
@@ -128,7 +128,7 @@ describe('schema fin — categorias e metodos', () => {
          VALUES (app.require_tenant_id(), 1)
          ON CONFLICT (tenant_id) DO NOTHING`);
 
-      // Consome o proximo numero de recibo
+      // Consome o próximo número de recibo
       const { rows: counterRows } = await tx.query<{ consumed: string }>(
         `UPDATE fin.receipt_counter
             SET next_value = next_value + 1

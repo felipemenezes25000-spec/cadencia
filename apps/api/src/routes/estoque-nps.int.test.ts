@@ -17,9 +17,9 @@ beforeAll(async () => {
       `INSERT INTO inv.product (tenant_id, id, sku, name, unit, min_stock)
        VALUES ($1,$2,'SKU-1','Luva de procedimento','cx',5)`,
       [s.tenantId, produtoId]);
-    // `quantity` e sempre POSITIVA (CHECK > 0): o sinal esta no `kind`, nao no
-    // numero. E `reference_type` e NOT NULL — toda movimentacao aponta de onde
-    // veio, senao "sumiram 3 caixas" nao tem a quem perguntar.
+    // `quantity` é sempre POSITIVA (CHECK > 0): o sinal está no `kind`, não no
+    // número. E `reference_type` é NOT NULL — toda movimentação aponta de onde
+    // veio, senão "sumiram 3 caixas" não tem a quem perguntar.
     for (const [kind, qtd, motivo, ref] of [
       ['entrada', 100, 'compra inicial', 'compra'],
       ['saida', 12, 'uso no atendimento', 'uso_atendimento'],
@@ -58,8 +58,8 @@ describe('historico de movimentacao de estoque', () => {
       movedAt: string; movedByNome: string }[] }).itens;
 
     expect(itens).toHaveLength(3);
-    // Sem historico, "temos 85 luvas" e um numero sem origem: ninguem consegue
-    // dizer se a diferenca veio de venda, perda ou erro de contagem.
+    // Sem histórico, "temos 85 luvas" é um número sem origem: ninguém consegue
+    // dizer se a diferença veio de venda, perda ou erro de contagem.
     expect(itens.map((x) => x.kind)).toContain('ajuste');
     expect(itens.some((x) => x.reason === 'contagem de inventario')).toBe(true);
     // Quem mexeu importa tanto quanto quanto mexeu.
@@ -94,10 +94,10 @@ describe('leitura de NPS', () => {
     expect(n.respostas).toBe(2);
     expect(n.promotores).toBe(1);
     expect(n.detratores).toBe(1);
-    // NPS = %promotores - %detratores. Com 1 e 1 em 2 respostas, da zero — e
-    // zero e um resultado legitimo, nao ausencia de dado.
+    // NPS = %promotores - %detratores. Com 1 e 1 em 2 respostas, dá zero — e
+    // zero é um resultado legítimo, não ausência de dado.
     expect(n.nps).toBe(0);
-    // O comentario e o que diz O QUE consertar; a nota sozinha so diz que ha
+    // O comentário é o que diz O QUE consertar; a nota sozinha só diz que há
     // algo errado.
     expect(n.comentarios.some((c) => c.comentario.includes('recepcao'))).toBe(true);
 

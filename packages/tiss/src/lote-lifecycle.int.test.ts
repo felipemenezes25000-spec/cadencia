@@ -228,7 +228,7 @@ describe('ciclo de vida do lote', () => {
     if (!lote.ok) return;
     const loteId = lote.value.loteId;
 
-    // Precisa de guia que nao esteja em outro lote
+    // Precisa de guia que não esteja em outro lote
     // Cria guias frescas para este sub-teste
     const freshGuiaId = uuidv7();
     const freshEncId = uuidv7();
@@ -345,7 +345,7 @@ describe('ciclo de vida do lote', () => {
     if (!result.ok) return;
     expect(result.value.guiasLiberadas).toBe(1);
 
-    // Apos cancelamento, a guia pode ser adicionada a outro lote
+    // Após cancelamento, a guia pode ser adicionada a outro lote
     const lote2 = await withTenantTx(actor, (tx) =>
       createLote(tx, { operadoraId: s.operadoraId, createdBy: s.userId }),
     );

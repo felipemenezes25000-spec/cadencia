@@ -20,11 +20,11 @@ export interface SecurityAuditEvent {
 }
 
 export interface SecurityAuditChannelOptions {
-  /** Conexao do pool DEDICADO. Nunca a mesma do pool de negocio. */
+  /** Conexão do pool DEDICADO. Nunca a mesma do pool de negócio. */
   readonly connectionString: string;
-  /** Arquivo NDJSON de contingencia, em volume persistente da task. */
+  /** Arquivo NDJSON de contingência, em volume persistente da task. */
   readonly bufferPath: string;
-  /** §2.1: 2 conexoes. */
+  /** §2.1: 2 conexões. */
   readonly max?: number;
 }
 
@@ -32,28 +32,28 @@ const SQL_LOG_SECURITY = `
   SELECT audit.log_security($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb) AS id`;
 
 /**
- * Buffer em disco existe para banco indisponivel — e so para isso.
- * SQLSTATE de constraint (23*), de dado (22*) ou de privilegio (42*) e bug nosso
+ * Buffer em disco existe para banco indisponível — e só para isso.
+ * SQLSTATE de constraint (23*), de dado (22*) ou de privilégio (42*) é bug nosso
  * e tem que falhar alto: bufferizar um `meta` recusado pela whitelist gravaria
- * queixa, CID ou nome de paciente em texto claro num arquivo NDJSON, que e
- * precisamente o que a NGS1.07.06 proibe.
+ * queixa, CID ou nome de paciente em texto claro num arquivo NDJSON, que é
+ * precisamente o que a NGS1.07.06 proíbe.
  */
 function isTransient(err: unknown): boolean {
   const code = (err as { code?: unknown }).code;
   // Erro de rede/socket do Node (ECONNREFUSED, ETIMEDOUT) ou timeout do pool:
-  // nao tem SQLSTATE de 5 caracteres.
+  // não tem SQLSTATE de 5 caracteres.
   if (typeof code !== 'string' || !/^[0-9A-Z]{5}$/.test(code)) return true;
-  // 08 conexao · 53 recursos esgotados · 57 intervencao do operador ·
-  // 58 erro de sistema · XX corrupcao interna.
+  // 08 conexão · 53 recursos esgotados · 57 intervenção do operador ·
+  // 58 erro de sistema · XX corrupção interna.
   return /^(08|53|57|58|XX)/.test(code);
 }
 
 /**
- * Canal B: seguranca e acesso, FORA da transacao de negocio.
+ * Canal B: segurança e acesso, FORA da transação de negócio.
  *
- * Evento de negacao e o que o auditor procura, e a negacao acontece exatamente
- * quando a transacao de negocio vai abortar. Gravar pela mesma conexao faria o
- * ROLLBACK apagar a evidencia. Se o banco recusar, o evento vai para disco.
+ * Evento de negação é o que o auditor procura, e a negação acontece exatamente
+ * quando a transação de negócio vai abortar. Gravar pela mesma conexão faria o
+ * ROLLBACK apagar a evidência. Se o banco recusar, o evento vai para disco.
  */
 export class SecurityAuditChannel {
   private readonly pool: Pool;
@@ -69,8 +69,8 @@ export class SecurityAuditChannel {
       connectionTimeoutMillis: 2_000,
       application_name: 'cadencia-audit-channel',
     });
-    // O papel de login `api` e NOINHERIT: nao herda app_rw sozinho. A query e
-    // enfileirada na conexao antes de qualquer outra, porque o `pg` mantem uma
+    // O papel de login `api` é NOINHERIT: não herda app_rw sozinho. A query é
+    // enfileirada na conexão antes de qualquer outra, porque o `pg` mantém uma
     // fila FIFO por cliente.
     this.pool.on('connect', (client) => {
       void client.query('SET ROLE app_rw').catch(() => undefined);
@@ -78,7 +78,7 @@ export class SecurityAuditChannel {
     this.pool.on('error', () => undefined);
   }
 
-  /** Conexoes fisicas efetivamente abertas agora por este pool. */
+  /** Conexões físicas efetivamente abertas agora por este pool. */
   get openConnections(): number {
     return this.pool.totalCount;
   }
@@ -95,9 +95,9 @@ export class SecurityAuditChannel {
   }
 
   /**
-   * Leitura de prontuario. A deduplicacao (1 evento por usuario × paciente ×
-   * caso de uso, janela de 5 min) acontece no banco: dois processos api nao
-   * compartilham cache de memoria.
+   * Leitura de prontuário. A deduplicação (1 evento por usuário × paciente ×
+   * caso de uso, janela de 5 min) acontece no banco: dois processos api não
+   * compartilham cache de memória.
    */
   async recordRead(read: {
     readonly useCase: string;

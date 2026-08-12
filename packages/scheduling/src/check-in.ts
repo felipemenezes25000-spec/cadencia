@@ -5,20 +5,20 @@ import type { SchedulingFailure } from './appointments';
 export interface CheckInResult {
   readonly appointmentId: string;
   readonly status: 'aguardando';
-  /** A divida de dados a cobrar AGORA, com a pessoa na frente. */
+  /** A dívida de dados a cobrar AGORA, com a pessoa na frente. */
   readonly pendentes: readonly string[];
 }
 
 /**
- * §5.5 — o check-in e o MOMENTO CERTO de cobrar CPF, nascimento e sexo: a pessoa
- * esta na frente e o dado sai correto. Ele NAO bloqueia: quem bloqueia e a
- * finalizacao do atendimento e o faturamento de convenio, que sao os momentos em
- * que o dado e de fato obrigatorio. Cobrar no agendamento por telefone e o que
+ * §5.5 — o check-in é o MOMENTO CERTO de cobrar CPF, nascimento e sexo: a pessoa
+ * está na frente e o dado sai correto. Ele NÃO bloqueia: quem bloqueia é a
+ * finalização do atendimento e o faturamento de convênio, que são os momentos em
+ * que o dado é de fato obrigatório. Cobrar no agendamento por telefone é o que
  * faz nascer o 000.000.000-00.
  *
- * A funcao NAO importa @cadencia/patients: scheduling e patients sao de camadas
- * diferentes (L2 e L1) e a seta desce, mas a consulta aqui e de tres colunas —
- * criar dependencia entre modulos por causa disso e o inicio do acoplamento que
+ * A função NÃO importa @cadencia/patients: scheduling e patients são de camadas
+ * diferentes (L2 e L1) e a seta desce, mas a consulta aqui é de três colunas —
+ * criar dependência entre módulos por causa disso é o início do acoplamento que
  * o §2.2 existe para evitar.
  */
 export async function checkIn(

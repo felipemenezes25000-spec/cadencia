@@ -6,7 +6,7 @@ import { rota } from '../guard';
 
 const Prioridade = z.enum(['baixa', 'normal', 'alta', 'urgente']);
 
-/** Violacao do indice unico parcial `ux_waitlist_ativa`. */
+/** Violação do índice único parcial `ux_waitlist_ativa`. */
 const UNIQUE_VIOLATION = '23505';
 
 export async function listaDeEsperaRoutes(app: FastifyInstance): Promise<void> {
@@ -38,7 +38,7 @@ export async function listaDeEsperaRoutes(app: FastifyInstance): Promise<void> {
       janela_de: string | null; janela_ate: string | null; observacao: string | null;
       called_at: Date | null; created_at: Date;
     }>(
-      // A ordem e a do indice ix_waitlist_fila: prioridade DESC, chegada.
+      // A ordem é a do índice ix_waitlist_fila: prioridade DESC, chegada.
       // Ordenar no cliente daria uma fila diferente por aba aberta.
       `SELECT w.id, w.patient_id, p.full_name AS patient_nome, w.professional_id,
               w.prioridade, w.janela_de::text, w.janela_ate::text, w.observacao,
@@ -102,8 +102,8 @@ export async function listaDeEsperaRoutes(app: FastifyInstance): Promise<void> {
          body.observacao ?? null, ctx.actor.userId]);
     } catch (e) {
       // `ux_waitlist_ativa` usa coalesce(professional_id, uuid-zero): "qualquer
-      // profissional" e UMA entrada, nao N. Traduzir o 23505 aqui e o que faz a
-      // recepcao ver "ja esta na fila" em vez de um 500 sem explicacao.
+      // profissional" é UMA entrada, não N. Traduzir o 23505 aqui é o que faz a
+      // recepção ver "já está na fila" em vez de um 500 sem explicação.
       if ((e as { code?: string }).code === UNIQUE_VIOLATION) {
         return reply.code(409).send({ erro: 'ja_na_fila' as const });
       }
@@ -126,7 +126,7 @@ export async function listaDeEsperaRoutes(app: FastifyInstance): Promise<void> {
     const p = req.params as { id: string };
     const b = req.body as { motivo: string };
 
-    // O CHECK da tabela exige que closed_at e close_reason andem juntos: nao
+    // O CHECK da tabela exige que closed_at e close_reason andem juntos: não
     // existe entrada encerrada sem motivo registrado.
     const { rowCount } = await tx.query(
       `UPDATE sched.waitlist

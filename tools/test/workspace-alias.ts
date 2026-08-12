@@ -2,9 +2,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // Um alias por pacote do workspace. O `paths` do tsconfig resolve o TIPO;
-// isto resolve o MODULO em tempo de teste. Os dois precisam existir: sem este
-// alias, o primeiro import de irmao quebra com "Failed to resolve import".
-// Tambem gera aliases para subpath exports declarados em package.json
+// isto resolve o MÓDULO em tempo de teste. Os dois precisam existir: sem este
+// alias, o primeiro import de irmão quebra com "Failed to resolve import".
+// Também gera aliases para subpath exports declarados em package.json
 // (ex: "@cadencia/reports/test-support" → ".../src/test-support.ts").
 export function buildWorkspaceAlias(): Record<string, string> {
   const entries: [string, string][] = [];
@@ -12,7 +12,7 @@ export function buildWorkspaceAlias(): Record<string, string> {
 
   // Subpath exports precisam vir ANTES do alias principal para que Vite
   // resolva "@cadencia/reports/test-support" antes de "@cadencia/reports"
-  // (o alias e prefix-match; mais especifico primeiro).
+  // (o alias é prefix-match; mais específico primeiro).
   const mainAliases: [string, string][] = [];
 
   for (const dir of dirs) {

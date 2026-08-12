@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     default: 'Cadencia',
     template: '%s | Cadencia',
   },
-  description: 'Sistema de gestao clinica e prontuario eletronico',
+  description: 'Sistema de gestão clínica e prontuário eletrônico',
 };
 
 export const viewport: Viewport = {
@@ -50,12 +50,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body className="bg-bg text-text font-sans antialiased">
-        {/* Link de acessibilidade: pular para conteudo principal */}
+        {/* Link de acessibilidade: pular para conteúdo principal */}
         <a
           href="#conteudo-principal"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[var(--r-md)] focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-on"
         >
-          Pular para o conteudo principal
+          Pular para o conteúdo principal
         </a>
 
         <Providers>

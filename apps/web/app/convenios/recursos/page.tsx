@@ -33,9 +33,9 @@ function RecursosInner() {
             id: x.recursoId,
             operadoraNome: x.operadoraNome,
             operadoraId: x.operadoraId,
-            // 'pronto' e 'resolvido' sao estados do BANCO; a tela so conhece o
-            // ciclo do recurso perante a operadora. Pronto ainda nao saiu daqui,
-            // entao continua rascunho para quem olha.
+            // 'pronto' e 'resolvido' são estados do BANCO; a tela só conhece o
+            // ciclo do recurso perante a operadora. Pronto ainda não saiu daqui,
+            // então continua rascunho para quem olha.
             status: x.status === 'enviado' ? 'enviado' as const
               : x.status === 'resolvido' ? 'aceito' as const
               : 'rascunho' as const,
@@ -43,7 +43,7 @@ function RecursosInner() {
             criadoEm: x.createdAt,
             enviadoEm: x.sentAt,
             totalGlosasCentavos: x.totalRecursadoCents,
-            // Os itens do recurso saem no detalhe. A listagem so precisa do
+            // Os itens do recurso saem no detalhe. A listagem só precisa do
             // contador para dizer "3 glosas neste recurso".
             itens: [],
           })),

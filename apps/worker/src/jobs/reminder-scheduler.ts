@@ -8,21 +8,21 @@ export interface ReminderScheduleResult {
 }
 
 /**
- * Agenda lembretes e confirmacoes automaticas.
+ * Agenda lembretes e confirmações automáticas.
  *
  * Varre msg.automation_rule para regras habilitadas, encontra agendamentos
- * que se encaixam no criterio de offset e agenda jobs de envio.
+ * que se encaixam no critério de offset e agenda jobs de envio.
  *
- * Divergencias do plano vs schema real:
- * - active (nao enabled)
- * - timing_offset_minutes (nao offset_minutes)
- * - channel (nao channel_kind)
+ * Divergências do plano vs schema real:
+ * - active (não enabled)
+ * - timing_offset_minutes (não offset_minutes)
+ * - channel (não channel_kind)
  */
 export async function scheduleReminders(boss: PgBoss): Promise<ReminderScheduleResult> {
   let scheduled = 0;
   let skipped = 0;
 
-  // Buscar regras ativas (coluna real: active, nao enabled)
+  // Buscar regras ativas (coluna real: active, não enabled)
   const { rows: rules } = await jobsPool().query<{
     id: string; tenant_id: string; trigger: string; template_id: string;
     timing_offset_minutes: string; channel: string;
@@ -35,7 +35,7 @@ export async function scheduleReminders(boss: PgBoss): Promise<ReminderScheduleR
   for (const rule of rules) {
     const offsetMinutes = Number(rule.timing_offset_minutes);
 
-    // Buscar agendamentos que precisam de lembrete/confirmacao.
+    // Buscar agendamentos que precisam de lembrete/confirmação.
     // O offset negativo significa "antes do agendamento".
     // Ex: timing_offset_minutes = -1440 significa 24h antes.
     // Colunas reais: patient.phone_primary, patient.full_name
@@ -80,7 +80,7 @@ export async function scheduleReminders(boss: PgBoss): Promise<ReminderScheduleR
           ruleId: rule.id,
         });
 
-        // Marcar como agendado para nao duplicar
+        // Marcar como agendado para não duplicar
         await jobsPool().query(
           `INSERT INTO msg.sent_reminder
              (id, tenant_id, appointment_id, rule_id, scheduled_at)

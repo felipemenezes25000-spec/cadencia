@@ -1,7 +1,7 @@
 import type { Queryable } from '../queryable';
 
 export interface AuditAliveOptions {
-  /** Defasagem maxima aceita entre agora e o evento mais recente. Ausente = sem limite. */
+  /** Defasagem máxima aceita entre agora e o evento mais recente. Ausente = sem limite. */
   maxLagMinutes?: number;
 }
 
@@ -11,9 +11,9 @@ async function relationExists(db: Queryable, relation: string): Promise<boolean>
 }
 
 /**
- * A trilha nao pode so existir: uma tabela audit.event vazia da impressao de controle
- * e nao prova nada em auditoria. Num banco recem-migrado o check reprova de proposito —
- * a resposta certa e exercitar audit.log, nao afrouxar o invariante.
+ * A trilha não pode só existir: uma tabela audit.event vazia dá impressão de controle
+ * e não prova nada em auditoria. Num banco recém-migrado o check reprova de propósito —
+ * a resposta certa é exercitar audit.log, não afrouxar o invariante.
  */
 export async function auditAliveViolations(db: Queryable, opts: AuditAliveOptions = {}): Promise<string[]> {
   if (!(await relationExists(db, 'audit.event'))) {

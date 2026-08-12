@@ -1,14 +1,14 @@
 // packages/db/test/0073_msg_channel_identity.int.test.ts
 //
-// Testes de integracao para msg.channel_identity (criada em 0071).
-// Valida existencia da tabela, RLS multi-tenant, e constraint unique.
+// Testes de integração para msg.channel_identity (criada em 0071).
+// Valida existência da tabela, RLS multi-tenant, e constraint unique.
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runMigrations } from '../src/migrate';
 import { closePools } from '../src/pool';
 import { withTenantTx, type Actor } from '../src/tx';
 
-// IDs fixos para este teste — UUIDv7 validos, nao colidem com o seed da iso.
+// IDs fixos para este teste — UUIDv7 válidos, não colidem com o seed da iso.
 const TENANT_A = '01930000-0000-7000-8000-100000000001';
 const TENANT_B = '01930000-0000-7000-8000-100000000002';
 const USER_A   = '01930000-0000-7000-8000-100000000003';
@@ -48,7 +48,7 @@ beforeAll(async () => {
     application_name: 'cadencia-channel-identity-test',
   });
 
-  // Semear dois tenants com usuario, clinica e vinculo para que app.is_member() passe.
+  // Semear dois tenants com usuário, clínica e vínculo para que app.is_member() passe.
   await admin.query(
     `INSERT INTO app.tenant (id, slug, razao_social, cnpj) VALUES
        ($1, 'ci-alpha', 'CI Alpha Ltda', '11AAA111111101'),
@@ -94,11 +94,11 @@ afterAll(async () => {
     [TENANT_A, TENANT_B],
   ]);
   await admin.query(`DELETE FROM id."user" WHERE id = ANY($1::uuid[])`, [[USER_A, USER_B]]);
-  // A conta bancaria e provisionada por gatilho quando o tenant nasce. Deixar
-  // ela para tras era o que produzia orfaos: o tenant sumia, a conta ficava, e a
-  // proxima rodada com o mesmo id fixo esbarrava no unique de nome. Desde a
-  // migration 0144 existe FK, entao o DELETE do tenant simplesmente falha — o
-  // que e melhor: erro alto agora em vez de lixo silencioso depois.
+  // A conta bancária é provisionada por gatilho quando o tenant nasce. Deixar
+  // ela para trás era o que produzia órfãos: o tenant sumia, a conta ficava, e a
+  // próxima rodada com o mesmo id fixo esbarrava no unique de nome. Desde a
+  // migration 0144 existe FK, então o DELETE do tenant simplesmente falha — o
+  // que é melhor: erro alto agora em vez de lixo silencioso depois.
   await admin.query('DELETE FROM fin.bank_account WHERE tenant_id = ANY($1::uuid[])', [
     [TENANT_A, TENANT_B],
   ]);
@@ -144,7 +144,7 @@ describe('msg.channel_identity', () => {
   });
 
   it('RLS impede leitura de canal de OUTRO tenant', async () => {
-    // Inserir como admin para garantir que a linha persiste apos o teste anterior (que fez COMMIT).
+    // Inserir como admin para garantir que a linha persiste após o teste anterior (que fez COMMIT).
     await admin.query(`
       INSERT INTO msg.channel_identity (
         tenant_id, id, channel, display_name, phone,
@@ -155,7 +155,7 @@ describe('msg.channel_identity', () => {
       )
     `, [TENANT_A]);
 
-    // Actor B nao deve enxergar linhas do tenant A.
+    // Actor B não deve enxergar linhas do tenant A.
     await withTenantTx(actorB, async (tx) => {
       const result = await tx.query(
         'SELECT * FROM msg.channel_identity WHERE tenant_id = $1',
