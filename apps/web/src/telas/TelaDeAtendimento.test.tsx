@@ -236,7 +236,7 @@ describe('TelaDeAtendimento', () => {
     // some, e isso é coberto pelo teste 'sem gancho de emissão'.
     renderTela({ aoEmitirDocumento: vi.fn() });
     // Verifica a barra de ações via aria-label
-    const barraAcoes = screen.getByRole('navigation', { name: /ações do atendimento/i });
+    const barraAcoes = screen.getByRole('navigation', { name: /Acoes do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
     // Verifica os botões dentro da barra de ações (using within)
     const botoes = barraAcoes.querySelectorAll('button');

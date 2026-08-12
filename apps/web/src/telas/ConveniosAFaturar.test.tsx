@@ -180,7 +180,7 @@ describe("ConveniosAFaturar", () => {
   it("tem filtro por periodo", async () => {
     montar();
     await waitFor(() =>
-      expect(screen.getByLabelText(/Periodo inicio/i)).toBeVisible(),
+      expect(screen.getByLabelText(/Período início/i)).toBeVisible(),
     );
     expect(screen.getByLabelText(/Periodo fim/i)).toBeVisible();
   });
