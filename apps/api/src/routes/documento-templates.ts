@@ -50,7 +50,7 @@ export async function documentTemplateRoutes(app: FastifyInstance): Promise<void
       `SELECT id, clinic_id, professional_id, kind, titulo, corpo,
               created_at::text AS created_at, updated_at::text AS updated_at
          FROM clin.document_template
-        WHERE clinic_id = current_setting('app.clinic_id')::uuid
+        WHERE tenant_id = current_setting('app.tenant_id')::uuid AND clinic_id = current_setting('app.clinic_id')::uuid
         ORDER BY kind, professional_id NULLS FIRST`,
     );
     return { itens: rows.map((x) => ({

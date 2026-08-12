@@ -198,7 +198,7 @@ export const ACTIONS = [
   { key: 'document_template.write', description: 'Criar ou editar modelos de documento',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   { key: 'document_template.delete', description: 'Excluir modelo de documento',
-    roles: ['admin_clinico'] },
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   // ── Notificações in-app ────────────────────────────────────────────────
   { key: 'notification.read', description: 'Ver notificações',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
