@@ -6,24 +6,14 @@ import {
   PencilSimple,
   MagnifyingGlass,
   ChatCircleDots,
-  ArrowLeft,
 } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Icone } from '../ui/Icone';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
 import { Skeleton } from '../ui/Skeleton';
-import type {
-  ConversaResumo,
-  FiltroConversas,
-} from './CaixaDeConversas';
-import {
-  PainelDeConversa,
-  type ContextoConversa,
-  type Mensagem,
-} from './PainelDeConversa';
-
-/* ── Props públicas ───────────────────────────────────────────────────── */
+import type { ConversaResumo, FiltroConversas } from './CaixaDeConversas';
+import { PainelDeConversa, type ContextoConversa, type Mensagem } from './PainelDeConversa';
 
 export interface ConversasProps {
   readonly filtro: FiltroConversas;
@@ -36,21 +26,15 @@ export interface ConversasProps {
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
   readonly aoVincularPaciente: () => void;
   readonly aoSelecionarTemplate: () => void;
-  /** Callback para voltar à lista no mobile (limpar conversa ativa) */
   readonly aoVoltar?: () => void;
-  /** Callback para iniciar nova conversa */
   readonly aoNova?: () => void;
 }
-
-/* ── Constantes ────────────────────────────────────────────────────────── */
 
 const FILTROS: ReadonlyArray<{ chave: FiltroConversas; rotulo: string }> = [
   { chave: 'todas', rotulo: 'Todas' },
   { chave: 'nao_lidas', rotulo: 'Não lidas' },
   { chave: 'whatsapp', rotulo: 'WhatsApp' },
 ];
-
-/* ── Utilidades (replicadas de CaixaDeConversas — funções privadas lá) ── */
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
@@ -60,163 +44,107 @@ function iniciais(nome: string): string {
 }
 
 function horaOuData(iso: string): string {
+  if (!iso) return '';
   const d = new Date(iso);
   const agora = new Date();
-  const mesmo =
-    d.getUTCFullYear() === agora.getUTCFullYear() &&
-    d.getUTCMonth() === agora.getUTCMonth() &&
-    d.getUTCDate() === agora.getUTCDate();
-  if (mesmo) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC',
-    }).format(d);
-  }
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: 'UTC',
-  }).format(d);
+  const mesmo = d.getUTCFullYear() === agora.getUTCFullYear()
+    && d.getUTCMonth() === agora.getUTCMonth()
+    && d.getUTCDate() === agora.getUTCDate();
+  return new Intl.DateTimeFormat('pt-BR', mesmo
+    ? { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }
+    : { day: '2-digit', month: '2-digit', timeZone: 'UTC' }).format(d);
 }
 
 function nomeExibido(c: ConversaResumo): string {
   return c.patientName ?? c.phoneNumber;
 }
 
-/* ── Sub-componentes ───────────────────────────────────────────────────── */
-
-/** Estado vazio quando nenhuma conversa está selecionada */
 function ConversaVazia() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
-      <Icone icon={ChatCircleDots} size="xl" className="text-text-muted mb-3" />
-      <p className="text-base font-medium text-text">
-        Nenhuma conversa selecionada
-      </p>
-      <p className="mt-1 text-sm text-text-muted">
-        Selecione uma conversa à esquerda ou inicie uma nova
+    <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+      <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent">
+        <ChatCircleDots size={29} aria-hidden />
+      </span>
+      <p className="mt-4 text-base font-semibold text-text">Sua central de relacionamento</p>
+      <p className="mt-1 max-w-sm text-sm leading-relaxed text-text-muted">
+        Selecione uma conversa para ver mensagens, próximo atendimento e pendências do paciente no mesmo contexto.
       </p>
     </div>
   );
 }
 
-/** Skeleton de carregamento para a tela inteira */
 function ConversasSkeleton() {
   return (
-    <div
-      className="flex h-full"
-      role="status"
-      aria-label="Carregando conversas"
-      data-testid="conversas-skeleton"
-    >
-      {/* Painel esquerdo skeleton */}
-      <div className="w-80 shrink-0 border-r border-line max-md:w-full">
-        <div className="border-b border-line p-4">
-          <Skeleton variant="text" width="120px" ariaLabel="Carregando título" />
-        </div>
-        <div className="border-b border-line p-3">
-          <Skeleton variant="text" height="36px" ariaLabel="Carregando busca" />
-        </div>
-        <div>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-3">
-              <Skeleton variant="avatar" width="40px" ariaLabel="Carregando avatar" />
-              <div className="flex-1 space-y-1">
-                <Skeleton variant="text" width="60%" ariaLabel="Carregando nome" />
-                <Skeleton variant="text" width="80%" ariaLabel="Carregando mensagem" />
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="flex h-[calc(100vh-68px-var(--nav-height,0px))] bg-surface" role="status" aria-label="Carregando conversas" data-testid="conversas-skeleton">
+      <div className="w-[360px] shrink-0 border-r border-line max-md:w-full">
+        <div className="border-b border-line p-5"><Skeleton variant="text" width="150px" /></div>
+        <div className="border-b border-line p-3"><Skeleton variant="text" height="40px" /></div>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 border-b border-line p-3.5">
+            <Skeleton variant="avatar" width="42px" />
+            <div className="flex-1 space-y-1"><Skeleton variant="text" width="60%" /><Skeleton variant="text" width="85%" /></div>
+          </div>
+        ))}
       </div>
-      {/* Painel direito skeleton */}
-      <div className="flex flex-1 items-center justify-center max-md:hidden">
-        <Skeleton variant="text" width="200px" ariaLabel="Carregando conversa" />
-      </div>
+      <div className="flex flex-1 items-center justify-center max-md:hidden"><Skeleton variant="text" width="220px" /></div>
     </div>
   );
 }
-
-/* ── Componente principal ──────────────────────────────────────────────── */
 
 export function Conversas(p: ConversasProps) {
   const [conversas, setConversas] = useState<ConversaResumo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState('');
 
-  /* Carrega conversas quando o filtro muda */
   useEffect(() => {
+    let ativo = true;
     setCarregando(true);
-    void p
-      .carregarConversas(p.filtro)
-      .then(setConversas)
-      .finally(() => setCarregando(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.filtro]);
+    void p.carregarConversas(p.filtro)
+      .then((resultado) => { if (ativo) setConversas(resultado); })
+      .finally(() => { if (ativo) setCarregando(false); });
+    return () => { ativo = false; };
+  }, [p.filtro, p.carregarConversas]);
 
-  /* Filtra conversas pelo campo de busca */
   const conversasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     if (termo === '') return conversas;
-    return conversas.filter(
-      (c) =>
-        c.patientName?.toLowerCase().includes(termo) ||
-        c.phoneNumber.includes(termo) ||
-        c.lastMessageBody.toLowerCase().includes(termo),
-    );
+    return conversas.filter((c) =>
+      c.patientName?.toLowerCase().includes(termo)
+      || c.phoneNumber.includes(termo)
+      || c.lastMessageBody.toLowerCase().includes(termo));
   }, [conversas, busca]);
 
   const conversaAtiva = p.conversaAbertaId;
-  const dadosConversa =
-    conversas.find((c) => c.conversationId === conversaAtiva) ?? null;
+  const dadosConversa = conversas.find((c) => c.conversationId === conversaAtiva) ?? null;
 
-  /* ── Skeleton de carregamento inicial ────────────────────────────────── */
-  if (carregando) {
-    return <ConversasSkeleton />;
-  }
+  if (carregando) return <ConversasSkeleton />;
 
   return (
-    <div
-      className="m-4 flex h-[calc(100vh-var(--nav-height,0px)-32px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-2 max-md:m-0 max-md:h-[calc(100vh-var(--nav-height,0px))] max-md:rounded-none max-md:border-0"
-      data-testid="split-view"
-    >
-      {/* ── Painel esquerdo: lista de conversas ──────────────────────────── */}
-      <div
-        className={cn(
-          'w-[340px] shrink-0 border-r border-line flex flex-col bg-surface/90',
-          conversaAtiva != null && 'max-md:hidden',
-        )}
-      >
-        {/* Cabeçalho */}
-        <div className="flex min-h-[64px] items-center justify-between border-b border-line px-4 py-3">
-          <h1 className="text-base font-semibold text-text">Conversas</h1>
-          <Botao
-            variante="fantasma"
-            tamanho="sm"
-            iconeEsquerda={PencilSimple}
-            onClick={p.aoNova}
-          >
-            Nova
-          </Botao>
+    <div className="flex h-[calc(100vh-68px-var(--nav-height,0px))] overflow-hidden bg-surface" data-testid="split-view">
+      <aside className={cn(
+        'flex w-[360px] shrink-0 flex-col border-r border-line bg-surface',
+        conversaAtiva != null && 'max-md:hidden',
+        'max-md:w-full',
+      )}>
+        <div className="flex min-h-[72px] items-center justify-between border-b border-line px-4 py-3.5">
+          <div>
+            <p className="cadencia-eyebrow mb-1">Relacionamento</p>
+            <h1 className="text-lg font-bold tracking-[-0.025em] text-text">Conversas</h1>
+          </div>
+          <Botao variante="secundario" tamanho="sm" iconeEsquerda={PencilSimple} onClick={p.aoNova}>Nova</Botao>
         </div>
 
-        {/* Busca */}
-        <div className="border-b border-line px-3 py-2">
+        <div className="border-b border-line px-3 py-3">
           <Campo
             prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-            placeholder="Buscar conversas..."
+            placeholder="Paciente, telefone ou mensagem…"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
+            aria-label="Buscar conversas"
           />
         </div>
 
-        {/* Filtros */}
-        <div
-          role="group"
-          aria-label="Filtros de conversas"
-          className="flex flex-wrap gap-1 border-b border-line px-3 py-2"
-        >
+        <div role="group" aria-label="Filtros de conversas" className="flex gap-1 border-b border-line bg-surface-subtle px-3 py-2">
           {FILTROS.map((f) => (
             <button
               key={f.chave}
@@ -224,11 +152,10 @@ export function Conversas(p: ConversasProps) {
               aria-pressed={p.filtro === f.chave}
               onClick={() => p.aoMudarFiltro(f.chave)}
               className={cn(
-                'cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold',
-                'transition-colors-fast',
+                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors-fast',
                 p.filtro === f.chave
-                  ? 'border-accent/25 bg-accent-soft text-accent shadow-elev-1'
-                  : 'bg-surface text-text-muted hover:border-line-strong hover:bg-surface-hover hover:text-text',
+                  ? 'bg-surface text-accent shadow-elev-1'
+                  : 'text-text-muted hover:bg-surface hover:text-text',
               )}
             >
               {f.rotulo}
@@ -236,111 +163,70 @@ export function Conversas(p: ConversasProps) {
           ))}
         </div>
 
-        {/* Lista de conversas */}
-        <ul
-          aria-label="Lista de conversas"
-          className="m-0 flex-1 list-none overflow-y-auto p-0"
-        >
-          {conversasFiltradas.map((c) => (
-            <li
-              key={c.conversationId}
-              onClick={() => p.aoAbrirConversa(c.conversationId)}
-              className={cn(
-                'grid cursor-pointer grid-cols-[40px_1fr_auto] items-center gap-2 border-b border-line px-3 py-3.5',
-                'transition-colors-fast hover:bg-surface-hover',
-                c.unreadCount > 0 && 'bg-surface-hover',
-                c.conversationId === conversaAtiva &&
-                  'bg-accent-soft hover:bg-accent-soft',
-              )}
-            >
-              {/* Avatar / iniciais */}
-              <span
-                aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent"
-              >
-                {c.patientName != null ? iniciais(c.patientName) : '#'}
-              </span>
-
-              {/* Nome + última mensagem */}
-              <div className="grid gap-0.5 overflow-hidden">
-                <span
+        <ul aria-label="Lista de conversas" className="m-0 flex-1 list-none overflow-y-auto p-0 scrollbar-thin">
+          {conversasFiltradas.map((c) => {
+            const ativa = c.conversationId === conversaAtiva;
+            return (
+              <li key={c.conversationId}>
+                <button
+                  type="button"
+                  onClick={() => p.aoAbrirConversa(c.conversationId)}
                   className={cn(
-                    'truncate text-sm',
-                    c.unreadCount > 0 ? 'font-semibold' : 'font-medium',
+                    'relative grid w-full grid-cols-[42px_1fr_auto] items-center gap-3 border-b border-line px-3.5 py-3.5 text-left transition-colors-fast',
+                    ativa ? 'bg-accent-soft/60' : 'hover:bg-surface-hover',
+                    c.unreadCount > 0 && !ativa && 'bg-surface-subtle',
                   )}
                 >
-                  {nomeExibido(c)}
-                </span>
-                <span className="truncate text-xs text-text-muted">
-                  {c.lastMessageBody}
-                </span>
-              </div>
-
-              {/* Hora + badge de não lidas */}
-              <div className="grid gap-0.5 justify-items-end self-start">
-                <span className="text-[11px] tabular-nums text-text-muted">
-                  {horaOuData(c.lastMessageAt)}
-                </span>
-                {c.unreadCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-on">
-                    {c.unreadCount}
+                  {ativa ? <span className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-accent" aria-hidden /> : null}
+                  <span aria-hidden="true" className={cn(
+                    'grid size-[42px] shrink-0 place-items-center rounded-xl text-xs font-bold',
+                    ativa ? 'bg-accent text-white' : 'bg-accent-soft text-accent',
+                  )}>
+                    {c.patientName != null ? iniciais(c.patientName) : '#'}
                   </span>
-                )}
-              </div>
-            </li>
-          ))}
 
-          {conversasFiltradas.length === 0 && (
-            <li className="p-6 text-center text-sm text-text-muted">
-              Nenhuma conversa encontrada
-            </li>
-          )}
+                  <span className="grid min-w-0 gap-0.5">
+                    <span className={cn('truncate text-sm text-text', c.unreadCount > 0 ? 'font-bold' : 'font-semibold')}>
+                      {nomeExibido(c)}
+                    </span>
+                    <span className={cn('truncate text-xs', c.unreadCount > 0 ? 'font-medium text-text-muted' : 'text-text-faint')}>
+                      {c.lastMessageDirection === 'outbound' ? 'Você: ' : ''}{c.lastMessageBody}
+                    </span>
+                  </span>
+
+                  <span className="grid justify-items-end gap-1 self-start pt-0.5">
+                    <span className="text-[11px] tabular-nums text-text-faint">{horaOuData(c.lastMessageAt)}</span>
+                    {c.unreadCount > 0 ? (
+                      <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-white">{c.unreadCount}</span>
+                    ) : null}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+
+          {conversasFiltradas.length === 0 ? (
+            <li className="p-8 text-center text-sm text-text-muted">Nenhuma conversa corresponde aos filtros.</li>
+          ) : null}
         </ul>
-      </div>
+      </aside>
 
-      {/* ── Painel direito: conversa ativa ou estado vazio ────────────────── */}
-      <div
-        className={cn(
-          'flex min-w-0 flex-1 flex-col bg-surface-sunken/35',
-          conversaAtiva == null && 'max-md:hidden',
-        )}
-      >
+      <main className={cn('min-w-0 flex-1 bg-surface-sunken/35', conversaAtiva == null && 'max-md:hidden')}>
         {conversaAtiva != null && dadosConversa != null ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            {/* Botão voltar — apenas no mobile */}
-            <div className="flex items-center gap-2 border-b border-line bg-surface px-3 py-2 md:hidden">
-              <button
-                type="button"
-                onClick={p.aoVoltar}
-                className="rounded-lg p-1.5 text-text-muted transition-colors-fast hover:bg-surface-raised"
-                aria-label="Voltar para lista"
-              >
-                <Icone icon={ArrowLeft} size="md" />
-              </button>
-              <span className="truncate text-sm font-medium text-text">
-                {nomeExibido(dadosConversa)}
-              </span>
-            </div>
-
-            {/* Painel de conversa */}
-            <div className="min-h-0 flex-1">
-              <PainelDeConversa
-                conversationId={dadosConversa.conversationId}
-                nomeExibido={nomeExibido(dadosConversa)}
-                phoneNumber={dadosConversa.phoneNumber}
-                patientId={dadosConversa.patientId}
-                carregarMensagens={p.carregarMensagens}
-                carregarContexto={p.carregarContexto}
-                aoEnviar={p.aoEnviar}
-                aoVincularPaciente={p.aoVincularPaciente}
-                aoSelecionarTemplate={p.aoSelecionarTemplate}
-              />
-            </div>
-          </div>
-        ) : (
-          <ConversaVazia />
-        )}
-      </div>
+          <PainelDeConversa
+            conversationId={dadosConversa.conversationId}
+            nomeExibido={nomeExibido(dadosConversa)}
+            phoneNumber={dadosConversa.phoneNumber}
+            patientId={dadosConversa.patientId}
+            carregarMensagens={p.carregarMensagens}
+            carregarContexto={p.carregarContexto}
+            aoEnviar={p.aoEnviar}
+            aoVincularPaciente={p.aoVincularPaciente}
+            aoSelecionarTemplate={p.aoSelecionarTemplate}
+            {...(p.aoVoltar ? { aoVoltar: p.aoVoltar } : {})}
+          />
+        ) : <ConversaVazia />}
+      </main>
     </div>
   );
 }
