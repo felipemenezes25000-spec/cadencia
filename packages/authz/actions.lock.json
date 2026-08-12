@@ -1,5 +1,5 @@
 {
-  "checksum": "811a5b7840aa51036a4079bbadb9d947e3f788d327be08bcc439ff8724418744",
+  "checksum": "f87de1ff7f4b297dcaa4605015d8add8ca6f4b1ce72715907b1e8875a5c72c78",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -91,6 +91,23 @@
       "requiresMfa": false
     },
     {
+      "key": "billing.read",
+      "description": "Ver planos, assinatura e faturas",
+      "roles": [
+        "admin_clinico",
+        "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "billing.write",
+      "description": "Contratar, alterar ou cancelar plano",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": false
+    },
+    {
       "key": "catalog.read",
       "description": "Consultar terminologia (CID-10, TUSS)",
       "roles": [
@@ -99,6 +116,22 @@
         "financeiro",
         "profissional",
         "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "channel.read",
+      "description": "Ver canais configurados",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "channel.write",
+      "description": "Configurar canais",
+      "roles": [
+        "admin_clinico"
       ],
       "requiresMfa": false
     },
@@ -153,6 +186,46 @@
       "roles": [
         "admin_clinico",
         "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "document_template.delete",
+      "description": "Excluir modelo de documento",
+      "roles": [
+        "admin_clinico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "document_template.read",
+      "description": "Listar modelos de documento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "document_template.write",
+      "description": "Criar ou editar modelos de documento",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "drug.read",
+      "description": "Consultar bulário de medicamentos",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
         "profissional",
         "recepcao"
       ],
@@ -353,6 +426,18 @@
       "requiresMfa": true
     },
     {
+      "key": "notification.read",
+      "description": "Ver notificações",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "financeiro",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
       "key": "patient.read",
       "description": "Ler cadastro de paciente",
       "roles": [
@@ -500,6 +585,23 @@
         "admin_clinico",
         "diretor_tecnico",
         "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tenant.read",
+      "description": "Ver dados do tenant e clínicas",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "tenant.write",
+      "description": "Gerenciar clínicas e membros",
+      "roles": [
+        "admin_clinico"
       ],
       "requiresMfa": false
     },

@@ -31,7 +31,9 @@
     "fastify-plugin": "^6.0.0",
     "fastify-type-provider-zod": "^7.0.0",
     "zod": "^4.4.3",
-    "@cadencia/storage": "workspace:*"
+    "@cadencia/storage": "workspace:*",
+    "@cadencia/billing": "workspace:*",
+    "@cadencia/bulas": "workspace:*"
   },
   "devDependencies": {
     "otpauth": "^9.4.0"

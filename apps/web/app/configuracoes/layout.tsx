@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Buildings,
+  CreditCard,
   GearSix,
   NotePencil,
   ShieldCheck,
@@ -17,10 +19,12 @@ import { PageHeader } from '../../src/ui/PageHeader';
 
 const ABAS = [
   { value: 'clinica', rotulo: 'Clínica', descricao: 'Unidades e dados cadastrais', href: '/configuracoes', icone: Stethoscope },
+  { value: 'clinicas', rotulo: 'Clínicas', descricao: 'Gerenciar unidades', href: '/configuracoes/clinicas', icone: Buildings },
   { value: 'equipe', rotulo: 'Equipe', descricao: 'Pessoas e acessos', href: '/configuracoes/equipe', icone: Users },
   { value: 'permissoes', rotulo: 'Permissões', descricao: 'Papéis e segurança', href: '/configuracoes/permissoes', icone: ShieldCheck },
   { value: 'procedimentos', rotulo: 'Procedimentos', descricao: 'Catálogo da unidade', href: '/configuracoes/procedimentos', icone: Table },
   { value: 'prontuario', rotulo: 'Prontuário', descricao: 'Estrutura clínica', href: '/configuracoes/prontuario', icone: NotePencil },
+  { value: 'plano', rotulo: 'Plano', descricao: 'Assinatura e faturamento', href: '/configuracoes/plano', icone: CreditCard },
   { value: 'auditoria', rotulo: 'Auditoria', descricao: 'Trilha de alterações', href: '/configuracoes/auditoria', icone: ShieldCheck },
   { value: 'exportar', rotulo: 'Exportar', descricao: 'Portabilidade de dados', href: '/configuracoes/exportar', icone: Table },
   { value: 'catalogos', rotulo: 'Catálogos', descricao: 'CID e TUSS', href: '/catalogos', icone: Table },

@@ -56,6 +56,12 @@ importers:
       '@cadencia/authz':
         specifier: workspace:*
         version: link:../../packages/authz
+      '@cadencia/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
+      '@cadencia/bulas':
+        specifier: workspace:*
+        version: link:../../packages/bulas
       '@cadencia/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -351,6 +357,15 @@ importers:
   packages/authz: {}
 
   packages/billing: {}
+
+  packages/bulas:
+    dependencies:
+      '@cadencia/db':
+        specifier: workspace:*
+        version: link:../db
+      '@cadencia/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
   packages/catalogs: {}
 

@@ -184,6 +184,34 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'financeiro'] },
   { key: 'tiss.recurso.send', description: 'Enviar recurso de glosa para operadora',
     roles: ['admin_clinico', 'financeiro'] },
+  // ── Fase 6 · Bulário ANVISA ──────────────────────────────────────────
+  { key: 'drug.read', description: 'Consultar bulário de medicamentos',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  // ── Billing / Comercial ───────────────────────────────────────────────
+  { key: 'billing.read', description: 'Ver planos, assinatura e faturas',
+    roles: ['admin_clinico', 'financeiro'] },
+  { key: 'billing.write', description: 'Contratar, alterar ou cancelar plano',
+    roles: ['admin_clinico'] },
+  // ── Templates de documento ──────────────────────────────────────────────
+  { key: 'document_template.read', description: 'Listar modelos de documento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'document_template.write', description: 'Criar ou editar modelos de documento',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'document_template.delete', description: 'Excluir modelo de documento',
+    roles: ['admin_clinico'] },
+  // ── Notificações in-app ────────────────────────────────────────────────
+  { key: 'notification.read', description: 'Ver notificações',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao', 'financeiro'] },
+  // ── Canais de comunicação ──────────────────────────────────────────────
+  { key: 'channel.read', description: 'Ver canais configurados',
+    roles: ['admin_clinico'] },
+  { key: 'channel.write', description: 'Configurar canais',
+    roles: ['admin_clinico'] },
+  // ── Tenancy / Admin ───────────────────────────────────────────────────
+  { key: 'tenant.read', description: 'Ver dados do tenant e clínicas',
+    roles: ['admin_clinico', 'diretor_tecnico'] },
+  { key: 'tenant.write', description: 'Gerenciar clínicas e membros',
+    roles: ['admin_clinico'] },
 ] as const satisfies readonly ActionDef[];
 
 export type ActionKey = (typeof ACTIONS)[number]['key'];
