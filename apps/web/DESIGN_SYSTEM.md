@@ -1,6 +1,6 @@
-# Cadencia Clinical OS — Design System v7
+# Cadência Clinical OS — Design System v7
 
-Este documento é o contrato visual oficial do Cadencia. O produto usa **um único tema claro**, com um shell clínico de alto contraste e superfícies operacionais claras. Não existe dark mode, seletor de tema ou adaptação baseada no tema do sistema.
+Este documento é o contrato visual oficial do Cadência. O produto usa **um único tema claro**, com um shell clínico de alto contraste e superfícies operacionais claras. Não existe dark mode, seletor de tema ou adaptação baseada no tema do sistema.
 
 ## 1. Modelo de produto
 
@@ -25,7 +25,7 @@ Princípios:
 
 ## 2. Identidade: Clinical Intelligence
 
-O Cadencia deve parecer um sistema operacional clínico premium, e não um dashboard SaaS genérico. A assinatura vem do contraste entre um **chrome tecnológico** e uma **superfície clínica extremamente legível**:
+O Cadência deve parecer um sistema operacional clínico premium, e não um dashboard SaaS genérico. A assinatura vem do contraste entre um **chrome tecnológico** e uma **superfície clínica extremamente legível**:
 
 - shell midnight/navy no desktop e dock translúcido no mobile;
 - canvas claro e frio com textura geométrica quase imperceptível;
@@ -247,6 +247,6 @@ Antes de criar ou alterar uma superfície, confirme:
 7. Teclado e leitor de tela concluem o fluxo?
 8. A cor carrega significado ou apenas decoração?
 9. O usuário precisa navegar ou um drawer/rail resolve?
-10. A nova tela ainda parece inequivocamente Cadencia?
+10. A nova tela ainda parece inequivocamente Cadência?
 
 Se uma regra de negócio aparecer em mais de uma tela, ela pertence ao domínio, não ao componente.

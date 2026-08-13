@@ -153,7 +153,7 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
           </span>
           {!collapsed ? (
             <div className="min-w-0">
-              <div className="text-[15px] font-bold tracking-[-0.025em] text-text">Cadencia</div>
+              <div className="text-[15px] font-bold tracking-[-0.025em] text-text">Cadência</div>
               <div className="text-[10px] font-semibold tracking-[.06em] text-text-faint">Clinical OS</div>
             </div>
           ) : null}

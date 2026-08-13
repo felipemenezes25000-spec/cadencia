@@ -9,8 +9,8 @@ import { AppShell } from '../src/components/shell/AppShell';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Cadencia',
-    template: '%s | Cadencia',
+    default: 'Cadência',
+    template: '%s | Cadência',
   },
   description: 'Sistema de gestão clínica e prontuário eletrônico',
 };

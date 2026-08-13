@@ -1,4 +1,4 @@
-# QA notes — Cadencia PRIME v3
+# QA notes — Cadência PRIME v3
 
 ## Validações executadas neste ambiente
 

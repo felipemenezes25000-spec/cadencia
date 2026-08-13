@@ -39,7 +39,7 @@ export function ConnectivityStatus() {
           key="offline" role="status" aria-live="polite"
           initial={{ y: -18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -14, opacity: 0 }}
           className="fixed left-1/2 top-3 z-[120] flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-2 rounded-full border border-warn/20 bg-warn-soft px-4 py-2 text-xs font-semibold text-warn shadow-elev-2"
-        ><CloudSlash size={16} weight="duotone" className="shrink-0 text-warn" /><span className="truncate">Sem conexão · o Cadencia continua disponível para leitura local.</span></motion.div>
+        ><CloudSlash size={16} weight="duotone" className="shrink-0 text-warn" /><span className="truncate">Sem conexão · o Cadência continua disponível para leitura local.</span></motion.div>
       ) : restored ? (
         <motion.div
           key="restored" role="status" aria-live="polite"
