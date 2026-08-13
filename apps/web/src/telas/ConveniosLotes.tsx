@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, type ChangeEvent } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { MagnifyingGlass, Plus, Package } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -118,7 +119,7 @@ function EstadoVazioLotes() {
 
 export function ConveniosLotes(p: ConveniosLotesProps) {
   const [dados, setDados] = useState<LotesDados | null>(null);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
 
   useEffect(() => {
     void p.carregarDados().then(setDados);

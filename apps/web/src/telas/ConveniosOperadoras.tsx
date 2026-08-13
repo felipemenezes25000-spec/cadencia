@@ -10,8 +10,10 @@ import {
   Buildings,
 } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
+import { DialogoDeConfirmacao } from '../ui/DialogoDeConfirmacao';
 import { Icone } from '../ui/Icone';
 import { PainelLateral } from '../ui/PainelLateral';
 import { Skeleton } from '../ui/Skeleton';
@@ -95,7 +97,10 @@ function EstadoVazioOperadoras() {
 export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
   const [dados, setDados] = useState<OperadorasDados | null>(null);
   const [formAberto, setFormAberto] = useState(false);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
+  const [operadoraParaExcluir, setOperadoraParaExcluir] = useState<Operadora | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
 
   // Form state
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -161,6 +166,23 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
       setFormAberto(false);
       limparForm();
     });
+  }
+
+  async function confirmarExclusao(): Promise<void> {
+    if (!operadoraParaExcluir || excluindo) return;
+    setExcluindo(true);
+    setErroExclusao(null);
+    try {
+      await p.aoDesativar(operadoraParaExcluir.id);
+      setDados((atual) => atual == null ? atual : {
+        operadoras: atual.operadoras.filter((item) => item.id !== operadoraParaExcluir.id),
+      });
+      setOperadoraParaExcluir(null);
+    } catch {
+      setErroExclusao('Não foi possível excluir a operadora. Tente novamente.');
+    } finally {
+      setExcluindo(false);
+    }
   }
 
   // Estado de carregamento
@@ -284,7 +306,10 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
                                 'transition-colors-fast',
                                 'focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
                               )}
-                              onClick={() => { void p.aoDesativar(op.id); }}
+                              onClick={() => {
+                                setErroExclusao(null);
+                                setOperadoraParaExcluir(op);
+                              }}
                             >
                               <Icone icon={Trash} size="sm" />
                             </button>
@@ -354,6 +379,21 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
           </Botao>
         </div>
       </PainelLateral>
+
+      <DialogoDeConfirmacao
+        aberto={operadoraParaExcluir != null}
+        titulo={`Excluir ${operadoraParaExcluir?.nome ?? 'operadora'}?`}
+        descricao="A operadora deixará de aparecer nas opções de faturamento. Esta ação exige confirmação."
+        confirmarRotulo="Confirmar exclusão"
+        destrutivo
+        carregando={excluindo}
+        erro={erroExclusao}
+        aoConfirmar={() => { void confirmarExclusao(); }}
+        aoFechar={() => {
+          setOperadoraParaExcluir(null);
+          setErroExclusao(null);
+        }}
+      />
     </div>
   );
 }

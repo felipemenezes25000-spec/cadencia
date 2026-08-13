@@ -101,8 +101,8 @@ describe('Navegacao completa de Convenios', () => {
       </ConveniosLayout>,
     );
     expect(screen.getByRole('heading', { level: 1, name: /Convênio/ })).toBeVisible();
-    const abaAFaturar = screen.getByRole('tab', { name: /A faturar/i });
-    expect(abaAFaturar).toHaveAttribute('data-state', 'active');
+    const abaAFaturar = screen.getByRole('link', { name: /A faturar/i });
+    expect(abaAFaturar).toHaveAttribute('aria-current', 'page');
     /* "7" aparece no grupo de contadores e como badge na aba */
     const grupo = screen.getByRole('group', { name: /Contadores de convênios/i });
     expect(within(grupo).getByText('7')).toBeVisible();
@@ -176,8 +176,7 @@ describe('Navegacao completa de Convenios', () => {
       </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
-    /* ConveniosLayout agora usa Radix Tabs (tab, nao link) */
-    const tabRetornos = screen.getByRole('tab', { name: /Retornos/i });
+    const tabRetornos = screen.getByRole('link', { name: /Retornos/i });
     expect(tabRetornos).toBeVisible();
     expect(screen.getByRole('button', { name: /Importar/i })).toBeVisible();
   });
@@ -225,13 +224,6 @@ describe('Navegacao completa de Convenios', () => {
       </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-001')).toBeVisible());
-    /*
-     * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que nao existe neste layout
-     * (conteudo vem das rotas filhas, nao de TabsContent).
-     */
-    expect(await axe(container, {
-      rules: { 'aria-valid-attr-value': { enabled: false } },
-    })).toHaveNoViolations();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

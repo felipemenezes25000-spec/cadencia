@@ -180,12 +180,12 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
           <div className={cn('flex items-center rounded-lg', collapsed ? 'justify-center py-2' : 'gap-3 px-2 py-2')}>
             <span className="relative">
               <Avatar nome={sessao.usuario.nome} />
-              <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-ok" aria-label="Online" />
+              <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-ok" aria-hidden />
             </span>
             {!collapsed ? (
               <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-bold text-text">{sessao.usuario.nome}</div>
-                <div className="truncate text-[11px] text-text-faint">{rotulo(sessao.vinculoAtivo.role)} · {sessao.vinculoAtivo.clinicNome}</div>
+                <div className="truncate text-[11px] text-text-muted">{rotulo(sessao.vinculoAtivo.role)} · {sessao.vinculoAtivo.clinicNome}<span className="sr-only"> · Online</span></div>
               </div>
             ) : null}
             {!collapsed ? (

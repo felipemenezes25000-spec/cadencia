@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { SortAscending, SortDescending, Receipt } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -180,11 +181,11 @@ export function FinanceiroCaixa(p: FinanceiroCaixaProps) {
   const baseId = useId();
   const [dados, setDados] = useState<CaixaDados | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [contaId, setContaId] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
-  const [tipoFiltro, setTipoFiltro] = useState('');
+  const [contaId, setContaId] = useEstadoNaUrl('conta');
+  const [dataInicio, setDataInicio] = useEstadoNaUrl('inicio');
+  const [dataFim, setDataFim] = useEstadoNaUrl('fim');
+  const [categoriaFiltro, setCategoriaFiltro] = useEstadoNaUrl('categoria');
+  const [tipoFiltro, setTipoFiltro] = useEstadoNaUrl('tipo');
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
 
   useEffect(() => {

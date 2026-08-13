@@ -1,11 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "../lib/cn";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { PageHeader } from "../ui/PageHeader";
-import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
-import { Botao } from "../ui/Botao";
+import { NavegacaoDeRotas } from "../ui/NavegacaoDeRotas";
 import { Plus } from "@phosphor-icons/react";
 
 /* ── Tipos exportados ──────────────────────────────────────────────── */
@@ -62,7 +61,6 @@ export function FinanceiroLayout({
   baixoEstoque,
 }: FinanceiroLayoutProps) {
   const pathname = usePathname();
-  const router = useRouter();
 
   /* Determina aba ativa a partir do pathname */
   const abaAtiva =
@@ -81,35 +79,22 @@ export function FinanceiroLayout({
         titulo="Financeiro"
         subtitulo="Gestão financeira da unidade"
         semBreadcrumb
-        acoes={<Botao iconeEsquerda={Plus} onClick={() => router.push('/financeiro/recebimentos?novo=1')}>Novo recebimento</Botao>}
+        acoes={(
+          <Link
+            href="/financeiro/recebimentos?novo=1"
+            className="cadencia-button inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-accent bg-accent px-3.5 text-sm font-semibold text-accent-on shadow-[0_5px_14px_rgb(8_119_131_/_0.18)] transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            <Plus size={16} aria-hidden />
+            Novo recebimento
+          </Link>
+        )}
       />
 
-      <Tabs
-        value={abaAtiva}
-        onValueChange={(value: string) => {
-          const aba = ABAS_FINANCEIRO.find((a) => a.value === value);
-          if (aba) router.push(aba.href);
-        }}
-      >
-        <div
-          className={cn(
-            "overflow-x-auto scrollbar-thin",
-            "-mx-1 px-1",
-          )}
-        >
-          <TabsList className="min-w-max">
-            {ABAS_FINANCEIRO.map((aba) => (
-              <TabsTrigger
-                key={aba.value}
-                value={aba.value}
-                badge={badges[aba.value]}
-              >
-                {aba.rotulo}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-      </Tabs>
+      <NavegacaoDeRotas
+        rotulo="Seções financeiras"
+        ativa={abaAtiva}
+        itens={ABAS_FINANCEIRO.map((aba) => ({ ...aba, badge: badges[aba.value] }))}
+      />
 
       {/* Conteúdo da rota filha */}
       {children}

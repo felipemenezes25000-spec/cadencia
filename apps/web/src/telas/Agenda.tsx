@@ -817,7 +817,7 @@ export function Agenda(p: AgendaProps) {
   };
 
   return (
-    <div className="cadencia-page grid gap-6">
+    <div className="cadencia-page grid grid-cols-[minmax(0,1fr)] gap-6 overflow-x-clip">
       <PageHeader titulo="Agenda" acoes={acoes} semBreadcrumb />
 
       <Tabs value={p.visao} onValueChange={(v) => p.aoMudarVisao(v as Visao['chave'])}>
@@ -828,7 +828,9 @@ export function Agenda(p: AgendaProps) {
         </TabsList>
 
         {carregando ? (
-          <AgendaSkeleton />
+          <TabsContent value={p.visao}>
+            <AgendaSkeleton />
+          </TabsContent>
         ) : (
           <>
             <TabsContent value="dia">

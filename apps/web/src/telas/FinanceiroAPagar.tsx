@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { SortAscending, SortDescending, Receipt } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -185,11 +186,11 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
   const baseId = useId();
   const [dados, setDados] = useState<APagarDados | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [fornecedor, setFornecedor] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState('');
+  const [fornecedor, setFornecedor] = useEstadoNaUrl('fornecedor');
+  const [categoria, setCategoria] = useEstadoNaUrl('categoria');
+  const [dataInicio, setDataInicio] = useEstadoNaUrl('inicio');
+  const [dataFim, setDataFim] = useEstadoNaUrl('fim');
+  const [statusFiltro, setStatusFiltro] = useEstadoNaUrl('status');
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
 
   useEffect(() => {

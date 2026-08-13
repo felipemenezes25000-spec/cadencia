@@ -53,15 +53,12 @@ test.describe('AppShell', () => {
 
   test('topbar contém busca', async ({ page }) => {
     const topbar = page.getByRole('banner');
-    await expect(topbar.getByPlaceholder(/buscar|pesquisar/i)).toBeVisible();
+    await expect(topbar.getByRole('button', { name: /buscar pacientes|abrir busca/i })).toBeVisible();
   });
 
   test('usuários logados veem seu nome', async ({ page }) => {
     // Deve haver algo indicando o usuário logado
     const userIndicator = page.getByText(/admin|dr\.|médico|recep/i).first();
-    // Não fail se não encontrar - só verifica que existe algo
-    const exists = await userIndicator.isVisible({ timeout: 2000 }).catch(() => false);
-    // Este teste é informativo, não falha
-    expect(true).toBeTruthy();
+    await expect(userIndicator).toBeVisible({ timeout: 2000 });
   });
 });

@@ -236,6 +236,7 @@ export function Hoje(props: HojeProps) {
   if (erroCarga || contadores === null) {
     return (
       <div className="cadencia-page">
+        <h1 className="sr-only">Hoje</h1>
         <EstadoVazio
           icone={WarningCircle}
           titulo="Não foi possível carregar a operação de hoje"

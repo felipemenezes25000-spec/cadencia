@@ -135,9 +135,9 @@ export default function PaginaEntrar() {
             <p className="text-xs font-bold uppercase tracking-[.28em] text-[#52708f]">
               Sistema de gestão clínica
             </p>
-            <h1 className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-[#17324d] xl:text-6xl">
+            <p className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-[#17324d] xl:text-6xl">
               O controle que sua <span className="text-[#2563eb]">clínica</span> precisa
-            </h1>
+            </p>
             <p className="mt-6 max-w-[610px] text-base leading-7 text-[#4f6f8e] xl:text-lg xl:leading-8">
               Operação, atendimento e gestão financeira integrados em uma única plataforma.
               Menos retrabalho, mais cuidado.
@@ -268,7 +268,7 @@ function FormContent({
             {passo.nome === 'mfa' ? 'Verificação de segurança' : 'Escolha a unidade'}
           </h1>
         )}
-        <p className="mt-2 text-sm text-[#70869c]">
+        <p className="mt-2 text-sm text-[#536d87]">
           {passo.nome === 'credenciais' ? 'Entre com suas credenciais para continuar'
             : passo.nome === 'mfa' ? 'Digite o código do seu autenticador'
             : 'Selecione onde você vai trabalhar'}
@@ -384,7 +384,7 @@ function FormContent({
 
       {passo.nome === 'credenciais' && (
         <div className="mt-7 border-t border-[#e6edf5] pt-6 text-center">
-          <p className="text-xs leading-5 text-[#7b8fa4]">
+          <p className="text-xs leading-5 text-[#536d87]">
             Problemas para acessar?{' '}
             <span className="font-semibold text-[#536d87]">Fale com a administração da sua clínica.</span>
           </p>

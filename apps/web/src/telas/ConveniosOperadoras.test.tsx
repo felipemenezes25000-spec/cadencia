@@ -109,6 +109,18 @@ describe('ConveniosOperadoras', () => {
     expect(botoesExcluir).toHaveLength(3);
   });
 
+  it('pede confirmação antes de excluir uma operadora', async () => {
+    const props = montar();
+    await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());
+
+    await userEvent.click(screen.getAllByLabelText('Excluir')[0]!);
+
+    expect(props.aoDesativar).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: /Excluir Unimed/i })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: /Confirmar exclusão/i }));
+    expect(props.aoDesativar).toHaveBeenCalledWith('op1');
+  });
+
   it('filtra ao digitar na busca', async () => {
     montar();
     await waitFor(() => expect(screen.getByText('Unimed')).toBeVisible());

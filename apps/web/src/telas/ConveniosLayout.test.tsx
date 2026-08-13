@@ -45,31 +45,25 @@ describe("ConveniosLayout", () => {
 
   it("renderiza todas as 6 abas", () => {
     montar();
-    expect(screen.getByRole("tab", { name: /A faturar/i })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Lotes/i })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Retornos/i })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Glosas/i })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Recursos/i })).toBeVisible();
-    expect(screen.getByRole("tab", { name: /Operadoras/i })).toBeVisible();
+    expect(screen.getAllByRole("link")).toHaveLength(6);
   });
 
   it("destaca aba ativa", () => {
     montar();
-    const abaAtiva = screen.getByRole("tab", { name: /A faturar/i });
-    expect(abaAtiva).toHaveAttribute("data-state", "active");
+    const abaAtiva = screen.getByRole("link", { name: /A faturar/i });
+    expect(abaAtiva).toHaveAttribute("aria-current", "page");
   });
 
-  it("navega ao clicar em aba", async () => {
+  it("expõe o destino da seção", () => {
     montar();
-    await userEvent.click(screen.getByRole("tab", { name: /Lotes/i }));
-    expect(mockPush).toHaveBeenCalledWith("/convenios/lotes");
+    expect(screen.getByRole("link", { name: /Lotes/i })).toHaveAttribute("href", "/convenios/lotes");
   });
 
   it("mostra badges de contagem nas abas", () => {
     montar();
     // Badges aparecem nos tabs (dentro do tablist)
-    const tablist = screen.getByRole("tablist");
-    const dentroTablist = within(tablist);
+    const navegacao = screen.getByRole("navigation", { name: /Seções de convênios/i });
+    const dentroTablist = within(navegacao);
     // A faturar badge: 14
     expect(dentroTablist.getByText("14")).toBeVisible();
     // Glosas badge: 8
@@ -122,15 +116,6 @@ describe("ConveniosLayout", () => {
         <div>Conteudo</div>
       </ConveniosLayout>,
     );
-    /**
-     * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que não existe neste layout
-     * (o conteúdo vem das rotas filhas, não de TabsContent).
-     */
-    expect(
-      await axe(container, {
-        rules: { "aria-valid-attr-value": { enabled: false } },
-      }),
-    ).toHaveNoViolations();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { MagnifyingGlass, Warning, Package } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -93,8 +94,8 @@ function EstadoVazio() {
 export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
   const [dados, setDados] = useState<EstoqueDados | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
+  const [categoriaFiltro, setCategoriaFiltro] = useEstadoNaUrl('categoria');
   const [apenasEstoqueBaixo, setApenasEstoqueBaixo] = useState(false);
 
   useEffect(() => {

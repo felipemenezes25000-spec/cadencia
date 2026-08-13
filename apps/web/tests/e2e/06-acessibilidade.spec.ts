@@ -4,7 +4,8 @@
  * Verifica que elementos críticos são acessíveis.
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Acessibilidade', () => {
   test('skip link existe na página', async ({ page }) => {
@@ -43,14 +44,8 @@ test.describe('Acessibilidade', () => {
     const buttons = page.getByRole('button');
     const count = await buttons.count();
 
-    for (let i = 0; i < Math.min(count, 10); i++) {
-      const btn = buttons.nth(i);
-      const ariaLabel = await btn.getAttribute('aria-label');
-      const text = await btn.textContent();
-      const title = await btn.getAttribute('title');
-
-      // Pelo menos um deve existir
-      expect(ariaLabel ?? text?.trim() ?? title).toBeTruthy();
+    for (let i = 0; i < count; i++) {
+      await expect(buttons.nth(i)).toHaveAccessibleName(/.+/);
     }
   });
 
@@ -58,18 +53,20 @@ test.describe('Acessibilidade', () => {
     await page.goto('/entrar');
 
     // Inputs devem ter labels associados
-    const inputs = page.getByRole('textbox');
+    const inputs = page.locator('input:not([type="hidden"])');
     const count = await inputs.count();
 
     for (let i = 0; i < count; i++) {
-      const input = inputs.nth(i);
-      // label associada ou aria-label
-      const label = page.getByText(/email|senha|usuário/i).first();
-      const hasAccessibleName =
-        (await input.getAttribute('aria-label')) ||
-        (await input.getAttribute('aria-labelledby')) ||
-        (await label.isVisible());
-      expect(hasAccessibleName).toBeTruthy();
+      await expect(inputs.nth(i)).toHaveAccessibleName(/.+/);
     }
+  });
+
+  test('não tem violações críticas ou sérias', async ({ page }) => {
+    await page.goto('/hoje');
+    const resultado = await new AxeBuilder({ page }).analyze();
+    const relevantes = resultado.violations.filter((item) =>
+      item.impact === 'critical' || item.impact === 'serious',
+    );
+    expect(relevantes).toEqual([]);
   });
 });

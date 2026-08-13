@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import {
   EnvelopeSimple,
   MagnifyingGlass,
@@ -105,10 +106,10 @@ const acaoBotaoClasses = cn(
 export function Recibos(p: RecibosProps) {
   const [recibos, setRecibos] = useState<LinhaDeRecibo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [paciente, setPaciente] = useState('');
-  const [busca, setBusca] = useState('');
+  const [dataInicio, setDataInicio] = useEstadoNaUrl('inicio');
+  const [dataFim, setDataFim] = useEstadoNaUrl('fim');
+  const [paciente, setPaciente] = useEstadoNaUrl('paciente');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
 
   useEffect(() => {
     setIsLoading(true);

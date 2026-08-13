@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import {
   CaretRight,
   MagnifyingGlass,
@@ -116,7 +117,7 @@ function IdentidadePaciente({ paciente }: { readonly paciente: PacienteHit }) {
 }
 
 export function Pacientes(p: PacientesProps) {
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
   const [itens, setItens] = useState<PacienteHit[] | null>(null);
   const [erro, setErro] = useState(false);
   const buscaDebounced = useDebounce(busca, 250);

@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -87,9 +88,9 @@ const TIPO_CHIP: Record<'analise' | 'pagamento', { rotulo: string; classes: stri
 
 export function ConveniosRetornos(p: ConveniosRetornosProps) {
   const [dados, setDados] = useState<RetornosDados | null>(null);
-  const [busca, setBusca] = useState('');
-  const [tipoFiltro, setTipoFiltro] = useState('');
-  const [operadoraFiltro, setOperadoraFiltro] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
+  const [tipoFiltro, setTipoFiltro] = useEstadoNaUrl('tipo');
+  const [operadoraFiltro, setOperadoraFiltro] = useEstadoNaUrl('operadora');
   const [importando, setImportando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 import {
   FinanceiroLayout,
@@ -47,49 +46,45 @@ beforeEach(() => {
 describe("FinanceiroLayout", () => {
   it("renderiza todas as 8 abas", () => {
     montar();
-    const tablist = screen.getByRole("tablist");
-    const tabs = within(tablist).getAllByRole("tab");
-    expect(tabs).toHaveLength(8);
+    const nav = screen.getByRole("navigation", { name: /Seções financeiras/i });
+    expect(within(nav).getAllByRole("link")).toHaveLength(8);
 
     for (const aba of ABAS_FINANCEIRO) {
       expect(
-        screen.getByRole("tab", { name: new RegExp(aba.rotulo, "i") }),
+        screen.getByRole("link", { name: new RegExp(aba.rotulo, "i") }),
       ).toBeVisible();
     }
   });
 
   it("destaca aba ativa com base na rota", () => {
     montar({ pathname: "/financeiro/caixa" });
-    const abaCaixa = screen.getByRole("tab", { name: /Caixa/i });
-    expect(abaCaixa).toHaveAttribute("data-state", "active");
+    const abaCaixa = screen.getByRole("link", { name: /Caixa/i });
+    expect(abaCaixa).toHaveAttribute("aria-current", "page");
 
-    const abaVisao = screen.getByRole("tab", { name: /Resumo/i });
-    expect(abaVisao).toHaveAttribute("data-state", "inactive");
+    const abaVisao = screen.getByRole("link", { name: /Resumo/i });
+    expect(abaVisao).not.toHaveAttribute("aria-current");
   });
 
-  it("navega para rota ao clicar em aba", async () => {
+  it("expõe o destino de cada seção", () => {
     montar({ pathname: "/financeiro" });
-    const user = userEvent.setup();
-
-    await user.click(screen.getByRole("tab", { name: /Cadastros/i }));
-    expect(mockPush).toHaveBeenCalledWith("/financeiro/cadastros");
+    expect(screen.getByRole("link", { name: /Cadastros/i })).toHaveAttribute("href", "/financeiro/cadastros");
   });
 
   it("mostra badge de pendentes em A receber", () => {
     montar({ pendentesReceber: 5 });
-    const aba = screen.getByRole("tab", { name: /A receber/i });
+    const aba = screen.getByRole("link", { name: /A receber/i });
     expect(within(aba).getByText("5")).toBeVisible();
   });
 
   it("mostra badge de pendentes em A pagar", () => {
     montar({ pendentesPagar: 3 });
-    const aba = screen.getByRole("tab", { name: /A pagar/i });
+    const aba = screen.getByRole("link", { name: /A pagar/i });
     expect(within(aba).getByText("3")).toBeVisible();
   });
 
   it("mostra badge de estoque baixo em Estoque", () => {
     montar({ baixoEstoque: 7 });
-    const aba = screen.getByRole("tab", { name: /Estoque/i });
+    const aba = screen.getByRole("link", { name: /Estoque/i });
     expect(within(aba).getByText("7")).toBeVisible();
   });
 
@@ -101,24 +96,12 @@ describe("FinanceiroLayout", () => {
 
   it("abas são scrolláveis horizontalmente no mobile", () => {
     montar();
-    const tablist = screen.getByRole("tablist");
-    /* O container pai direto do tablist deve ter overflow-x-auto */
-    const scrollContainer = tablist.parentElement;
-    expect(scrollContainer).toBeDefined();
-    expect(scrollContainer?.className).toMatch(/overflow-x-auto/);
+    const nav = screen.getByRole("navigation", { name: /Seções financeiras/i });
+    expect(nav.className).toMatch(/overflow-x-auto/);
   });
 
   it("não tem violações de acessibilidade", async () => {
     const { container } = montar();
-    /*
-     * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que não existe neste layout
-     * (o conteúdo vem das rotas filhas, não de TabsContent).
-     */
-    expect(
-      await axe(container, {
-        rules: { "aria-valid-attr-value": { enabled: false } },
-      }),
-    ).toHaveNoViolations();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

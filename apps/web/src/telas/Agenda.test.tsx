@@ -61,6 +61,10 @@ describe('tela Agenda', () => {
     render(<Agenda {...montarProps({ carregar })} />);
 
     expect(screen.getByTestId('agenda-skeleton')).toBeInTheDocument();
+    const abaAtiva = screen.getByRole('tab', { name: 'Dia' });
+    const painelId = abaAtiva.getAttribute('aria-controls');
+    expect(painelId).toBeTruthy();
+    expect(document.getElementById(painelId!)).toBeInTheDocument();
 
     resolver(FILA);
     await waitFor(() => {

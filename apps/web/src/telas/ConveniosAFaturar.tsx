@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useEstadoNaUrl } from "../hooks/useEstadoNaUrl";
 import { Package } from "@phosphor-icons/react";
 import { cn } from "../lib/cn";
 import { Botao } from "../ui/Botao";
@@ -123,10 +124,10 @@ function EstadoVazio() {
 export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
   const [dados, setDados] = useState<AFaturarDados | null>(null);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
-  const [operadoraId, setOperadoraId] = useState("");
-  const [status, setStatus] = useState("");
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  const [operadoraId, setOperadoraId] = useEstadoNaUrl("operadora");
+  const [status, setStatus] = useEstadoNaUrl("status");
+  const [dataInicio, setDataInicio] = useEstadoNaUrl("inicio");
+  const [dataFim, setDataFim] = useEstadoNaUrl("fim");
   const [criandoLote, setCriandoLote] = useState(false);
   const [erroLote, setErroLote] = useState<string | null>(null);
 

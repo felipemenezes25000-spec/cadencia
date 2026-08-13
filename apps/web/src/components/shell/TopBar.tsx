@@ -1,14 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Bell, CalendarBlank, ChatCircle, MagnifyingGlass, Plus } from '@phosphor-icons/react';
-import { Botao } from '../../ui/Botao';
-import { BotaoIcone } from '../../ui/BotaoIcone';
 import { CommandPalette } from './CommandPalette';
 
 export function TopBar() {
-  const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -37,13 +34,14 @@ export function TopBar() {
         <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Abrir busca global" className="grid size-10 place-items-center rounded-xl border border-line bg-surface/80 text-text-muted shadow-elev-1 md:hidden"><MagnifyingGlass size={18} aria-hidden /></button>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-          <BotaoIcone icone={CalendarBlank} rotulo="Abrir calendário" className="max-sm:hidden" onClick={() => router.push('/agenda')} />
-          <BotaoIcone icone={ChatCircle} rotulo="Abrir mensagens" className="max-sm:hidden" onClick={() => router.push('/conversas')} />
-          <BotaoIcone icone={Bell} rotulo="Abrir notificações" onClick={() => router.push('/notificacoes')} />
+          <Link href="/agenda" aria-label="Abrir calendário" title="Abrir calendário" className="cadencia-icon-button hidden size-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-text-muted transition-colors-fast hover:border-line-strong hover:bg-surface-subtle hover:text-text sm:inline-grid"><CalendarBlank size={18} aria-hidden /></Link>
+          <Link href="/conversas" aria-label="Abrir mensagens" title="Abrir mensagens" className="cadencia-icon-button hidden size-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-text-muted transition-colors-fast hover:border-line-strong hover:bg-surface-subtle hover:text-text sm:inline-grid"><ChatCircle size={18} aria-hidden /></Link>
+          <Link href="/notificacoes" aria-label="Abrir notificações" title="Abrir notificações" className="cadencia-icon-button inline-grid size-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-text-muted transition-colors-fast hover:border-line-strong hover:bg-surface-subtle hover:text-text"><Bell size={18} aria-hidden /></Link>
           <span className="mx-1 hidden h-5 w-px bg-line sm:block" aria-hidden />
-          <Botao variante="primario" iconeEsquerda={Plus} onClick={() => router.push('/agenda?novo=1')} className="shadow-[0_8px_20px_rgb(11_107_118/.18)] max-sm:px-2.5">
+          <Link href="/agenda?novo=1" className="cadencia-button inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[10px] border border-accent bg-accent px-3.5 text-sm font-semibold text-accent-on shadow-[0_8px_20px_rgb(11_107_118/.18)] transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 max-sm:px-2.5">
+            <Plus size={16} aria-hidden />
             <span className="max-sm:hidden">Novo atendimento</span><span className="sm:hidden">Novo</span>
-          </Botao>
+          </Link>
         </div>
       </header>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />

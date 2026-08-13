@@ -16,6 +16,7 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
+  testDir: './tests/e2e',
   /* ── Output ────────────────────────────────────────────────────── */
   outputDir: '.playwright-results',
   reportDir: '.playwright-report',
@@ -25,10 +26,7 @@ export default defineConfig({
   timeout: 30_000,
 
   /* ── Retries ─────────────────────────────────────────────────── */
-  retries: {
-    passed: 0,
-    failed: 2, // retry 2x em falha (flaky networks)
-  },
+  retries: 2,
 
   /* ── Repórteres ──────────────────────────────────────────────── */
   reporter: [

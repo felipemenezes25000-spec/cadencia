@@ -91,7 +91,7 @@ describe('Composicao completa: Retornos + Glosas + Recursos + Detalhe + Form', (
       </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('PROT-100')).toBeVisible());
-    expect(screen.getByRole('tab', { name: /Retornos/i })).toHaveAttribute('data-state', 'active');
+    expect(screen.getByRole('link', { name: /Retornos/i })).toHaveAttribute('aria-current', 'page');
   });
 
   it('ConveniosGlosas compoe dentro de ConveniosLayout', async () => {
@@ -184,12 +184,6 @@ describe('Composicao completa: Retornos + Glosas + Recursos + Detalhe + Form', (
       </ConveniosLayout>,
     );
     await waitFor(() => expect(screen.getByText('000010')).toBeVisible());
-    /*
-     * Desabilitamos aria-valid-attr-value porque o Radix Tabs emite
-     * aria-controls apontando para TabsContent que nao existe neste layout.
-     */
-    expect(await axe(container, {
-      rules: { 'aria-valid-attr-value': { enabled: false } },
-    })).toHaveNoViolations();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

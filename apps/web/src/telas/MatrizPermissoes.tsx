@@ -52,6 +52,18 @@ export function MatrizPermissoes() {
   const [estadoEdicao, setEstadoEdicao] = useState<Record<string, boolean | null>>({});
   const [temAlteracoes, setTemAlteracoes] = useState(false);
 
+  useEffect(() => {
+    if (!temAlteracoes) return;
+
+    function avisarAlteracoesNaoSalvas(evento: BeforeUnloadEvent) {
+      evento.preventDefault();
+      evento.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', avisarAlteracoesNaoSalvas);
+    return () => window.removeEventListener('beforeunload', avisarAlteracoesNaoSalvas);
+  }, [temAlteracoes]);
+
   // Carregar clínicas
   useEffect(() => {
     void carregarClinicas();

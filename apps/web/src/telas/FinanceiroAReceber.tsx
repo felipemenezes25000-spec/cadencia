@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { SortAscending, SortDescending, Receipt, WarningCircle } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -193,11 +194,11 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
   const baseId = useId();
   const [dados, setDados] = useState<AReceberDados | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState('');
-  const [busca, setBusca] = useState('');
+  const [dataInicio, setDataInicio] = useEstadoNaUrl('inicio');
+  const [dataFim, setDataFim] = useEstadoNaUrl('fim');
+  const [categoriaFiltro, setCategoriaFiltro] = useEstadoNaUrl('categoria');
+  const [statusFiltro, setStatusFiltro] = useEstadoNaUrl('status');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
   const [selecionada, setSelecionada] = useState<EntradaPendenteReceber | null>(null);
   const [recarga, setRecarga] = useState(0);

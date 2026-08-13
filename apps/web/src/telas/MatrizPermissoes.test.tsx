@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { MatrizPermissoes } from './MatrizPermissoes';
 
@@ -79,4 +79,15 @@ describe('MatrizPermissoes', () => {
     });
     expect(await axe(container)).toHaveNoViolations();
   }, 15_000);
+
+  it('avisa antes de sair quando existem alterações não salvas', async () => {
+    render(<MatrizPermissoes />);
+    const controles = await screen.findAllByRole('button', { name: /Negado|Permitido|Padrão/i });
+    fireEvent.click(controles[0]!);
+
+    const evento = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(evento);
+
+    expect(evento.defaultPrevented).toBe(true);
+  });
 });

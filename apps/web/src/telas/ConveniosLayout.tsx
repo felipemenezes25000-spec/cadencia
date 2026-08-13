@@ -2,9 +2,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "../lib/cn";
-import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs";
+import { NavegacaoDeRotas } from "../ui/NavegacaoDeRotas";
 import { PageHeader } from "../ui/PageHeader";
 
 /* ── Tipos exportados ────────────────────────────────────────────── */
@@ -71,7 +71,6 @@ export function ConveniosLayout({
   aoNavegar,
 }: ConveniosLayoutProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const abaAtiva =
     ABAS.find((a) => a.href === pathname)?.value ?? abaAtivaLegada ?? "a-faturar";
   const chaves = contadores
@@ -120,41 +119,17 @@ export function ConveniosLayout({
         </div>
       )}
 
-      <Tabs
-        value={abaAtiva}
-        onValueChange={(value: string) => {
-          const aba = ABAS.find((a) => a.value === value);
-          if (aba) {
-            if (aoNavegar) {
-              aoNavegar(aba.value);
-            }
-            router.push(aba.href);
-          }
-        }}
-      >
-        <div
-          className={cn(
-            "overflow-x-auto scrollbar-thin",
-            "-mx-1 px-1",
-          )}
-        >
-          <TabsList className="min-w-max">
-            {ABAS.map((aba) => (
-              <TabsTrigger
-                key={aba.value}
-                value={aba.value}
-                badge={
-                  aba.badgeKey && contadores && contadores[aba.badgeKey] > 0
-                    ? contadores[aba.badgeKey]
-                    : undefined
-                }
-              >
-                {aba.rotulo}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-      </Tabs>
+      <NavegacaoDeRotas
+        rotulo="Seções de convênios"
+        ativa={abaAtiva}
+        aoNavegar={(value) => aoNavegar?.(value as SubAbaConvenios)}
+        itens={ABAS.map((aba) => ({
+          ...aba,
+          badge: aba.badgeKey && contadores && contadores[aba.badgeKey] > 0
+            ? contadores[aba.badgeKey]
+            : undefined,
+        }))}
+      />
 
       {children}
     </div>

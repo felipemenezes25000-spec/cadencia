@@ -142,9 +142,7 @@ const PACIENTES = [{
  * aria-valid-attr-value: Radix Tabs emite aria-controls apontando para
  *   TabsContent inexistente quando o conteudo vem de rotas filhas.
  */
-const AXE_OPTS = {
-  rules: { 'aria-valid-attr-value': { enabled: false } },
-};
+const AXE_OPTS = {};
 
 /* ── Testes ─────────────────────────────────────────────────────────── */
 

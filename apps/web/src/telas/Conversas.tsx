@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import {
   PencilSimple,
   MagnifyingGlass,
@@ -94,7 +95,7 @@ function ConversasSkeleton() {
 export function Conversas(p: ConversasProps) {
   const [conversas, setConversas] = useState<ConversaResumo[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
 
   useEffect(() => {
     let ativo = true;
@@ -129,7 +130,7 @@ export function Conversas(p: ConversasProps) {
         <div className="flex min-h-[72px] items-center justify-between border-b border-line px-4 py-3.5">
           <div>
             <p className="cadencia-eyebrow mb-1">Relacionamento</p>
-            <h1 className="text-lg font-bold tracking-[-0.025em] text-text">Conversas</h1>
+            <h2 className="text-lg font-bold tracking-[-0.025em] text-text">Conversas</h2>
           </div>
           <Botao variante="secundario" tamanho="sm" iconeEsquerda={PencilSimple} onClick={p.aoNova}>Nova</Botao>
         </div>

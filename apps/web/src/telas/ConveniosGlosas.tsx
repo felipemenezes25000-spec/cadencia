@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useEstadoNaUrl } from '../hooks/useEstadoNaUrl';
 import { CheckCircle, MagnifyingGlass } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -76,9 +77,9 @@ const STATUS_CHIP: Record<StatusGlosa, { rotulo: string; classes: string }> = {
 export function ConveniosGlosas(p: ConveniosGlosasProps) {
   const [dados, setDados] = useState<GlosasDados | null>(null);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
-  const [busca, setBusca] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState('');
-  const [operadoraFiltro, setOperadoraFiltro] = useState('');
+  const [busca, setBusca] = useEstadoNaUrl('busca');
+  const [statusFiltro, setStatusFiltro] = useEstadoNaUrl('status');
+  const [operadoraFiltro, setOperadoraFiltro] = useEstadoNaUrl('operadora');
 
   useEffect(() => {
     void p.carregarDados({}).then(setDados);
