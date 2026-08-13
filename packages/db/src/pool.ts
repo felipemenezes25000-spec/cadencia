@@ -13,6 +13,11 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function optionalEnv(name: string): string | undefined {
+  const value = process.env[name];
+  return value === undefined || value === '' ? undefined : value;
+}
+
 /**
  * Pool de negócio. Toda transação de domínio passa por withTenantTx, que é a
  * única função do sistema autorizada a abrir transação neste pool.
@@ -20,6 +25,7 @@ function requireEnv(name: string): string {
 export function businessPool(): Pool {
   business ??= new Pool({
     connectionString: requireEnv('DATABASE_URL'),
+    password: optionalEnv('DATABASE_PASSWORD'),
     max: 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
@@ -37,6 +43,7 @@ export function businessPool(): Pool {
 export function auditPool(): Pool {
   audit ??= new Pool({
     connectionString: requireEnv('DATABASE_URL'),
+    password: optionalEnv('DATABASE_PASSWORD'),
     max: 2,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
@@ -57,6 +64,7 @@ export function auditPool(): Pool {
 export function jobsPool(): Pool {
   jobs ??= new Pool({
     connectionString: requireEnv('DATABASE_URL_JOBS'),
+    password: optionalEnv('DATABASE_JOBS_PASSWORD'),
     max: 4,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
@@ -79,6 +87,7 @@ export function appPool(): Pool {
   if (app === undefined) {
     const created = new Pool({
       connectionString: requireEnv('DATABASE_URL'),
+      password: optionalEnv('DATABASE_PASSWORD'),
       max: 5,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,

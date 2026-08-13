@@ -17,8 +17,26 @@ export type Decision =
   | { allowed: true; action: ActionDef }
   | { allowed: false; reason: DenyReason };
 
+export interface PermissionOverride {
+  readonly role: Role;
+  readonly allowed: boolean;
+}
+
 export function can(
   subject: AuthzSubject, actionKey: string, target: { clinicId: string },
+): Decision {
+  return canWithOverrides(subject, actionKey, target, []);
+}
+
+/**
+ * Decide a autorização efetiva: catálogo versionado + customização da unidade.
+ * MFA pertence à ação e nunca pode ser desligada por override administrativo.
+ */
+export function canWithOverrides(
+  subject: AuthzSubject,
+  actionKey: string,
+  target: { clinicId: string },
+  overrides: readonly PermissionOverride[],
 ): Decision {
   const action = ACTION_BY_KEY.get(actionKey);
   // Fail-closed: chave fora do catalogo e negada. Rota nova nasce fechada.
@@ -27,7 +45,8 @@ export function can(
   const naClinica = subject.memberships.filter((m) => m.clinicId === target.clinicId);
   if (naClinica.length === 0) return { allowed: false, reason: 'sem_vinculo' };
 
-  const temPapel = naClinica.some((m) => action.roles.includes(m.role));
+  const porPapel = new Map(overrides.map((item) => [item.role, item.allowed]));
+  const temPapel = naClinica.some((m) => porPapel.get(m.role) ?? action.roles.includes(m.role));
   if (!temPapel) return { allowed: false, reason: 'papel_insuficiente' };
 
   if (action.requiresMfa === true && subject.mfaAt === null) {

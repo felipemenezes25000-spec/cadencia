@@ -16,9 +16,7 @@ describe('drillDownFactor', () => {
     pool = new Pool({
       connectionString: process.env['DATABASE_URL'],
       max: 2,
-    });
-    pool.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
+      options: '-c role=app_rw',
     });
 
     // Período B (julho 2026): 3 faltas do profissional A, todas de manhã em dias úteis

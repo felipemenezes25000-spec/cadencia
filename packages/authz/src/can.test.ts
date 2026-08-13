@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACTIONS, ACTION_BY_KEY } from './actions';
-import { can, assertCan, type AuthzSubject } from './can';
+import { can, canWithOverrides, assertCan, type AuthzSubject } from './can';
 
 const CLINICA_SP = '01890a5d-ac96-774b-bcce-b302099a8057';
 const CLINICA_MANAUS = '01890a5d-ac96-774b-bcce-b302099a8058';
@@ -71,6 +71,29 @@ describe('can', () => {
     expect(d.allowed).toBe(false);
     if (d.allowed) return;
     expect(d.reason).toBe('mfa_exigida');
+  });
+
+  it('override negado remove permissao que o papel teria por padrao', () => {
+    const recepcao = sujeito([{ clinicId: CLINICA_SP, role: 'recepcao' }]);
+    const d = canWithOverrides(recepcao, 'patient.read', { clinicId: CLINICA_SP }, [
+      { role: 'recepcao', allowed: false },
+    ]);
+    expect(d).toEqual({ allowed: false, reason: 'papel_insuficiente' });
+  });
+
+  it('override permitido concede acao fora do padrao do papel', () => {
+    const financeiro = sujeito([{ clinicId: CLINICA_SP, role: 'financeiro' }]);
+    expect(canWithOverrides(financeiro, 'patient.read', { clinicId: CLINICA_SP }, [
+      { role: 'financeiro', allowed: true },
+    ]).allowed).toBe(true);
+  });
+
+  it('override nao remove exigencia de MFA da acao', () => {
+    const recepcao = sujeito([{ clinicId: CLINICA_SP, role: 'recepcao' }], null);
+    const d = canWithOverrides(recepcao, 'membership.grant', { clinicId: CLINICA_SP }, [
+      { role: 'recepcao', allowed: true },
+    ]);
+    expect(d).toEqual({ allowed: false, reason: 'mfa_exigida' });
   });
 
   it('sujeito sem nenhum vinculo e negado em tudo', () => {

@@ -133,10 +133,10 @@ export async function scheduleRoutes(app: FastifyInstance): Promise<void> {
     const q = req.query as { dia: string; professionalId?: string; status?: never };
     const base = { clinicId: ctx.actor.clinicId, dia: q.dia,
                    ...(q.professionalId === undefined ? {} : { professionalId: q.professionalId }) };
-    const [contadores, fila] = await Promise.all([
-      dayCounters(tx, base),
-      dayQueue(tx, { ...base, ...(q.status === undefined ? {} : { status: q.status }) }),
-    ]);
+    const contadores = await dayCounters(tx, base);
+    const fila = await dayQueue(
+      tx, { ...base, ...(q.status === undefined ? {} : { status: q.status }) },
+    );
     return { contadores, fila };
   }));
 

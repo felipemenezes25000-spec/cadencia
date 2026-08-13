@@ -14,49 +14,25 @@ import { reprojetarGuiaTiss } from './jobs/reprojetar-guia-tiss';
 import {
   createFakeMessagingProvider, createFakePaymentProvider,
 } from '@cadencia/integrations';
-
-const FILA_RASCUNHOS = 'emr.auto-finalize-stale-drafts';
-const FILA_OUTBOX = 'outbox.dispatch';
-const FILA_ENVIO_MSG = 'messaging.send_message';
-const FILA_RECONCILIACAO = 'payments.reconciliation';
-// O despachante roteia event_type desconhecido para `outbox.<tipo>`. Este era o
-// caso de `create_payment_link`: a fila existia e ninguém escutava.
-const FILA_LINK_PAGAMENTO = 'outbox.create_payment_link';
-const FILA_ROLLUP = 'fin.daily-rollup';
-const FILA_LEMBRETES = 'messaging.schedule-reminders';
-const FILA_SELO = 'audit.seal-daily';
-const FILA_EXPURGO = 'clin.expurgo-retencao';
-// `resolveQueue` roteia ENCOUNTER_AMENDED para cá desde a Fase 4. A fila
-// existia, o evento chegava, e ninguém escutava — o mesmo defeito silencioso de
-// `create_payment_link` logo acima, repetido.
-const FILA_REPROJECAO_TISS = 'tiss.encounter_amended';
-
-const FILAS = [
-  FILA_RASCUNHOS,
-  FILA_OUTBOX,
-  FILA_ENVIO_MSG,
-  FILA_RECONCILIACAO,
-  FILA_LINK_PAGAMENTO,
-  FILA_ROLLUP,
-  FILA_LEMBRETES,
-  FILA_SELO,
-  FILA_EXPURGO,
-  FILA_REPROJECAO_TISS,
-] as const;
+import {
+  FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
+  FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
+  FILA_EXPURGO, FILA_REPROJECAO_TISS,
+} from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
   const boss = new PgBoss({
     connectionString: process.env.DATABASE_URL_JOBS ?? '',
+    ...(process.env['DATABASE_JOBS_PASSWORD'] === undefined
+      ? {} : { password: process.env['DATABASE_JOBS_PASSWORD'] }),
     schema: 'pgboss',
+    migrate: false,
   });
   await boss.start();
 
-  // pg-boss 10 nao cria mais filas implicitamente em work()/schedule(). Como
-  // schedule.name referencia queue.name, agendar antes deste bootstrap derruba
-  // o worker no boot com FK schedule_name_fkey. createQueue e idempotente, entao
-  // o mesmo caminho serve tanto ao primeiro deploy quanto aos reinicios.
-  for (const fila of FILAS) await boss.createQueue(fila);
-
+  // pg-boss 10 nao cria mais filas implicitamente em work()/schedule(). O
+  // bootstrap de producao instala o schema e as filas antes deste processo;
+  // migrate:false impede que o worker carregue privilegios de DDL em runtime.
   const usarFakes = process.env.CADENCIA_PROVIDERS !== 'real';
   const messaging = usarFakes ? createFakeMessagingProvider() : (() => {
     throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { providers, type Providers } from './providers';
 
 /**
@@ -15,6 +15,11 @@ function ambienteNaoFake(): void {
   process.env['MEMED_SECRET_KEY'] ??= 's';
   process.env['PSP_WEBHOOK_SECRET'] ??= 'segredo-de-teste-psp';
   process.env['WHATSAPP_APP_SECRET'] ??= 'segredo-de-teste-whatsapp';
+}
+
+async function recarregarProviders(): Promise<() => Providers> {
+  vi.resetModules();
+  return (await import('./providers')).providers;
 }
 
 describe('registry de providers (fake)', () => {
@@ -48,7 +53,7 @@ describe('modo so-prescricao', () => {
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'memed';
     ambienteNaoFake();
-    const { providers: recarregado } = await import(`./providers?memed=${Date.now()}`);
+    const recarregado = await recarregarProviders();
     try {
       const p = recarregado() as Providers;
       expect(p.prescription.id).toBe('memed');
@@ -68,7 +73,7 @@ describe('assinatura fora de desenvolvimento', () => {
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'memed';
     ambienteNaoFake();
-    const { providers: recarregado } = await import(`./providers?assin=${Date.now()}`);
+    const recarregado = await recarregarProviders();
     try {
       const p = recarregado() as Providers;
       // O fake ASSINA e reporta 'valida'. Num ambiente que emite documento de
@@ -86,7 +91,7 @@ describe('assinatura fora de desenvolvimento', () => {
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'real';
     ambienteNaoFake();
-    const { providers: recarregado } = await import(`./providers?real=${Date.now()}`);
+    const recarregado = await recarregarProviders();
     try {
       // Antes isto lançava no boot. Travar o sistema inteiro não protegia
       // ninguém: com a API no chão ninguém emite documento nenhum, nem os que
@@ -128,8 +133,7 @@ describe('segredo de webhook fora de desenvolvimento', () => {
       process.env['CADENCIA_PROVIDERS'] = modo;
       ambienteNaoFake();
       delete process.env[variavel];
-      const { providers: recarregado } =
-        await import(`./providers?semsegredo=${modo}${variavel}${Date.now()}`);
+      const recarregado = await recarregarProviders();
       try {
         expect(() => (recarregado as () => Providers)()).toThrow(variavel);
       } finally {

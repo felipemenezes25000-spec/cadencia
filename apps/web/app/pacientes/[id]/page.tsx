@@ -4,7 +4,7 @@ import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FichaDoPaciente, type AtendimentoResumo, type LancamentoResumo,
-  type DocumentoResumo, type MensagemResumo, type PapelNaTela,
+  type MensagemResumo, type PapelNaTela,
 } from '../../../src/telas/FichaDoPaciente';
 import type { ContatoPayload } from '../../../src/telas/SecaoContato';
 import type { PacienteHit } from '../../../src/ui/ComboboxDePaciente';
@@ -20,6 +20,7 @@ import { apiFetch, apiFetchBlobUrl, ApiError } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 import { useToast } from '../../../src/ui/useToast';
 import { useCallback, useEffect, useState } from 'react';
+import { carregarDocumentosDoPaciente } from '../../../src/telas/documentos-do-paciente';
 
 interface PacienteDaApi extends PacienteHit {
   email: string | null;
@@ -37,21 +38,6 @@ interface EncontroDaApi {
   profissionalNome: string;
   versionCount: number;
 }
-
-const ROTULOS_DOCUMENTO: Readonly<Record<string, string>> = {
-  atestado: 'Atestado médico',
-  pedido_exame: 'Pedido de exame',
-  relatorio: 'Relatório médico',
-  declaracao_comparecimento: 'Declaração de comparecimento',
-};
-
-const ROTULOS_ANEXO: Readonly<Record<string, string>> = {
-  resultado_exame: 'Resultado de exame',
-  imagem: 'Imagem clínica',
-  documento_externo: 'Documento externo',
-  consentimento: 'Consentimento',
-  outro: 'Outro arquivo',
-};
 
 /**
  * Amanhã no fuso da CLÍNICA, 'AAAA-MM-DD'.
@@ -313,37 +299,16 @@ export default function PaginaFichaDoPaciente(
         return itens;
       }}
       carregarDocumentos={async () => {
-        const [emitidos, anexos] = await Promise.all([
-          apiFetch<{
+        return carregarDocumentosDoPaciente(
+          () => apiFetch<{
             itens: { documentId: string; kind: string; titulo: string;
                      issuedDate: string; createdAt: string; assinado: boolean }[];
           }>(`/v1/pacientes/${id}/documentos`, { clinicId, csrfToken }),
-          apiFetch<{
+          () => apiFetch<{
             itens: { attachmentId: string; kind: string; originalName: string;
                      sizeBytes: number; criadoEm: string }[];
           }>(`/v1/pacientes/${id}/anexos`, { clinicId, csrfToken }),
-        ]);
-        const itens: DocumentoResumo[] = [
-          ...emitidos.itens.map((x) => ({
-            id: x.documentId,
-            origem: 'emitido' as const,
-            titulo: x.titulo,
-            categoria: ROTULOS_DOCUMENTO[x.kind] ?? 'Documento clínico',
-            criadoEm: x.createdAt || x.issuedDate,
-            tamanhoBytes: null,
-            assinado: x.assinado,
-          })),
-          ...anexos.itens.map((x) => ({
-            id: x.attachmentId,
-            origem: 'anexo' as const,
-            titulo: x.originalName,
-            categoria: ROTULOS_ANEXO[x.kind] ?? 'Arquivo clínico',
-            criadoEm: x.criadoEm,
-            tamanhoBytes: x.sizeBytes,
-            assinado: false,
-          })),
-        ];
-        return itens.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+        );
       }}
       aoAbrirDocumento={async (documento) => {
         try {

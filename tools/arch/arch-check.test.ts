@@ -8,13 +8,16 @@ const TIMEOUT = 120_000;
 
 function archCheck(): { code: number; output: string } {
   try {
-    // `shell` no Windows porque o executável é `pnpm.cmd`: sem ele o spawn falha com
-    // ENOENT antes de rodar o depcruise, e o teste nunca veria a saída que afirma.
-    const output = execFileSync('pnpm', ['arch:check'], {
-      encoding: 'utf8',
-      stdio: 'pipe',
-      shell: process.platform === 'win32',
-    });
+    const pnpmCli = process.env['npm_execpath'];
+    // Executar o CLI pelo próprio Node funciona em todos os sistemas sem abrir
+    // um shell, portanto argumentos de teste nunca são reinterpretados pelo SO.
+    const options = { encoding: 'utf8', stdio: 'pipe' } as const;
+    const output = pnpmCli
+      ? execFileSync(process.execPath, [pnpmCli, 'arch:check'], options)
+      : process.platform === 'win32'
+        ? execFileSync(process.env['ComSpec'] ?? 'cmd.exe',
+            ['/d', '/s', '/c', 'pnpm.cmd', 'arch:check'], options)
+        : execFileSync('pnpm', ['arch:check'], options);
     return { code: 0, output };
   } catch (error) {
     const e = error as { status?: number; stdout?: string; stderr?: string };

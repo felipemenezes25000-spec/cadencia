@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { ACTIONS } from '../packages/authz/src/actions';
 import { catalogRows, catalogChecksum } from '../packages/authz/src/catalog';
 import { closePools, jobsPool } from '../packages/db/src/pool';
+import { syncActionCatalog } from './sync-action-catalog';
 
 // Este script roda em processo próprio (o teste o invoca por execFileSync) e
 // não passa pelo setupFiles do vitest: sem isto, DATABASE_URL_JOBS não existe.
@@ -39,21 +40,7 @@ async function main(): Promise<void> {
   const client = await jobsPool().connect();
   try {
     await client.query('BEGIN');
-    for (const r of rows) {
-      await client.query(
-        `INSERT INTO ref.action (key, description, roles, requires_mfa)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (key) DO UPDATE
-           SET description = EXCLUDED.description,
-               roles = EXCLUDED.roles,
-               requires_mfa = EXCLUDED.requires_mfa,
-               generated_at = clock_timestamp()`,
-        [r.key, r.description, r.roles, r.requiresMfa],
-      );
-    }
-    // Ação que saiu de actions.ts sai do banco: o banco nunca vira fonte paralela.
-    await client.query(`DELETE FROM ref.action WHERE key <> ALL($1::text[])`,
-      [rows.map((r) => r.key)]);
+    await syncActionCatalog(client);
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK');

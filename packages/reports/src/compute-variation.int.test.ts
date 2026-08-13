@@ -17,10 +17,7 @@ describe('computeVariation', () => {
     pool = new Pool({
       connectionString: process.env['DATABASE_URL'],
       max: 2,
-    });
-    // Conecta e seta o papel para simular runtime
-    pool.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
+      options: '-c role=app_rw',
     });
 
     // Período A (junho 2026): 5 consultas a R$250 do profissional A, particular
@@ -174,9 +171,7 @@ describe('computeVariation', () => {
       poolGlosa = new Pool({
         connectionString: process.env['DATABASE_URL'],
         max: 2,
-      });
-      poolGlosa.on('connect', (client) => {
-        void client.query('SET ROLE app_rw').catch(() => undefined);
+        options: '-c role=app_rw',
       });
 
       // Período A (junho 2026): 3 consultas pagas + 1 glosa aceita de R$200
@@ -244,9 +239,7 @@ describe('computeVariation', () => {
       const poolInv = new Pool({
         connectionString: process.env['DATABASE_URL'],
         max: 2,
-      });
-      poolInv.on('connect', (client) => {
-        void client.query('SET ROLE app_rw').catch(() => undefined);
+        options: '-c role=app_rw',
       });
 
       try {

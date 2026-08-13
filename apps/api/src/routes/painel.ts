@@ -108,24 +108,23 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
     const dias = q.dias ?? 30;
     const p = [ctx.actor.clinicId, dias] as const;
 
-    const [serie, procs, convenios, duracoes, novos, etaria] = await Promise.all([
-      tx.query<{ dia: string; total: string }>(
+    const serie = await tx.query<{ dia: string; total: string }>(
         `SELECT a.appointment_date::text AS dia, count(*) AS total
            FROM sched.appointment a
           WHERE a.clinic_id = $1 AND a.status = 'atendido'
             AND a.appointment_date >= (current_date - make_interval(days => $2::int))
-          GROUP BY 1 ORDER BY 1`, [...p]),
+          GROUP BY 1 ORDER BY 1`, [...p]);
 
-      tx.query<{ rotulo: string; total: string }>(
+    const procs = await tx.query<{ rotulo: string; total: string }>(
         `SELECT coalesce(pr.nome, 'Sem procedimento') AS rotulo, count(*) AS total
            FROM sched.appointment a
            LEFT JOIN sched.procedure pr
                   ON (pr.tenant_id, pr.id) = (a.tenant_id, a.procedure_id)
           WHERE a.clinic_id = $1 AND a.status = 'atendido'
             AND a.appointment_date >= (current_date - make_interval(days => $2::int))
-          GROUP BY 1 ORDER BY 2 DESC`, [...p]),
+          GROUP BY 1 ORDER BY 2 DESC`, [...p]);
 
-      tx.query<{ rotulo: string; total: string }>(
+    const convenios = await tx.query<{ rotulo: string; total: string }>(
         // Sem operadora é PARTICULAR, e particular é uma fatia legítima do
         // gráfico — não "sem dados". Agrupar os dois esconderia o mix real de
         // faturamento, que é o que a gestora está olhando aqui.
@@ -133,9 +132,9 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
            FROM sched.appointment a
           WHERE a.clinic_id = $1 AND a.status = 'atendido'
             AND a.appointment_date >= (current_date - make_interval(days => $2::int))
-          GROUP BY 1 ORDER BY 2 DESC`, [...p]),
+          GROUP BY 1 ORDER BY 2 DESC`, [...p]);
 
-      tx.query<{ rotulo: string; minutos: string }>(
+    const duracoes = await tx.query<{ rotulo: string; minutos: string }>(
         `SELECT coalesce(pr.nome, 'Sem procedimento') AS rotulo,
                 round(avg(extract(epoch FROM (a.finished_at - a.started_at)) / 60))
                   AS minutos
@@ -145,17 +144,17 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
           WHERE a.clinic_id = $1 AND a.status = 'atendido'
             AND a.started_at IS NOT NULL AND a.finished_at IS NOT NULL
             AND a.appointment_date >= (current_date - make_interval(days => $2::int))
-          GROUP BY 1 ORDER BY 2 DESC`, [...p]),
+          GROUP BY 1 ORDER BY 2 DESC`, [...p]);
 
-      tx.query<{ dia: string; total: string }>(
+    const novos = await tx.query<{ dia: string; total: string }>(
         `SELECT app.local_date(p.created_at, c.timezone)::text AS dia, count(*) AS total
            FROM clin.patient p
            JOIN app.clinic c ON c.id = $1
           WHERE p.created_at >= (clock_timestamp() - make_interval(days => $2::int))
             AND p.merged_into_id IS NULL
-          GROUP BY 1 ORDER BY 1`, [...p]),
+          GROUP BY 1 ORDER BY 1`, [...p]);
 
-      tx.query<{ faixa: string; total: string }>(
+    const etaria = await tx.query<{ faixa: string; total: string }>(
         // Faixas fixas e não quantis: a gestora compara com a faixa do mês
         // passado, e quantil move a fronteira a cada consulta.
         `WITH idades AS (
@@ -174,8 +173,7 @@ export async function painelRoutes(app: FastifyInstance): Promise<void> {
                   ELSE '75+'
                 END AS faixa,
                 count(*) AS total
-           FROM idades GROUP BY 1 ORDER BY 1`, []),
-    ]);
+           FROM idades GROUP BY 1 ORDER BY 1`, []);
 
     const par = (rows: { rotulo: string; total: string }[]) =>
       rows.map((x) => ({ rotulo: x.rotulo, total: Number(x.total) }));

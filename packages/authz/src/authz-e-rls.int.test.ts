@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import { Pool } from 'pg';
 import { uuidv7 } from '@cadencia/kernel';
 import { jobsPool, withTenantTx } from '@cadencia/db';
 import { ACTIONS } from './actions';
 import { can, type AuthzSubject } from './can';
+
+function pnpm(...args: string[]): void {
+  const pnpmCli = process.env['npm_execpath'];
+  if (pnpmCli) {
+    execFileSync(process.execPath, [pnpmCli, ...args], { stdio: 'pipe' });
+  } else if (process.platform === 'win32') {
+    execFileSync(process.env['ComSpec'] ?? 'cmd.exe',
+      ['/d', '/s', '/c', 'pnpm.cmd', ...args], { stdio: 'pipe' });
+  } else {
+    execFileSync('pnpm', args, { stdio: 'pipe' });
+  }
+}
 
 // O slug e o email levam o uuid INTEIRO, nunca um prefixo: os 8 primeiros
 // digitos hex de um uuidv7 sao `ms >> 16`, um balde de ~65 segundos, entao os
@@ -48,7 +61,7 @@ describe('pnpm authz:seed', () => {
       ['fantasma.acao', 'inserida a mao', ['admin_clinico']],
     );
 
-    execFileSync('pnpm', ['authz:seed'], { stdio: 'pipe', shell: process.platform === 'win32' });
+    pnpm('authz:seed');
 
     const { rows } = await jobsPool().query(`SELECT key FROM ref.action ORDER BY key`);
     const noBanco = rows.map((r) => r.key as string);
@@ -57,10 +70,32 @@ describe('pnpm authz:seed', () => {
   });
 
   it('--check passa com o lock em dia', () => {
-    expect(() =>
-      execFileSync('pnpm', ['authz:seed', '--check'],
-        { stdio: 'pipe', shell: process.platform === 'win32' }),
-    ).not.toThrow();
+    expect(() => pnpm('authz:seed', '--check')).not.toThrow();
+  });
+
+  it('remove overrides órfãos ao aposentar uma ação do catálogo', async () => {
+    const t = await seedTenant('Clínica de catálogo');
+    const admin = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
+    try {
+      await admin.query(
+        `INSERT INTO ref.action (key, description, roles)
+         VALUES ('temporaria.remover', 'temporária', ARRAY['recepcao'])`,
+      );
+      await admin.query(
+        `INSERT INTO app.permission_override
+           (tenant_id, clinic_id, role, action_key, allowed)
+         VALUES ($1, $2, 'recepcao', 'temporaria.remover', false)`,
+        [t.tenantId, t.clinicId],
+      );
+      await admin.query(`DELETE FROM ref.action WHERE key = 'temporaria.remover'`);
+      const { rows } = await admin.query<{ count: number }>(
+        `SELECT count(*)::int AS count FROM app.permission_override
+          WHERE action_key = 'temporaria.remover'`,
+      );
+      expect(rows[0]?.count).toBe(0);
+    } finally {
+      await admin.end();
+    }
   });
 });
 

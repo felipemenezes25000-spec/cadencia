@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { ACTION_BY_KEY } from '@cadencia/authz';
 import { rota } from '../guard';
 
 const RoleSchema = z.enum([
@@ -8,7 +9,8 @@ const RoleSchema = z.enum([
 ]);
 
 const OverrideSchema = z.object({
-  action: z.string(), role: RoleSchema, permitido: z.boolean(),
+  action: z.string().refine((action) => ACTION_BY_KEY.has(action), 'ação desconhecida'),
+  role: RoleSchema, permitido: z.boolean(),
 });
 
 /**
@@ -80,7 +82,7 @@ export async function tenancyRoutes(app: FastifyInstance): Promise<void> {
     const overrides: Record<string, z.infer<typeof OverrideSchema>[]> = {};
     for (const item of rows) (overrides[item.role] ??= []).push(item);
     return { overrides };
-  }));
+  }, { clinicId: (req) => (req.query as { clinicId: string }).clinicId }));
 
   r.put('/v1/clinics/:id/permissions', {
     schema: {
@@ -101,5 +103,5 @@ export async function tenancyRoutes(app: FastifyInstance): Promise<void> {
       );
     }
     return { saved: body.overrides.length };
-  }));
+  }, { clinicId: (req) => (req.params as { id: string }).id }));
 }

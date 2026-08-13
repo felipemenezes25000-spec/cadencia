@@ -106,10 +106,8 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     },
   }, rota('billing.read', async (tx, ctx) => {
     const tenantId = ctx.actor.tenantId;
-    const [assinatura, valorCalculado] = await Promise.all([
-      getSubscription(tx as never, tenantId),
-      calculateSubscriptionValue(tx as never, tenantId),
-    ]);
+    const assinatura = await getSubscription(tx as never, tenantId);
+    const valorCalculado = await calculateSubscriptionValue(tx as never, tenantId);
     return { assinatura, valorCalculado };
   }));
 

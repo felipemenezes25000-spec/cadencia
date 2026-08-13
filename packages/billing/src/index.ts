@@ -263,8 +263,7 @@ export async function listInvoices(
   limit = 20,
   offset = 0,
 ): Promise<{ itens: Fatura[]; total: number }> {
-  const [faturasResult, countResult] = await Promise.all([
-    pool.query<{
+  const faturasResult = await pool.query<{
       id: string; tenant_id: string; assinatura_id: string;
       valor_cents: number; status: string;
       data_vencimento: string; data_pagamento: string | null;
@@ -277,12 +276,11 @@ export async function listInvoices(
      ORDER BY data_vencimento DESC
         LIMIT $2 OFFSET $3`,
       [tenantId, limit, offset],
-    ),
-    pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM com.fatura WHERE tenant_id = $1`,
-      [tenantId],
-    ),
-  ]);
+    );
+  const countResult = await pool.query<{ count: string }>(
+    `SELECT COUNT(*) AS count FROM com.fatura WHERE tenant_id = $1`,
+    [tenantId],
+  );
 
   return {
     itens: faturasResult.rows.map(mapFatura),
@@ -441,10 +439,8 @@ export async function calculateSubscriptionValue(
   pool: Pool,
   tenantId: string,
 ): Promise<{ valorCents: number; profissionais: number } | null> {
-  const [assinatura, profissionais] = await Promise.all([
-    getSubscription(pool, tenantId),
-    countProfessionals(pool, tenantId),
-  ]);
+  const assinatura = await getSubscription(pool, tenantId);
+  const profissionais = await countProfessionals(pool, tenantId);
 
   if (!assinatura?.plano) return null;
 

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closePools } from '@cadencia/db';
 import { closePdfPool } from '@cadencia/documents';
 import { buildApp } from '../app';
-import { semearSessao, auth, type SementeSessao } from '../test-support';
+import { semearColega, semearSessao, auth, type SementeSessao } from '../test-support';
 
 let s: SementeSessao;
 beforeAll(async () => { s = await semearSessao({ role: 'profissional' }); });
@@ -41,6 +41,22 @@ describe('artefatos clinicos', () => {
         }),
       ]),
     });
+    await app.close();
+  });
+
+  it('recepção reimprime documento emitido sem ganhar leitura de anexos', async () => {
+    const recepcao = await semearColega(s, { role: 'recepcao' });
+    const app = await buildApp();
+    const documentos = await app.inject({
+      method: 'GET', url: `/v1/pacientes/${s.patientId}/documentos`, ...auth(recepcao),
+    });
+    const anexos = await app.inject({
+      method: 'GET', url: `/v1/pacientes/${s.patientId}/anexos`, ...auth(recepcao),
+    });
+    expect(documentos.statusCode).toBe(200);
+    expect((documentos.json() as { itens: unknown[] }).itens.length).toBeGreaterThan(0);
+    expect(anexos.statusCode).toBe(403);
+    expect(anexos.json()).toMatchObject({ acao: 'attachment.read' });
     await app.close();
   });
 

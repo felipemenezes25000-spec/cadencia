@@ -182,6 +182,7 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 
 pnpm db:up
 pnpm db:migrate
+pnpm authz:seed
 ```
 
 O compose de desenvolvimento publica o PostgreSQL apenas em `127.0.0.1:5433` e usa os três papéis do runtime: `api`, `jobs` e `postgres` para migrations.
@@ -226,7 +227,10 @@ systemctl status cadencia-api cadencia-worker
 journalctl -u cadencia-api -u cadencia-worker --since today
 ```
 
-Depois de migration ou atualização do código, o deploy só está concluído quando todas estas verificações passam:
+No Compose de produção, o serviço one-shot `bootstrap` aplica migrations, define
+as senhas dos papéis, sincroniza o catálogo de ações e prepara o pg-boss antes de
+liberar API e worker. Depois de atualização do código, o deploy só está concluído
+quando todas estas verificações passam:
 
 ```bash
 # Na instância AWS

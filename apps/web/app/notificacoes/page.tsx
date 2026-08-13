@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CalendarBlank, ChatCircle, CheckCircle, Clock, CreditCard, Pill, Stethoscope } from '@phosphor-icons/react';
 import { apiFetch } from '../../src/api';
 import { useSessao } from '../../src/sessao';
@@ -11,21 +11,9 @@ import { EstadoVazio } from '../../src/ui/EstadoVazio';
 import { PageHeader } from '../../src/ui/PageHeader';
 import { Skeleton } from '../../src/ui/Skeleton';
 import { useToast } from '../../src/ui/ToastProvider';
-
-interface Notification {
-  id: string;
-  kind: string;
-  title: string;
-  body: string;
-  readAt: string | null;
-  createdAt: string;
-}
-
-interface NotificationResponse {
-  itens: Notification[];
-  nextCursor: string | null;
-  unreadCount: number;
-}
+import {
+  combineNotificationPages, notificationPageUrl, type NotificationPage,
+} from '../../src/telas/notificacoes-pagination';
 
 function KindIcon({ kind }: { readonly kind: string }) {
   const Icon = kind.startsWith('appointment_') ? CalendarBlank
@@ -57,12 +45,16 @@ export default function NotificacoesPage() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  const {
+    data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['notifications', clinicId, showUnreadOnly],
-    queryFn: () => apiFetch<NotificationResponse>(
-      `/v1/notifications${showUnreadOnly ? '?unreadOnly=true' : ''}`,
+    queryFn: ({ pageParam }) => apiFetch<NotificationPage>(
+      notificationPageUrl(showUnreadOnly, pageParam),
       { clinicId, csrfToken },
     ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 30_000,
   });
 
@@ -83,8 +75,8 @@ export default function NotificacoesPage() {
     },
   });
 
-  const notifications = data?.itens ?? [];
-  const unreadCount = data?.unreadCount ?? 0;
+  const notifications = combineNotificationPages(data?.pages);
+  const unreadCount = data?.pages[0]?.unreadCount ?? 0;
 
   return (
     <div className="cadencia-page space-y-6">
@@ -171,6 +163,17 @@ export default function NotificacoesPage() {
               </button>
             );
           })}
+          {hasNextPage ? (
+            <div className="flex justify-center bg-surface p-4">
+              <Botao
+                variante="secundario"
+                carregando={isFetchingNextPage}
+                onClick={() => void fetchNextPage()}
+              >
+                Carregar mais
+              </Botao>
+            </div>
+          ) : null}
         </section>
       ) : null}
     </div>

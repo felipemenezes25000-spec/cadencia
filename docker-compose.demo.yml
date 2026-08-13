@@ -50,14 +50,15 @@ services:
     container_name: cadencia-api
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: "3001"
-      DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
-      DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
-      DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL: postgres://api@db:5432/cadencia
+      DATABASE_PASSWORD: ${API_PASSWORD:?defina no .env da instancia}
+      DATABASE_URL_JOBS: postgres://jobs@db:5432/cadencia
+      DATABASE_JOBS_PASSWORD: ${JOBS_PASSWORD:?defina no .env da instancia}
       # `fake` continua sendo o padrao seguro. O modo `memed` so e ativado por
       # decisao explicita no .env da instancia; nunca fica gravado na imagem.
       CADENCIA_PROVIDERS: ${CADENCIA_PROVIDERS:-fake}
@@ -77,6 +78,17 @@ services:
       # Publica porque a funcao da Vercel precisa alcancar: e o unico servico que
       # sai da rede interna.
       - "3001:3001"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch(process.argv[1]).then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+        - http://127.0.0.1:3001/health
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
     volumes:
       - cadencia-anexos:/var/lib/cadencia/anexos
 
@@ -86,13 +98,14 @@ services:
     container_name: cadencia-worker
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
-      DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
-      DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
+      DATABASE_URL: postgres://api@db:5432/cadencia
+      DATABASE_PASSWORD: ${API_PASSWORD:?defina no .env da instancia}
+      DATABASE_URL_JOBS: postgres://jobs@db:5432/cadencia
+      DATABASE_JOBS_PASSWORD: ${JOBS_PASSWORD:?defina no .env da instancia}
       CADENCIA_PROVIDERS: ${CADENCIA_PROVIDERS:-fake}
       CADENCIA_TOTP_KEY: ${CADENCIA_TOTP_KEY:?}
       STORAGE_DIR: /var/lib/cadencia/anexos
@@ -100,6 +113,21 @@ services:
     volumes:
       - cadencia-anexos:/var/lib/cadencia/anexos
     command: ["pnpm", "--filter", "@cadencia/worker", "exec", "tsx", "src/worker.ts"]
+
+  bootstrap:
+    image: cadencia-runtime:local
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: cadencia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env da instancia}
+      API_PASSWORD: ${API_PASSWORD:?defina no .env da instancia}
+      JOBS_PASSWORD: ${JOBS_PASSWORD:?defina no .env da instancia}
+    command: ["pnpm", "exec", "tsx", "scripts/bootstrap-production.ts"]
 
 volumes:
   cadencia-pgdata:

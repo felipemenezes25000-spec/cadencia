@@ -24,9 +24,7 @@ describe('rota variation — teste de dominio end-to-end', () => {
     pool = new Pool({
       connectionString: process.env['DATABASE_URL'],
       max: 2,
-    });
-    pool.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
+      options: '-c role=app_rw',
     });
 
     // Cenario: receita caiu de R$1.250 (jun) para R$950 (jul)

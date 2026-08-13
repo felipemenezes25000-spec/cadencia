@@ -27,9 +27,7 @@ describe('persistVariationSnapshot e readVariationSnapshot', () => {
     businessPool = new Pool({
       connectionString: process.env['DATABASE_URL'],
       max: 2,
-    });
-    businessPool.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
+      options: '-c role=app_rw',
     });
     jobPool = new Pool({
       connectionString: process.env['DATABASE_URL_JOBS'],

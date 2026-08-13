@@ -6,7 +6,12 @@ import { describe, expect, it } from 'vitest';
 const workspace = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 type RenderedCompose = {
-  services: Record<string, { environment?: Record<string, string> }>;
+  services: Record<string, {
+    environment?: Record<string, string>;
+    healthcheck?: { test?: string[] };
+    depends_on?: Record<string, { condition?: string }>;
+    command?: string[];
+  }>;
 };
 
 let rendered: RenderedCompose | undefined;
@@ -62,5 +67,30 @@ describe('compose da demonstracao', () => {
   it('mantem o worker no mesmo modo de provedores da API', () => {
     expect(renderedDemoCompose().services['worker']?.environment)
       .toMatchObject({ CADENCIA_PROVIDERS: 'memed' });
+  }, 30_000);
+
+  it('publica healthcheck da API para o orquestrador', () => {
+    expect(renderedDemoCompose().services['api']?.healthcheck?.test)
+      .toEqual(expect.arrayContaining(['http://127.0.0.1:3001/health']));
+  }, 30_000);
+
+  it('executa o bootstrap antes da API e do worker sem expor a senha administrativa', () => {
+    const services = renderedDemoCompose().services;
+    expect(services['bootstrap']?.command)
+      .toEqual(expect.arrayContaining(['scripts/bootstrap-production.ts']));
+    expect(services['api']?.depends_on?.['bootstrap']?.condition)
+      .toBe('service_completed_successfully');
+    expect(services['worker']?.depends_on?.['bootstrap']?.condition)
+      .toBe('service_completed_successfully');
+    expect(services['api']?.environment).toMatchObject({
+      DATABASE_URL: 'postgres://api@db:5432/cadencia',
+      DATABASE_PASSWORD: 'api-test',
+    });
+    expect(services['worker']?.environment).toMatchObject({
+      DATABASE_URL_JOBS: 'postgres://jobs@db:5432/cadencia',
+      DATABASE_JOBS_PASSWORD: 'jobs-test',
+    });
+    expect(services['api']?.environment?.['DATABASE_URL_ADMIN']).toBeUndefined();
+    expect(services['worker']?.environment?.['DATABASE_URL_ADMIN']).toBeUndefined();
   }, 30_000);
 });
