@@ -31,7 +31,7 @@ export function BlocoDeSecao({
 
   return (
     <section
-      className={cn('mb-[var(--s-8)]', className)}
+      className={cn('cadencia-section-block mb-[var(--s-8)]', className)}
     >
       <button
         type="button"
