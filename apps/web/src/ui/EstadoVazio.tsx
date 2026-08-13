@@ -28,12 +28,12 @@ export function EstadoVazio({
 }: EstadoVazioProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center rounded-xl border border-dashed border-line bg-surface-subtle/70 text-center",
+      "cadencia-empty-state flex flex-col items-center justify-center rounded-xl border border-dashed border-line bg-surface-subtle/70 text-center",
       compacto ? "px-4 py-7" : "px-6 py-12",
       className
     )}>
       <div className={cn(
-        "mb-4 grid place-items-center rounded-xl bg-surface text-text-muted ring-1 ring-inset ring-line",
+        "cadencia-empty-icon mb-4 grid place-items-center rounded-xl bg-surface text-text-muted ring-1 ring-inset ring-line",
         compacto ? "size-10" : "size-12"
       )}>
         <Icone
