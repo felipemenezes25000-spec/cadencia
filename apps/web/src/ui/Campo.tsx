@@ -29,7 +29,7 @@ export interface CampoProps
 }
 
 const wrapperBase = [
-  'flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.75)]',
+  'cadencia-field flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.75)]',
   'transition-[border-color,background-color,box-shadow] duration-150 hover:border-line-strong hover:bg-surface-raised',
 ].join(' ');
 
@@ -99,7 +99,7 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
     const nearMax = maxLength != null && charCount >= maxLength * 0.9;
 
     return (
-      <div className={cn('flex flex-col gap-1.5', className)}>
+      <div className={cn('cadencia-field-group flex flex-col gap-1.5', className)}>
         {rotulo && <label htmlFor={id} className="text-[13px] font-semibold text-text-secondary">{rotulo}</label>}
 
         <div className={wrapperClasses}>
