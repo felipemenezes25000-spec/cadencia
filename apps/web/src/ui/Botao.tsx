@@ -69,7 +69,7 @@ export function Botao({
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.008em]',
+        'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.008em]',
         'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.985]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         classesVariante[variante],
