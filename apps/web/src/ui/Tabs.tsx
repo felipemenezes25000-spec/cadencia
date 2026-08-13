@@ -15,7 +15,7 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <RadixTabs.List
       className={cn(
-        "flex w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-line bg-surface-subtle/85 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)] backdrop-blur-sm scrollbar-thin",
+        "cadencia-tabs-list flex w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-line bg-surface-subtle/85 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)] backdrop-blur-sm scrollbar-thin",
         className,
       )}
     >
@@ -36,7 +36,7 @@ export function TabsTrigger({ children, value, badge, className }: TabsTriggerPr
     <RadixTabs.Trigger
       value={value}
       className={cn(
-        "inline-flex min-h-9 items-center rounded-lg px-3 py-1.5",
+        "cadencia-tab-trigger inline-flex min-h-9 items-center rounded-lg px-3 py-1.5",
         "whitespace-nowrap text-sm font-medium text-text-muted outline-none",
         "transition-[background-color,color,box-shadow,transform] duration-150",
         "hover:bg-surface hover:text-text",
