@@ -72,7 +72,7 @@ Todos usam a senha `Cadencia@2026`.
 </details>
 
 > [!IMPORTANT]
-> Este ambiente contém **somente dados fictícios** e roda com `CADENCIA_PROVIDERS=fake`: nenhuma receita chega à Memed, nenhuma mensagem chega à Meta e nenhum pagamento chega a um PSP. A demonstração não é um ambiente de produção e nunca deve receber dados de pacientes reais.
+> Este ambiente contém **somente dados fictícios** e não é a produção clínica de referência. A demonstração publicada roda em modo `memed`: prescrições usam a integração real da Memed e a assistência de transcrição usa OpenAI; mensagens, pagamentos e assinatura de atestados continuam sem provedor real contratado. Nunca cadastre pacientes reais neste ambiente.
 
 ## Feito para o trabalho real
 
@@ -151,13 +151,15 @@ Composição entre módulos irmãos acontece em `apps/`; contratos assíncronos 
 
 ## Rodando localmente
 
+Esta seção é apenas para desenvolvimento. A [demonstração pública](https://cadencia-nine.vercel.app/entrar) não depende do Docker da máquina de quem acessa: o navegador fala com a Vercel, e a Vercel encaminha `/v1/*` para a API na AWS.
+
 ### Pré-requisitos
 
 | Ferramenta | Versão |
 |---|---:|
 | Node.js | `>= 24` |
 | pnpm | `10.28.2` |
-| Docker + Compose | versão atual |
+| Docker + Compose | versão atual, somente para desenvolvimento local |
 
 ### 1. Instale as dependências
 
@@ -212,6 +214,31 @@ Pontos úteis depois do boot:
 - Aplicação: <http://localhost:3000>
 - Saúde da API: <http://localhost:3001/health>
 - Contrato OpenAPI: <http://localhost:3001/openapi.json>
+
+## Operação da demonstração publicada
+
+A URL pública é <https://cadencia-nine.vercel.app>. O frontend roda na Vercel e mantém navegador, cookies e API na mesma origem; o rewrite de `/v1/*` usa `API_ORIGIN` para alcançar a instância Lightsail `cadencia-server-new`, em `sa-east-1`.
+
+Na instância, o PostgreSQL 18 roda no container `cadencia-db`. API e worker são serviços supervisionados pelo systemd:
+
+```bash
+systemctl status cadencia-api cadencia-worker
+journalctl -u cadencia-api -u cadencia-worker --since today
+```
+
+Depois de migration ou atualização do código, o deploy só está concluído quando todas estas verificações passam:
+
+```bash
+# Na instância AWS
+pnpm exec tsx --env-file=.env scripts/semear-demo.ts
+pnpm exec tsx --env-file=.env scripts/memed-check.ts
+sudo systemctl restart cadencia-api cadencia-worker
+curl -fsS http://127.0.0.1:3001/health
+```
+
+Por fim, teste o login pela URL pública com `helena@aurora.demo` e confirme que a escolha da unidade abre `/hoje`. Um `GET /v1/sessao` anônimo retornar `401` prova apenas que a API está acessível; não prova que as contas da demonstração foram semeadas.
+
+Os segredos pertencem ao `.env` da instância, com permissão `0600`. A Vercel recebe somente `API_ORIGIN`; chaves de banco, AWS, Memed, OpenAI e CID-11 nunca entram em variável `NEXT_PUBLIC_*` nem no repositório.
 
 ## Qualidade como contrato
 
@@ -282,7 +309,7 @@ Antes de uma mudança estrutural, leia as [decisões irreversíveis do design](d
 | Ambiente | Topologia | Pode conter dado real? |
 |---|---|---:|
 | Local | Docker Compose + processos Node | **Não** |
-| Demonstração | Vercel → Lightsail em São Paulo → PostgreSQL/API/worker | **Não** |
+| Demonstração publicada | Vercel → Lightsail `cadencia-server-new` em São Paulo → API/worker (systemd) + PostgreSQL 18 (Docker) | **Não** |
 | Referência de produção | ALB/WAF → ECS Fargate → RDS Multi-AZ + S3/KMS em `sa-east-1` | Somente após implantação e validação das salvaguardas documentadas |
 
 ## Licença

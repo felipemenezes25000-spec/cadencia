@@ -9,5 +9,9 @@ export default defineConfig({
     globals: false,
     setupFiles: ['./vitest.setup.ts'],
     css: true,
+    // Centenas de arquivos jsdom em paralelo saturam memoria/CPU e fazem testes
+    // de axe estourarem o timeout sem falha funcional. Quatro workers mantem a
+    // suite paralela, mas evita a tempestade de forks observada no Windows e CI.
+    maxWorkers: 4,
   },
 });

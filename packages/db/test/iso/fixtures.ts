@@ -338,6 +338,10 @@ export const GUIA_SADT_B = '01930000-0000-7000-8000-000000001070';
 export const LOTE_SADT_A = '01930000-0000-7000-8000-000000001071';
 export const LOTE_SADT_B = '01930000-0000-7000-8000-000000001072';
 
+/** Configuracao operacional (migration 0174): uma linha do tenant B por tabela. */
+export const NOTIFICATION_B = '01930000-0000-7000-8000-000000001081';
+export const CHANNEL_CONFIG_B = '01930000-0000-7000-8000-000000001082';
+
 /** CPF válido (dígitos verificadores corretos) usado nos DOIS tenants de propósito. */
 export const CPF_VALIDO = '52998224725';
 

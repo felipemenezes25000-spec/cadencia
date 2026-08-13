@@ -31,12 +31,31 @@ const FILA_EXPURGO = 'clin.expurgo-retencao';
 // `create_payment_link` logo acima, repetido.
 const FILA_REPROJECAO_TISS = 'tiss.encounter_amended';
 
+const FILAS = [
+  FILA_RASCUNHOS,
+  FILA_OUTBOX,
+  FILA_ENVIO_MSG,
+  FILA_RECONCILIACAO,
+  FILA_LINK_PAGAMENTO,
+  FILA_ROLLUP,
+  FILA_LEMBRETES,
+  FILA_SELO,
+  FILA_EXPURGO,
+  FILA_REPROJECAO_TISS,
+] as const;
+
 export async function startWorker(): Promise<PgBoss> {
   const boss = new PgBoss({
     connectionString: process.env.DATABASE_URL_JOBS ?? '',
     schema: 'pgboss',
   });
   await boss.start();
+
+  // pg-boss 10 nao cria mais filas implicitamente em work()/schedule(). Como
+  // schedule.name referencia queue.name, agendar antes deste bootstrap derruba
+  // o worker no boot com FK schedule_name_fkey. createQueue e idempotente, entao
+  // o mesmo caminho serve tanto ao primeiro deploy quanto aos reinicios.
+  for (const fila of FILAS) await boss.createQueue(fila);
 
   const usarFakes = process.env.CADENCIA_PROVIDERS !== 'real';
   const messaging = usarFakes ? createFakeMessagingProvider() : (() => {

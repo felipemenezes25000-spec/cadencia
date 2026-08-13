@@ -1499,4 +1499,33 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($1, $2, $3, 'atestado', 'Atestado do tenant B', 'Conteúdo isolado do tenant B')`,
     [F.TENANT_B, F.CLINIC_B_RIO_BRANCO, F.PROF_B_DIEGO],
   );
+
+  // Configuracao operacional adicionada na migration 0174. O canario descobre
+  // essas tabelas pelo catalogo; por isso cada uma precisa de dado alheio real.
+  await admin.query(
+    `INSERT INTO app.notification
+       (tenant_id, id, user_id, clinic_id, kind, title, body) VALUES
+       ($1, $2, $3, $4, 'appointment_attention',
+        'Notificacao do tenant B', 'Conteudo isolado do tenant B')`,
+    [F.TENANT_B, F.NOTIFICATION_B, F.USER_B_DIEGO, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  await admin.query(
+    `INSERT INTO msg.channel_config
+       (tenant_id, id, channel, status, rate_limit_per_minute) VALUES
+       ($1, $2, 'whatsapp', 'active', 60)`,
+    [F.TENANT_B, F.CHANNEL_CONFIG_B],
+  );
+
+  await admin.query(
+    `INSERT INTO ref.action (key, description, roles)
+     VALUES ('patient.read', 'Ler cadastro de paciente', ARRAY['recepcao'])`,
+  );
+
+  await admin.query(
+    `INSERT INTO app.permission_override
+       (tenant_id, clinic_id, role, action_key, allowed) VALUES
+       ($1, $2, 'recepcao', 'patient.read', false)`,
+    [F.TENANT_B, F.CLINIC_B_RIO_BRANCO],
+  );
 }

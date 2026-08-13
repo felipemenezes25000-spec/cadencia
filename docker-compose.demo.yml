@@ -58,10 +58,19 @@ services:
       DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
       DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
       DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
-      # `fake` nao e placeholder: e a guarda que impede este ambiente de virar
-      # producao por inercia. Receita nao chega a Memed, atestado sai pendente.
-      CADENCIA_PROVIDERS: fake
+      # `fake` continua sendo o padrao seguro. O modo `memed` so e ativado por
+      # decisao explicita no .env da instancia; nunca fica gravado na imagem.
+      CADENCIA_PROVIDERS: ${CADENCIA_PROVIDERS:-fake}
       CADENCIA_TOTP_KEY: ${CADENCIA_TOTP_KEY:?}
+      MEMED_BASE_URL: ${MEMED_BASE_URL:-}
+      MEMED_SCRIPT_URL: ${MEMED_SCRIPT_URL:-}
+      MEMED_API_KEY: ${MEMED_API_KEY:-}
+      MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ICD_CLIENT_ID: ${ICD_CLIENT_ID:-}
+      ICD_CLIENT_SECRET: ${ICD_CLIENT_SECRET:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      PSP_WEBHOOK_SECRET: ${PSP_WEBHOOK_SECRET:-}
       STORAGE_DIR: /var/lib/cadencia/anexos
       LOG_LEVEL: info
     ports:
@@ -84,7 +93,7 @@ services:
       DATABASE_URL: postgres://api:${API_PASSWORD:?}@db:5432/cadencia
       DATABASE_URL_JOBS: postgres://jobs:${JOBS_PASSWORD:?}@db:5432/cadencia
       DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/cadencia
-      CADENCIA_PROVIDERS: fake
+      CADENCIA_PROVIDERS: ${CADENCIA_PROVIDERS:-fake}
       CADENCIA_TOTP_KEY: ${CADENCIA_TOTP_KEY:?}
       STORAGE_DIR: /var/lib/cadencia/anexos
       LOG_LEVEL: info
