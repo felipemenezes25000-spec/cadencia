@@ -68,13 +68,10 @@ export class SecurityAuditChannel {
       max: this.maxConnections,
       connectionTimeoutMillis: 2_000,
       application_name: 'cadencia-audit-channel',
+      options: '-c role=app_rw',
     });
-    // O papel de login `api` é NOINHERIT: não herda app_rw sozinho. A query é
-    // enfileirada na conexão antes de qualquer outra, porque o `pg` mantém uma
-    // fila FIFO por cliente.
-    this.pool.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
-    });
+    // O papel de login `api` é NOINHERIT. Definir o papel no handshake evita que
+    // o pool entregue a conexão enquanto uma query de inicialização ainda roda.
     this.pool.on('error', () => undefined);
   }
 

@@ -30,7 +30,7 @@
     "db:privileges": "tsx packages/db/src/invariants/write-privileges.ts",
     "db:invariants": "tsx packages/db/src/invariants-cli.ts",
     "restore:drill": "tsx scripts/restore-drill.ts",
-    "prepush": "pnpm typecheck && pnpm arch:check && pnpm lint:terminology-clock && pnpm lint:session-guc && pnpm authz:check && pnpm test && pnpm test:web && pnpm build:web && pnpm test:int && pnpm test:iso",
+    "prepush": "pnpm typecheck && pnpm arch:check && pnpm lint:terminology-clock && pnpm lint:session-guc && pnpm lint:routes && pnpm authz:check && pnpm test && pnpm test:web && pnpm build:web && pnpm test:int && pnpm test:iso",
     "prepare": "husky",
     "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
     "icd:up": "docker compose --profile icd up -d --wait icd-api",

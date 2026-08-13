@@ -71,9 +71,9 @@ export function jobsPool(): Pool {
  * terminologia global (`ref.*`, sem RLS). Nunca substitui withTenantTx — nada
  * que leia tabela com tenant_id passa por aqui.
  *
- * `api` foi criado NOINHERIT na 0001: sem o SET ROLE abaixo, toda query retorna
- * 42501. A query é enfileirada na conexão antes de qualquer outra, porque o `pg`
- * mantém uma fila FIFO por cliente.
+ * `api` foi criado NOINHERIT na 0001: sem iniciar a sessão como `app_rw`, toda
+ * query retorna 42501. O papel é definido no handshake do PostgreSQL, antes de
+ * a conexão ficar disponível no pool.
  */
 export function appPool(): Pool {
   if (app === undefined) {
@@ -83,9 +83,7 @@ export function appPool(): Pool {
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
       application_name: 'cadencia-app',
-    });
-    created.on('connect', (client) => {
-      void client.query('SET ROLE app_rw').catch(() => undefined);
+      options: '-c role=app_rw',
     });
     app = created;
   }

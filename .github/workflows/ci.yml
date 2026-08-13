@@ -47,6 +47,8 @@ jobs:
         run: pnpm lint:session-guc
       - name: 'lint:terminology-clock — terminologia nao le relogio'
         run: pnpm lint:terminology-clock
+      - name: 'lint:routes — toda navegacao interna aponta para uma tela real'
+        run: pnpm lint:routes
       - name: 'authz:check — catalogo de acoes em dia com o lock'
         run: pnpm authz:check
       - name: 'arch:check — setas so descem, irmao nunca importa irmao, sem ciclo'
