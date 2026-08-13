@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { FichaDoPaciente } from './FichaDoPaciente';
-import type { AtendimentoResumo, LancamentoResumo } from './FichaDoPaciente';
+import type { AtendimentoResumo, DocumentoResumo, LancamentoResumo } from './FichaDoPaciente';
 
 /* ── Mocks ───────────────────────────────────────────────────────────── */
 
@@ -67,6 +67,27 @@ const LANCAMENTOS: LancamentoResumo[] = [
   },
 ];
 
+const DOCUMENTOS: DocumentoResumo[] = [
+  {
+    id: 'd1',
+    origem: 'emitido',
+    titulo: 'Relatorio de acompanhamento',
+    categoria: 'Relatorio medico',
+    criadoEm: '2026-08-05T14:30:00-03:00',
+    tamanhoBytes: null,
+    assinado: true,
+  },
+  {
+    id: 'a1',
+    origem: 'anexo',
+    titulo: 'hemograma.pdf',
+    categoria: 'Resultado de exame',
+    criadoEm: '2026-08-04T10:00:00-03:00',
+    tamanhoBytes: 245760,
+    assinado: false,
+  },
+];
+
 /* ── Helper de montagem ──────────────────────────────────────────────── */
 
 function montar(over = {}) {
@@ -81,6 +102,8 @@ function montar(over = {}) {
     aoQuebrarVidro: vi.fn(async () => {}),
     carregarConversas: vi.fn(async () => []),
     carregarFinanceiro: vi.fn(async () => LANCAMENTOS),
+    carregarDocumentos: vi.fn(async () => []),
+    aoAbrirDocumento: vi.fn(async () => {}),
     podeVerFinanceiro: false,
     atendimentos: ATENDIMENTOS,
     aoMensagem: vi.fn(),
@@ -155,6 +178,20 @@ describe('FichaDoPaciente', () => {
     });
   });
 
+  it('carrega documentos emitidos e anexos ao abrir a aba', async () => {
+    const props = montar({ carregarDocumentos: vi.fn(async () => DOCUMENTOS) });
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Documentos' }));
+
+    expect(await screen.findByText('Relatorio de acompanhamento')).toBeVisible();
+    expect(screen.getByText('hemograma.pdf')).toBeVisible();
+    expect(screen.getByText('Documento assinado')).toBeVisible();
+    expect(props.carregarDocumentos).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getAllByRole('button', { name: /Abrir/ })[0]!);
+    expect(props.aoAbrirDocumento).toHaveBeenCalledWith(DOCUMENTOS[0]);
+  });
+
   it('mostra timeline de atendimentos no tab Histórico', async () => {
     montar();
     await userEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
@@ -202,6 +239,8 @@ describe('FichaDoPaciente', () => {
         aoQuebrarVidro={async () => {}}
         carregarConversas={async () => []}
         carregarFinanceiro={async () => []}
+        carregarDocumentos={async () => []}
+        aoAbrirDocumento={async () => {}}
         podeVerFinanceiro={false}
         atendimentos={ATENDIMENTOS}
       />,

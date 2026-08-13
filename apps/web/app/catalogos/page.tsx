@@ -7,7 +7,7 @@ const CATALOGOS = [
   { href: '/catalogos/cid10', icone: Heartbeat, titulo: 'CID-10', descricao: 'Classificação Internacional de Doenças, 10a revisão' },
   { href: '/catalogos/cid11', icone: Heartbeat, titulo: 'CID-11', descricao: 'Classificação Internacional de Doenças, 11a revisão (OMS)' },
   { href: '/catalogos/tuss', icone: Barcode, titulo: 'TUSS', descricao: 'Terminologia Unificada da Saúde Suplementar (ANS)' },
-  { href: '#', icone: Pill, titulo: 'Bulas', descricao: 'Em breve — catálogo de bulas ANVISA' },
+  { href: '/bulas', icone: Pill, titulo: 'Bulas', descricao: 'Consulte medicamentos, apresentações e bulas oficiais' },
 ] as const;
 
 export default function PaginaCatalogos() {
@@ -17,7 +17,6 @@ export default function PaginaCatalogos() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CATALOGOS.map((cat) => {
           const Icone = cat.icone;
-          const desabilitado = cat.href === '#';
           const conteudo = (
             <>
               <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-accent-soft text-accent">
@@ -27,10 +26,8 @@ export default function PaginaCatalogos() {
               <p className="mt-1 text-sm text-text-muted">{cat.descricao}</p>
             </>
           );
-          const cls = `rounded-xl border border-line bg-surface p-5 transition ${desabilitado ? 'opacity-50' : 'hover:border-accent hover:shadow-elev-1'}`;
-          return desabilitado
-            ? <div key={cat.titulo} className={cls}>{conteudo}</div>
-            : <Link key={cat.titulo} href={cat.href} className={cls}>{conteudo}</Link>;
+          const cls = 'rounded-xl border border-line bg-surface p-5 transition hover:border-accent hover:shadow-elev-1';
+          return <Link key={cat.titulo} href={cat.href} className={cls}>{conteudo}</Link>;
         })}
       </div>
     </div>

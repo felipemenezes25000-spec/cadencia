@@ -102,7 +102,7 @@ function HojeSkeleton() {
       <div className="space-y-2"><Skeleton variant="text" width="260px" /><Skeleton variant="text" width="360px" /></div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} variant="card" height="78px" />)}</div>
       <Skeleton variant="card" height="56px" />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_350px]"><Skeleton variant="card" height="520px" /><Skeleton variant="card" height="520px" /></div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_350px]"><Skeleton variant="card" height="520px" /><Skeleton variant="card" height="520px" /></div>
     </div>
   );
 }
@@ -290,8 +290,8 @@ export function Hoje(props: HojeProps) {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
-        <section id="fluxo-de-hoje" aria-labelledby="titulo-fluxo" className="order-2 overflow-hidden rounded-2xl border border-line bg-surface xl:order-1">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_350px]">
+        <section id="fluxo-de-hoje" aria-labelledby="titulo-fluxo" className="order-1 overflow-hidden rounded-2xl border border-line bg-surface">
           <div className="border-b border-line px-4 pt-4 sm:px-5">
             <h2 id="titulo-fluxo" className="text-lg font-bold tracking-tight text-text">Fluxo de hoje</h2>
             <div className="mt-3 flex gap-5 overflow-x-auto scrollbar-thin">
@@ -436,7 +436,7 @@ function UnitPanel({ now, next, precisa, timezone, onNow, onNext }: {
   readonly onNext: () => void;
 }) {
   return (
-    <aside id="painel-unidade" aria-labelledby="titulo-painel-unidade" className="order-1 overflow-hidden rounded-2xl border border-line bg-surface xl:sticky xl:top-[88px] xl:order-2">
+    <aside id="painel-unidade" aria-labelledby="titulo-painel-unidade" className="order-2 overflow-hidden rounded-2xl border border-line bg-surface lg:sticky lg:top-[88px]">
       <h2 id="titulo-painel-unidade" className="border-b border-line px-5 py-4 text-lg font-bold tracking-tight text-text">Painel da unidade</h2>
       <section className="border-b border-line p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-text"><span className="size-2 rounded-full bg-ok" aria-hidden />Agora</h3>

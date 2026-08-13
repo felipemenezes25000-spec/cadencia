@@ -62,11 +62,11 @@ export async function documentTemplateRoutes(app: FastifyInstance): Promise<void
 
   r.get('/v1/documentos/templates/vars/:kind', {
     schema: { params: z.object({ kind: DocumentKind }) },
-  }, async () => ({
+  }, rota('document_template.read', async () => ({
     variaveis: TEMPLATE_VARIABLES.map((v) => ({
       chave: v.chave, exemplo: v.exemplo, descricao: v.descricao,
     })),
-  }));
+  })));
 
   r.post('/v1/documentos/templates', {
     schema: {

@@ -19,6 +19,31 @@ describe('artefatos clinicos', () => {
     await app.close();
   });
 
+  it('GET /v1/pacientes/:id/documentos lista os documentos emitidos do paciente', async () => {
+    const app = await buildApp();
+    const emitido = await app.inject({ method: 'POST', url: '/v1/documentos', ...auth(s),
+      payload: { kind: 'relatorio', patientId: s.patientId,
+                 payload: { titulo: 'Relatorio de acompanhamento', corpo: 'Evolucao estavel.' } } });
+    expect(emitido.statusCode).toBe(201);
+    const { documentId } = emitido.json() as { documentId: string };
+
+    const listado = await app.inject({
+      method: 'GET', url: `/v1/pacientes/${s.patientId}/documentos`, ...auth(s) });
+
+    expect(listado.statusCode).toBe(200);
+    expect(listado.json()).toMatchObject({
+      itens: expect.arrayContaining([
+        expect.objectContaining({
+          documentId,
+          kind: 'relatorio',
+          titulo: 'Relatorio de acompanhamento',
+          assinado: true,
+        }),
+      ]),
+    });
+    await app.close();
+  });
+
   it('POST /v1/prescricoes/sessao devolve a sessao embutida do prescritor', async () => {
     const app = await buildApp();
     const r = await app.inject({ method: 'POST', url: '/v1/prescricoes/sessao', ...auth(s),

@@ -90,6 +90,8 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
         aoQuebrarVidro={async () => {}}
         carregarConversas={() => nuncaResolve()}
         carregarFinanceiro={() => nuncaResolve()}
+        carregarDocumentos={() => nuncaResolve()}
+        aoAbrirDocumento={async () => {}}
         podeVerFinanceiro
         carregando
       />,

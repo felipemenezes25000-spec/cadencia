@@ -17,6 +17,65 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 export async function clinicalArtifactRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
+  r.get('/v1/pacientes/:id/documentos', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      response: {
+        200: z.object({
+          itens: z.array(z.object({
+            documentId: z.string().uuid(),
+            kind: z.enum(['atestado', 'pedido_exame', 'relatorio',
+                          'declaracao_comparecimento']),
+            titulo: z.string(),
+            issuedDate: z.string(),
+            createdAt: z.string(),
+            assinado: z.boolean(),
+            professionalName: z.string(),
+          })),
+        }),
+      },
+    },
+  }, rota('document.read', async (tx, _ctx, req) => {
+    const { id } = req.params as { id: string };
+    const { rows } = await tx.query<{
+      id: string; kind: 'atestado' | 'pedido_exame' | 'relatorio'
+        | 'declaracao_comparecimento'; titulo: string; issued_date: string;
+      created_at: string; signature_id: string | null; professional_name: string;
+    }>(
+      `SELECT d.id, d.kind::text AS kind,
+              coalesce(nullif(d.payload->>'titulo', ''),
+                CASE d.kind
+                  WHEN 'atestado' THEN 'Atestado medico'
+                  WHEN 'pedido_exame' THEN 'Solicitacao de exames'
+                  WHEN 'relatorio' THEN 'Relatorio medico'
+                  ELSE 'Declaracao de comparecimento'
+                END) AS titulo,
+              d.issued_date::text AS issued_date,
+              to_char(d.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:00') AS created_at,
+              d.signature_id,
+              coalesce(u.full_name, 'Profissional da unidade') AS professional_name
+         FROM clin.document d
+         JOIN app.professional pr
+              ON (pr.tenant_id, pr.id) = (d.tenant_id, d.professional_id)
+         JOIN id."user" u ON u.id = pr.user_id
+        WHERE d.patient_id = $1
+        ORDER BY d.issued_date DESC, d.created_at DESC`,
+      [id],
+    );
+    await tx.query(`SELECT audit.log_read('document_list', $1)`, [id]);
+    return {
+      itens: rows.map((x) => ({
+        documentId: x.id,
+        kind: x.kind,
+        titulo: x.titulo,
+        issuedDate: x.issued_date,
+        createdAt: x.created_at,
+        assinado: x.signature_id !== null,
+        professionalName: x.professional_name,
+      })),
+    };
+  }));
+
   r.post('/v1/documentos', {
     schema: {
       body: z.object({

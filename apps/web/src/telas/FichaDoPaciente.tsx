@@ -62,6 +62,16 @@ export interface ProntuarioResumo {
   readonly versionCount: number;
 }
 
+export interface DocumentoResumo {
+  readonly id: string;
+  readonly origem: 'emitido' | 'anexo';
+  readonly titulo: string;
+  readonly categoria: string;
+  readonly criadoEm: string;
+  readonly tamanhoBytes: number | null;
+  readonly assinado: boolean;
+}
+
 export interface ContatoDoPaciente {
   readonly email: string | null;
   readonly phoneSecondary: string | null;
@@ -82,6 +92,8 @@ export interface FichaDoPacienteProps {
   readonly aoQuebrarVidro: (justificativa: string, horas: number) => Promise<void>;
   readonly carregarConversas: () => Promise<MensagemResumo[]>;
   readonly carregarFinanceiro: () => Promise<LancamentoResumo[]>;
+  readonly carregarDocumentos: () => Promise<DocumentoResumo[]>;
+  readonly aoAbrirDocumento: (documento: DocumentoResumo) => Promise<void>;
   readonly podeVerFinanceiro: boolean;
   /** Exibir skeleton de carregamento */
   readonly carregando?: boolean;
@@ -295,6 +307,91 @@ function HistoricoTab({
 
 /* ── Tab: Financeiro ─────────────────────────────────────────────────── */
 
+function formatarTamanho(bytes: number | null): string | null {
+  if (bytes === null) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
+}
+
+function DocumentosTab({
+  itens,
+  erro,
+  abrindoId,
+  aoAbrir,
+  aoTentarNovamente,
+}: {
+  readonly itens: DocumentoResumo[] | null;
+  readonly erro: string | null;
+  readonly abrindoId: string | null;
+  readonly aoAbrir: (documento: DocumentoResumo) => void;
+  readonly aoTentarNovamente: () => void;
+}) {
+  if (erro !== null) {
+    return (
+      <EstadoVazio
+        icone={WarningCircle}
+        titulo="Não foi possível carregar os documentos"
+        descricao={erro}
+        acao={<Botao variante="secundario" onClick={aoTentarNovamente}>Tentar novamente</Botao>}
+      />
+    );
+  }
+  if (itens === null) {
+    return (
+      <div role="status" className="rounded-xl border border-line bg-surface p-5 text-sm text-text-muted">
+        Carregando documentos…
+      </div>
+    );
+  }
+  if (itens.length === 0) {
+    return (
+      <EstadoVazio
+        icone={FileText}
+        titulo="Nenhum documento cadastrado"
+        descricao="Atestados, laudos e arquivos vinculados ao paciente aparecerão aqui."
+      />
+    );
+  }
+  return (
+    <section aria-label="Documentos do paciente" className="overflow-hidden rounded-xl border border-line bg-surface">
+      <ul className="m-0 list-none divide-y divide-line p-0">
+        {itens.map((item) => {
+          const tamanho = formatarTamanho(item.tamanhoBytes);
+          return (
+            <li key={`${item.origem}-${item.id}`} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden="true">
+                  <FileText size={18} weight="duotone" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-text">{item.titulo}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    {item.categoria} · {new Date(item.criadoEm).toLocaleDateString('pt-BR')}
+                    {tamanho === null ? '' : ` · ${tamanho}`}
+                  </p>
+                  {item.assinado && (
+                    <span className="mt-1 inline-flex rounded-full bg-ok-soft px-2 py-0.5 text-[11px] font-semibold text-ok">
+                      Documento assinado
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Botao
+                variante="secundario"
+                carregando={abrindoId === item.id}
+                onClick={() => aoAbrir(item)}
+              >
+                Abrir {item.origem === 'anexo' ? 'anexo' : 'documento'}
+              </Botao>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function FinanceiroTab({
   lancamentos,
   veFinanceiro,
@@ -482,8 +579,11 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
   );
   const [prontuario, setProntuario] = useState<ProntuarioResumo[] | null>(null);
   const [conversas, setConversas] = useState<MensagemResumo[] | null>(null);
+  const [documentos, setDocumentos] = useState<DocumentoResumo[] | null>(null);
+  const [abrindoDocumentoId, setAbrindoDocumentoId] = useState<string | null>(null);
   const [erroProntuario, setErroProntuario] = useState<string | null>(null);
   const [erroConversas, setErroConversas] = useState<string | null>(null);
+  const [erroDocumentos, setErroDocumentos] = useState<string | null>(null);
   const [erroFinanceiro, setErroFinanceiro] = useState<string | null>(null);
 
   /* Skeleton de carregamento */
@@ -518,6 +618,24 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
     }
   }
 
+  async function carregarDocumentos(): Promise<void> {
+    setErroDocumentos(null);
+    try {
+      setDocumentos(await p.carregarDocumentos());
+    } catch {
+      setErroDocumentos('A consulta não foi concluída. Tente novamente.');
+    }
+  }
+
+  async function abrirDocumento(documento: DocumentoResumo): Promise<void> {
+    setAbrindoDocumentoId(documento.id);
+    try {
+      await p.aoAbrirDocumento(documento);
+    } finally {
+      setAbrindoDocumentoId(null);
+    }
+  }
+
   function aoMudarTab(value: string): void {
     if (value === 'prontuario' && prontuario === null && p.prontuarioAcessivel) {
       void carregarProntuario();
@@ -527,6 +645,9 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
     }
     if (value === 'financeiro' && lancamentos === null && veFinanceiro) {
       void carregarFinanceiro();
+    }
+    if (value === 'documentos' && documentos === null) {
+      void carregarDocumentos();
     }
   }
 
@@ -636,10 +757,12 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
         </TabsContent>
 
         <TabsContent value="documentos">
-          <EstadoVazio
-            icone={FileText}
-            titulo="Nenhum documento cadastrado"
-            descricao="Atestados, laudos e arquivos vinculados ao paciente aparecerão aqui."
+          <DocumentosTab
+            itens={documentos}
+            erro={erroDocumentos}
+            abrindoId={abrindoDocumentoId}
+            aoAbrir={(documento) => { void abrirDocumento(documento); }}
+            aoTentarNovamente={() => { void carregarDocumentos(); }}
           />
         </TabsContent>
 

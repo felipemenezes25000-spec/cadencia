@@ -5,9 +5,14 @@ import { describe, expect, it } from 'vitest';
 
 const workspace = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-function renderedDemoCompose(): {
+type RenderedCompose = {
   services: Record<string, { environment?: Record<string, string> }>;
-} {
+};
+
+let rendered: RenderedCompose | undefined;
+
+function renderedDemoCompose(): RenderedCompose {
+  if (rendered !== undefined) return rendered;
   const output = execFileSync(
     'docker', ['compose', '-f', 'docker-compose.demo.yml', 'config', '--format', 'json'],
     {
@@ -32,9 +37,8 @@ function renderedDemoCompose(): {
       },
     },
   );
-  return JSON.parse(output) as {
-    services: Record<string, { environment?: Record<string, string> }>;
-  };
+  rendered = JSON.parse(output) as RenderedCompose;
+  return rendered;
 }
 
 describe('compose da demonstracao', () => {
@@ -53,10 +57,10 @@ describe('compose da demonstracao', () => {
       WHATSAPP_APP_SECRET: 'whatsapp-test',
       PSP_WEBHOOK_SECRET: 'psp-test',
     });
-  });
+  }, 30_000);
 
   it('mantem o worker no mesmo modo de provedores da API', () => {
     expect(renderedDemoCompose().services['worker']?.environment)
       .toMatchObject({ CADENCIA_PROVIDERS: 'memed' });
-  });
+  }, 30_000);
 });

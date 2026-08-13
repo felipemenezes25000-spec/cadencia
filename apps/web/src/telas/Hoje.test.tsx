@@ -101,6 +101,15 @@ describe('cockpit Hoje', () => {
     expect(painel).toHaveTextContent('Pendências');
   });
 
+  it('mantém o fluxo antes do painel auxiliar em telas estreitas', async () => {
+    montar();
+    const fluxo = await screen.findByRole('region', { name: 'Fluxo de hoje' });
+    const painel = screen.getByRole('complementary', { name: 'Painel da unidade' });
+
+    expect(fluxo).toHaveClass('order-1');
+    expect(painel).toHaveClass('order-2');
+  });
+
   it('estado vazio explica o que aconteceu', async () => {
     montar({ carregarDia: vi.fn(async () => ({ contadores: { agendados: 0, confirmados: 0, aguardando: 0, atendidos: 0, faltas: 0 }, fila: [] })) });
     expect(await screen.findByText('Nenhum atendimento hoje')).toBeVisible();

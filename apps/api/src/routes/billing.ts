@@ -28,8 +28,16 @@ import {
 // Schemas de resposta
 // ---------------------------------------------------------------------------
 
+// PostgreSQL aceita UUIDs com qualquer nibble de versao. Os planos iniciais
+// possuem IDs determinísticos de versao 0, portanto `z.uuid()` (que aceita
+// apenas versoes RFC modernas) recusaria uma resposta válida do banco.
+const UuidDoPostgres = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  'UUID invalido',
+);
+
 const PlanoSchema = z.object({
-  id: z.string().uuid(),
+  id: UuidDoPostgres,
   slug: z.string(),
   nome: z.string(),
   valorPorProfissionalCents: z.number().int(),

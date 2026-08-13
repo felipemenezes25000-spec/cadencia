@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './premium.css';
-import './light-blue.css';
 import { Providers } from './providers';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';

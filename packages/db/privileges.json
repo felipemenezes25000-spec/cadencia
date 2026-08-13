@@ -29,6 +29,16 @@
       ]
     }
   },
+  "app.clinic_print_config": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "app.membership": {
     "table": {
       "app_rw": [
@@ -55,6 +65,20 @@
       ],
       "sched_public": [
         "SELECT"
+      ]
+    }
+  },
+  "app.notification": {
+    "table": {
+      "app_rw": [
+        "SELECT",
+        "UPDATE"
+      ],
+      "jobs": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
@@ -87,6 +111,16 @@
       }
     }
   },
+  "app.permission_override": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "app.professional": {
     "table": {
       "app_rw": [
@@ -113,6 +147,16 @@
       ],
       "sched_public": [
         "SELECT"
+      ]
+    }
+  },
+  "app.professional_config": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
@@ -262,6 +306,16 @@
           "UPDATE"
         ]
       }
+    }
+  },
+  "clin.document_template": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
     }
   },
   "clin.encounter": {
@@ -876,6 +930,15 @@
       ]
     }
   },
+  "msg.channel_config": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "msg.channel_identity": {
     "table": {
       "app_rw": [
@@ -1356,36 +1419,6 @@
   "tiss.recurso_number_counter": {
     "table": {
       "app_rw": [
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ]
-    }
-  },
-  "app.clinic_print_config": {
-    "table": {
-      "app_rw": [
-        "DELETE",
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ]
-    }
-  },
-  "app.professional_config": {
-    "table": {
-      "app_rw": [
-        "DELETE",
-        "INSERT",
-        "SELECT",
-        "UPDATE"
-      ]
-    }
-  },
-  "clin.document_template": {
-    "table": {
-      "app_rw": [
-        "DELETE",
         "INSERT",
         "SELECT",
         "UPDATE"

@@ -12,7 +12,6 @@ import {
   CaretRight,
   Paperclip,
   Microphone,
-  FlaskIcon,
 } from '@phosphor-icons/react';
 import { EditorClinico, type CodigoHit, type ModeloHit, type ValorAnterior } from './EditorClinico';
 import { PainelDeCobranca, type MetodoPagamento } from '../ui/PainelDeCobranca';
@@ -392,7 +391,9 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
   }
 
   function pedirExame() {
-    // placeholder para futuro painel de exames
+    if (p.aoEmitirGuiaSadt !== undefined && p.buscarProcedimentoTuss !== undefined) {
+      setSadtAberto(true);
+    }
   }
 
   function emitirDocumento() {
@@ -550,8 +551,12 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           {/* Keyboard shortcut hints (hidden on mobile) */}
           <div className="flex items-center gap-4 max-sm:hidden">
             <KbdHint atalho="Ctrl+P" rotulo="Prescrever" />
-            <KbdHint atalho="Ctrl+E" rotulo="Pedir exame" />
-            <KbdHint atalho="Ctrl+D" rotulo="Documento" />
+            {p.aoEmitirGuiaSadt !== undefined && p.buscarProcedimentoTuss !== undefined && (
+              <KbdHint atalho="Ctrl+E" rotulo="Pedir exame" />
+            )}
+            {p.aoEmitirDocumento !== undefined && (
+              <KbdHint atalho="Ctrl+D" rotulo="Documento" />
+            )}
           </div>
 
           {/* Action buttons */}
@@ -562,9 +567,11 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
             <Botao variante="secundario" iconeEsquerda={Pill} onClick={prescrever}>
               Prescrever
             </Botao>
-            <Botao variante="secundario" iconeEsquerda={TestTube} onClick={pedirExame}>
-              Pedir exame
-            </Botao>
+            {p.aoEmitirGuiaSadt !== undefined && p.buscarProcedimentoTuss !== undefined && (
+              <Botao variante="secundario" iconeEsquerda={TestTube} onClick={pedirExame}>
+                Pedir exame
+              </Botao>
+            )}
             {p.aoEmitirDocumento !== undefined && (
               <Botao variante="secundario" iconeEsquerda={FileText} onClick={emitirDocumento}>
                 Emitir documento
@@ -580,12 +587,6 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
               <Botao variante="secundario" iconeEsquerda={Microphone}
                 onClick={() => setTranscricaoAberta(true)}>
                 Transcrever
-              </Botao>
-            )}
-            {p.aoEmitirGuiaSadt !== undefined && (
-              <Botao variante="secundario" iconeEsquerda={FlaskIcon}
-                onClick={() => setSadtAberto(true)}>
-                Exames
               </Botao>
             )}
           </nav>

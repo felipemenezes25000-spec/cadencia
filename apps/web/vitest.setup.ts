@@ -34,3 +34,31 @@ if (typeof SVGElement !== 'undefined') {
   if (!proto.getComputedTextLength) proto.getComputedTextLength = () => 0;
   if (!proto.getBBox) proto.getBBox = () => ({ x: 0, y: 0, width: 0, height: 0 });
 }
+
+// axe-core e os graficos consultam canvas apenas para medir texto/cor. O JSDOM
+// expõe getContext(), mas a implementação padrão só escreve dezenas de erros no
+// stderr e devolve null. Este contexto mínimo mantém o contrato que os testes
+// realmente usam sem instalar um renderer nativo de canvas no CI.
+if (typeof HTMLCanvasElement !== 'undefined') {
+  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+    configurable: true,
+    value: () => ({
+      canvas: document.createElement('canvas'),
+      fillStyle: '#000000',
+      font: '14px sans-serif',
+      measureText: (text: string) => ({
+        width: text.length * 7,
+        actualBoundingBoxAscent: 10,
+        actualBoundingBoxDescent: 3,
+      }),
+      clearRect: () => undefined,
+      fillRect: () => undefined,
+      getImageData: () => ({ data: new Uint8ClampedArray([0, 0, 0, 255]) }),
+      putImageData: () => undefined,
+      save: () => undefined,
+      restore: () => undefined,
+      scale: () => undefined,
+      translate: () => undefined,
+    }),
+  });
+}

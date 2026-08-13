@@ -93,6 +93,11 @@ vi.mock('../ui/PainelDeDocumentos', () => ({
     aberto ? <div data-testid="painel-documentos">Documentos</div> : null,
 }));
 
+vi.mock('../ui/PainelDeSadt', () => ({
+  PainelDeSadt: ({ aberto }: { aberto: boolean }) =>
+    aberto ? <div data-testid="painel-sadt">Exames SADT</div> : null,
+}));
+
 /* ── mock do PainelDePrescricao ───────────────────────────────────────── */
 
 vi.mock('../ui/PainelDePrescricao', () => ({
@@ -231,10 +236,14 @@ describe('TelaDeAtendimento', () => {
     expect(screen.getByText('Consulta inicial')).toBeInTheDocument();
   });
 
-  it('renderiza barra de ações', () => {
+  it('renderiza apenas as ações clínicas disponíveis', () => {
     // Com o gancho de emissão: a barra completa. Sem ele o botão de documento
     // some, e isso é coberto pelo teste 'sem gancho de emissão'.
-    renderTela({ aoEmitirDocumento: vi.fn() });
+    renderTela({
+      aoEmitirDocumento: vi.fn(),
+      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
+      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
+    });
     // Verifica a barra de ações via aria-label
     const barraAcoes = screen.getByRole('navigation', { name: /Acoes do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
@@ -246,6 +255,26 @@ describe('TelaDeAtendimento', () => {
     expect(textos).toContain('Pedir exame');
     expect(textos).toContain('Emitir documento');
     expect(screen.getByRole('button', { name: 'Finalizar atendimento' })).toBeVisible();
+  });
+
+  it('Pedir exame abre o painel SADT quando a integração está disponível', async () => {
+    renderTela({
+      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
+      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
+      aoEmitirDocumento: vi.fn(),
+    });
+    expect(screen.queryByTestId('painel-sadt')).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pedir exame' }));
+    });
+
+    expect(screen.getByTestId('painel-sadt')).toBeInTheDocument();
+  });
+
+  it('não oferece pedido de exame sem a integração SADT completa', () => {
+    renderTela({ buscarProcedimentoTuss: vi.fn().mockResolvedValue([]) });
+    expect(screen.queryByRole('button', { name: 'Pedir exame' })).not.toBeInTheDocument();
   });
 
   it('botão Finalizar chama callback', async () => {
@@ -414,7 +443,11 @@ describe('TelaDeAtendimento', () => {
   });
 
   it('renderiza atalhos de teclado na barra de ações', () => {
-    renderTela();
+    renderTela({
+      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
+      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
+      aoEmitirDocumento: vi.fn(),
+    });
     expect(screen.getByText('Ctrl+P')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+E')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+D')).toBeInTheDocument();
