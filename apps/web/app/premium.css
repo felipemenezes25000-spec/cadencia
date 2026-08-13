@@ -1,0 +1,430 @@
+/*
+ * CADENCIA CLINICAL UI — Premium Quality Layer v8
+ *
+ * A tela de login pode usar uma expressão visual mais forte; dentro do produto,
+ * a mesma qualidade aparece como profundidade sutil, hierarquia, precisão e
+ * feedback de interação. Esta camada é carregada depois de globals.css para
+ * elevar todas as telas sem duplicar regras de negócio ou reescrever páginas.
+ */
+
+:root {
+  --canvas: #f2f6f7;
+  --surface-subtle: #f7fbfb;
+  --surface-sunken: #edf3f4;
+  --surface-hover: #f0f7f7;
+  --border: #dce6e8;
+  --border-strong: #c2d1d4;
+
+  --brand: #087b83;
+  --brand-hover: #056b74;
+  --brand-strong: #064c55;
+  --brand-soft: #e0f3f3;
+
+  --r-md: 9px;
+  --r-lg: 11px;
+  --r-xl: 14px;
+  --r-2xl: 18px;
+
+  --shadow-card:
+    0 1px 2px rgb(8 31 39 / .035),
+    0 10px 30px rgb(8 31 39 / .035);
+  --shadow-menu:
+    0 22px 58px rgb(5 28 35 / .15),
+    0 4px 14px rgb(5 28 35 / .06);
+  --shadow-dialog:
+    0 42px 120px rgb(4 25 31 / .27),
+    0 12px 38px rgb(4 25 31 / .11);
+}
+
+html {
+  background: #eef4f5;
+}
+
+body {
+  background:
+    radial-gradient(circle at 78% -8%, rgb(9 157 156 / .075), transparent 31rem),
+    radial-gradient(circle at 8% 30%, rgb(8 119 131 / .035), transparent 26rem),
+    linear-gradient(180deg, #f7fafb 0, var(--canvas) 22rem, var(--canvas) 100%);
+}
+
+/* ── APP CHROME ───────────────────────────────────────────── */
+
+.cadencia-shell-bg {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+.cadencia-shell-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 76% 0%, rgb(7 157 157 / .055), transparent 30rem),
+    linear-gradient(180deg, rgb(255 255 255 / .22), transparent 18rem);
+}
+
+.cadencia-workspace {
+  position: relative;
+  min-width: 0;
+}
+
+.cadencia-workspace::before {
+  opacity: .42;
+  background-image:
+    linear-gradient(rgb(8 123 131 / .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(8 123 131 / .022) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, black, transparent 52%);
+}
+
+.cadencia-topbar {
+  border-color: rgb(202 216 219 / .82) !important;
+  background: rgb(255 255 255 / .82);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 8px 28px rgb(7 35 42 / .035);
+}
+
+.cadencia-sidebar {
+  border-color: #163943 !important;
+  background:
+    radial-gradient(circle at 16% 0%, rgb(80 214 215 / .16), transparent 15rem),
+    radial-gradient(circle at 100% 70%, rgb(16 118 128 / .09), transparent 17rem),
+    linear-gradient(180deg, #09232b 0%, #071d24 54%, #06181e 100%);
+  box-shadow:
+    inset -1px 0 0 rgb(255 255 255 / .025),
+    14px 0 38px rgb(3 22 27 / .065);
+}
+
+.cadencia-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(99 232 229 / .34), transparent);
+}
+
+.cadencia-sidebar a[aria-current="page"] {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .035),
+    0 8px 24px rgb(1 18 23 / .12);
+}
+
+.cadencia-sidebar button,
+.cadencia-sidebar a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cadencia-brand-mark {
+  background: #4cd1d1 !important;
+  color: #05292f !important;
+  box-shadow:
+    0 10px 28px rgb(80 214 215 / .24),
+    inset 0 1px 0 rgb(255 255 255 / .34);
+}
+
+.cadencia-mobile-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+  border-color: rgb(201 215 218 / .9) !important;
+  background: rgb(255 255 255 / .91) !important;
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow: 0 -12px 34px rgb(8 31 39 / .07);
+}
+
+/* ── PAGE HIERARCHY ───────────────────────────────────────── */
+
+.cadencia-page,
+.clinical-page {
+  animation: cadencia-page-enter 280ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.cadencia-page-header {
+  padding-left: 2px;
+}
+
+.cadencia-page-header::before {
+  left: -14px;
+  width: 4px;
+  height: 36px;
+  background: linear-gradient(180deg, #0aa29f 0%, var(--brand) 62%, rgb(8 123 131 / .14) 100%);
+  box-shadow: 0 0 22px rgb(8 123 131 / .2);
+}
+
+.cadencia-eyebrow,
+.cadencia-kicker {
+  letter-spacing: .085em;
+}
+
+.cadencia-section-heading {
+  letter-spacing: -.022em;
+}
+
+/* ── SURFACES AND CARDS ───────────────────────────────────── */
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-surface,
+.cadencia-panel,
+.cadencia-table-shell,
+.cadencia-page-card,
+.ui-surface,
+.ui-surface-raised {
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-surface,
+.cadencia-panel,
+.cadencia-table-shell,
+.cadencia-page-card {
+  border-radius: var(--r-xl);
+}
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-page-card,
+.ui-surface,
+.ui-surface-raised {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .99), rgb(255 255 255 / .965));
+}
+
+.cadencia-card-interactive {
+  will-change: transform;
+}
+
+.cadencia-card-interactive:hover {
+  border-color: color-mix(in srgb, var(--brand) 23%, var(--border));
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .04),
+    0 18px 38px rgb(8 31 39 / .075);
+  transform: translateY(-2px);
+}
+
+.cadencia-hero-panel {
+  border-radius: 20px;
+  border-color: color-mix(in srgb, var(--brand) 20%, var(--border));
+  background:
+    radial-gradient(circle at 92% 6%, rgb(8 157 156 / .13), transparent 22rem),
+    linear-gradient(135deg, rgb(255 255 255 / .99), rgb(247 252 252 / .96));
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .04),
+    0 18px 46px rgb(8 31 39 / .055),
+    inset 0 1px 0 rgb(255 255 255 / .95);
+}
+
+.cadencia-stat-card {
+  border-color: var(--border);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .99), rgb(251 253 253 / .98));
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) ease,
+    box-shadow var(--dur-2) ease;
+}
+
+.cadencia-stat-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 18%, var(--border));
+  box-shadow: 0 16px 36px rgb(8 31 39 / .065);
+  transform: translateY(-1px);
+}
+
+.cadencia-stat-icon,
+.cadencia-icon-orb {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .75);
+}
+
+/* ── FORM CONTROLS ────────────────────────────────────────── */
+
+.cadencia-field,
+.cadencia-select-trigger {
+  border-radius: 11px !important;
+  border-color: var(--border);
+  background: rgb(255 255 255 / .92);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 1px 2px rgb(8 31 39 / .02);
+}
+
+.cadencia-field:hover,
+.cadencia-select-trigger:hover {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border-strong));
+  background: #fff;
+}
+
+.cadencia-field:focus-within,
+.cadencia-select-trigger:focus {
+  border-color: var(--brand) !important;
+  box-shadow:
+    0 0 0 4px rgb(8 123 131 / .1),
+    0 8px 22px rgb(8 31 39 / .055),
+    inset 0 1px 0 rgb(255 255 255 / .95) !important;
+}
+
+.cadencia-button {
+  border-radius: 11px !important;
+  box-shadow:
+    0 6px 16px rgb(8 31 39 / .04),
+    inset 0 1px 0 rgb(255 255 255 / .12);
+}
+
+.cadencia-button:hover:not(:disabled) {
+  box-shadow:
+    0 10px 24px rgb(8 31 39 / .08),
+    inset 0 1px 0 rgb(255 255 255 / .16);
+}
+
+.cadencia-icon-button {
+  border-radius: 11px !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .82);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    color var(--dur-2) ease,
+    border-color var(--dur-2) ease,
+    background-color var(--dur-2) ease,
+    box-shadow var(--dur-2) ease;
+}
+
+.cadencia-icon-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── TABS / SECTIONS ──────────────────────────────────────── */
+
+.cadencia-tabs-list {
+  border-radius: 13px !important;
+  border-color: var(--border);
+  background: rgb(244 249 249 / .9) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 5px 18px rgb(8 31 39 / .025);
+}
+
+.cadencia-tab-trigger {
+  border-radius: 9px !important;
+}
+
+.cadencia-tab-trigger[data-state="active"] {
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .035),
+    0 6px 16px rgb(8 31 39 / .055);
+}
+
+.cadencia-section-block > button {
+  padding: 5px 3px;
+}
+
+.cadencia-section-block > button:hover h3 {
+  color: var(--brand);
+}
+
+/* ── TABLES / DATA DENSITY ────────────────────────────────── */
+
+.clinical-table-shell,
+.cadencia-table-shell {
+  border-radius: 15px;
+  background: rgb(255 255 255 / .985);
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .03),
+    0 10px 28px rgb(8 31 39 / .03);
+}
+
+.clinical-table thead,
+.cadencia-table-shell thead {
+  background: linear-gradient(180deg, #fbfdfd, #f6fafb);
+}
+
+.clinical-table tbody tr:hover,
+.cadencia-table-shell tbody tr:hover {
+  background: color-mix(in srgb, var(--brand-soft) 45%, white);
+}
+
+/* ── EMPTY / FEEDBACK STATES ──────────────────────────────── */
+
+.cadencia-empty-state {
+  border-radius: 16px;
+}
+
+.cadencia-empty-icon {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .8),
+    0 8px 24px rgb(8 31 39 / .035);
+}
+
+.cadencia-status {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .48);
+}
+
+/* ── RESPONSIVE POLISH ────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  :root {
+    --page-gutter: 16px;
+  }
+
+  .cadencia-page,
+  .clinical-page {
+    padding-top: 18px;
+  }
+
+  .cadencia-page-header::before {
+    left: -9px;
+    height: 30px;
+  }
+
+  .cadencia-card,
+  .clinical-panel,
+  .cadencia-page-card,
+  .cadencia-table-shell,
+  .clinical-table-shell {
+    border-radius: 13px;
+  }
+}
+
+@keyframes cadencia-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cadencia-page,
+  .clinical-page {
+    animation: none;
+  }
+
+  .cadencia-card-interactive:hover,
+  .cadencia-stat-card:hover,
+  .cadencia-icon-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media print {
+  body,
+  .cadencia-shell-bg {
+    background: white !important;
+  }
+
+  .cadencia-page,
+  .clinical-page {
+    animation: none;
+  }
+}
