@@ -25,7 +25,7 @@ export function BotaoIcone({
       aria-label={rotulo}
       title={rotulo}
       className={cn(
-        'inline-grid shrink-0 place-items-center rounded-lg text-text-muted transition-colors-fast disabled:cursor-not-allowed disabled:opacity-50',
+        'cadencia-icon-button inline-grid shrink-0 place-items-center rounded-lg text-text-muted transition-colors-fast disabled:cursor-not-allowed disabled:opacity-50',
         variante === 'contorno'
           ? 'border border-line bg-surface hover:border-line-strong hover:bg-surface-subtle hover:text-text'
           : 'border border-transparent bg-transparent hover:bg-surface-subtle hover:text-text',
