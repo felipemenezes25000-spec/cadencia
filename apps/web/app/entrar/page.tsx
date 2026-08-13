@@ -108,23 +108,23 @@ export default function PaginaEntrar() {
   return (
     <main
       id="conteudo-principal"
-      className="relative min-h-screen overflow-hidden bg-[#003942] text-white"
+      className="relative min-h-screen overflow-hidden bg-[#eaf4ff] text-[#17324d]"
     >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 56% 50%, rgba(18, 205, 191, .28), transparent 28%), linear-gradient(135deg, #00333d 0%, #004e58 52%, #057c82 100%)',
+            'radial-gradient(circle at 56% 50%, rgba(96, 165, 250, .30), transparent 28%), linear-gradient(135deg, #f3f8ff 0%, #dbeafe 52%, #bfdbfe 100%)',
         }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-[540px] left-[4%] hidden size-[900px] rounded-full border border-[#16d8ca]/25 shadow-[0_0_90px_rgba(16,216,202,0.16)] lg:block"
+        className="pointer-events-none absolute -bottom-[540px] left-[4%] hidden size-[900px] rounded-full border border-[#60a5fa]/25 shadow-[0_0_90px_rgba(59,130,246,0.13)] lg:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-[430px] left-[22%] hidden size-[760px] rounded-full border border-white/5 lg:block"
+        className="pointer-events-none absolute -top-[430px] left-[22%] hidden size-[760px] rounded-full border border-white/45 lg:block"
       />
 
       <div className="relative z-10 grid min-h-screen lg:grid-cols-[minmax(0,1.15fr)_minmax(500px,0.85fr)]">
@@ -132,13 +132,13 @@ export default function PaginaEntrar() {
           <Marca />
 
           <div className="my-auto max-w-[670px] py-14">
-            <p className="text-xs font-bold uppercase tracking-[.28em] text-white/70">
+            <p className="text-xs font-bold uppercase tracking-[.28em] text-[#52708f]">
               Sistema de gestão clínica
             </p>
-            <h1 className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-white xl:text-6xl">
-              O controle que sua <span className="text-[#12c8bf]">clínica</span> precisa
+            <h1 className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-[#17324d] xl:text-6xl">
+              O controle que sua <span className="text-[#2563eb]">clínica</span> precisa
             </h1>
-            <p className="mt-6 max-w-[610px] text-base leading-7 text-white/70 xl:text-lg xl:leading-8">
+            <p className="mt-6 max-w-[610px] text-base leading-7 text-[#4f6f8e] xl:text-lg xl:leading-8">
               Operação, atendimento e gestão financeira integrados em uma única plataforma.
               Menos retrabalho, mais cuidado.
             </p>
@@ -146,36 +146,36 @@ export default function PaginaEntrar() {
             <div className="mt-10 space-y-5">
               {BENEFICIOS.map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-center gap-4">
-                  <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.10)] backdrop-blur-sm">
-                    <Icon size={22} weight="duotone" className="text-white" />
+                  <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-[#93c5fd]/55 bg-white/65 shadow-[0_12px_30px_rgba(30,64,175,0.08)] backdrop-blur-sm">
+                    <Icon size={22} weight="duotone" className="text-[#2563eb]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{label}</p>
-                    <p className="mt-1 text-sm text-white/60">{desc}</p>
+                    <p className="text-sm font-semibold text-[#17324d]">{label}</p>
+                    <p className="mt-1 text-sm text-[#607b96]">{desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-6 text-xs text-white/45 xl:text-sm">
-            <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 backdrop-blur-sm">
-              <ShieldCheck size={17} weight="duotone" className="text-white/80" />
+          <div className="flex items-center justify-between gap-6 text-xs text-[#6b829a] xl:text-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-[#93c5fd]/55 bg-white/55 px-4 py-2.5 backdrop-blur-sm">
+              <ShieldCheck size={17} weight="duotone" className="text-[#2563eb]" />
               <span>LGPD Compliant</span>
             </div>
             <p>© 2026 Cadencia · Todos os direitos reservados</p>
           </div>
         </aside>
 
-        <section className="flex min-h-screen items-center justify-center bg-[#f7fbfb] px-4 py-7 text-[#12313b] sm:px-6 lg:px-10 lg:py-10">
+        <section className="flex min-h-screen items-center justify-center bg-[#f7fbff]/85 px-4 py-7 text-[#17324d] backdrop-blur-[2px] sm:px-6 lg:px-10 lg:py-10">
           <div className="w-full max-w-[570px]">
             <div className="mb-6 flex justify-center lg:hidden">
               <Marca compacta />
             </div>
 
-            <div className="rounded-[28px] border border-white bg-white p-6 shadow-[0_30px_85px_rgba(0,52,60,0.20)] sm:p-9 lg:rounded-[34px] lg:p-11 xl:p-12">
-              <div className="mx-auto mb-7 grid size-[88px] place-items-center rounded-full bg-[#0ea5a1]/10 ring-8 ring-[#0ea5a1]/5">
-                <div className="grid size-[64px] place-items-center rounded-full bg-gradient-to-br from-[#12aaa7] to-[#05737e] shadow-[0_12px_28px_rgba(4,122,130,0.28)]">
+            <div className="rounded-[28px] border border-white bg-white p-6 shadow-[0_30px_85px_rgba(30,64,175,0.16)] sm:p-9 lg:rounded-[34px] lg:p-11 xl:p-12">
+              <div className="mx-auto mb-7 grid size-[88px] place-items-center rounded-full bg-[#3b82f6]/10 ring-8 ring-[#60a5fa]/10">
+                <div className="grid size-[64px] place-items-center rounded-full bg-gradient-to-br from-[#60a5fa] to-[#2563eb] shadow-[0_12px_28px_rgba(37,99,235,0.28)]">
                   <Pulse size={34} weight="bold" className="text-white" />
                 </div>
               </div>
@@ -198,8 +198,8 @@ export default function PaginaEntrar() {
               />
             </div>
 
-            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-[#6d818a] lg:hidden">
-              <ShieldCheck size={15} weight="fill" className="text-[#0b9897]" />
+            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-[#6d8298] lg:hidden">
+              <ShieldCheck size={15} weight="fill" className="text-[#2563eb]" />
               Dados protegidos · LGPD
             </div>
           </div>
@@ -212,12 +212,12 @@ export default function PaginaEntrar() {
 function Marca({ compacta = false }: { compacta?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className={`${compacta ? 'size-11 rounded-xl' : 'size-12 rounded-[14px]'} grid place-items-center border border-white/10 bg-white/15 shadow-[0_12px_28px_rgba(0,0,0,0.12)] backdrop-blur-md`}>
+      <div className={`${compacta ? 'size-11 rounded-xl' : 'size-12 rounded-[14px]'} grid place-items-center border border-[#93c5fd]/60 bg-[#3b82f6] shadow-[0_12px_28px_rgba(37,99,235,0.20)]`}>
         <Pulse size={compacta ? 24 : 27} weight="bold" className="text-white" />
       </div>
       <div>
-        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-white`}>Cadencia</p>
-        <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[.28em] text-white/60">Clinical OS</p>
+        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-[#17324d]`}>Cadencia</p>
+        <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[.28em] text-[#607b96]">Clinical OS</p>
       </div>
     </div>
   );
@@ -260,15 +260,15 @@ function FormContent({
     <>
       <header className="mb-8 text-center">
         {passo.nome === 'credenciais' ? (
-          <h1 className="text-2xl font-bold tracking-[-0.035em] text-[#11323d] sm:text-[30px]">
-            Bem-<span className="text-[#079d9c]">vindo</span> de volta
+          <h1 className="text-2xl font-bold tracking-[-0.035em] text-[#17324d] sm:text-[30px]">
+            Bem-<span className="text-[#2563eb]">vindo</span> de volta
           </h1>
         ) : (
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-[#11323d] sm:text-[28px]">
+          <h1 className="text-2xl font-bold tracking-[-0.03em] text-[#17324d] sm:text-[28px]">
             {passo.nome === 'mfa' ? 'Verificação de segurança' : 'Escolha a unidade'}
           </h1>
         )}
-        <p className="mt-2 text-sm text-[#758795]">
+        <p className="mt-2 text-sm text-[#70869c]">
           {passo.nome === 'credenciais' ? 'Entre com suas credenciais para continuar'
             : passo.nome === 'mfa' ? 'Digite o código do seu autenticador'
             : 'Selecione onde você vai trabalhar'}
@@ -285,7 +285,7 @@ function FormContent({
             autoComplete="username"
             autoFocus
             required
-            prefixo={<span className="font-medium text-[#7d919b]">@</span>}
+            prefixo={<span className="font-medium text-[#70869c]">@</span>}
           />
 
           <div className="relative">
@@ -300,7 +300,7 @@ function FormContent({
             <button
               type="button"
               onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute bottom-3 right-3 grid size-8 place-items-center rounded-lg text-[#758795] transition-colors hover:bg-[#edf7f7] hover:text-[#078f91] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#079d9c]/30"
+              className="absolute bottom-3 right-3 grid size-8 place-items-center rounded-lg text-[#70869c] transition-colors hover:bg-[#edf5ff] hover:text-[#2563eb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6]/30"
               aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {mostrarSenha ? <EyeSlash size={18} /> : <Eye size={18} />}
@@ -317,13 +317,13 @@ function FormContent({
 
       {passo.nome === 'mfa' && (
         <form onSubmit={(e) => { void onConfirmarMfa(e); }} className="space-y-5">
-          <div className="flex items-center gap-3 rounded-xl border border-[#0b9b9a]/10 bg-[#edfafa] p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-[#93c5fd]/45 bg-[#eff6ff] p-4">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-white shadow-sm">
-              <Fingerprint size={23} className="text-[#0a9695]" weight="duotone" />
+              <Fingerprint size={23} className="text-[#2563eb]" weight="duotone" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#087f80]">Autenticação em duas etapas</p>
-              <p className="mt-0.5 text-xs text-[#4e8186]">Abra o app autenticador e digite o código</p>
+              <p className="text-sm font-semibold text-[#1d4ed8]">Autenticação em duas etapas</p>
+              <p className="mt-0.5 text-xs text-[#536d87]">Abra o app autenticador e digite o código</p>
             </div>
           </div>
           <Campo
@@ -357,19 +357,19 @@ function FormContent({
                   .then(() => window.location.assign('/hoje'))
                   .catch((e: unknown) => setErro(mensagem(e)));
               }}
-              className="w-full rounded-xl border border-[#dce7e8] bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#0aa09f]/50 hover:shadow-[0_12px_28px_rgba(0,117,123,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#079d9c]/25"
+              className="w-full rounded-xl border border-[#d5e4f5] bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#60a5fa] hover:shadow-[0_12px_28px_rgba(37,99,235,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6]/25"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-11 place-items-center rounded-xl bg-[#ecf8f8]">
-                  <Stethoscope size={21} className="text-[#078f91]" weight="duotone" />
+                <div className="grid size-11 place-items-center rounded-xl bg-[#e8f1ff]">
+                  <Stethoscope size={21} className="text-[#2563eb]" weight="duotone" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#173943]">{v.clinicNome}</p>
-                  <p className="mt-0.5 truncate text-xs text-[#748791]">
+                  <p className="truncate font-semibold text-[#17324d]">{v.clinicNome}</p>
+                  <p className="mt-0.5 truncate text-xs text-[#70869c]">
                     {v.tenantNome} · {rotulo(v.role)}
                   </p>
                 </div>
-                <CheckCircle size={20} className="shrink-0 text-[#079d9c]" weight="fill" />
+                <CheckCircle size={20} className="shrink-0 text-[#3b82f6]" weight="fill" />
               </div>
             </button>
           ))}
@@ -383,10 +383,10 @@ function FormContent({
       )}
 
       {passo.nome === 'credenciais' && (
-        <div className="mt-7 border-t border-[#edf1f2] pt-6 text-center">
-          <p className="text-xs leading-5 text-[#8797a0]">
+        <div className="mt-7 border-t border-[#e6edf5] pt-6 text-center">
+          <p className="text-xs leading-5 text-[#7b8fa4]">
             Problemas para acessar?{' '}
-            <span className="font-semibold text-[#5f737d]">Fale com a administração da sua clínica.</span>
+            <span className="font-semibold text-[#536d87]">Fale com a administração da sua clínica.</span>
           </p>
         </div>
       )}
