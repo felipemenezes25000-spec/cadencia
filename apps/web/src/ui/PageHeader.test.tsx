@@ -50,7 +50,10 @@ describe("PageHeader", () => {
 
   it("renderiza ações quando fornecidas", () => {
     render(<PageHeader titulo="T" acoes={<button>Ação</button>} />);
-    expect(screen.getByRole("button", { name: "Ação" })).toBeInTheDocument();
+    const acao = screen.getByRole("button", { name: "Ação" });
+    expect(acao).toBeInTheDocument();
+    expect(acao.parentElement).toHaveClass("min-w-0", "max-w-full", "max-sm:w-full");
+    expect(screen.getByRole("banner")).toHaveClass("min-w-0", "max-w-full");
   });
 
   it("renderiza breadcrumb por padrão", () => {

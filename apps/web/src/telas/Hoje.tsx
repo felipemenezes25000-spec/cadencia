@@ -11,7 +11,6 @@ import {
   FileText,
   NotePencil,
   PencilSimple,
-  Plus,
   Pulse,
   WarningCircle,
 } from '@phosphor-icons/react';
@@ -71,7 +70,6 @@ export interface HojeProps {
   readonly aoMudarFiltro: (filtro: FiltroDoFluxo | undefined) => void;
   readonly aoMensagem: (linha: OperationalAppointment) => void;
   readonly aoCobrar: (linha: OperationalAppointment) => void;
-  readonly aoNovoAtendimento?: () => void;
   readonly aoEnviarMensagem?: () => void;
 }
 
@@ -270,7 +268,6 @@ export function Hoje(props: HojeProps) {
           <Botao variante="secundario" iconeEsquerda={ChatCircle} onClick={props.aoEnviarMensagem}>
             Enviar mensagem{props.mensagensNaoLidasTotal > 0 ? ` (${props.mensagensNaoLidasTotal})` : ''}
           </Botao>
-          <Botao iconeEsquerda={Plus} onClick={props.aoNovoAtendimento}>Novo atendimento</Botao>
         </div>
       </header>
 

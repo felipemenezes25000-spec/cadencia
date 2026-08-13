@@ -65,7 +65,7 @@ function ConversaVazia() {
       <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent">
         <ChatCircleDots size={29} aria-hidden />
       </span>
-      <p className="mt-4 text-base font-semibold text-text">Sua central de relacionamento</p>
+      <p className="mt-4 text-base font-semibold text-text">Central de relacionamento</p>
       <p className="mt-1 max-w-sm text-sm leading-relaxed text-text-muted">
         Selecione uma conversa para ver mensagens, próximo atendimento e pendências do paciente no mesmo contexto.
       </p>

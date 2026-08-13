@@ -163,7 +163,7 @@ export default function PaginaEntrar() {
               <ShieldCheck size={17} weight="duotone" className="text-[#2563eb]" />
               <span>LGPD Compliant</span>
             </div>
-            <p>© 2026 Cadencia · Todos os direitos reservados</p>
+            <p>© 2026 Cadência · Todos os direitos reservados</p>
           </div>
         </aside>
 
@@ -216,7 +216,7 @@ function Marca({ compacta = false }: { compacta?: boolean }) {
         <Pulse size={compacta ? 24 : 27} weight="bold" className="text-white" />
       </div>
       <div>
-        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-[#17324d]`}>Cadencia</p>
+        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-[#17324d]`}>Cadência</p>
         <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[.28em] text-[#607b96]">Clinical OS</p>
       </div>
     </div>

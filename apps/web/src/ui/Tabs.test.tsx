@@ -97,6 +97,21 @@ describe("Tabs", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
   });
 
+  it("contem a rolagem horizontal no componente em telas estreitas", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList>
+          <TabsTrigger value="a">Uma aba com nome longo</TabsTrigger>
+          <TabsTrigger value="b">Outra aba com nome longo</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">Conteúdo</TabsContent>
+        <TabsContent value="b">Outro</TabsContent>
+      </Tabs>,
+    );
+
+    expect(screen.getByRole("tablist")).toHaveClass("min-w-0", "w-full", "overflow-x-auto", "sm:w-fit");
+  });
+
   it("não mostra badge quando valor é 0", () => {
     render(
       <Tabs defaultValue="a">

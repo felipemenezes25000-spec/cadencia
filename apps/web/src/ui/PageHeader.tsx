@@ -24,7 +24,7 @@ export function PageHeader({
   eyebrow,
 }: PageHeaderProps) {
   return (
-    <header className={cn("cadencia-page-header space-y-2.5", className)}>
+    <header className={cn("cadencia-page-header min-w-0 max-w-full space-y-2.5", className)}>
       {!semBreadcrumb && (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
 
       <div className="flex min-w-0 items-end justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
@@ -41,7 +41,7 @@ export function PageHeader({
         </div>
 
         {acoes && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:w-full max-sm:justify-start">
+          <div className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center justify-end gap-2 max-sm:w-full max-sm:justify-start">
             {acoes}
           </div>
         )}

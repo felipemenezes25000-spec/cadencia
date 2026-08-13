@@ -84,7 +84,6 @@ function HojeInner() {
       mensagensNaoLidasTotal={0}
       aoMensagem={(linha) => router.push(`/conversas?patientId=${linha.patientId}`)}
       aoCobrar={(linha) => router.push(`/financeiro/a-receber?patientId=${linha.patientId}`)}
-      aoNovoAtendimento={() => router.push('/agenda?novo=1')}
       aoEnviarMensagem={() => router.push('/conversas?nova=1')}
     />
   );

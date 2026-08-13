@@ -596,7 +596,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
     try {
       setProntuario(await p.carregarProntuario());
     } catch {
-      setErroProntuario('A consulta não foi concluída. Nenhum dado clínico foi alterado.');
+      setErroProntuario('Não foi possível consultar o prontuário. Nenhum dado clínico foi alterado.');
     }
   }
 
@@ -605,7 +605,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
     try {
       setConversas(await p.carregarConversas());
     } catch {
-      setErroConversas('A consulta não foi concluída. Tente novamente.');
+      setErroConversas('Não foi possível carregar as comunicações. Tente novamente.');
     }
   }
 
@@ -623,7 +623,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
     try {
       setDocumentos(await p.carregarDocumentos());
     } catch {
-      setErroDocumentos('A consulta não foi concluída. Tente novamente.');
+      setErroDocumentos('Não foi possível carregar os documentos. Tente novamente.');
     }
   }
 
@@ -652,7 +652,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
   }
 
   return (
-    <div className="cadencia-page grid gap-6">
+    <div className="cadencia-page grid min-w-0 gap-6">
       {/* Page header com breadcrumbs e ações */}
       <PageHeader
         titulo={p.paciente.displayName}
@@ -722,7 +722,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
       ) : null}
 
       {/* Tabs */}
-      <Tabs defaultValue="resumo" onValueChange={aoMudarTab}>
+      <Tabs defaultValue="resumo" onValueChange={aoMudarTab} className="min-w-0 max-w-full">
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="prontuario">Prontuário</TabsTrigger>

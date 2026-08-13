@@ -98,7 +98,7 @@ describe('Conversas (split view)', () => {
       expect(screen.getByText('Maria Souza Lima')).toBeVisible(),
     );
     expect(
-      screen.getByText('Sua central de relacionamento'),
+      screen.getByText('Central de relacionamento'),
     ).toBeVisible();
   });
 
