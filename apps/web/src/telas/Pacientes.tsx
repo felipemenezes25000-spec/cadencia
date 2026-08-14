@@ -105,9 +105,9 @@ function IdentidadePaciente({ paciente }: { readonly paciente: PacienteHit }) {
         {iniciais(paciente.displayName)}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-text">{paciente.displayName}</span>
+        <span title={paciente.displayName} className="block truncate text-sm font-semibold text-text">{paciente.displayName}</span>
         {paciente.hasSocialName && paciente.legalName !== paciente.displayName ? (
-          <span className="block truncate text-xs text-text-faint">Registro: {paciente.legalName}</span>
+          <span title={paciente.legalName} className="block truncate text-xs text-text-faint">Registro: {paciente.legalName}</span>
         ) : (
           <span className="block truncate text-xs text-text-faint">Prontuário ativo</span>
         )}

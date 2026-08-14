@@ -427,7 +427,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
               <span className="hidden text-xs font-semibold uppercase tracking-[.08em] text-text-faint sm:inline">Atendimento</span>
               <ChipDeStatus status="atendendo" />
             </div>
-            <h1 className="truncate text-base font-bold text-text">{p.pacienteNome}</h1>
+            <h1 title={p.pacienteNome} className="truncate text-base font-bold text-text">{p.pacienteNome}</h1>
             <p className="truncate text-xs text-text-muted">
               {[
                 p.procedimentoNome,

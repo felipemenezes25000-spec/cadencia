@@ -440,7 +440,7 @@ function UnitPanel({ now, next, precisa, timezone, onNow, onNext }: {
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-text"><span className="size-2 rounded-full bg-ok" aria-hidden />Agora</h3>
         {now ? (
           <div>
-            <div className="flex items-start gap-3"><Avatar nome={now.displayName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-text">{now.displayName}</p><p className="mt-0.5 text-xs text-text-muted">{horaNaClinica(now.startsAt, timezone)} · {now.procedureNome ?? 'Atendimento'}</p><p className="text-xs text-text-muted">{now.professionalNome ?? now.professionalId}</p></div></div>
+            <div className="flex items-start gap-3"><Avatar nome={now.displayName} /><div className="min-w-0"><p title={now.displayName} className="truncate text-sm font-bold text-text">{now.displayName}</p><p className="mt-0.5 text-xs text-text-muted">{horaNaClinica(now.startsAt, timezone)} · {now.procedureNome ?? 'Atendimento'}</p><p className="text-xs text-text-muted">{now.professionalNome ?? now.professionalId}</p></div></div>
             <div className="mt-3"><ChipDeStatus status={now.status} /></div>
             <Botao fullWidth className="mt-4" onClick={onNow}>Continuar atendimento</Botao>
           </div>

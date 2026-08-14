@@ -189,7 +189,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           {p.nomeExibido.trim().charAt(0).toLocaleUpperCase('pt-BR') || '#'}
         </span>
         <div className="min-w-0">
-          <h2 className="m-0 truncate text-[15px] font-bold tracking-[-0.02em] text-text">{p.nomeExibido}</h2>
+          <h2 title={p.nomeExibido} className="m-0 truncate text-[15px] font-bold tracking-[-0.02em] text-text">{p.nomeExibido}</h2>
           <p className="mt-0.5 truncate text-xs text-text-faint">{p.phoneNumber} · conversa ativa</p>
         </div>
 
