@@ -89,33 +89,10 @@
 :root {
   color-scheme: light;
 
-  --canvas: #f3f6f7;
-  --surface: #ffffff;
-  --surface-subtle: #f7fafb;
-  --surface-sunken: #f0f3f4;
-  --surface-hover: #f3f7f7;
-  --surface-raised: #ffffff;
-  --border: #e0e6e8;
-  --border-strong: #c7d1d5;
   /* Redefinido em light-blue.css. Fica aqui para o token nunca resolver vazio
      se alguém carregar globals.css sozinho. */
-  --border-field: #8f9ea4;
-
-  --text-primary: #17313b;
-  --text-secondary: #5b707a;
-  --text-tertiary: #657983;
-
-  --brand: #087783;
-  --brand-hover: #056873;
-  --brand-strong: #064c55;
-  --brand-soft: #dff3f4;
 
   /* nav usa a mesma família clara do produto; não existe mais um segundo tema */
-  --nav: #ffffff;
-  --nav-active: #e2f1f2;
-  --nav-text: #17313b;
-  --nav-muted: #687c85;
-  --nav-accent: #0b6b76;
 
   --success: #28734e;
   --success-soft: #e8f4ed;
@@ -123,8 +100,6 @@
   --warning-soft: #fff3df;
   --danger: #a04249;
   --danger-soft: #fbecee;
-  --info: #3d6697;
-  --info-soft: #ebf1f8;
 
   --font-ui: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --fs-11: 11px;
@@ -150,15 +125,8 @@
   --s-8: 24px;
 
   --r-sm: 6px;
-  --r-md: 8px;
-  --r-lg: 10px;
-  --r-xl: 12px;
-  --r-2xl: 14px;
   --r-full: 999px;
 
-  --shadow-card: 0 1px 2px rgb(9 35 44 / .035), 0 8px 24px rgb(9 35 44 / .025);
-  --shadow-menu: 0 20px 50px rgb(7 31 39 / .14), 0 3px 10px rgb(7 31 39 / .05);
-  --shadow-dialog: 0 36px 100px rgb(5 27 34 / .26), 0 10px 30px rgb(5 27 34 / .10);
   --elev-1: var(--shadow-card);
   --elev-2: var(--shadow-menu);
   --elev-3: var(--shadow-dialog);
@@ -180,6 +148,49 @@
   --nav-height: 0px;
   --page-gutter: clamp(18px, 2vw, 32px);
   --page-max: 1680px;
+
+  /* --- vindos da antiga camada premium.css --- */
+  --r-md: 9px;
+  --r-lg: 11px;
+  --r-xl: 14px;
+  --r-2xl: 18px;
+
+  /* --- vindos da antiga camada light-blue.css: a paleta clinica --- */
+  --canvas: #f0f9ff;
+  --surface: #ffffff;
+  --surface-subtle: #f5fafe;
+  --surface-sunken: #e3f1fb;
+  --surface-hover: #eaf5fd;
+  --surface-raised: #ffffff;
+  /* --border é separador decorativo: fica leve de propósito. Contorno que
+     comunica affordance (campo de formulário) usa --border-field, que passa
+     em 3:1 conforme WCAG 1.4.11. */
+  --border: #cbe4f4;
+  --border-strong: #93c2dd;
+  --border-field: #6695b4;
+  --text-primary: #0c3f5c;
+  --text-secondary: #43687f;
+  --text-tertiary: #517084;
+  --brand: #0279b4;
+  --brand-hover: #0369a1;
+  --brand-strong: #075985;
+  --brand-soft: #e0f2fe;
+  --nav: #e8f4fc;
+  --nav-active: #d5eaf8;
+  --nav-text: #0c3f5c;
+  --nav-muted: #456878;
+  --nav-accent: #0279b4;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  --shadow-card:
+    0 1px 2px rgb(7 89 133 / .035),
+    0 10px 30px rgb(7 89 133 / .045);
+  --shadow-menu:
+    0 22px 58px rgb(7 89 133 / .13),
+    0 4px 14px rgb(7 89 133 / .06);
+  --shadow-dialog:
+    0 42px 120px rgb(8 66 95 / .22),
+    0 12px 38px rgb(7 89 133 / .10);
 }
 
 * { box-sizing: border-box; }
@@ -384,8 +395,6 @@ tbody tr { transition: background-color var(--dur-1) ease; }
   body { background: white; }
 }
 
-
-
 /* ── DESIGN SYSTEM v7 — premium clinical chrome ─────────────── */
 .cadencia-shell-bg {
   isolation: isolate;
@@ -564,4 +573,629 @@ tbody tr { transition: background-color var(--dur-1) ease; }
 
 .pull-refresh-loading {
   animation: pull-refresh 0.3s ease-out forwards;
+}
+
+/* ========================================================================
+   CAMADA 2 — vinda de premium.css. Ordem preservada: o que esta aqui
+   sobrescreve o bloco acima, e e sobrescrito pela camada 3.
+   ======================================================================== */
+
+/*
+ * CADENCIA CLINICAL UI — Premium Quality Layer v8
+ *
+ * A tela de login pode usar uma expressão visual mais forte; dentro do produto,
+ * a mesma qualidade aparece como profundidade sutil, hierarquia, precisão e
+ * feedback de interação. Esta camada é carregada depois de globals.css para
+ * elevar todas as telas sem duplicar regras de negócio ou reescrever páginas.
+ */
+
+html {
+  background: #eef4f5;
+}
+
+body {
+  background:
+    radial-gradient(circle at 78% -8%, rgb(9 157 156 / .075), transparent 31rem),
+    radial-gradient(circle at 8% 30%, rgb(8 119 131 / .035), transparent 26rem),
+    linear-gradient(180deg, #f7fafb 0, var(--canvas) 22rem, var(--canvas) 100%);
+}
+
+/* ── APP CHROME ───────────────────────────────────────────── */
+
+.cadencia-shell-bg {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+.cadencia-shell-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 76% 0%, rgb(7 157 157 / .055), transparent 30rem),
+    linear-gradient(180deg, rgb(255 255 255 / .22), transparent 18rem);
+}
+
+.cadencia-workspace {
+  position: relative;
+  min-width: 0;
+}
+
+.cadencia-workspace::before {
+  opacity: .42;
+  background-image:
+    linear-gradient(rgb(8 123 131 / .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(8 123 131 / .022) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, black, transparent 52%);
+}
+
+.cadencia-topbar {
+  background: rgb(255 255 255 / .82);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 8px 28px rgb(7 35 42 / .035);
+}
+
+.cadencia-sidebar {
+  background:
+    radial-gradient(circle at 16% 0%, rgb(80 214 215 / .16), transparent 15rem),
+    radial-gradient(circle at 100% 70%, rgb(16 118 128 / .09), transparent 17rem),
+    linear-gradient(180deg, #09232b 0%, #071d24 54%, #06181e 100%);
+  box-shadow:
+    inset -1px 0 0 rgb(255 255 255 / .025),
+    14px 0 38px rgb(3 22 27 / .065);
+}
+
+.cadencia-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(99 232 229 / .34), transparent);
+}
+
+.cadencia-sidebar a[aria-current="page"] {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .035),
+    0 8px 24px rgb(1 18 23 / .12);
+}
+
+.cadencia-sidebar button,
+.cadencia-sidebar a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cadencia-brand-mark {
+  box-shadow:
+    0 10px 28px rgb(80 214 215 / .24),
+    inset 0 1px 0 rgb(255 255 255 / .34);
+}
+
+.cadencia-mobile-nav {
+  /* O <nav> tem altura fixa de 68px. Padding sozinho comprimiria os rotulos
+     em vez de afastar do indicador de home, entao a safe area entra TAMBEM na
+     altura. Antes de viewport-fit=cover isto era regra morta: env() resolvia 0. */
+  height: calc(68px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow: 0 -12px 34px rgb(8 31 39 / .07);
+}
+
+/* ── PAGE HIERARCHY ───────────────────────────────────────── */
+
+.cadencia-page,
+.clinical-page {
+  animation: cadencia-page-enter 280ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.cadencia-page-header {
+  padding-left: 2px;
+}
+
+.cadencia-page-header::before {
+  left: -14px;
+  width: 4px;
+  height: 36px;
+  background: linear-gradient(180deg, #0aa29f 0%, var(--brand) 62%, rgb(8 123 131 / .14) 100%);
+  box-shadow: 0 0 22px rgb(8 123 131 / .2);
+}
+
+.cadencia-eyebrow,
+.cadencia-kicker {
+  letter-spacing: .085em;
+}
+
+.cadencia-section-heading {
+  letter-spacing: -.022em;
+}
+
+/* ── SURFACES AND CARDS ───────────────────────────────────── */
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-surface,
+.cadencia-panel,
+.cadencia-table-shell,
+.cadencia-page-card,
+.ui-surface,
+.ui-surface-raised {
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-surface,
+.cadencia-panel,
+.cadencia-table-shell,
+.cadencia-page-card {
+  border-radius: var(--r-xl);
+}
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-page-card,
+.ui-surface,
+.ui-surface-raised {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .99), rgb(255 255 255 / .965));
+}
+
+.cadencia-card-interactive {
+  will-change: transform;
+}
+
+.cadencia-card-interactive:hover {
+  border-color: color-mix(in srgb, var(--brand) 23%, var(--border));
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .04),
+    0 18px 38px rgb(8 31 39 / .075);
+  transform: translateY(-2px);
+}
+
+.cadencia-hero-panel {
+  border-radius: 20px;
+  border-color: color-mix(in srgb, var(--brand) 20%, var(--border));
+  background:
+    radial-gradient(circle at 92% 6%, rgb(8 157 156 / .13), transparent 22rem),
+    linear-gradient(135deg, rgb(255 255 255 / .99), rgb(247 252 252 / .96));
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .04),
+    0 18px 46px rgb(8 31 39 / .055),
+    inset 0 1px 0 rgb(255 255 255 / .95);
+}
+
+.cadencia-stat-card {
+  border-color: var(--border);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .99), rgb(251 253 253 / .98));
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) ease,
+    box-shadow var(--dur-2) ease;
+}
+
+.cadencia-stat-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 18%, var(--border));
+  box-shadow: 0 16px 36px rgb(8 31 39 / .065);
+  transform: translateY(-1px);
+}
+
+.cadencia-stat-icon,
+.cadencia-icon-orb {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .75);
+}
+
+/* ── FORM CONTROLS ────────────────────────────────────────── */
+
+.cadencia-field,
+.cadencia-select-trigger {
+  border-radius: 11px !important;
+  border-color: var(--border);
+  background: rgb(255 255 255 / .92);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 1px 2px rgb(8 31 39 / .02);
+}
+
+.cadencia-field:hover,
+.cadencia-select-trigger:hover {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border-strong));
+  background: #fff;
+}
+
+.cadencia-field:focus-within,
+.cadencia-select-trigger:focus {
+  border-color: var(--brand) !important;
+}
+
+.cadencia-button {
+  border-radius: 11px !important;
+  box-shadow:
+    0 6px 16px rgb(8 31 39 / .04),
+    inset 0 1px 0 rgb(255 255 255 / .12);
+}
+
+.cadencia-button:hover:not(:disabled) {
+  box-shadow:
+    0 10px 24px rgb(8 31 39 / .08),
+    inset 0 1px 0 rgb(255 255 255 / .16);
+}
+
+.cadencia-icon-button {
+  border-radius: 11px !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .82);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    color var(--dur-2) ease,
+    border-color var(--dur-2) ease,
+    background-color var(--dur-2) ease,
+    box-shadow var(--dur-2) ease;
+}
+
+.cadencia-icon-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── TABS / SECTIONS ──────────────────────────────────────── */
+
+.cadencia-tabs-list {
+  border-radius: 13px !important;
+  border-color: var(--border);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .92),
+    0 5px 18px rgb(8 31 39 / .025);
+}
+
+.cadencia-tab-trigger {
+  border-radius: 9px !important;
+}
+
+.cadencia-tab-trigger[data-state="active"] {
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .035),
+    0 6px 16px rgb(8 31 39 / .055);
+}
+
+.cadencia-section-block > button {
+  padding: 5px 3px;
+}
+
+.cadencia-section-block > button:hover h3 {
+  color: var(--brand);
+}
+
+/* ── TABLES / DATA DENSITY ────────────────────────────────── */
+
+.clinical-table-shell,
+.cadencia-table-shell {
+  border-radius: 15px;
+  background: rgb(255 255 255 / .985);
+  box-shadow:
+    0 1px 2px rgb(8 31 39 / .03),
+    0 10px 28px rgb(8 31 39 / .03);
+}
+
+.clinical-table thead,
+.cadencia-table-shell thead {
+  background: linear-gradient(180deg, #fbfdfd, #f6fafb);
+}
+
+.clinical-table tbody tr:hover,
+.cadencia-table-shell tbody tr:hover {
+  background: color-mix(in srgb, var(--brand-soft) 45%, white);
+}
+
+/* ── EMPTY / FEEDBACK STATES ──────────────────────────────── */
+
+.cadencia-empty-state {
+  border-radius: 16px;
+}
+
+.cadencia-empty-icon {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .8),
+    0 8px 24px rgb(8 31 39 / .035);
+}
+
+.cadencia-status {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .48);
+}
+
+/* ── RESPONSIVE POLISH ────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  :root {
+    --page-gutter: 16px;
+  }
+
+  .cadencia-page,
+  .clinical-page {
+    padding-top: 18px;
+  }
+
+  .cadencia-page-header::before {
+    left: -9px;
+    height: 30px;
+  }
+
+  .cadencia-card,
+  .clinical-panel,
+  .cadencia-page-card,
+  .cadencia-table-shell,
+  .clinical-table-shell {
+    border-radius: 13px;
+  }
+}
+
+@keyframes cadencia-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cadencia-page,
+  .clinical-page {
+    animation: none;
+  }
+
+  .cadencia-card-interactive:hover,
+  .cadencia-stat-card:hover,
+  .cadencia-icon-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media print {
+
+  .cadencia-page,
+  .clinical-page {
+    animation: none;
+  }
+}
+
+/* ========================================================================
+   CAMADA 3 — vinda de light-blue.css. Ultima na cascata: e ela que
+   define a paleta efetiva do produto.
+   ======================================================================== */
+
+/*
+ * CADENCIA CLINICAL UI — Azul Claro Clínico v10
+ *
+ * Camada cromática global, carregada depois de globals.css e premium.css.
+ * Mantém a hierarquia do sistema premium e troca a assinatura teal/midnight
+ * por um azul claro de tom médico — a família cyan-azul de portal de saúde,
+ * mais calma e menos saturada que o azul-royal anterior.
+ *
+ * TODO valor de texto aqui foi escolhido por medição, não por gosto: cada par
+ * texto/fundo abaixo passa em WCAG AA (4.5:1). A paleta anterior reprovava —
+ * --text-tertiary dava 3.38:1 sobre o canvas, e o azul de marca dava 4.1:1 com
+ * branco, ou seja, o próprio botão primário reprovava. Ao mexer aqui, remeça:
+ * `node` sobre os pares, ou o teste de contraste.
+ *
+ *   texto            surface  canvas  sunken   nav
+ *   --text-primary    11.16    10.47    9.70   9.98
+ *   --text-secondary   5.96     5.59    5.17   5.33
+ *   --text-tertiary    5.25     4.92    4.56   4.69
+ *   --brand            4.78     4.48       —      —   (branco sobre marca: 4.78)
+ *   --nav-muted           —        —       —   5.36
+ */
+
+html {
+  background: #e3f1fb;
+}
+
+body {
+  background:
+    radial-gradient(circle at 78% -8%, rgb(56 160 210 / .19), transparent 32rem),
+    radial-gradient(circle at 8% 28%, rgb(147 205 235 / .13), transparent 27rem),
+    linear-gradient(180deg, #f6fbfe 0, var(--canvas) 22rem, var(--canvas) 100%);
+}
+
+::selection {
+  background: #d5ecf8;
+  color: #08425f;
+}
+
+.cadencia-shell-bg::before {
+  background:
+    radial-gradient(circle at 76% 0%, rgb(56 160 210 / .14), transparent 31rem),
+    linear-gradient(180deg, rgb(255 255 255 / .42), transparent 18rem);
+}
+
+.cadencia-workspace::before {
+  opacity: .45;
+  background-image:
+    linear-gradient(rgb(2 121 180 / .028) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(2 121 180 / .028) 1px, transparent 1px);
+}
+
+.cadencia-topbar {
+  border-color: rgb(188 220 239 / .92) !important;
+  background: rgb(246 251 254 / .86);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .96),
+    0 8px 28px rgb(7 89 133 / .045);
+}
+
+/* Sidebar clara: sobrescreve também os tokens locais definidos em globals.css. */
+.cadencia-sidebar {
+  --surface: #eaf5fd;
+  --surface-subtle: #dfeefa;
+  --surface-sunken: #d5ecf8;
+  --surface-hover: #d5eaf8;
+  --surface-raised: #f5fafe;
+  --border: #bcdcef;
+  --border-strong: #93c2dd;
+  --text-primary: #0c3f5c;
+  --text-secondary: #43687f;
+  --text-tertiary: #517084;
+  --brand: #0369a1;
+  --brand-hover: #075985;
+  --brand-strong: #075985;
+  --brand-soft: rgb(2 121 180 / .12);
+
+  border-color: #bcdcef !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgb(147 205 235 / .42), transparent 16rem),
+    radial-gradient(circle at 100% 74%, rgb(191 219 254 / .32), transparent 18rem),
+    linear-gradient(180deg, #ecf6fd 0%, #e3f1fb 58%, #dcecf9 100%);
+  box-shadow:
+    inset -1px 0 0 rgb(255 255 255 / .68),
+    14px 0 38px rgb(7 89 133 / .055);
+}
+
+.cadencia-sidebar::before {
+  background: linear-gradient(90deg, transparent, rgb(2 121 180 / .30), transparent);
+}
+
+.cadencia-sidebar a[aria-current="page"] {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .78),
+    0 8px 22px rgb(2 121 180 / .10);
+}
+
+.cadencia-brand-mark {
+  background: #0279b4 !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 10px 28px rgb(2 121 180 / .22),
+    inset 0 1px 0 rgb(255 255 255 / .30);
+}
+
+.cadencia-brand-mark::after {
+  border-color: rgb(2 121 180 / .16);
+}
+
+.cadencia-mobile-nav {
+  border-color: rgb(190 222 240 / .94) !important;
+  background: rgb(244 251 254 / .94) !important;
+  box-shadow: 0 -12px 34px rgb(7 89 133 / .075);
+}
+
+.cadencia-page-header::before {
+  background: linear-gradient(180deg, #38a0d2 0%, var(--brand) 62%, rgb(2 121 180 / .14) 100%);
+  box-shadow: 0 0 22px rgb(2 121 180 / .20);
+}
+
+.cadencia-card,
+.clinical-panel,
+.cadencia-page-card,
+.ui-surface,
+.ui-surface-raised {
+  background: linear-gradient(180deg, rgb(255 255 255 / .995), rgb(247 252 254 / .975));
+}
+
+.cadencia-card-interactive:hover {
+  box-shadow:
+    0 1px 2px rgb(7 89 133 / .045),
+    0 18px 38px rgb(7 89 133 / .085);
+}
+
+.cadencia-hero-panel {
+  border-color: color-mix(in srgb, var(--brand) 20%, var(--border));
+  background:
+    radial-gradient(circle at 92% 6%, rgb(56 160 210 / .20), transparent 22rem),
+    linear-gradient(135deg, rgb(255 255 255 / .995), rgb(242 249 253 / .97));
+  box-shadow:
+    0 1px 2px rgb(7 89 133 / .045),
+    0 18px 46px rgb(7 89 133 / .065),
+    inset 0 1px 0 rgb(255 255 255 / .96);
+}
+
+.cadencia-stat-card {
+  background: linear-gradient(180deg, #ffffff, #f6fbfe);
+}
+
+.cadencia-stat-card:hover {
+  box-shadow: 0 16px 36px rgb(7 89 133 / .075);
+}
+
+.cadencia-field,
+.cadencia-select-trigger {
+  background: rgb(255 255 255 / .95);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .96),
+    0 1px 2px rgb(7 89 133 / .025);
+}
+
+.cadencia-field:focus-within,
+.cadencia-select-trigger:focus {
+  box-shadow:
+    0 0 0 4px rgb(2 121 180 / .11),
+    0 8px 22px rgb(7 89 133 / .065),
+    inset 0 1px 0 rgb(255 255 255 / .96) !important;
+}
+
+.cadencia-button {
+  box-shadow:
+    0 6px 16px rgb(7 89 133 / .055),
+    inset 0 1px 0 rgb(255 255 255 / .16);
+}
+
+.cadencia-button:hover:not(:disabled) {
+  box-shadow:
+    0 10px 24px rgb(7 89 133 / .12),
+    inset 0 1px 0 rgb(255 255 255 / .18);
+}
+
+.cadencia-tabs-list {
+  background: rgb(236 246 253 / .92) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .95),
+    0 5px 18px rgb(7 89 133 / .035);
+}
+
+.cadencia-tab-trigger[data-state="active"] {
+  box-shadow:
+    0 1px 2px rgb(7 89 133 / .04),
+    0 6px 16px rgb(7 89 133 / .07);
+}
+
+.clinical-table-shell,
+.cadencia-table-shell {
+  background: rgb(255 255 255 / .99);
+  box-shadow:
+    0 1px 2px rgb(7 89 133 / .035),
+    0 10px 28px rgb(7 89 133 / .04);
+}
+
+.clinical-table thead,
+.cadencia-table-shell thead {
+  background: linear-gradient(180deg, #fafdfe, #f0f8fc);
+}
+
+.clinical-table tbody tr:hover,
+.cadencia-table-shell tbody tr:hover {
+  background: #f0f8fd;
+}
+
+.cadencia-empty-icon {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .86),
+    0 8px 24px rgb(7 89 133 / .045);
+}
+
+@media print {
+  body,
+  .cadencia-shell-bg {
+    background: white !important;
+  }
 }

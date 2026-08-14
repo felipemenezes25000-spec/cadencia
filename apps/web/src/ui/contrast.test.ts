@@ -4,18 +4,21 @@ import { describe, expect, it } from 'vitest';
 import { contrasteHex, lerToken } from './contrast';
 
 /*
- * O tema efetivo é o de light-blue.css: ele é carregado por último e redefine
- * TODA a paleta de globals.css e premium.css. Este teste lia globals.css e
- * conferia valores OKLCH que o produto não usa mais — validava números dentro
- * do próprio arquivo de teste, não a cor que chega na tela. Agora lê a camada
- * que realmente vence a cascata.
+ * Havia três folhas empilhadas — globals, premium e light-blue — cada uma
+ * redefinindo o mesmo `:root`. Este teste chegou a ler a errada: conferia
+ * valores OKLCH em globals.css que o produto não usava mais, ou seja validava
+ * números dentro do próprio arquivo de teste e não a cor que chega na tela.
+ *
+ * Agora é uma folha só, com um `:root` só e cada token declarado uma vez —
+ * então ler o arquivo é ler o que o navegador computa.
  */
-const TEMA = readFileSync(resolve(__dirname, '../../app/light-blue.css'), 'utf8');
-const BASE = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
+const CSS = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
+const TEMA = CSS;
+const BASE = CSS;
 
 function token(nome: string): string {
-  const v = lerToken(TEMA, `--${nome}`);
-  if (v === null) throw new Error(`token --${nome} nao encontrado em light-blue.css`);
+  const v = lerToken(CSS, `--${nome}`);
+  if (v === null) throw new Error(`token --${nome} nao encontrado em globals.css`);
   return v;
 }
 
@@ -89,6 +92,34 @@ describe('paleta clinica — contraste medido sobre o tema que realmente carrega
     expect(BASE).not.toContain('@media (prefers-color-scheme: dark)');
     expect(BASE).not.toContain(':root[data-theme="dark"]');
     expect(TEMA).not.toContain('@media (prefers-color-scheme: dark)');
+  });
+
+  it('a paleta vive em UM arquivo, com UM :root e cada token declarado uma vez', () => {
+    /* Eram tres folhas empilhadas, cada uma redefinindo o mesmo :root, com ~30
+       `!important` se anulando em pares. Funcionava so porque a ultima
+       espelhava regra por regra o que a segunda declarava — mudar uma cor era
+       imprevisivel. Se este teste falhar, a pilha voltou. */
+    expect((CSS.match(/^:root\s*\{/gm) ?? []).length,
+      'mais de um bloco :root').toBe(1);
+
+    /* Só DENTRO do :root. Fora dele a redeclaração é técnica deliberada:
+       `.cadencia-sidebar` redefine --surface/--text-primary/--brand no próprio
+       subtree para ganhar tema próprio, e media query redefine --page-gutter.
+       Isso é sombreamento com escopo, não a pilha que o teste persegue. */
+    const corpo = /^:root\s*\{([\s\S]*?)^\}/m.exec(CSS)?.[1] ?? '';
+    expect(corpo, ':root vazio — regex do teste quebrou').not.toBe('');
+    const declaracoes = [...corpo.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]);
+    const repetidos = declaracoes.filter((t, i) => declaracoes.indexOf(t) !== i);
+    expect([...new Set(repetidos)], 'token declarado duas vezes no :root').toEqual([]);
+  });
+
+  it('nao voltou a existir uma segunda folha de tema', () => {
+    /* O `@import` do layout aponta so para globals.css. Uma folha nova
+       carregada depois recomeça exatamente o problema que a consolidacao
+       resolveu. */
+    const layout = readFileSync(resolve(__dirname, '../../app/layout.tsx'), 'utf8');
+    const importsDeCss = [...layout.matchAll(/import\s+'\.\/([\w-]+\.css)'/g)].map((m) => m[1]);
+    expect(importsDeCss).toEqual(['globals.css']);
   });
 
   it('prefers-reduced-motion reduz animacoes e transicoes', () => {
