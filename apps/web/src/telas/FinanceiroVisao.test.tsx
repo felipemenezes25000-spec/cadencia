@@ -1,7 +1,6 @@
 // apps/web/src/telas/FinanceiroVisao.test.tsx
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { FinanceiroVisao, type VisaoDados } from './FinanceiroVisao';
@@ -111,8 +110,10 @@ describe('FinanceiroVisao', () => {
 
   it('renderiza 4 cards de resumo', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
-    expect(screen.getByText('Despesa')).toBeVisible();
+    /* 'Receita' e 'Despesa' aparecem duas vezes cada: no rotulo do cartao e na
+       legenda do grafico. Os cartoes sao os que carregam o valor formatado. */
+    await waitFor(() => expect(screen.getAllByText('Receita').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('Despesa').length).toBeGreaterThan(0);
     expect(screen.getByText('Saldo')).toBeVisible();
     expect(screen.getByText('Pendente')).toBeVisible();
   });
@@ -131,37 +132,41 @@ describe('FinanceiroVisao', () => {
     expect(screen.getByText(/5\.3% vs\. período anterior/)).toBeVisible();
   });
 
-  it('renderiza seletor de período', async () => {
+  /* Havia aqui dois testes do `SeletorPeriodo` (Diário/Semanal/Mensal): um
+     verificava que os botoes apareciam, o outro que clicar gravava `?periodo=`
+     na URL. Os dois passavam — e o seletor nao filtrava NADA. `carregarDados()`
+     nao recebe argumento, o efeito nao depende do periodo, e a rota nao aceita
+     recorte. O unico efeito do clique era o titulo do grafico passar a mentir.
+     Os testes mediam a escrita na URL, que de fato acontecia; nunca o dado, que
+     nunca mudou. Seletor removido, e no lugar deles fica a asercao de que a
+     tela nao volta a oferecer um filtro que a API nao suporta. */
+  it('não oferece filtro de período que a API não suporta', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
-    await userEvent.click(screen.getByText('Análise do período'));
-    expect(screen.getByRole('group', { name: /Seletor de período/i })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Diário' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Semanal' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Mensal' })).toBeVisible();
+    await waitFor(() => expect(screen.getByText('R$ 3.500,00')).toBeVisible());
+    expect(screen.queryByRole('group', { name: /Seletor de período/i })).not.toBeInTheDocument();
   });
 
-  it('muda período ao clicar', async () => {
-    const user = userEvent.setup();
-    const { onUrlUpdate } = montar();
-    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
-    await user.click(screen.getByText('Análise do período'));
-
-    await user.click(screen.getByRole('button', { name: 'Diário' }));
-
-    await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          queryString: expect.stringContaining('periodo=dia'),
-        }),
-      );
-    });
+  it('plota despesa junto da receita, em vez de descartá-la', async () => {
+    /* A API sempre devolveu os dois valores por mes e a tela plotava so a
+       receita: faturamento subindo sem dizer que o custo subiu mais. */
+    montar();
+    const grafico = await screen.findByRole('img', { name: /Receita e despesa por mês/ });
+    expect(grafico).toBeInTheDocument();
+    const legenda = screen.getByTestId('grafico-receita');
+    expect(legenda).toBeInTheDocument();
   });
 
-  it('renderiza gráfico de receita', async () => {
+  it('renderiza o saldo diário, que a API mandava e ninguém desenhava', async () => {
     montar();
-    await waitFor(() => expect(screen.getByText('Receita')).toBeVisible());
-    expect(screen.getByTestId('grafico-receita')).toBeInTheDocument();
+    expect(await screen.findByTestId('grafico-saldo-diario')).toBeInTheDocument();
+  });
+
+  it('mostra a análise sem exigir que o usuário abra uma gaveta', async () => {
+    /* Os graficos ficavam dentro de um `<details>` FECHADO rotulado "Análise do
+       período": quem abria o Financeiro concluia que a tela nao tinha grafico. */
+    montar();
+    expect(await screen.findByTestId('grafico-receita')).toBeVisible();
+    expect(screen.queryByText('Análise do período')).not.toBeInTheDocument();
   });
 
   it('não tem violações de acessibilidade', async () => {
