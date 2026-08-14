@@ -46,11 +46,11 @@ const ABAS: readonly AbaConfig[] = [
 
 const ROTULOS_CONTADORES: Record<FiltroConvenios, string> = {
   guiasAFaturar: "Guias a faturar",
-  lotesRascunho: "Lotes rascunho",
+  lotesRascunho: "Lotes em rascunho",
   lotesEnviados: "Lotes enviados",
   pendencias: "Pendências",
   glosasPendentes: "Glosas pendentes",
-  recursosRascunho: "Recursos rascunho",
+  recursosRascunho: "Recursos em rascunho",
 };
 
 export interface ConveniosLayoutProps {

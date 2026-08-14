@@ -89,11 +89,11 @@ describe("ConveniosLayout", () => {
   it("rótulos dos contadores incluem glosas pendentes e recursos rascunho", () => {
     montar();
     expect(screen.getByText(/Guias a faturar/i)).toBeVisible();
-    expect(screen.getByText(/Lotes rascunho/i)).toBeVisible();
+    expect(screen.getByText(/Lotes em rascunho/i)).toBeVisible();
     expect(screen.getByText(/Lotes enviados/i)).toBeVisible();
     expect(screen.getByText(/Pendências/i)).toBeVisible();
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
-    expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
+    expect(screen.getByText(/Recursos em rascunho/i)).toBeVisible();
   });
 
   it("ao clicar em um contador chama aoFiltrar com a chave correta", async () => {

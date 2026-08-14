@@ -68,14 +68,14 @@ describe('MatrizPermissoes', () => {
     render(<MatrizPermissoes />);
     // O teste original verifica se há MFA mas a tabela atual pode não ter - verificamos estrutura
     await waitFor(() => {
-      expect(screen.getByText('Matriz de Permissões')).toBeDefined();
+      expect(screen.getByText('Matriz de permissões')).toBeDefined();
     });
   });
 
   it('passa a11y', async () => {
     const { container } = render(<MatrizPermissoes />);
     await waitFor(() => {
-      expect(screen.getByText('Matriz de Permissões')).toBeDefined();
+      expect(screen.getByText('Matriz de permissões')).toBeDefined();
     });
     expect(await axe(container)).toHaveNoViolations();
   }, 15_000);

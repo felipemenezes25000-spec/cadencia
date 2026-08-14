@@ -317,10 +317,10 @@ function SecaoAlertas({ alertas }: { readonly alertas: readonly AlertaItem[] }) 
 function SecaoCategorias({ categorias }: { readonly categorias: readonly CategoriaItem[] }) {
   return (
     <section
-      aria-label="Top categorias"
+      aria-label="Principais categorias"
       className="rounded-xl border border-line bg-surface shadow-elev-1 p-[var(--s-6)]"
     >
-      <h2 className="mb-[var(--s-4)] text-[length:var(--fs-15)] font-semibold">Top categorias</h2>
+      <h2 className="mb-[var(--s-4)] text-[length:var(--fs-15)] font-semibold">Principais categorias</h2>
       <ul className="m-0 grid list-none gap-[var(--s-3)] p-0">
         {categorias.map((c) => (
           <li

@@ -18,7 +18,7 @@ interface SkeletonProps {
    * `aria-hidden`.
    *
    * Cada Skeleton é uma região live por padrão. Numa tela de carregamento com
-   * uma dúzia deles, o leitor de tela repete "Carregando..." uma dúzia de
+   * uma dúzia deles, o leitor de tela repete "Carregando…" uma dúzia de
    * vezes. Quem compõe várias barras deve declarar UMA região no contêiner e
    * passar `decorativo` nas barras — é o que SkeletonDePagina faz.
    */
@@ -65,7 +65,7 @@ export function Skeleton({
   width,
   height,
   lines = 1,
-  ariaLabel = "Carregando...",
+  ariaLabel = "Carregando",
   decorativo = false,
   className,
 }: SkeletonProps) {

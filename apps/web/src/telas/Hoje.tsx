@@ -301,7 +301,7 @@ export function Hoje(props: HojeProps) {
             </div>
           </div>
           <div className="hidden grid-cols-[72px_minmax(220px,1fr)_88px_148px_136px_36px] gap-x-4 border-b border-line bg-surface-subtle px-4 py-2 text-[10px] font-bold uppercase tracking-[.07em] text-text-faint md:grid">
-            <span>Horário</span><span>Paciente / atendimento</span><span>Espera</span><span>Status</span><span>Ação</span><span><span className="sr-only">Mais</span></span>
+            <span>Horário</span><span>Paciente / atendimento</span><span>Espera</span><span>Situação</span><span>Ação</span><span><span className="sr-only">Mais</span></span>
           </div>
           {filaVisivel.length > 0 ? (
             <ul className="m-0 list-none p-0">
@@ -365,7 +365,7 @@ export function Hoje(props: HojeProps) {
 
       {feedback ? (
         <div role="status" className="fixed bottom-20 right-4 z-[70] max-w-sm rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-text shadow-elev-2 md:bottom-6">
-          <div className="flex items-start gap-3"><CheckCircle size={18} className="mt-0.5 shrink-0 text-ok" aria-hidden /><span className="flex-1">{feedback}</span><button type="button" aria-label="Fechar confirmação" className="text-text-faint" onClick={() => setFeedback(null)}>×</button></div>
+          <div className="flex items-start gap-3"><CheckCircle size={18} className="mt-0.5 shrink-0 text-ok" aria-hidden /><span className="flex-1">{feedback}</span><button type="button" aria-label="Fechar confirmação" className="shrink-0 rounded text-text-faint max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center" onClick={() => setFeedback(null)}>×</button></div>
         </div>
       ) : null}
     </div>

@@ -149,7 +149,7 @@ export function Recibos(p: RecibosProps) {
       <div className="flex flex-wrap items-end gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar por paciente ou número..."
+          placeholder="Buscar por paciente ou número…"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="max-w-xs"
@@ -157,20 +157,20 @@ export function Recibos(p: RecibosProps) {
         />
         <Campo
           type="date"
-          rotulo="Data início"
+          rotulo="Data inicial"
           denso
           value={dataInicio}
           onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Data início"
+          aria-label="Data inicial"
           className="w-36"
         />
         <Campo
           type="date"
-          rotulo="Data fim"
+          rotulo="Data final"
           denso
           value={dataFim}
           onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Data fim"
+          aria-label="Data final"
           className="w-36"
         />
         <Campo
@@ -213,7 +213,7 @@ export function Recibos(p: RecibosProps) {
                       Valor
                     </th>
                     <th scope="col" className={thClasses}>
-                      Forma pgto
+                      Forma de pagamento
                     </th>
                     <th scope="col" className="px-4 py-2.5 w-20">
                       <span className="sr-only">Ações</span>
@@ -254,10 +254,10 @@ export function Recibos(p: RecibosProps) {
                               <Icone icon={Printer} size="sm" />
                             </button>
                           </Tooltip>
-                          <Tooltip conteudo="Enviar por email">
+                          <Tooltip conteudo="Enviar por e-mail">
                             <button
                               className={acaoBotaoClasses}
-                              aria-label={`Enviar recibo ${r.receiptNumber} por email`}
+                              aria-label={`Enviar recibo ${r.receiptNumber} por e-mail`}
                               onClick={() => {
                                 void p.aoEnviarEmail?.(r.receiptId);
                               }}

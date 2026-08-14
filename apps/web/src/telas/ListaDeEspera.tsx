@@ -195,7 +195,7 @@ export function ListaDeEspera({
         <EstadoVazio
           icone={ClockCounterClockwise}
           titulo="Lista de espera vazia"
-          descricao="Nenhum paciente na lista de espera"
+          descricao="Quando um paciente entrar na fila, ele aparecerá aqui."
           compacto
         />
       ) : (

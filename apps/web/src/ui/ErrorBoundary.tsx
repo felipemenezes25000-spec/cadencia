@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             Algo deu errado
           </h2>
           <p className="text-sm text-text-muted max-w-md mb-6">
-            Ocorreu um erro inesperado. Tente recarregar a pagina ou entre em contato com o suporte
+            Ocorreu um erro inesperado. Tente recarregar a página ou entre em contato com o suporte
             se o problema persistir.
           </p>
           {process.env.NODE_ENV === "development" && this.state.error && (

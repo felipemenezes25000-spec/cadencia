@@ -67,7 +67,7 @@ export default function PaginaPerfil() {
             </div>
             <div>
               <p className="font-semibold text-text">{usuario.nome}</p>
-              <p className="text-sm text-text-muted">{usuario.email}</p>
+              <p className="break-words text-sm text-text-muted">{usuario.email}</p>
             </div>
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">

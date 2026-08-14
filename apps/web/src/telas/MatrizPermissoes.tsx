@@ -197,7 +197,7 @@ export function MatrizPermissoes() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Matriz de Permissões
+          Matriz de permissões
         </h2>
         {temAlteracoes && (
           <div className="flex gap-2">
@@ -260,7 +260,7 @@ export function MatrizPermissoes() {
 
       {carregando ? (
         <div className="grid min-h-[200px] place-items-center">
-          <p className="text-sm text-text-muted">Carregando permissões...</p>
+          <p className="text-sm text-text-muted">Carregando permissões…</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-line">
@@ -308,7 +308,7 @@ export function MatrizPermissoes() {
         {podeEditar && (
           <span className="ml-auto flex items-center gap-1.5 text-text-faint">
             <ShieldCheck size={14} />
-            Override ativo
+            Exceção ativa
           </span>
         )}
       </div>
@@ -370,11 +370,11 @@ function GroupFragment({
             } else if (valor) {
               corClasse = 'bg-ok/10';
               icone = <Check size={16} weight="bold" className="mx-auto text-ok" />;
-              label = 'Permitido (override)';
+              label = 'Permitido (exceção)';
             } else {
               corClasse = 'bg-danger/10';
               icone = <X size={16} weight="bold" className="mx-auto text-danger" />;
-              label = 'Negado (override)';
+              label = 'Negado (exceção)';
             }
 
             return (

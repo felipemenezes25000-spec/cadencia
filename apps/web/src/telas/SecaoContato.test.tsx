@@ -36,7 +36,7 @@ describe('SecaoContato', () => {
     render(<SecaoContato {...base} />);
     await user.click(screen.getByRole('button', { name: 'Editar' }));
     expect(screen.getByLabelText('Telefone principal')).toBeTruthy();
-    expect(screen.getByLabelText('Email')).toBeTruthy();
+    expect(screen.getByLabelText('E-mail')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salvar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeTruthy();
   });
@@ -47,7 +47,7 @@ describe('SecaoContato', () => {
     render(<SecaoContato {...base} aoSalvar={aoSalvar} />);
     await user.click(screen.getByRole('button', { name: 'Editar' }));
 
-    const emailInput = screen.getByLabelText('Email');
+    const emailInput = screen.getByLabelText('E-mail');
     await user.clear(emailInput);
     await user.type(emailInput, 'novo@email.com');
 
@@ -67,7 +67,7 @@ describe('SecaoContato', () => {
     await user.click(screen.getByRole('button', { name: 'Editar' }));
 
     const foneInput = screen.getByLabelText('Telefone principal');
-    const emailInput = screen.getByLabelText('Email');
+    const emailInput = screen.getByLabelText('E-mail');
     await user.clear(foneInput);
     await user.clear(emailInput);
 

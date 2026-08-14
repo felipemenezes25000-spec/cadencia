@@ -49,7 +49,7 @@ function TabelaSkeleton() {
   return (
     <div
       role="status"
-      aria-label="Carregando operadoras..."
+      aria-label="Carregando operadoras"
       className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
     >
       <table className="w-full text-sm">
@@ -206,7 +206,7 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
       <div className="flex items-center justify-between gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar operadora..."
+          placeholder="Buscar operadora…"
           className="max-w-xs"
           value={busca}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setBusca(e.target.value)}

@@ -245,7 +245,7 @@ describe('TelaDeAtendimento', () => {
       aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
     });
     // Verifica a barra de ações via aria-label
-    const barraAcoes = screen.getByRole('navigation', { name: /Acoes do atendimento/i });
+    const barraAcoes = screen.getByRole('navigation', { name: /Ações do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
     // Verifica os botões dentro da barra de ações (using within)
     const botoes = barraAcoes.querySelectorAll('button');

@@ -56,10 +56,10 @@ describe("Skeleton", () => {
     expect(el).toHaveAttribute("aria-busy", "true");
   });
 
-  it("tem aria-label padrão 'Carregando...'", () => {
+  it("tem aria-label padrão 'Carregando'", () => {
     render(<Skeleton />);
     const el = screen.getByRole("status");
-    expect(el).toHaveAttribute("aria-label", "Carregando...");
+    expect(el).toHaveAttribute("aria-label", "Carregando");
   });
 
   it("aceita aria-label customizado", () => {

@@ -8,7 +8,7 @@ import type {
   VariationIndicator, WaterfallFactor,
 } from '../../src/telas/desempenho/types';
 import { apiFetch, ApiError } from '../../src/api';
-import { useSessao } from '../../src/sessao';
+import { useSessao, rotulo } from '../../src/sessao';
 
 interface FatorDaApi {
   factor: string;
@@ -62,9 +62,12 @@ function DesempenhoInner() {
     return (
       <div className="grid min-h-[60vh] place-items-center">
         <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold">Desempenho é da gestão</h1>
+          <h1 className="text-lg font-semibold">Acesso restrito à gestão</h1>
           <p className="mt-2 text-sm text-text-muted">
-            Seu perfil ({vinculoAtivo.role.replace('_', ' ')}) não tem acesso aos
+            {/* `replace('_',' ')` mostrava o slug cru do banco — "admin clinico",
+                "diretor tecnico", sem acento. `rotulo` e o mapa que o resto do
+                app ja usa. */}
+            Seu perfil ({rotulo(vinculoAtivo.role)}) não tem acesso aos
             indicadores de receita. Peça a quem administra a clínica se precisar.
           </p>
         </div>

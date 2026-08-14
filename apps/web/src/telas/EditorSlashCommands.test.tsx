@@ -206,13 +206,13 @@ describe("EditorSlashCommands", () => {
     expect(handled).toBe(true);
   });
 
-  it("agrupa comandos por seção (SOAP, Acoes, Codigos)", () => {
+  it("agrupa comandos por seção (SOAP, Ações, Códigos)", () => {
     const grupos = agruparPorSecao(SLASH_COMMANDS);
 
-    expect(Object.keys(grupos)).toEqual(["SOAP", "Acoes", "Codigos"]);
+    expect(Object.keys(grupos)).toEqual(["SOAP", "Ações", "Códigos"]);
     expect(grupos["SOAP"]).toHaveLength(4);
-    expect(grupos["Acoes"]).toHaveLength(2);
-    expect(grupos["Codigos"]).toHaveLength(1);
+    expect(grupos["Ações"]).toHaveLength(2);
+    expect(grupos["Códigos"]).toHaveLength(1);
   });
 
   it("mostra descrições dos comandos", () => {
@@ -237,8 +237,8 @@ describe("EditorSlashCommands", () => {
     renderSlashMenu();
 
     expect(screen.getByText("SOAP")).toBeInTheDocument();
-    expect(screen.getByText("Acoes")).toBeInTheDocument();
-    expect(screen.getByText("Codigos")).toBeInTheDocument();
+    expect(screen.getByText("Ações")).toBeInTheDocument();
+    expect(screen.getByText("Códigos")).toBeInTheDocument();
   });
 
   it("mostra mensagem quando nenhum comando encontrado", () => {

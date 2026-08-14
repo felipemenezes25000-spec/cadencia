@@ -46,7 +46,7 @@ export interface FinanceiroEstoqueProps {
 
 function EstoqueSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando estoque...">
+    <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando estoque">
       {/* Cabeçalho skeleton */}
       <div className="flex items-center justify-between">
         <Skeleton variant="text" width="80px" height="24px" />
@@ -160,7 +160,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
       <div className="flex flex-wrap items-center gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar produto..."
+          placeholder="Buscar produto…"
           className="max-w-xs"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -177,7 +177,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
               'focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none',
             )}
           >
-            <option value="">Todas categorias</option>
+            <option value="">Todas as categorias</option>
             {categorias.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}

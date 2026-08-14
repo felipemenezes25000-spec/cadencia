@@ -26,9 +26,9 @@ export interface AbaConfig {
 }
 
 export const ABAS_FINANCEIRO: readonly AbaConfig[] = [
-  { value: "visao", rotulo: "Resumo", href: "/financeiro" },
+  { value: "visao", rotulo: "Visão geral", href: "/financeiro" },
   { value: "caixa", rotulo: "Caixa", href: "/financeiro/caixa" },
-  { value: "a-receber", rotulo: "Contas a receber", href: "/financeiro/a-receber" },
+  { value: "a-receber", rotulo: "A receber", href: "/financeiro/a-receber" },
   { value: "a-pagar", rotulo: "A pagar", href: "/financeiro/a-pagar" },
   {
     value: "recebimentos",

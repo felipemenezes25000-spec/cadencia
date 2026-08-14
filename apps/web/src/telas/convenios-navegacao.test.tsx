@@ -191,7 +191,7 @@ describe('Navegacao completa de Convenios', () => {
       </ConveniosLayout>,
     );
     expect(screen.getByText(/Glosas pendentes/i)).toBeVisible();
-    expect(screen.getByText(/Recursos rascunho/i)).toBeVisible();
+    expect(screen.getByText(/Recursos em rascunho/i)).toBeVisible();
     const grupoContadores = screen.getByRole('group', { name: /Contadores de convênios/i });
     expect(within(grupoContadores).getByText('4')).toBeVisible();
   });

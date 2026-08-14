@@ -562,7 +562,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
           {/* Action buttons */}
           <nav
             className="flex min-w-0 items-center gap-2 overflow-x-auto max-sm:w-full"
-            aria-label="Acoes do atendimento"
+            aria-label="Ações do atendimento"
           >
             <Botao variante="secundario" iconeEsquerda={Pill} onClick={prescrever}>
               Prescrever

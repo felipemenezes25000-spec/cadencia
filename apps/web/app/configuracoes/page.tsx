@@ -94,7 +94,7 @@ export default function PaginaConfiguracoes() {
   if (clinica === null) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
-        <p className="text-sm text-text-muted">Carregando...</p>
+        <p className="text-sm text-text-muted">Carregando…</p>
       </div>
     );
   }

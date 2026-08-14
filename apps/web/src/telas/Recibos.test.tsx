@@ -70,13 +70,13 @@ describe('tela Recibos', () => {
     montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
     expect(screen.getAllByRole('button', { name: /Imprimir/ })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: /email/i })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /e-mail/i })).toHaveLength(2);
   });
 
   it('tem campos de filtro por data e paciente', async () => {
     montar();
-    await waitFor(() => expect(screen.getByLabelText(/Data início/i)).toBeVisible());
-    expect(screen.getByLabelText(/Data fim/i)).toBeVisible();
+    await waitFor(() => expect(screen.getByLabelText(/Data inicial/i)).toBeVisible());
+    expect(screen.getByLabelText(/Data final/i)).toBeVisible();
     expect(screen.getByLabelText(/Paciente/i)).toBeVisible();
   });
 
@@ -94,7 +94,7 @@ describe('tela Recibos', () => {
   it('filtra por data', async () => {
     const props = montar();
     await waitFor(() => expect(screen.getByText('#42')).toBeVisible());
-    const campoDataInicio = screen.getByLabelText(/Data início/i);
+    const campoDataInicio = screen.getByLabelText(/Data inicial/i);
     await userEvent.type(campoDataInicio, '2026-08-01');
     await userEvent.click(screen.getByRole('button', { name: /Filtrar/ }));
     expect(props.carregarRecibos).toHaveBeenCalledTimes(2);

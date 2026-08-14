@@ -83,7 +83,11 @@ export default function NotificacoesPage() {
       <PageHeader
         titulo="Notificações"
         eyebrow="Central de atividade"
-        subtitulo={unreadCount > 0 ? `${unreadCount} atualização${unreadCount > 1 ? 'ões' : ''} aguardando sua atenção.` : 'Tudo em dia por aqui.'}
+        subtitulo={unreadCount > 0
+          /* Plural trocava a palavra inteira, nao o sufixo: com 2 saia
+             "2 atualizaçãoões". */
+          ? `${unreadCount} ${unreadCount > 1 ? 'atualizações' : 'atualização'} aguardando sua atenção.`
+          : 'Tudo em dia por aqui.'}
         semBreadcrumb
         acoes={unreadCount > 0 ? (
           <Botao variante="secundario" iconeEsquerda={CheckCircle} carregando={markAll.isPending} onClick={() => markAll.mutate()}>

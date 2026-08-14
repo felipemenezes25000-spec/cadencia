@@ -66,7 +66,7 @@ describe('FinanceiroRepasse', () => {
         papelAtual="admin_clinico"
       />,
     );
-    expect(screen.getByLabelText('Carregando repasse...')).toBeInTheDocument();
+    expect(screen.getByLabelText('Carregando repasse')).toBeInTheDocument();
   });
 
   it('renderiza seletor de período', async () => {

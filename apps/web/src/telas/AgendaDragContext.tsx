@@ -78,7 +78,7 @@ export function AgendaDragContext({
       onDragCancel={handleDragCancel}
     >
       <div id="dnd-instrucoes" className="sr-only">
-        Pressione espaco para arrastar. Use as setas para mover. Pressione espaco para soltar.
+        Pressione espaço para arrastar. Use as setas para mover. Pressione espaço para soltar.
         Pressione escape para cancelar.
       </div>
 

@@ -67,7 +67,7 @@ export default function PaginaTuss() {
       </div>
       <BuscaDeCatalogo<ItemTuss>
         titulo="TUSS"
-        placeholder="Buscar por código ou termo..."
+        placeholder="Buscar por código ou termo…"
         colunas={COLUNAS}
         buscar={buscar}
       />

@@ -78,7 +78,7 @@ function periodoParaMesAno(inicio: string): { mes: number; ano: number } {
 
 function RepasseSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando repasse...">
+    <div className="space-y-6" role="status" aria-busy="true" aria-label="Carregando repasse">
       {/* Seletor de período skeleton */}
       <div className="flex items-center justify-center gap-2">
         <Skeleton variant="text" width="28px" height="28px" />

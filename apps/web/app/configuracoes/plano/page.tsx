@@ -94,7 +94,7 @@ export default function PlanoPage() {
               <h3 className="text-2xl font-bold tracking-[-0.035em] text-text">{currentPlan.nome}</h3>
               <p className="mt-1 text-sm text-text-muted">{formatCurrency(currentPlan.valorPorProfissionalCents)} por profissional / {currentPlan.periodicidade}</p>
             </div>
-            {subscription.status === 'trial' ? <div className="rounded-xl border border-info/15 bg-info-soft px-3.5 py-2.5 text-xs font-semibold text-info">Trial até {new Date(subscription.trialTerminoEm).toLocaleDateString('pt-BR')}</div> : null}
+            {subscription.status === 'trial' ? <div className="rounded-xl border border-info/15 bg-info-soft px-3.5 py-2.5 text-xs font-semibold text-info">Teste até {new Date(subscription.trialTerminoEm).toLocaleDateString('pt-BR')}</div> : null}
           </div>
           <div className="relative z-10 mt-5 flex flex-wrap gap-2">
             {currentPlan.features.slice(0, 8).map((feature) => <span key={feature} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-1.5 text-[11px] font-semibold text-text-muted"><Check size={12} className="text-ok" aria-hidden />{feature === '*' ? 'Todas as funcionalidades' : feature}</span>)}
@@ -128,7 +128,7 @@ export default function PlanoPage() {
         {invoices.length > 0 ? (
           <div className="cadencia-table-shell overflow-x-auto">
             <table className="w-full min-w-[620px]">
-              <thead className="bg-surface-subtle"><tr><th className="px-4 py-3 text-left">Vencimento</th><th className="px-4 py-3 text-left">Valor</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-right">Ação</th></tr></thead>
+              <thead className="bg-surface-subtle"><tr><th className="px-4 py-3 text-left">Vencimento</th><th className="px-4 py-3 text-left">Valor</th><th className="px-4 py-3 text-left">Situação</th><th className="px-4 py-3 text-right">Ação</th></tr></thead>
               <tbody>{invoices.map((invoice) => <tr key={invoice.id} className="border-t border-line hover:bg-surface-subtle"><td className="px-4 py-3 text-sm text-text">{new Date(invoice.dataVencimento).toLocaleDateString('pt-BR')}</td><td className="px-4 py-3 text-sm font-bold text-text num">{formatCurrency(invoice.valorCents)}</td><td className="px-4 py-3"><StatusBadge status={invoice.status} /></td><td className="px-4 py-3 text-right">{invoice.linkPagamento && invoice.status === 'pendente' ? <a href={invoice.linkPagamento} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-accent hover:text-accent-hover">Abrir cobrança <ArrowSquareOut size={13} aria-hidden /></a> : <span className="text-xs text-text-faint">—</span>}</td></tr>)}</tbody>
             </table>
           </div>

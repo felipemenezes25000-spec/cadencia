@@ -130,6 +130,10 @@ body {
 }
 
 .cadencia-mobile-nav {
+  /* O <nav> tem altura fixa de 68px. Padding sozinho comprimiria os rotulos
+     em vez de afastar do indicador de home, entao a safe area entra TAMBEM na
+     altura. Antes de viewport-fit=cover isto era regra morta: env() resolvia 0. */
+  height: calc(68px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   border-color: rgb(201 215 218 / .9) !important;
   background: rgb(255 255 255 / .91) !important;

@@ -26,6 +26,8 @@ export function BotaoIcone({
       title={rotulo}
       className={cn(
         'cadencia-icon-button inline-grid shrink-0 place-items-center rounded-lg text-text-muted transition-colors-fast disabled:cursor-not-allowed disabled:opacity-50',
+        /* Ver Botao.tsx: 32/36px viram 44px de area no toque. */
+        'max-md:min-h-11 max-md:min-w-11',
         variante === 'contorno'
           ? 'border border-line bg-surface hover:border-line-strong hover:bg-surface-subtle hover:text-text'
           : 'border border-transparent bg-transparent hover:bg-surface-subtle hover:text-text',

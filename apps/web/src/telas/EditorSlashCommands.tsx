@@ -30,7 +30,7 @@ export interface SlashCommand {
   readonly titulo: string;
   readonly descricao: string;
   readonly icone: PhosphorIcon;
-  readonly secao: "SOAP" | "Acoes" | "Codigos";
+  readonly secao: "SOAP" | "Ações" | "Códigos";
 }
 
 /* ── lista de comandos ────────────────────────────────────────────────── */
@@ -72,14 +72,14 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     titulo: "Prescrição",
     descricao: "Inserir prescrição médica",
     icone: Pill,
-    secao: "Acoes",
+    secao: "Ações",
   },
   {
     id: "exame",
     titulo: "Exame",
     descricao: "Solicitar exame complementar",
     icone: TestTube,
-    secao: "Acoes",
+    secao: "Ações",
   },
 
   // Code lookups
@@ -88,7 +88,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     titulo: "CID",
     descricao: "Buscar código CID-10",
     icone: MagnifyingGlass,
-    secao: "Codigos",
+    secao: "Códigos",
   },
 ];
 

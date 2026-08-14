@@ -161,7 +161,7 @@ export default function PaginaEntrar() {
           <div className="flex items-center justify-between gap-6 text-xs text-text-muted xl:text-sm">
             <div className="flex items-center gap-2 rounded-xl border border-[#93c5fd]/55 bg-white/55 px-4 py-2.5 backdrop-blur-sm">
               <ShieldCheck size={17} weight="duotone" className="text-brand-hover" />
-              <span>LGPD Compliant</span>
+              <span>Em conformidade com a LGPD</span>
             </div>
             <p>© 2026 Cadência · Todos os direitos reservados</p>
           </div>

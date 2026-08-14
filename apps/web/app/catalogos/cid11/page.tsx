@@ -43,7 +43,7 @@ export default function PaginaCid11() {
     <div className="cadencia-page grid gap-8">
       <PageHeader
         titulo="CID-11"
-        subtitulo="Classificação Internacional de Doenças, 11a revisão (OMS)"
+        subtitulo="Classificação Internacional de Doenças, 11ª revisão (OMS)"
         breadcrumbs={[
           { rotulo: 'Catálogos', href: '/catalogos' },
           { rotulo: 'CID-11' },
@@ -57,7 +57,7 @@ export default function PaginaCid11() {
       />
       <BuscaDeCatalogo<ItemCid11>
         titulo="CID-11"
-        placeholder="Buscar por código ou descrição..."
+        placeholder="Buscar por código ou descrição…"
         colunas={COLUNAS}
         buscar={buscar}
       />

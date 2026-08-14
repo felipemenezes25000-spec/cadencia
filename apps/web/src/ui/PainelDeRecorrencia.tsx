@@ -58,7 +58,7 @@ const FREQUENCIAS: readonly { id: FrequenciaRecorrencia; rotulo: string }[] = [
 const MOTIVO: Record<string, string> = {
   horario_ocupado: 'horário ocupado',
   sala_ocupada: 'sala ocupada',
-  erro: 'não foi possível',
+  erro: 'falha ao agendar',
 };
 
 /** 'AAAA-MM-DDTHH:MM' -> '09/03', sem passar por Date (e sem fuso junto). */

@@ -37,6 +37,8 @@ export function TabsTrigger({ children, value, badge, className }: TabsTriggerPr
       value={value}
       className={cn(
         "cadencia-tab-trigger inline-flex min-h-9 items-center rounded-lg px-3 py-1.5",
+        /* 36px viram 44px no toque. Atinge toda barra de abas do produto. */
+        "max-md:min-h-11",
         "whitespace-nowrap text-sm font-medium text-text-muted outline-none",
         "transition-[background-color,color,box-shadow,transform] duration-150",
         "hover:bg-surface hover:text-text",

@@ -86,14 +86,14 @@ export function TabelaEquipe({
               <tr key={`${m.userId}-${m.role}`} className="border-t border-line">
                 <td className="px-4 py-3">
                   <span className="block font-medium">{m.nome}</span>
-                  <span className="block text-xs text-text-muted">{m.email}</span>
+                  <span className="block break-words text-xs text-text-muted">{m.email}</span>
                 </td>
                 <td className="px-4 py-3">
                   {confirmandoEste && confirmando.tipo === 'papel' ? (
                     <select
                       value={novoPapel}
                       onChange={(e) => setNovoPapel(e.target.value)}
-                      className="h-8 rounded-[var(--r-md)] border border-line bg-surface px-2 text-sm"
+                      className="h-8 max-md:h-11 rounded-[var(--r-md)] border border-line bg-surface px-2 text-sm"
                       aria-label="Novo papel"
                     >
                       {PAPEIS.filter((p) => p !== m.role).map((p) => (

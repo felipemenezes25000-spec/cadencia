@@ -118,13 +118,13 @@ export function LayoutDoProntuario(p: LayoutDoProntuarioProps) {
             <button type="button" aria-label={`Subir ${s.label}`}
               disabled={i === 0}
               onClick={() => mover(i, -1)}
-              className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-30">
+              className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-30 max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center">
               <CaretUp size={16} aria-hidden="true" />
             </button>
             <button type="button" aria-label={`Descer ${s.label}`}
               disabled={i === ordem.length - 1}
               onClick={() => mover(i, 1)}
-              className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-30">
+              className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-30 max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center">
               <CaretDown size={16} aria-hidden="true" />
             </button>
           </li>

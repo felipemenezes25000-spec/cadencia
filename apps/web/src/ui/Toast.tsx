@@ -97,7 +97,7 @@ export function ToastItem({ data, onClose }: ToastItemProps) {
         ) : null}
 
         <RadixToast.Close
-          aria-label="Fechar notificacao"
+          aria-label="Fechar notificação"
           className={cn(
             "shrink-0 mt-px p-0.5 rounded-[var(--r-sm)]",
             "text-text-muted hover:text-text hover:bg-surface-hover",

@@ -45,7 +45,10 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
           <ToastItem key={t.id} data={t} onClose={() => removeToast(t.id)} />
         ))}
         <RadixToast.Viewport
-          className="fixed top-4 right-4 z-[var(--z-toast)] flex flex-col gap-2 w-80 m-0 p-0 outline-none"
+          /* `w-80` + `right-4` = 336px: estoura viewport de 320px. E no topo o
+             toast cobre os controles da TopBar. No celular vai para baixo,
+             acima do dock (68px + respiro). */
+          className="fixed top-4 right-4 z-[var(--z-toast)] m-0 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 p-0 outline-none max-md:inset-x-4 max-md:bottom-[calc(84px+env(safe-area-inset-bottom))] max-md:top-auto max-md:w-auto"
           data-testid="toast-viewport"
         />
       </RadixToast.Provider>

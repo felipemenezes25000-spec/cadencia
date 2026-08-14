@@ -37,7 +37,7 @@ export default function PaginaRegrasDeRepasse() {
     return (
       <div className="grid min-h-[40vh] place-items-center">
         <div className="max-w-md text-center">
-          <h2 className="text-lg font-semibold text-text">Regras são da gestão</h2>
+          <h2 className="text-lg font-semibold text-text">Acesso restrito à gestão</h2>
           <p className="mt-2 text-sm text-text-muted">
             Seu perfil vê o próprio repasse, mas não define o percentual dele.
             Peça a quem administra a clínica.

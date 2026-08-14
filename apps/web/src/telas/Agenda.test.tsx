@@ -282,7 +282,7 @@ describe('tela Agenda', () => {
 
       const instrucoes = document.getElementById('dnd-instrucoes');
       expect(instrucoes).toBeInTheDocument();
-      expect(instrucoes?.textContent).toContain('Pressione espaco para arrastar');
+      expect(instrucoes?.textContent).toContain('Pressione espaço para arrastar');
       expect(instrucoes?.textContent).toContain('Use as setas para mover');
       expect(instrucoes?.textContent).toContain('Pressione escape para cancelar');
     });

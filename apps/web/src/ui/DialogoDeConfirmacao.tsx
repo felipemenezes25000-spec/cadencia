@@ -52,7 +52,9 @@ export function DialogoDeConfirmacao({
 
           {erro ? <p role="alert" className="mt-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{erro}</p> : null}
 
-          <div className="mt-5 flex justify-end gap-2">
+          {/* flex-wrap: dois rotulos em portugues ("Cancelar" + "Confirmar
+              cancelamento") estouram 343px numa linha so. */}
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
             <Dialog.Close asChild>
               <Botao variante="secundario" disabled={carregando}>Cancelar</Botao>
             </Dialog.Close>

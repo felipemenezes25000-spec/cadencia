@@ -242,7 +242,7 @@ export function Financeiro(p: FinanceiroProps) {
                 </span>
                 <Botao variante="fantasma" altura={28}
                   onClick={() => { void p.aoEnviarLink(e.entryId); }}>
-                  Enviar link
+                  Enviar link de cobrança
                 </Botao>
               </li>
             ))}

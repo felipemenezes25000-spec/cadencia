@@ -39,7 +39,7 @@ describe('FinanceiroEstoque', () => {
         aoRegistrarMovimentacao={async () => {}}
       />,
     );
-    expect(screen.getByLabelText('Carregando estoque...')).toBeInTheDocument();
+    expect(screen.getByLabelText('Carregando estoque')).toBeInTheDocument();
   });
 
   it('renderiza tabela de produtos', async () => {

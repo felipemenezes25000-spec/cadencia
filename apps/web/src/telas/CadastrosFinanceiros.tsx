@@ -293,8 +293,8 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
         <TabsContent value="recorrencias">
           <div className="grid gap-4 pt-4">
             <p className="text-sm text-text-muted">
-              Lançamentos que se repetem sozinhos — aluguel, salário, assinatura.
-              Criados pelo lançamento no contas a pagar ou a receber.
+              Lançamentos que se repetem automaticamente — aluguel, salário, assinatura.
+              Criados a partir de um lançamento em Contas a pagar ou Contas a receber.
             </p>
             <ul className="grid gap-1.5">
               {p.dados.recorrencias.map((r) => (

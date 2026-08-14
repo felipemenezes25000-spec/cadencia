@@ -107,7 +107,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
           <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 font-mono text-sm">
             <span className="flex-1 select-all break-all">{segredo}</span>
             <button type="button" onClick={() => { void copiar(); }}
-              className="shrink-0 rounded p-1 hover:bg-surface-hover"
+              className="shrink-0 rounded p-1 hover:bg-surface-hover max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center"
               aria-label="Copiar segredo">
               {copiado
                 ? <CheckCircle size={18} className="text-accent" />

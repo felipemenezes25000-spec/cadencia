@@ -186,7 +186,7 @@ describe('ConveniosRetornos', () => {
     });
     const secao = screen.getByRole('region', { name: /Demonstrativos importados/i });
     // Chips de tipo dentro da tabela
-    expect(within(secao).getByText(/Analise/i)).toBeVisible();
+    expect(within(secao).getByText(/Análise/i)).toBeVisible();
     expect(within(secao).getByText(/Pagamento/i)).toBeVisible();
   });
 

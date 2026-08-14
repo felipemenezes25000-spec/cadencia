@@ -136,7 +136,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
       <div className="flex flex-wrap items-end gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar..."
+          placeholder="Buscar…"
           className="max-w-xs"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -199,7 +199,7 @@ export function ConveniosRecursos(p: ConveniosRecursosProps) {
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Operadora</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Data</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Situação</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
                       <span className="sr-only">Ações</span>
                     </th>
@@ -259,7 +259,7 @@ function RecursoLinhas({
             onClick={aoExpandir}
             aria-expanded={expandido}
             aria-label="Expandir"
-            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-surface-hover transition-colors-fast"
+            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-surface-hover transition-colors-fast max-md:h-11 max-md:w-11"
           >
             {expandido ? '▾' : '▸'}
           </button>
@@ -317,8 +317,10 @@ function RecursoLinhas({
       {expandido && rec.itens.length > 0 && (
         <tr>
           <td colSpan={7} className="px-4 pb-4 pt-0">
-            <div className="ml-10 overflow-hidden rounded-xl border border-line bg-surface-sunken">
-              <table className="w-full text-sm">
+            {/* Era `overflow-hidden`: no celular a tabela era CORTADA em vez de
+                rolar, e o `ml-10` ainda comia 40px. */}
+            <div className="ml-10 overflow-x-auto rounded-xl border border-line bg-surface-sunken scrollbar-thin max-md:ml-0">
+              <table className="w-full min-w-[360px] text-sm">
                 <tbody className="divide-y divide-line">
                   {rec.itens.map((item) => (
                     <tr key={item.id}>

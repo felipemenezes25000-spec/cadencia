@@ -61,7 +61,7 @@ describe("FinanceiroLayout", () => {
     const abaCaixa = screen.getByRole("link", { name: /Caixa/i });
     expect(abaCaixa).toHaveAttribute("aria-current", "page");
 
-    const abaVisao = screen.getByRole("link", { name: /Resumo/i });
+    const abaVisao = screen.getByRole("link", { name: /Visão geral/i });
     expect(abaVisao).not.toHaveAttribute("aria-current");
   });
 

@@ -182,7 +182,7 @@ export function PainelDeSadt(p: PainelDeSadtProps) {
             <Warning size={18} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0 text-warn" />
             <span>
               Atendimento <strong>particular</strong>: guia SP/SADT só existe
-              contra operadora. Emitir aqui criaria uma guia que nunca será
+              para convênio. Emitir aqui criaria uma guia que nunca será
               enviada e ficaria pendente para sempre no faturamento.
             </span>
           </p>
@@ -265,7 +265,11 @@ export function PainelDeSadt(p: PainelDeSadtProps) {
         </section>
 
         {itens.length > 0 && (
-          <table className="w-full text-sm">
+          /* Cinco colunas, uma delas com input numerico, dentro de uma gaveta
+             que no celular tem ~319px uteis. Sem o scroller a coluna de
+             remover fica fora da tela e sem como alcancar. */
+          <div className="-mx-1 overflow-x-auto px-1 scrollbar-thin">
+          <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-text-muted">
                 <th className="pb-1">Código</th>
@@ -333,6 +337,7 @@ export function PainelDeSadt(p: PainelDeSadtProps) {
               </tr>
             </tfoot>
           </table>
+          </div>
         )}
 
         {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}

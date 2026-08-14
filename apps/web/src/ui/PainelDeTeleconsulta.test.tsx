@@ -90,6 +90,6 @@ describe('PainelDeTeleconsulta', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /iniciar teleconsulta/i }));
     });
-    expect(screen.getByRole('alert').textContent).toContain('Nao foi possivel criar');
+    expect(screen.getByRole('alert').textContent).toContain('Não foi possível criar');
   });
 });

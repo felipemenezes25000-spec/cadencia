@@ -511,7 +511,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
               <div className="col-span-2"><dt className="text-xs text-text-faint">Paciente</dt><dd className="mt-1 font-semibold text-text">{selecionada.patientName}</dd></div>
               <div><dt className="text-xs text-text-faint">Vencimento</dt><dd className="mt-1 font-medium text-text tabular-nums">{formatarData(selecionada.dueDate)}</dd></div>
               <div><dt className="text-xs text-text-faint">Valor</dt><dd className="mt-1 font-semibold text-text tabular-nums">{centavosParaReais(selecionada.amountCents)}</dd></div>
-              <div><dt className="text-xs text-text-faint">Status</dt><dd className="mt-1"><ChipDeStatusFinanceiro status={derivarStatus(selecionada)} /></dd></div>
+              <div><dt className="text-xs text-text-faint">Situação</dt><dd className="mt-1"><ChipDeStatusFinanceiro status={derivarStatus(selecionada)} /></dd></div>
               <div><dt className="text-xs text-text-faint">Atraso</dt><dd className="mt-1 font-medium text-text">{selecionada.daysPastDue > 0 ? `${selecionada.daysPastDue} dias` : 'Dentro do prazo'}</dd></div>
             </dl>
             <section className="border-t border-line pt-4">

@@ -79,7 +79,7 @@ function LotesSkeleton() {
   return (
     <div
       role="status"
-      aria-label="Carregando lotes..."
+      aria-label="Carregando lotes"
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       {Array.from({ length: 6 }, (_, i) => (
@@ -155,7 +155,7 @@ export function ConveniosLotes(p: ConveniosLotesProps) {
       <div className="flex items-center justify-between gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar lote..."
+          placeholder="Buscar lote…"
           className="max-w-xs"
           value={busca}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setBusca(e.target.value)}
@@ -214,7 +214,7 @@ export function ConveniosLotes(p: ConveniosLotesProps) {
                 {lote.status === 'processando' && lote.progresso != null && (
                   <div className="mt-3" data-testid="barra-progresso">
                     <div className="flex items-center justify-between text-xs text-text-muted mb-1">
-                      <span>Processando...</span>
+                      <span>Processando…</span>
                       <span>{lote.progresso}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-line overflow-hidden">

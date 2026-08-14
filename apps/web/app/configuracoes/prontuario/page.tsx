@@ -30,8 +30,8 @@ export default function PaginaLayoutDoProntuario() {
     void carregar().catch((e: unknown) => {
       setErro(e instanceof ApiError && e.status === 403
         // A rota exige `encounter.read`. Quem não atende não tem prontuário
-        // para arrumar — e dizer isso é melhor que uma tela vazia.
-        ? 'Só quem atende tem prontuário para arrumar.'
+        // para organizar — e dizer isso é melhor que uma tela vazia.
+        ? 'Só quem atende pacientes tem um prontuário para organizar.'
         : 'Não foi possível carregar o layout.');
     });
   }, [carregar]);

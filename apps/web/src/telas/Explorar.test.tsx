@@ -66,8 +66,8 @@ describe('tela Explorar', () => {
 
   it('exibe seletor de período com campos de data início e fim', () => {
     montar();
-    expect(screen.getByLabelText(/Data início/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Data fim/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Data inicial/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Data final/i)).toBeInTheDocument();
   });
 
   it('exibe tabela de resultados após consulta', async () => {

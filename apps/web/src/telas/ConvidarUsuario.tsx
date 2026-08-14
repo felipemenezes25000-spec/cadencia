@@ -126,7 +126,7 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
     >
         <form id="form-convidar-usuario" onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
           <label className="grid gap-1">
-            <span className="text-xs text-text-muted">Email</span>
+            <span className="text-xs text-text-muted">E-mail</span>
             <input type="email" required
               value={email} onChange={(e) => setEmail(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />

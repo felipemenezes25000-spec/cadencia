@@ -285,7 +285,7 @@ function HistoricoTab({
   return (
     <ol
       className="list-none overflow-hidden rounded-xl border border-line bg-surface p-0"
-      aria-label="Timeline de atendimentos"
+      aria-label="Linha do tempo de atendimentos"
     >
       {atendimentos.map((at) => (
         <li key={at.id} className="grid gap-2 border-b border-line px-5 py-4 last:border-b-0 sm:grid-cols-[116px_minmax(0,1fr)]">
@@ -699,7 +699,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
             </p>
           </div>
           <div>
-            <span className="text-text-muted">Status</span>
+            <span className="text-text-muted">Situação</span>
             <p className="m-0 inline-flex items-center gap-1.5 font-medium text-text">
               <span aria-hidden="true">{p.paciente.cadastroStatus === 'completo' ? '✓' : '◷'}</span>
               {p.paciente.cadastroStatus === 'completo'

@@ -58,7 +58,20 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[var(--z-modal)] bg-text/25 transition-opacity duration-200 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
         <Dialog.Content
-          className={`fixed left-1/2 top-1/2 z-[calc(var(--z-modal)+1)] ${LARGURA[largura]} max-h-[calc(100vh-48px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-3 focus:outline-none`}
+          className={[
+            'fixed z-[calc(var(--z-modal)+1)] overflow-hidden border border-line bg-surface shadow-elev-3 focus:outline-none',
+            /* Desktop: caixa centrada. */
+            'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl',
+            LARGURA[largura],
+            'max-h-[calc(100dvh-48px)]',
+            /* Celular: folha de baixo. Centrado com `top-1/2` o modal se
+               ancora no viewport de LAYOUT, que nao encolhe quando o teclado
+               do iOS abre — o rodape com Salvar/Cancelar ficava atras do
+               teclado. Colado embaixo, ele sobe junto. */
+            'max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none',
+            'max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-2xl max-md:rounded-b-none',
+            'max-md:max-h-[92dvh] max-md:pb-[env(safe-area-inset-bottom)]',
+          ].join(' ')}
           /* Com descrição, Radix liga o `aria-describedby` sozinho e a prop não
              pode ser passada (passá-la como undefined apagaria o vínculo).
              Sem descrição, passar undefined é o opt-out documentado — sem isso
@@ -79,7 +92,7 @@ export function Modal({
             </Dialog.Close>
           </div>
 
-          <div className="max-h-[min(60vh,520px)] overflow-y-auto scrollbar-thin px-5 py-4">
+          <div className="max-h-[min(60dvh,520px)] overflow-y-auto scrollbar-thin px-5 py-4">
             {children}
           </div>
 

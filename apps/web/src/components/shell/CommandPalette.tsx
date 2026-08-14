@@ -40,11 +40,11 @@ interface CommandItem {
 const ACOES: readonly CommandItem[] = [
   { id: 'novo-atendimento', label: 'Novo atendimento', meta: 'Agendar ou iniciar um atendimento', href: '/agenda?novo=1', icon: Plus, atalho: 'n', categoria: 'acao' },
   { id: 'registrar-pagamento', label: 'Registrar pagamento', meta: 'Lançar recebimento no caixa', href: '/financeiro/recebimentos', icon: CreditCard, atalho: 'p', categoria: 'acao' },
-  { id: 'lancar-despesa', label: 'Contas a pagar', meta: 'Abrir despesas e compromissos', href: '/financeiro/a-pagar', icon: Money, atalho: 'd', categoria: 'acao' },
+  { id: 'lancar-despesa', label: 'A pagar', meta: 'Abrir despesas e compromissos', href: '/financeiro/a-pagar', icon: Money, atalho: 'd', categoria: 'acao' },
   { id: 'abrir-agenda', label: 'Abrir agenda', meta: 'Visualizar horários da unidade', href: '/agenda', icon: CalendarBlank, atalho: 'g a', categoria: 'acao' },
-  { id: 'hoje', label: 'Ir para Hoje', meta: 'Cockpit operacional do dia', href: '/hoje', icon: Stethoscope, atalho: 'g h', categoria: 'acao' },
+  { id: 'hoje', label: 'Ir para Hoje', meta: 'Painel operacional do dia', href: '/hoje', icon: Stethoscope, atalho: 'g h', categoria: 'acao' },
   { id: 'caixa', label: 'Caixa do dia', meta: 'Visualizar entradas e saídas', href: '/financeiro/caixa', icon: Wallet, atalho: 'g f c', categoria: 'acao' },
-  { id: 'a-receber', label: 'Contas a receber', meta: 'Lista de recebíveis', href: '/financeiro/a-receber', icon: Receipt, atalho: 'g f r', categoria: 'acao' },
+  { id: 'a-receber', label: 'A receber', meta: 'Lista de recebíveis', href: '/financeiro/a-receber', icon: Receipt, atalho: 'g f r', categoria: 'acao' },
   { id: 'lista-pacientes', label: 'Lista de pacientes', meta: 'Buscar e gerenciar pacientes', href: '/pacientes', icon: Users, atalho: 'g p', categoria: 'acao' },
   { id: 'convenios', label: 'Convênios', meta: 'Operadoras, guias e lotes', href: '/convenios', icon: Stethoscope, atalho: 'g o', categoria: 'acao' },
   { id: 'config-equipe', label: 'Equipe', meta: 'Gerenciar usuários e papéis', href: '/configuracoes/equipe', icon: Users, atalho: 'g c e', categoria: 'acao' },
@@ -208,10 +208,20 @@ export function CommandPalette({ open, onOpenChange }: {
               className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-text outline-none placeholder:text-text-faint"
             />
             {query ? <button type="button" onClick={() => setQuery('')} aria-label="Limpar busca" className="grid size-8 place-items-center rounded-lg text-text-faint hover:bg-surface-subtle hover:text-text"><X size={15} aria-hidden /></button> : null}
+            {/* No desktop a dica de tecla basta. No celular nao ha Esc, e o
+                unico jeito de sair era tocar no overlay acima do painel — algo
+                que ninguem descobre. Como esta e a UNICA busca do app no
+                mobile, entrar sem saber sair e um beco. */}
             <Dialog.Close className="hidden rounded-md border border-line bg-surface-subtle px-2 py-1 text-[10px] font-semibold text-text-faint sm:block">Esc</Dialog.Close>
+            <Dialog.Close
+              aria-label="Fechar busca"
+              className="grid size-11 shrink-0 place-items-center rounded-lg text-text-faint hover:bg-surface-subtle hover:text-text sm:hidden"
+            >
+              <X size={20} aria-hidden />
+            </Dialog.Close>
           </div>
 
-          <div id="command-listbox" role="listbox" aria-label="Resultados da busca" className="max-h-[62vh] overflow-y-auto p-2.5 scrollbar-thin">
+          <div id="command-listbox" role="listbox" aria-label="Resultados da busca" className="max-h-[62dvh] overflow-y-auto p-2.5 scrollbar-thin max-md:max-h-[46dvh]">
             {grupos.length === 0 ? (
               <div className="px-5 py-14 text-center"><p className="font-bold text-text">Nenhum resultado</p><p className="mt-1 text-sm text-text-muted">Experimente <kbd className="rounded bg-surface-subtle px-1.5 py-0.5">@</kbd> pacientes, <kbd className="rounded bg-surface-subtle px-1.5 py-0.5">$</kbd> ações, <kbd className="rounded bg-surface-subtle px-1.5 py-0.5">#</kbd> catálogos ou <kbd className="rounded bg-surface-subtle px-1.5 py-0.5">&gt;</kbd> telas.</p></div>
             ) : (() => {

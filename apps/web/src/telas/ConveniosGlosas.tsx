@@ -141,7 +141,7 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
       <div className="flex flex-wrap items-end gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar..."
+          placeholder="Buscar…"
           className="max-w-xs"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -218,9 +218,9 @@ export function ConveniosGlosas(p: ConveniosGlosasProps) {
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Operadora</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Motivo</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Situação</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                      <span className="sr-only">Acao</span>
+                      <span className="sr-only">Ação</span>
                     </th>
                   </tr>
                 </thead>

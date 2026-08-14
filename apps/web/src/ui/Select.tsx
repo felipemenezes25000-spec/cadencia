@@ -42,6 +42,8 @@ export interface SelectProps {
 
 const triggerBase = [
   'cadencia-select-trigger flex h-10 w-full items-center justify-between gap-2 rounded-[10px] border bg-surface px-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.75)]',
+  /* 40px viram 44px no toque. */
+  'max-md:min-h-11',
   'text-sm text-text',
   'transition-all-fast hover:border-line-strong hover:bg-surface-raised',
   'disabled:cursor-not-allowed disabled:opacity-50',

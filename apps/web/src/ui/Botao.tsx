@@ -70,6 +70,11 @@ export function Botao({
       aria-busy={carregando}
       className={cn(
         'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.008em]',
+        /* Alvo de toque de 44px so no touch. Os tres tamanhos do botao sao
+           32/36/40px — todos abaixo do minimo, e o `md` (36px), que e o
+           padrao, aparece 202 vezes. No desktop a altura visual continua a
+           mesma; aqui a caixa de acerto e que cresce. */
+        'max-md:min-h-11 max-md:min-w-11',
         'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.985]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         classesVariante[variante],

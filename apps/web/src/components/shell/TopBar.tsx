@@ -21,7 +21,9 @@ export function TopBar() {
 
   return (
     <>
-      <header className="cadencia-topbar sticky top-0 z-20 flex h-[68px] shrink-0 items-center gap-4 border-b border-line px-4 md:px-6">
+      {/* Com viewport-fit=cover o layout encosta no topo fisico da tela, entao
+          o header precisa se afastar do notch por conta propria. */}
+      <header className="cadencia-topbar sticky top-0 z-20 flex h-[68px] shrink-0 items-center gap-4 border-b border-line px-4 pt-[env(safe-area-inset-top)] md:px-6">
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}

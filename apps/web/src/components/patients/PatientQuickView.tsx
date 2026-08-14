@@ -84,7 +84,7 @@ export function PatientQuickView({
             <>
               <QuickSection icon={IdentificationCard} title="Identificação">
                 <p>{summary?.cadastroStatus === 'preliminar' ? 'Cadastro preliminar' : 'Cadastro confirmado'}</p>
-                {summary?.email ? <p className="text-text-muted">{summary.email}</p> : null}
+                {summary?.email ? <p className="break-words text-text-muted">{summary.email}</p> : null}
               </QuickSection>
               <QuickSection icon={CalendarBlank} title="Atendimento de hoje">
                 <p className="font-semibold text-text">{appointment.procedureNome ?? (appointment.teleconsulta ? 'Teleconsulta' : 'Atendimento')}</p>

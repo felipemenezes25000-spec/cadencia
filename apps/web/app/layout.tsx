@@ -45,6 +45,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  /* Sem `cover`, `env(safe-area-inset-*)` resolve 0 e a regra de safe area do
+     dock (premium.css) nunca dispara. Com `cover`, o layout vai de borda a
+     borda e QUEM insere o respiro e o CSS — por isso isto anda junto com o
+     padding do dock e o `pt-[env(safe-area-inset-top)]` da TopBar.
+     `maximumScale`/`userScalable` seguem ausentes de proposito: desativar
+     pinch-zoom quebra acessibilidade. */
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

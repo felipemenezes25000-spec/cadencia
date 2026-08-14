@@ -76,7 +76,7 @@ function ConversaVazia() {
 
 function ConversasSkeleton() {
   return (
-    <div className="flex h-[calc(100vh-68px-var(--nav-height,0px))] bg-surface" role="status" aria-label="Carregando conversas" data-testid="conversas-skeleton">
+    <div className="flex h-[calc(100dvh-68px-var(--nav-height,0px))] bg-surface" role="status" aria-label="Carregando conversas" data-testid="conversas-skeleton">
       <div className="w-[360px] shrink-0 border-r border-line max-md:w-full">
         <div className="border-b border-line p-5"><Skeleton variant="text" width="150px" /></div>
         <div className="border-b border-line p-3"><Skeleton variant="text" height="40px" /></div>
@@ -121,7 +121,7 @@ export function Conversas(p: ConversasProps) {
   if (carregando) return <ConversasSkeleton />;
 
   return (
-    <div className="flex h-[calc(100vh-68px-var(--nav-height,0px))] overflow-hidden bg-surface" data-testid="split-view">
+    <div className="flex h-[calc(100dvh-68px-var(--nav-height,0px))] overflow-hidden bg-surface" data-testid="split-view">
       <aside className={cn(
         'flex w-[360px] shrink-0 flex-col border-r border-line bg-surface',
         conversaAtiva != null && 'max-md:hidden',

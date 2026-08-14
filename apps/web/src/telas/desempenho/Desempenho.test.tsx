@@ -22,7 +22,7 @@ const WATERFALL: WaterfallFactor[] = [
   { factorId: 'f1', label: 'Faltas e cancelamentos', valueCents: -980000 },
   { factorId: 'f2', label: 'Mix de convenio', valueCents: -310000 },
   { factorId: 'f3', label: 'Glosas nao recuperadas', valueCents: -240000 },
-  { factorId: 'f4', label: 'Ticket medio', valueCents: 110000 },
+  { factorId: 'f4', label: 'Ticket médio', valueCents: 110000 },
 ];
 
 const DRILL_DOWN: DrillDownResult = {
@@ -69,8 +69,8 @@ describe('tela Desempenho — Variações do período', () => {
       // Use getAllByText because "Receita caiu..." appears both in h2 (destaque) and in buttons
       const allText = screen.getAllByText(/Receita caiu/);
       expect(allText.length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText(/Ticket medio subiu/)).toHaveLength(1);
-      expect(screen.getAllByText(/Ocupacao caiu 9 pontos/)).toHaveLength(1);
+      expect(screen.getAllByText(/Ticket médio subiu/)).toHaveLength(1);
+      expect(screen.getAllByText(/Ocupação caiu 9 pontos/)).toHaveLength(1);
     });
   });
 
@@ -78,7 +78,7 @@ describe('tela Desempenho — Variações do período', () => {
     montar();
     await waitFor(() => {
       // Only check button elements, not h2 which also has "Receita caiu"
-      const botoes = screen.getAllByRole('button', { name: /Receita|Ticket|Ocupacao/ });
+      const botoes = screen.getAllByRole('button', { name: /Receita|Ticket|Ocupação/ });
       expect(botoes.length).toBe(3);
     });
   });

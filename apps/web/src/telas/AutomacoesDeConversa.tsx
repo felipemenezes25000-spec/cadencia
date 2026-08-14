@@ -113,7 +113,7 @@ function CardAutomacao({ automacao, onToggle, onEditar, onExcluir }: CardAutomac
             <DropdownMenu.Trigger asChild>
               <button
                 type="button"
-                className="rounded-md p-1 text-text-muted hover:bg-surface-raised transition-colors-fast"
+                className="rounded-md p-1 text-text-muted hover:bg-surface-raised transition-colors-fast max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center"
                 aria-label={`Ações de ${automacao.nome}`}
               >
                 <Icone icon={DotsThree} size="md" />
@@ -193,12 +193,12 @@ function FormularioAutomacao({ automacao, onSalvar, onCancelar }: FormularioAuto
       />
       <Campo
         rotulo="Gatilho"
-        placeholder="Ex: 2 dias antes"
+        placeholder="Ex.: 2 dias antes"
         {...register('timing')}
       />
       <Campo
         rotulo="Canal"
-        placeholder="Ex: whatsapp"
+        placeholder="Ex.: WhatsApp"
         {...register('canal')}
       />
       <Campo

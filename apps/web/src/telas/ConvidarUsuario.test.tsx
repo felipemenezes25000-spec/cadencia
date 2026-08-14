@@ -18,7 +18,7 @@ function montar(over: Partial<Parameters<typeof ConvidarUsuario>[0]> = {}) {
 describe('ConvidarUsuario', () => {
   it('renderiza campos quando aberto=true', () => {
     montar();
-    expect(screen.getByLabelText(/email/i)).toBeDefined();
+    expect(screen.getByLabelText(/e-mail/i)).toBeDefined();
     expect(screen.getByLabelText(/nome completo/i)).toBeDefined();
     expect(screen.getByLabelText(/papel/i)).toBeDefined();
     expect(screen.getByLabelText(/senha temporária/i)).toBeDefined();
@@ -27,7 +27,7 @@ describe('ConvidarUsuario', () => {
 
   it('não renderiza nada quando aberto=false', () => {
     montar({ aberto: false });
-    expect(screen.queryByLabelText(/email/i)).toBeNull();
+    expect(screen.queryByLabelText(/e-mail/i)).toBeNull();
   });
 
   it('campos profissionais aparecem ao selecionar role profissional', async () => {
@@ -55,7 +55,7 @@ describe('ConvidarUsuario', () => {
   it('chama aoConvidar com dados corretos (recepcao)', async () => {
     const props = montar();
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'novo@test.local');
+    await user.type(screen.getByLabelText(/e-mail/i), 'novo@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Novo Usuario');
     await user.selectOptions(screen.getByLabelText(/papel/i), 'recepcao');
     await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
@@ -71,7 +71,7 @@ describe('ConvidarUsuario', () => {
   it('chama aoConvidar com dados profissionais quando profissional', async () => {
     const props = montar();
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'dr@test.local');
+    await user.type(screen.getByLabelText(/e-mail/i), 'dr@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Dr Novo');
     await user.selectOptions(screen.getByLabelText(/papel/i), 'profissional');
     await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
@@ -94,7 +94,7 @@ describe('ConvidarUsuario', () => {
       aoConvidar: vi.fn(async () => { throw new Error('vinculo_duplicado'); }),
     });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'dup@test.local');
+    await user.type(screen.getByLabelText(/e-mail/i), 'dup@test.local');
     await user.type(screen.getByLabelText(/nome completo/i), 'Dup User');
     await user.type(screen.getByLabelText(/senha temporária/i), 'Temp@2026xx');
     await user.click(screen.getByRole('button', { name: /convidar/i }));

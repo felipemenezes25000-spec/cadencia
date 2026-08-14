@@ -68,7 +68,7 @@ function TabelaSkeleton() {
   return (
     <div
       role="status"
-      aria-label="Carregando guias..."
+      aria-label="Carregando guias"
       className="overflow-hidden rounded-xl border border-line bg-surface shadow-elev-1"
     >
       <div className="overflow-x-auto">
@@ -264,20 +264,20 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
         </div>
 
         <Campo
-          rotulo="Período início"
+          rotulo="Início do período"
           type="date"
           denso
           value={dataInicio}
           onChange={(e) => setDataInicio(e.target.value)}
-          aria-label="Período início"
+          aria-label="Início do período"
         />
         <Campo
-          rotulo="Período fim"
+          rotulo="Fim do período"
           type="date"
           denso
           value={dataFim}
           onChange={(e) => setDataFim(e.target.value)}
-          aria-label="Período fim"
+          aria-label="Fim do período"
         />
         <Botao variante="secundario" tamanho="md" onClick={filtrar}>
           Filtrar

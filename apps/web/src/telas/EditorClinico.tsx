@@ -158,7 +158,7 @@ export function EditorClinico(p: EditorClinicoProps) {
         code: {},
       }),
       Placeholder.configure({
-        placeholder: "Comece a digitar o registro clínico...",
+        placeholder: "Comece a digitar o registro clínico…",
       }),
       SlashCommandExtension,
     ],
@@ -455,7 +455,7 @@ function SeparadorDaToolbar() {
 function IndicadorAutoSave({ status }: { readonly status: SaveStatus }) {
   const configs: Record<SaveStatus, { icon: PhosphorIcon; texto: string; cor: string }> = {
     saved: { icon: Check, texto: "Salvo", cor: "text-ok" },
-    saving: { icon: SpinnerGap, texto: "Salvando...", cor: "text-text-muted" },
+    saving: { icon: SpinnerGap, texto: "Salvando…", cor: "text-text-muted" },
     error: { icon: Warning, texto: "Erro ao salvar", cor: "text-danger" },
     unsaved: { icon: FloppyDisk, texto: "Não salvo", cor: "text-warn" },
   };

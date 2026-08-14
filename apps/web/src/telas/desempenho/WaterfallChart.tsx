@@ -153,7 +153,7 @@ function WaterfallInner({
         width={width}
         height={height}
         role="img"
-        aria-label="Gráfico waterfall"
+        aria-label="Gráfico de cascata"
       >
         <Group left={margin.left} top={margin.top}>
           {/* Linhas conectoras */}

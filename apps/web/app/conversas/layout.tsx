@@ -7,7 +7,7 @@ import { NavegacaoDeRotas } from '../../src/ui/NavegacaoDeRotas';
 
 const ABAS = [
   { value: 'caixa', rotulo: 'Caixa', href: '/conversas' },
-  { value: 'automacoes', rotulo: 'Automacoes', href: '/conversas/automacoes' },
+  { value: 'automacoes', rotulo: 'Automações', href: '/conversas/automacoes' },
   { value: 'templates', rotulo: 'Templates', href: '/conversas/templates' },
 ] as const;
 

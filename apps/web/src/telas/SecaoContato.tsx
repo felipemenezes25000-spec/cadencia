@@ -96,8 +96,8 @@ export function SecaoContato(props: SecaoContatoProps) {
             <dd className="m-0 font-medium text-text">{formatarTelefone(props.phoneSecondary)}</dd>
           </div>
           <div>
-            <dt className="text-text-muted">Email</dt>
-            <dd className="m-0 font-medium text-text">{props.email ?? '--'}</dd>
+            <dt className="text-text-muted">E-mail</dt>
+            <dd className="m-0 break-words font-medium text-text">{props.email ?? '--'}</dd>
           </div>
         </dl>
 
@@ -139,7 +139,7 @@ export function SecaoContato(props: SecaoContatoProps) {
           {...(!foneSecValido ? { erro: 'Mínimo 10 dígitos' } : {})}
         />
         <Campo
-          rotulo="Email"
+          rotulo="E-mail"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -165,7 +165,7 @@ export function SecaoContato(props: SecaoContatoProps) {
         </div>
         {!canalOk && (
           <p className="text-sm text-danger" role="alert">
-            Informe ao menos um telefone principal ou email.
+            Informe ao menos um telefone principal ou e-mail.
           </p>
         )}
         <div className="flex gap-2 justify-end mt-2">

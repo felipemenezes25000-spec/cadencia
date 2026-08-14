@@ -47,12 +47,12 @@ describe('buildVariationPhrase', () => {
 
   it('ticket medio que subiu gera frase com "subiu"', () => {
     const frase = buildVariationPhrase('ticket_medio', 1200, 4);
-    expect(frase).toBe('Ticket medio subiu R$ 12 (+4%)');
+    expect(frase).toBe('Ticket médio subiu R$ 12 (+4%)');
   });
 
   it('ocupacao que caiu gera frase com "caiu N pontos"', () => {
     const frase = buildVariationPhrase('ocupacao', -9, -9);
-    expect(frase).toBe('Ocupacao caiu 9 pontos');
+    expect(frase).toBe('Ocupação caiu 9 pontos');
   });
 
   it('receita que subiu gera frase com "subiu"', () => {
@@ -62,7 +62,7 @@ describe('buildVariationPhrase', () => {
 
   it('variacao zero gera frase com "estavel"', () => {
     const frase = buildVariationPhrase('receita', 0, 0);
-    expect(frase).toBe('Receita estavel');
+    expect(frase).toBe('Receita estável');
   });
 });
 

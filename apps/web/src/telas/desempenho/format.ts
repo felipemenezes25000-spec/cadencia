@@ -7,8 +7,8 @@ const MESES: readonly string[] = [
 
 const LABELS: Record<string, string> = {
   receita: 'Receita',
-  ticket_medio: 'Ticket medio',
-  ocupacao: 'Ocupacao',
+  ticket_medio: 'Ticket médio',
+  ocupacao: 'Ocupação',
 };
 
 function formatReais(cents: number): string {
@@ -48,7 +48,7 @@ export function buildVariationPhrase(
   const label = LABELS[metric] ?? metric;
 
   if (deltaAbsolute === 0 && deltaPercent === 0) {
-    return `${label} estavel`;
+    return `${label} estável`;
   }
 
   const direction = deltaAbsolute > 0 ? 'subiu' : 'caiu';

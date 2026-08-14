@@ -150,7 +150,7 @@ export function Explorar(p: ExplorarProps) {
           <label htmlFor="data-inicio"
             style={{ display: 'block', fontSize: 'var(--fs-12)',
                      color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
-            Data início
+            Data inicial
           </label>
           <input id="data-inicio" type="date" value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
@@ -162,7 +162,7 @@ export function Explorar(p: ExplorarProps) {
           <label htmlFor="data-fim"
             style={{ display: 'block', fontSize: 'var(--fs-12)',
                      color: 'var(--text-muted)', marginBottom: 'var(--s-1)' }}>
-            Data fim
+            Data final
           </label>
           <input id="data-fim" type="date" value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}

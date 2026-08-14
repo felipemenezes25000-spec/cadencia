@@ -58,7 +58,7 @@ export function PainelDeTeleconsulta({
       setTc(dados);
       setIframeAberto(true);
     } catch {
-      setErro('Nao foi possivel criar a teleconsulta.');
+      setErro('Não foi possível criar a teleconsulta.');
     } finally {
       setCarregando(false);
     }
@@ -72,7 +72,7 @@ export function PainelDeTeleconsulta({
       setTc({ ...tc, endedAt: 'encerrada' });
       setIframeAberto(false);
     } catch {
-      setErro('Nao foi possivel encerrar.');
+      setErro('Não foi possível encerrar.');
     } finally {
       setCarregando(false);
     }
@@ -126,7 +126,7 @@ export function PainelDeTeleconsulta({
             />
             <button
               type="button"
-              className="absolute top-2 right-2 p-1 rounded bg-black/50 text-white hover:bg-black/70"
+              className="absolute top-2 right-2 p-1 rounded bg-black/50 text-white hover:bg-black/70 max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center"
               onClick={() => setIframeAberto(false)}
               aria-label="Minimizar"
             >

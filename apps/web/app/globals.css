@@ -499,10 +499,34 @@ tbody tr { transition: background-color var(--dur-1) ease; }
     padding-block: 10px;
   }
 
-  /* Garante que inputs de busca sejam grandes o suficiente */
+  /* Garante que inputs de busca sejam grandes o suficiente.
+     `input:not([type])` e obrigatorio: ui/Campo.tsx renderiza <input> SEM
+     atributo type, e seletor de atributo nao casa com o default do IDL — a
+     regra passava longe justamente do input principal do produto. */
+  input:not([type]),
   input[type="search"],
-  input[type="text"] {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  input[type="password"] {
     min-height: 44px;
+  }
+}
+
+/* iOS Safari da zoom na pagina inteira quando um controle focado tem
+   font-size abaixo de 16px. O corpo do app e 14px e `font: inherit` na linha
+   ~202 propaga isso para input/select/textarea, entao TODO campo do produto
+   disparava o zoom: o usuario toca para digitar e a tela salta.
+   16px so no toque; no desktop segue 14px, que e a densidade do design.
+   Nao usar `maximum-scale=1` para suprimir — isso mata o pinch-zoom, que e
+   requisito de acessibilidade. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 
@@ -510,25 +534,17 @@ tbody tr { transition: background-color var(--dur-1) ease; }
 @media (max-width: 768px) {
   .cadencia-page,
   .clinical-page {
-    padding-bottom: 84px; /* espaço para dock mobile */
+    /* 68px de dock + 16px de respiro + a safe area, que com viewport-fit=cover
+       deixou de ser 0 em iPhone com indicador de home. */
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
 
-  /* Sidebar vira dock bottom em mobile */
-  [data-shell="sidebar"] {
-    display: none;
-  }
-
-  [data-shell="mobile-dock"] {
-    display: flex;
-  }
 }
 
-/* Desktop: esconde dock mobile */
-@media (min-width: 769px) {
-  [data-shell="mobile-dock"] {
-    display: none;
-  }
-}
+/* Havia aqui regras para [data-shell="sidebar"] e [data-shell="mobile-dock"].
+   Nenhum elemento do app carrega esses atributos — AppShell alterna sidebar e
+   dock por classe (`hidden md:flex` / `md:hidden`). Eram seletores apontando
+   para nada; removidos para o CSS parar de descrever um shell que nao existe. */
 
 /* Swipe hint animation */
 @keyframes swipe-hint {

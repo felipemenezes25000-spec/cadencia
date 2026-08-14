@@ -80,7 +80,7 @@ const ROTULOS_TOTAIS: { chave: keyof TotaisRetornos; rotulo: string }[] = [
 ];
 
 const TIPO_CHIP: Record<'analise' | 'pagamento', { rotulo: string; classes: string }> = {
-  analise:   { rotulo: 'Analise',   classes: 'text-accent bg-accent-soft' },
+  analise:   { rotulo: 'Análise',   classes: 'text-accent bg-accent-soft' },
   pagamento: { rotulo: 'Pagamento', classes: 'text-ok bg-ok-soft' },
 };
 
@@ -196,7 +196,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
       <div className="flex flex-wrap items-end gap-3">
         <Campo
           prefixo={<Icone icon={MagnifyingGlass} size="sm" />}
-          placeholder="Buscar..."
+          placeholder="Buscar…"
           className="max-w-xs"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -214,7 +214,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
             className="h-9 rounded-md border border-line bg-surface px-3 text-sm text-text transition-colors-fast focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           >
             <option value="">Todos</option>
-            <option value="analise">Analise</option>
+            <option value="analise">Análise</option>
             <option value="pagamento">Pagamento</option>
           </select>
         </div>
@@ -255,7 +255,7 @@ export function ConveniosRetornos(p: ConveniosRetornosProps) {
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Guias</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor aprovado</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">Valor glosado</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">Situação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
