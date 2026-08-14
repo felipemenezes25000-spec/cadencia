@@ -64,8 +64,7 @@ function montar(over: Partial<Parameters<typeof Conversas>[0]> = {}) {
     aoMudarFiltro: vi.fn(),
     aoAbrirConversa: vi.fn(),
     aoEnviar: vi.fn(async () => ({ messageId: 'm9' })),
-    aoVincularPaciente: vi.fn(),
-    aoSelecionarTemplate: vi.fn(),
+    carregarTemplates: vi.fn().mockResolvedValue([]),
     aoVoltar: vi.fn(),
     aoNova: vi.fn(),
     ...over,
@@ -149,12 +148,10 @@ describe('Conversas (split view)', () => {
     expect(aoAbrirConversa).toHaveBeenCalledWith('c1');
   });
 
-  it('conversa com número desconhecido mostra botão de vincular no painel', async () => {
+  it('conversa com número desconhecido mostra o estado do vínculo no painel', async () => {
     montar({ conversaAbertaId: 'c2' });
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: /Vincular paciente/ }),
-      ).toBeVisible(),
+      expect(screen.getByText('Sem paciente vinculado')).toBeVisible(),
     );
     expect(screen.getAllByText('+5511888880002').length).toBeGreaterThanOrEqual(
       1,

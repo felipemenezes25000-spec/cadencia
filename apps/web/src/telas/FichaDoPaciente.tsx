@@ -14,6 +14,7 @@ import {
 import { cn } from '../lib/cn';
 import { Avatar } from '../ui/Avatar';
 import { Botao } from '../ui/Botao';
+import { DialogoDeQuebraVidro } from '../ui/DialogoDeQuebraVidro';
 import { EstadoVazio } from '../ui/EstadoVazio';
 import { PageHeader } from '../ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
@@ -88,7 +89,13 @@ export interface FichaDoPacienteProps {
   readonly prontuarioAcessivel: boolean;
   readonly existeMasSemAcesso: boolean;
   readonly carregarProntuario: () => Promise<ProntuarioResumo[]>;
-  readonly aoSolicitarAcesso: () => void;
+  /* `aoSolicitarAcesso` saiu. A pagina passava uma funcao vazia e o botao
+     "Solicitar acesso" no prontuario restrito nao fazia nada — nao existe rota
+     de pedido de compartilhamento partindo daqui. O que EXISTE, e ja estava
+     inteiramente ligado menos pela ponta da tela, e o quebra-vidro:
+     `aoQuebrarVidro` era declarado aqui, implementado de verdade na pagina
+     contra `POST /v1/pacientes/:id/quebra-vidro`, e nenhum componente o
+     chamava. O caminho regulado existia e era inalcancavel. */
   readonly aoQuebrarVidro: (justificativa: string, horas: number) => Promise<void>;
   readonly carregarConversas: () => Promise<MensagemResumo[]>;
   readonly carregarFinanceiro: () => Promise<LancamentoResumo[]>;
@@ -465,14 +472,14 @@ function ProntuarioTab({
   acessivel,
   restrito,
   erro,
-  aoSolicitarAcesso,
+  aoAbrirQuebraVidro,
   aoTentarNovamente,
 }: {
   readonly itens: ProntuarioResumo[] | null;
   readonly acessivel: boolean;
   readonly restrito: boolean;
   readonly erro: string | null;
-  readonly aoSolicitarAcesso: () => void;
+  readonly aoAbrirQuebraVidro: () => void;
   readonly aoTentarNovamente: () => void;
 }) {
   if (!acessivel || restrito) {
@@ -480,8 +487,12 @@ function ProntuarioTab({
       <EstadoVazio
         icone={LockKey}
         titulo="Prontuário com acesso restrito"
-        descricao="O cadastro permanece disponível, mas o conteúdo clínico depende de autorização específica."
-        acao={<Botao variante="secundario" onClick={aoSolicitarAcesso}>Solicitar acesso</Botao>}
+        descricao="O cadastro permanece disponível. Em situação de urgência assistencial, o acesso pode ser liberado por tempo determinado — a liberação é nominal e fica na trilha de auditoria."
+        acao={(
+          <Botao variante="secundario" onClick={aoAbrirQuebraVidro}>
+            Acesso de emergência
+          </Botao>
+        )}
       />
     );
   }
@@ -585,6 +596,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
   const [erroConversas, setErroConversas] = useState<string | null>(null);
   const [erroDocumentos, setErroDocumentos] = useState<string | null>(null);
   const [erroFinanceiro, setErroFinanceiro] = useState<string | null>(null);
+  const [quebraVidroAberto, setQuebraVidroAberto] = useState(false);
 
   /* Skeleton de carregamento */
   if (p.carregando) {
@@ -747,7 +759,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
             acessivel={p.prontuarioAcessivel}
             restrito={p.existeMasSemAcesso}
             erro={erroProntuario}
-            aoSolicitarAcesso={p.aoSolicitarAcesso}
+            aoAbrirQuebraVidro={() => setQuebraVidroAberto(true)}
             aoTentarNovamente={() => { void carregarProntuario(); }}
           />
         </TabsContent>
@@ -785,6 +797,19 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
           />
         </TabsContent>
       </Tabs>
+
+      <DialogoDeQuebraVidro
+        aberto={quebraVidroAberto}
+        nomeDoPaciente={p.paciente.displayName}
+        aoFechar={() => setQuebraVidroAberto(false)}
+        aoConfirmar={async ({ justificativa, horas }) => {
+          await p.aoQuebrarVidro(justificativa, horas);
+          /* A pagina baixa `existeMasSemAcesso` ao concluir, mas o conteudo so
+             chega no proximo carregamento — sem isto a aba fica no estado
+             restrito ate alguem trocar de aba e voltar. */
+          void carregarProntuario();
+        }}
+      />
     </div>
   );
 }

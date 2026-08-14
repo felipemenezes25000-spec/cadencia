@@ -98,7 +98,6 @@ function montar(over = {}) {
     carregarProntuario: vi.fn(async () => []),
     prontuarioAcessivel: true,
     existeMasSemAcesso: false,
-    aoSolicitarAcesso: vi.fn(),
     aoQuebrarVidro: vi.fn(async () => {}),
     carregarConversas: vi.fn(async () => []),
     carregarFinanceiro: vi.fn(async () => LANCAMENTOS),
@@ -235,7 +234,6 @@ describe('FichaDoPaciente', () => {
         carregarProntuario={async () => []}
         prontuarioAcessivel
         existeMasSemAcesso={false}
-        aoSolicitarAcesso={vi.fn()}
         aoQuebrarVidro={async () => {}}
         carregarConversas={async () => []}
         carregarFinanceiro={async () => []}

@@ -202,8 +202,7 @@ describe('Auditoria de acessibilidade', () => {
         aoMudarFiltro={vi.fn()}
         aoAbrirConversa={vi.fn()}
         aoEnviar={async () => ({ messageId: 'm1' })}
-        aoVincularPaciente={vi.fn()}
-        aoSelecionarTemplate={vi.fn()}
+        carregarTemplates={vi.fn().mockResolvedValue([])}
       />,
     );
     await waitFor(() =>

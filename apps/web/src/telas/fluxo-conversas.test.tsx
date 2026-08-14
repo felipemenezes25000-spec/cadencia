@@ -1,7 +1,6 @@
 // apps/web/src/telas/fluxo-conversas.test.tsx
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { Conversas } from './Conversas';
 import type { ConversaResumo } from './CaixaDeConversas';
 import type { Mensagem, ContextoConversa } from './PainelDeConversa';
@@ -34,7 +33,7 @@ describe('fluxo: conversa com numero desconhecido', () => {
         carregarContexto={async () => CONTEXTO}
         aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()}
         aoEnviar={async () => ({ messageId: 'm9' })}
-        aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
+        carregarTemplates={vi.fn().mockResolvedValue([])} />);
     await waitFor(() => {
       expect(screen.getByText('+5521900001111')).toBeVisible();
     });
@@ -42,7 +41,13 @@ describe('fluxo: conversa com numero desconhecido', () => {
     expect(screen.queryByText('undefined')).not.toBeInTheDocument();
   });
 
-  it('ao abrir a conversa, mostra botao "Vincular a paciente"', async () => {
+  /* Aqui havia DOIS testes: um afirmava que o botao "Vincular paciente"
+     aparecia, o outro que clicar nele chamava o callback — e o callback que a
+     pagina passava era uma funcao vazia. Os dois passavam verde enquanto o
+     botao nao fazia absolutamente nada, porque mediam a fiacao e nao o efeito.
+     Nao existe rota que associe conversa a paciente, entao o botao saiu; no
+     lugar ficou o estado, que e verdadeiro e nao promete acao nenhuma. */
+  it('conversa sem paciente mostra o estado, sem oferecer ação inexistente', async () => {
     render(
       <Conversas filtro="todas" conversaAbertaId="c-desconhecido"
         carregarConversas={async () => CONVERSAS}
@@ -50,25 +55,10 @@ describe('fluxo: conversa com numero desconhecido', () => {
         carregarContexto={async () => CONTEXTO}
         aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()}
         aoEnviar={async () => ({ messageId: 'm9' })}
-        aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
+        carregarTemplates={vi.fn().mockResolvedValue([])} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
-  });
-
-  it('clicar em "Vincular a paciente" chama o callback', async () => {
-    const aoVincularPaciente = vi.fn();
-    render(
-      <Conversas filtro="todas" conversaAbertaId="c-desconhecido"
-        carregarConversas={async () => CONVERSAS}
-        carregarMensagens={async () => MENSAGENS}
-        carregarContexto={async () => CONTEXTO}
-        aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()}
-        aoEnviar={async () => ({ messageId: 'm9' })}
-        aoVincularPaciente={aoVincularPaciente} aoSelecionarTemplate={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
-    await userEvent.click(screen.getByRole('button', { name: /Vincular paciente/ }));
-    expect(aoVincularPaciente).toHaveBeenCalled();
+      expect(screen.getByText('Sem paciente vinculado')).toBeVisible());
+    expect(screen.queryByRole('button', { name: /Vincular paciente/ })).not.toBeInTheDocument();
   });
 
   it('avatar do numero desconhecido mostra "#" em vez de iniciais', async () => {
@@ -79,7 +69,7 @@ describe('fluxo: conversa com numero desconhecido', () => {
         carregarContexto={async () => CONTEXTO}
         aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()}
         aoEnviar={async () => ({ messageId: 'm9' })}
-        aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
+        carregarTemplates={vi.fn().mockResolvedValue([])} />);
     await waitFor(() => expect(screen.getByText('#')).toBeVisible());
   });
 
@@ -91,7 +81,7 @@ describe('fluxo: conversa com numero desconhecido', () => {
         carregarContexto={async () => CONTEXTO}
         aoMudarFiltro={vi.fn()} aoAbrirConversa={vi.fn()}
         aoEnviar={async () => ({ messageId: 'm9' })}
-        aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
+        carregarTemplates={vi.fn().mockResolvedValue([])} />);
     await waitFor(() =>
       expect(screen.getByText('Gostaria de agendar uma consulta')).toBeVisible());
     const input = screen.getByRole('textbox', { name: /Mensagem/ });

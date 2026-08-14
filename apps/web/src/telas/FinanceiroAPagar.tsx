@@ -40,7 +40,6 @@ export interface FiltrosAPagar {
 export interface FinanceiroAPagarProps {
   readonly carregarDados: (filtros: FiltrosAPagar) => Promise<APagarDados>;
   readonly aoMarcarPago: (despesaId: string) => Promise<void>;
-  readonly aoEditar: (despesaId: string) => void;
   readonly aoParcelar: (despesaId: string) => Promise<void>;
 }
 
@@ -431,15 +430,12 @@ export function FinanceiroAPagar(p: FinanceiroAPagarProps) {
                           >
                             Marcar pago
                           </Botao>
-                          <Botao
-                            variante="fantasma"
-                            tamanho="sm"
-                            onClick={() => {
-                              p.aoEditar(d.id);
-                            }}
-                          >
-                            Editar
-                          </Botao>
+                          {/* Havia aqui um botao "Editar" ligado a uma funcao
+                              vazia. Nao existe rota de alteracao de despesa —
+                              `finance-operations.ts` expoe `POST /v1/payables`
+                              para criar e `POST /v1/payables/:id/pagar` para
+                              baixar, nada que edite. Clicar nao fazia nada. O
+                              botao volta quando a rota existir. */}
                           <Botao
                             variante="fantasma"
                             tamanho="sm"

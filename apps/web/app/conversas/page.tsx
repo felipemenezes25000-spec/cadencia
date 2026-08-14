@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Conversas } from '../../src/telas/Conversas';
 import type { ConversaResumo, FiltroConversas } from '../../src/telas/CaixaDeConversas';
@@ -31,6 +32,14 @@ interface MensagemDaApi {
   createdAt: string;
 }
 
+interface TemplateDaApi {
+  templateId: string;
+  name: string;
+  category: string;
+  bodyTemplate: string;
+  status: string;
+}
+
 interface ContextoDaApi {
   proximoAgendamento: {
     quando: string; profissional: string; procedimento: string | null;
@@ -59,6 +68,7 @@ function diaCurto(iso: string): string {
 }
 
 function ConversasInner() {
+  const router = useRouter();
   const { clinicId, csrfToken } = useSessao();
   const [filtro, setFiltro] = useQueryState('filtro',
     parseAsStringLiteral(FILTROS).withDefault('todas'));
@@ -149,8 +159,15 @@ function ConversasInner() {
           `/v1/conversations/${abertaId}/messages`,
           { method: 'POST', body: { bodyText: body }, clinicId, csrfToken });
       }}
-      aoVincularPaciente={() => { /* vínculo entra com a busca de paciente */ }}
-      aoSelecionarTemplate={() => { /* templates já têm endpoint próprio */ }}
+      carregarTemplates={async () => {
+        const r = await apiFetch<{ itens: TemplateDaApi[] }>(
+          '/v1/messaging/templates', { clinicId, csrfToken });
+        /* Só modelo aprovado pela Meta pode iniciar conversa fora da janela de
+           24h; oferecer um rascunho no compositor levaria a um envio recusado
+           pelo provedor, com a recepção sem entender por quê. */
+        return r.itens.filter((t) => t.status === 'approved');
+      }}
+      aoAbrirPaciente={(patientId) => router.push(`/pacientes/${patientId}`)}
     />
   );
 }

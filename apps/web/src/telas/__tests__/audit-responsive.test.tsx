@@ -275,8 +275,7 @@ describe('Auditoria responsiva', () => {
           aoMudarFiltro={vi.fn()}
           aoAbrirConversa={vi.fn()}
           aoEnviar={async () => ({ messageId: 'm2' })}
-          aoVincularPaciente={vi.fn()}
-          aoSelecionarTemplate={vi.fn()}
+          carregarTemplates={vi.fn().mockResolvedValue([])}
         />,
       );
       await waitFor(() =>
@@ -311,8 +310,7 @@ describe('Auditoria responsiva', () => {
           aoMudarFiltro={vi.fn()}
           aoAbrirConversa={vi.fn()}
           aoEnviar={async () => ({ messageId: 'm2' })}
-          aoVincularPaciente={vi.fn()}
-          aoSelecionarTemplate={vi.fn()}
+          carregarTemplates={vi.fn().mockResolvedValue([])}
           aoVoltar={vi.fn()}
         />,
       );
