@@ -107,6 +107,9 @@ jobs:
         run: psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1
              -c "ALTER ROLE api LOGIN PASSWORD 'api'; ALTER ROLE jobs LOGIN PASSWORD 'jobs'"
 
+      - name: 'authz:seed — popula ref.action antes dos testes de integracao'
+        run: pnpm authz:seed
+
       - name: 'test:int — integracao contra PostgreSQL real'
         run: pnpm test:int
 
