@@ -58,3 +58,5 @@ export { lembreteConsultaEmail, type LembreteConsultaVars } from './email-templa
 export type { TeleconsultProvider, CreateRoomInput, TeleconsultRoom } from './contracts/teleconsult';
 export { createFakeTeleconsultProvider, type FakeTeleconsultOptions, type CreatedRoom as CreatedTeleconsultRoom } from './fakes/teleconsult-fake';
 export { createJitsiTeleconsultProvider } from './adapters/jitsi-teleconsult';
+export type { CalendarProvider, CalendarEvent, CalendarInfo } from './contracts/calendar';
+export { createFakeCalendarProvider, type FakeCalendarOptions, type CreatedCalendarEvent } from './fakes/calendar-fake';

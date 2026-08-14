@@ -6,10 +6,11 @@ import {
   createFakeMessagingProvider, createFakePaymentProvider,
   createFakeEmailProvider, createSmtpEmailProvider,
   createFakeTeleconsultProvider, createJitsiTeleconsultProvider,
+  createFakeCalendarProvider,
   createMemedProvider,
   type PrescriptionProvider, type SignatureProvider,
   type MessagingProvider, type PaymentProvider,
-  type EmailProvider, type TeleconsultProvider,
+  type EmailProvider, type TeleconsultProvider, type CalendarProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
@@ -20,6 +21,7 @@ export interface Providers {
   readonly transcription: TranscriptionProvider;
   readonly email: EmailProvider;
   readonly teleconsult: TeleconsultProvider;
+  readonly calendar: CalendarProvider;
 }
 
 let cache: Providers | null = null;
@@ -109,6 +111,7 @@ export function providers(): Providers {
       transcription: transcricaoConfigurada(),
       email: emailConfigurado(),
       teleconsult: createJitsiTeleconsultProvider(),
+      calendar: createFakeCalendarProvider(),
     };
     cache = soMemed;
     return soMemed;
@@ -123,6 +126,7 @@ export function providers(): Providers {
       transcription: createFakeTranscriptionProvider(),
       email: createFakeEmailProvider(),
       teleconsult: createFakeTeleconsultProvider(),
+      calendar: createFakeCalendarProvider(),
     };
     cache = comFakes;
     return comFakes;
@@ -161,6 +165,7 @@ export function providers(): Providers {
     transcription: transcricaoConfigurada(),
     email: emailConfigurado(),
     teleconsult: createJitsiTeleconsultProvider(),
+    calendar: createFakeCalendarProvider(),
   };
   cache = reais;
   return reais;
