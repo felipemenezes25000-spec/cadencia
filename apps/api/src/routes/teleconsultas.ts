@@ -26,7 +26,7 @@ export async function teleconsultaRoutes(app: FastifyInstance): Promise<void> {
 
     const { rows: appts } = await tx.query<{ id: string; patient_name: string }>(
       `SELECT a.id,
-              COALESCE(p.nome, 'Paciente') AS patient_name
+              COALESCE(p.full_name, 'Paciente') AS patient_name
          FROM sched.appointment a
          LEFT JOIN clin.patient p ON p.id = a.patient_id AND p.tenant_id = a.tenant_id
         WHERE a.id = $1`,
@@ -81,7 +81,7 @@ export async function teleconsultaRoutes(app: FastifyInstance): Promise<void> {
     );
 
     await tx.query(
-      `SELECT audit.log('teleconsulta', 'clin', 'teleconsulta', $1, 'criada',
+      `SELECT audit.log('TELECONSULTA_CREATE', 'clin', 'teleconsulta', $1, 'sucesso',
                          jsonb_build_object('room_id', $2::text, 'room_provider', 'jitsi'::text), $3)`,
       [id, result.value.roomId, ctx.actor.clinicId],
     );
@@ -160,7 +160,7 @@ export async function teleconsultaRoutes(app: FastifyInstance): Promise<void> {
     );
 
     await tx.query(
-      `SELECT audit.log('teleconsulta', 'clin', 'teleconsulta', $1, 'encerrada',
+      `SELECT audit.log('TELECONSULTA_END', 'clin', 'teleconsulta', $1, 'sucesso',
                          jsonb_build_object('room_id', ''::text, 'room_provider', 'jitsi'::text), $2)`,
       [id, ctx.actor.clinicId],
     );

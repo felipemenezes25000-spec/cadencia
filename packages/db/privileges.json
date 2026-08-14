@@ -1,4 +1,14 @@
 {
+  "app.calendar_sync": {
+    "table": {
+      "app_rw": [
+        "DELETE",
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "app.clinic": {
     "table": {
       "app_rw": [
@@ -628,6 +638,15 @@
     }
   },
   "clin.signature_pending": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "clin.teleconsulta": {
     "table": {
       "app_rw": [
         "INSERT",

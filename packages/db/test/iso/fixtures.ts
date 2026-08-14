@@ -342,6 +342,12 @@ export const LOTE_SADT_B = '01930000-0000-7000-8000-000000001072';
 export const NOTIFICATION_B = '01930000-0000-7000-8000-000000001081';
 export const CHANNEL_CONFIG_B = '01930000-0000-7000-8000-000000001082';
 
+/** Teleconsulta e calendar_sync (migrations 0178/0179): uma linha por tenant. */
+export const TELECONSULTA_A = '01930000-0000-7000-8000-000000001091';
+export const TELECONSULTA_B = '01930000-0000-7000-8000-000000001092';
+export const CALENDAR_SYNC_A = '01930000-0000-7000-8000-000000001093';
+export const CALENDAR_SYNC_B = '01930000-0000-7000-8000-000000001094';
+
 /** CPF válido (dígitos verificadores corretos) usado nos DOIS tenants de propósito. */
 export const CPF_VALIDO = '52998224725';
 

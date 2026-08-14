@@ -1528,4 +1528,29 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
        ($1, $2, 'recepcao', 'patient.read', false)`,
     [F.TENANT_B, F.CLINIC_B_RIO_BRANCO],
   );
+
+  // clin.teleconsulta nasceu na migration 0178. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B, senao o teste meta reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO clin.teleconsulta
+       (tenant_id, id, clinic_id, appointment_id, provider, room_id, room_url) VALUES
+       ($1, $3, $5, $7,  'jitsi', 'seed-room-a', 'https://meet.fake/seed-a'),
+       ($2, $4, $6, $8, 'jitsi', 'seed-room-b', 'https://meet.fake/seed-b')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.TELECONSULTA_A, F.TELECONSULTA_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.SCHED_APPOINTMENT_A, F.SCHED_APPOINTMENT_B],
+  );
+
+  // app.calendar_sync nasceu na migration 0179. Como toda tabela multi-tenant,
+  // precisa de linha do tenant B, senao o teste meta reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO app.calendar_sync
+       (tenant_id, id, user_id, provider) VALUES
+       ($1, $3, $5, 'google'),
+       ($2, $4, $6, 'google')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.CALENDAR_SYNC_A, F.CALENDAR_SYNC_B,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
 }
