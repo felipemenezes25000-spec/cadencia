@@ -348,6 +348,12 @@ export const TELECONSULTA_B = '01930000-0000-7000-8000-000000001092';
 export const CALENDAR_SYNC_A = '01930000-0000-7000-8000-000000001093';
 export const CALENDAR_SYNC_B = '01930000-0000-7000-8000-000000001094';
 
+/** Consentimento e solicitação LGPD (migration 0181): uma linha por tenant. */
+export const LGPD_CONSENT_A = '01930000-0000-7000-8000-000000001095';
+export const LGPD_CONSENT_B = '01930000-0000-7000-8000-000000001096';
+export const LGPD_REQUEST_A = '01930000-0000-7000-8000-000000001097';
+export const LGPD_REQUEST_B = '01930000-0000-7000-8000-000000001098';
+
 /** CPF válido (dígitos verificadores corretos) usado nos DOIS tenants de propósito. */
 export const CPF_VALIDO = '52998224725';
 

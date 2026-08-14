@@ -25,6 +25,30 @@ export function oklchParaSrgb(l: number, c: number, hGraus: number): Srgb {
   return { r: gama(rLin), g: gama(gLin), b: gama(bLin) };
 }
 
+/** `#rrggbb` ou `#rgb` para sRGB 0..1. Lança se o formato não bater. */
+export function hexParaSrgb(hex: string): Srgb {
+  const h = hex.trim().replace(/^#/, '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    throw new Error(`hex invalido: ${hex}`);
+  }
+  const n = parseInt(full, 16);
+  return {
+    r: ((n >> 16) & 0xff) / 255,
+    g: ((n >> 8) & 0xff) / 255,
+    b: (n & 0xff) / 255,
+  };
+}
+
+/** Razão de contraste entre duas cores hex, arredondada a 2 casas. */
+export function contrasteHex(a: string, b: string): number {
+  const razao = razaoDeContraste(
+    luminanciaRelativa(hexParaSrgb(a)),
+    luminanciaRelativa(hexParaSrgb(b)),
+  );
+  return Math.round(razao * 100) / 100;
+}
+
 export function luminanciaRelativa(c: Srgb): number {
   const canal = (v: number): number =>
     v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);

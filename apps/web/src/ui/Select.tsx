@@ -53,7 +53,8 @@ const triggerFocus =
 const triggerError =
   'border-danger focus:border-danger focus:ring-danger';
 
-const triggerNormal = 'border-line';
+/* Ver Campo.tsx: contorno de controle carrega affordance, exige 3:1. */
+const triggerNormal = 'border-line-field';
 
 function SelectItem({ value, label, disabled = false }: SelectOption) {
   return (

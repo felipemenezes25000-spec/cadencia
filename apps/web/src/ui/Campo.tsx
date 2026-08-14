@@ -35,7 +35,9 @@ const wrapperBase = [
 
 const wrapperFocus = 'focus-within:border-accent focus-within:bg-surface focus-within:ring-4 focus-within:ring-accent/10 focus-within:shadow-elev-1';
 const wrapperError = 'border-danger focus-within:border-danger focus-within:ring-danger/12';
-const wrapperNormal = 'border-line';
+/* Campo usa --line-field, não --line: o contorno é o que diz "aqui se digita",
+   então precisa dos 3:1 do WCAG 1.4.11. Separador decorativo segue leve. */
+const wrapperNormal = 'border-line-field';
 const inputBase = 'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(

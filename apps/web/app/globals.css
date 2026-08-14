@@ -17,6 +17,10 @@
   --color-border: var(--border);
   --color-line: var(--border);
   --color-line-strong: var(--border-strong);
+  /* Contorno de controle de formulário. Separado de --line porque WCAG 1.4.11
+     exige 3:1 para o que comunica affordance, e um separador decorativo nesse
+     peso deixaria a interface com cara de wireframe. */
+  --color-line-field: var(--border-field);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -93,6 +97,9 @@
   --surface-raised: #ffffff;
   --border: #e0e6e8;
   --border-strong: #c7d1d5;
+  /* Redefinido em light-blue.css. Fica aqui para o token nunca resolver vazio
+     se alguém carregar globals.css sozinho. */
+  --border-field: #8f9ea4;
 
   --text-primary: #17313b;
   --text-secondary: #5b707a;

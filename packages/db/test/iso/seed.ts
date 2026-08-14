@@ -1553,4 +1553,29 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.CALENDAR_SYNC_A, F.CALENDAR_SYNC_B,
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
+
+  // app.lgpd_consent e app.lgpd_data_request nasceram na migration 0181. Como
+  // toda tabela multi-tenant, precisam de linha do tenant B, senao o teste meta
+  // reprova e o T1 passaria a toa.
+  await admin.query(
+    `INSERT INTO app.lgpd_consent
+       (tenant_id, id, patient_id, purpose, granted, granted_at, collected_by) VALUES
+       ($1, $3, $5, 'marketing', true,  now(), $7),
+       ($2, $4, $6, 'marketing', false, NULL,  $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LGPD_CONSENT_A, F.LGPD_CONSENT_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.lgpd_data_request
+       (tenant_id, id, patient_id, request_type, status, requested_by, justification) VALUES
+       ($1, $3, $5, 'portabilidade', 'pendente',     $7, 'seed A'),
+       ($2, $4, $6, 'acesso',        'em_andamento', $8, 'seed B')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.LGPD_REQUEST_A, F.LGPD_REQUEST_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
 }
