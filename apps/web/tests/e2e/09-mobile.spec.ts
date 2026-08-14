@@ -28,6 +28,19 @@ function apenasMobile(nomeDoProjeto: string): boolean {
   return nomeDoProjeto.startsWith('mobile');
 }
 
+/**
+ * Rota autenticada sem sessão cai em /entrar pelo CLIENTE — o HTML do SSR vem
+ * certo e só depois o redirect roda. Sem esta checagem o teste mede a tela de
+ * login dez vezes e passa dez vezes, o que é pior do que não existir: dá o
+ * sinal de coberto sem cobrir nada.
+ *
+ * Pula alto, com o motivo escrito, em vez de passar em falso.
+ */
+async function estaNaRota(page: Page, rota: string): Promise<boolean> {
+  await page.waitForLoadState('networkidle').catch(() => { /* segue */ });
+  return new URL(page.url()).pathname === rota;
+}
+
 async function larguraDeRolagem(page: Page) {
   return page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
@@ -48,6 +61,10 @@ test.describe('mobile', () => {
     test(`${rota} não rola horizontalmente`, async ({ page }, info) => {
       test.skip(!apenasMobile(info.project.name), 'só nos projetos de telefone');
       await page.goto(rota);
+      test.skip(
+        !(await estaNaRota(page, rota)),
+        `${rota} exige sessão — sobe a API e semeia o banco para esta rota valer`,
+      );
       const r = await larguraDeRolagem(page);
       expect(
         r.scroll,
@@ -106,8 +123,10 @@ test.describe('mobile', () => {
   test('a dock inferior não cobre o fim do conteúdo', async ({ page }, info) => {
     test.skip(!apenasMobile(info.project.name), 'só nos projetos de telefone');
     await page.goto('/hoje');
-    const dock = page.getByRole('navigation', { name: /móvel/i });
-    if (await dock.count() === 0) test.skip(true, 'rota sem dock');
+    test.skip(
+      !(await estaNaRota(page, '/hoje')),
+      '/hoje exige sessão — sem ela cai em /entrar, que não tem dock',
+    );
 
     const folga = await page.evaluate(() => {
       const nav = document.querySelector('nav[aria-label*="óvel"]');
