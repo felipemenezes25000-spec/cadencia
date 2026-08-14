@@ -102,7 +102,7 @@ export function createOpenAiTranscriptionProvider(
 
     async transcrever(_ctx, i): Promise<ProviderResult<TranscricaoBruta>> {
       const form = new FormData();
-      form.append('file', new Blob([i.audio as BlobPart], { type: i.contentType }),
+      form.append('file', new Blob([new Uint8Array(i.audio) as unknown as ArrayBuffer], { type: i.contentType }),
         'consulta.webm');
       form.append('model', modeloAudio);
       form.append('response_format', 'json');
