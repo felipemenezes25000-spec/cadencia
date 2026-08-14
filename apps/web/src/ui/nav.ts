@@ -166,6 +166,11 @@ export const NAVEGACAO_SHELL: readonly {
     itens: [
       { id: 'financeiro', rotulo: 'Financeiro', href: '/financeiro', icone: Wallet, prefixoAtivo: '/financeiro' },
       { id: 'indicadores', rotulo: 'Indicadores', href: '/desempenho', icone: ChartBar, prefixoAtivo: '/desempenho' },
+      /* `/explorar` existe, consulta `/v1/reports/query` de verdade e estava
+         fora do shell: so aparecia na busca global (⌘K), porque `ITENS_NAV` —
+         que a lista — alimenta o indice da paleta, nao a Sidebar. Quem nao
+         soubesse que a tela existe nao tinha como descobrir. */
+      { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar', icone: Table, prefixoAtivo: '/explorar' },
     ],
   },
   {
