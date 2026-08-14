@@ -246,6 +246,47 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
     );
   }
 
+  if (campo.kind === 'multipla_escolha' && campo.options !== null) {
+    /* Cada marcação vira UMA linha de encounter_field_value com ordinal
+       próprio, e promove para clin.encounter_finding — é isso que torna a
+       comorbidade consultável. Guardado como lista separada por `|`, porque o
+       contrato desta tela é string; quem finaliza explode em linhas.
+       Uma caixa de texto livre aqui deixaria a clínica sem conseguir listar os
+       próprios diabéticos. */
+    const marcados = valor === '' ? [] : valor.split('|');
+    return (
+      <fieldset className="grid gap-1.5">
+        <legend className="text-sm font-medium text-text">{campo.label}</legend>
+        <div className="grid gap-1 sm:grid-cols-2">
+          {campo.options.map((o) => {
+            const id = `${campo.fieldId}:${o}`;
+            const marcado = marcados.includes(o);
+            return (
+              <label key={o} htmlFor={id}
+                className="flex items-center gap-2 rounded-[var(--r-sm)] px-1 py-1 text-sm text-text max-md:min-h-11">
+                <input
+                  id={id}
+                  type="checkbox"
+                  checked={marcado}
+                  onChange={(e) => {
+                    /* Preserva a ordem declarada no catálogo em vez da ordem de
+                       clique: o prontuário fica estável entre versões. */
+                    const proximo = e.target.checked
+                      ? campo.options!.filter((x) => x === o || marcados.includes(x))
+                      : marcados.filter((x) => x !== o);
+                    aoMudar(campo.fieldId, proximo.join('|'));
+                  }}
+                  className="accent-[var(--accent)]"
+                />
+                {o}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+    );
+  }
+
   if (campo.kind === 'odontograma') {
     return (
       <Odontograma

@@ -80,6 +80,13 @@ export default defineConfig({
 
   /* ── Acessibilidade ───────────────────────────────────────────── */
   use: {
+    /* O Playwright só lê `baseURL` DENTRO de `use`. Estava declarado no nível
+       raiz do defineConfig, onde é ignorado — então todo `page.goto('/rota')`
+       falhava com "Cannot navigate to invalid URL" e a suíte e2e inteira
+       nunca rodou com caminho relativo. A constante no topo do arquivo
+       continua sendo a fonte; só o lugar estava errado. */
+    baseURL: BASE_URL,
+
     /* Cabeçalhos customizados para testes */
     extraHTTPHeaders: {
       'X-Test-Environment': 'true',

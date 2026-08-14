@@ -33,6 +33,12 @@ const SECOES: SecaoDaFicha[] = [
         unit: null, options: null, refSource: null, observationCode: null, componentes: [],
       },
       {
+        fieldId: 'f-comorb', code: 'comorbidades', label: 'Comorbidades',
+        kind: 'multipla_escolha', generation: 1, required: false,
+        unit: null, options: ['Diabetes', 'Hipertensão', 'Asma'],
+        refSource: null, observationCode: null, componentes: [],
+      },
+      {
         fieldId: 'f-exotico', code: 'oculos', label: 'Prescrição de óculos',
         kind: 'oculos', generation: 1, required: false,
         unit: null, options: null, refSource: null, observationCode: null, componentes: [],
@@ -90,6 +96,40 @@ describe('FichaClinica', () => {
     // Sumir com o campo faria a clínica achar que configurou algo que não existe
     // e o dado nunca ser coletado, sem ninguém perceber.
     expect(screen.getByText(/oculos.*ainda não|não suportado/i)).toBeInTheDocument();
+  });
+
+  it('múltipla escolha vira caixas marcáveis, uma por opção', () => {
+    montar();
+    for (const o of ['Diabetes', 'Hipertensão', 'Asma']) {
+      expect(screen.getByRole('checkbox', { name: o })).toBeInTheDocument();
+    }
+  });
+
+  it('marcar duas comorbidades avisa o pai com as duas', () => {
+    const { aoMudar } = montar();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Diabetes' }));
+    expect(aoMudar).toHaveBeenLastCalledWith('f-comorb', 'Diabetes');
+  });
+
+  it('desmarcar remove só aquela opção', () => {
+    const aoMudar = vi.fn();
+    render(
+      <FichaClinica secoes={SECOES} valores={{ 'f-comorb': 'Diabetes|Asma' }}
+        aoMudar={aoMudar} buscarCodigo={vi.fn()} />,
+    );
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Diabetes' })[0]!);
+    expect(aoMudar).toHaveBeenLastCalledWith('f-comorb', 'Asma');
+  });
+
+  it('mantém a ordem do catálogo, não a ordem de clique', () => {
+    // Prontuário estável entre versões: "Diabetes|Asma" e não "Asma|Diabetes".
+    const aoMudar = vi.fn();
+    render(
+      <FichaClinica secoes={SECOES} valores={{ 'f-comorb': 'Asma' }}
+        aoMudar={aoMudar} buscarCodigo={vi.fn()} />,
+    );
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Diabetes' })[0]!);
+    expect(aoMudar).toHaveBeenLastCalledWith('f-comorb', 'Diabetes|Asma');
   });
 
   it('campo de odontograma renderiza a arcada, não o aviso de não suportado', () => {

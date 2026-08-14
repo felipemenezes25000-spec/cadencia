@@ -300,7 +300,7 @@ function FormContent({
             <button
               type="button"
               onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute bottom-3 right-3 grid size-8 place-items-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              className="absolute bottom-3 right-3 grid size-8 place-items-center max-md:size-11 rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {mostrarSenha ? <EyeSlash size={18} /> : <Eye size={18} />}

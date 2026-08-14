@@ -34,3 +34,10 @@ export {
   type PostEncounterOutboxEntry,
   type NpsOutboxEntry,
 } from './automations/post-encounter';
+
+export {
+  handleBirthday, handleInactive, handleNoShow, handleOverdue, handleRecall,
+  type BirthdayPayload, type EventoDeRetencao, type InactivePayload,
+  type NoShowPayload, type OverduePayload, type RecallPayload,
+  type RetencaoOutboxEntry,
+} from './automations/retencao';
