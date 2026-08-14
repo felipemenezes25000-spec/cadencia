@@ -1,11 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PageHeader } from "../ui/PageHeader";
 import { NavegacaoDeRotas } from "../ui/NavegacaoDeRotas";
-import { Plus } from "@phosphor-icons/react";
 
 /* ── Tipos exportados ──────────────────────────────────────────────── */
 
@@ -79,15 +77,13 @@ export function FinanceiroLayout({
         titulo="Financeiro"
         subtitulo="Gestão financeira da unidade"
         semBreadcrumb
-        acoes={(
-          <Link
-            href="/financeiro/recebimentos?novo=1"
-            className="cadencia-button inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-accent bg-accent px-3.5 text-sm font-semibold text-accent-on shadow-[0_5px_14px_rgb(8_119_131_/_0.18)] transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-          >
-            <Plus size={16} aria-hidden />
-            Novo recebimento
-          </Link>
-        )}
+        /* Havia aqui um botão "Novo recebimento" apontando para
+           `/financeiro/recebimentos?novo=1`. Ninguém lê `novo` nessa tela e não
+           existe `POST` de recebível na API — recebível nasce como efeito da
+           cobrança de um atendimento, não de um cadastro avulso. O botão
+           navegava para a lista e não abria nada: o usuário clicava e concluía,
+           com razão, que o financeiro estava quebrado. Enquanto o fluxo de
+           lançamento avulso não existir de ponta a ponta, não há botão. */
       />
 
       <NavegacaoDeRotas
