@@ -17,9 +17,9 @@ export function createJitsiTeleconsultProvider(): TeleconsultProvider {
       return { up: true, latencyMs: 0, checkedAt: agora() };
     },
 
-    async createRoom(_ctx, input) {
+    async createRoom(ctx, _input) {
       const short = randomUUID().slice(0, 8);
-      const roomId = `cadencia-${input.appointmentId.slice(0, 8)}-${short}`;
+      const roomId = `cadencia-${ctx.tenantId.slice(0, 8)}-${short}`;
       const roomUrl = `https://meet.jit.si/${roomId}`;
       return success({ roomId, roomUrl }, roomId);
     },

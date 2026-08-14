@@ -27,7 +27,7 @@ export async function teleconsultaRoutes(app: FastifyInstance): Promise<void> {
     const { rows: appts } = await tx.query<{ id: string; patient_name: string }>(
       `SELECT a.id,
               COALESCE(p.nome, 'Paciente') AS patient_name
-         FROM clin.appointment a
+         FROM sched.appointment a
          LEFT JOIN clin.patient p ON p.id = a.patient_id AND p.tenant_id = a.tenant_id
         WHERE a.id = $1`,
       [appointmentId],
