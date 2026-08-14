@@ -144,7 +144,7 @@ export function Financeiro(p: FinanceiroProps) {
       {/* Caixa do dia */}
       {caixa !== null ? (
         <section aria-label="Caixa do dia"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+          style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
                    background: 'var(--surface)', padding: 'var(--s-6)' }}>
           <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
                        margin: `0 0 var(--s-4)` }}>
@@ -172,7 +172,7 @@ export function Financeiro(p: FinanceiroProps) {
       {/* Receitas do mês */}
       {receitas !== null ? (
         <section aria-label="Receitas do mês"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+          style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
                    background: 'var(--surface)', padding: 'var(--s-6)' }}>
           <h2 style={{ fontSize: 'var(--fs-15)', fontWeight: 'var(--fw-semibold)',
                        margin: `0 0 var(--s-4)` }}>
@@ -207,7 +207,7 @@ export function Financeiro(p: FinanceiroProps) {
       {/* A receber */}
       {aReceber !== null ? (
         <section aria-label="A receber"
-          style={{ border: 'var(--border)', borderRadius: 'var(--r-md)',
+          style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
                    background: 'var(--surface)', padding: 'var(--s-6)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between',
                         alignItems: 'baseline', marginBottom: 'var(--s-4)' }}>

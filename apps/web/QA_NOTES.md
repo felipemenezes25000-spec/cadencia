@@ -25,5 +25,6 @@ Nenhuma dependência foi removida, substituída ou falsificada para produzir um 
 3. `pnpm --filter @cadencia/web build`.
 4. Smoke visual em 390, 768, 1024, 1440 e 1920 px.
 5. Smoke de teclado: `Tab`, `Shift+Tab`, `Esc`, `Enter`, `Ctrl/⌘ K`, `Alt+1..n`.
-6. Verificação de tema escuro e `prefers-reduced-motion`.
+6. Verificação de `prefers-reduced-motion`. (Não há tema escuro — ver
+   `DESIGN_SYSTEM.md`; `contrast.test.ts` falha se um for reintroduzido.)
 7. Teste de conteúdo extremo: nomes > 80 caracteres, tabelas largas, listas vazias, erros de API e modo offline.

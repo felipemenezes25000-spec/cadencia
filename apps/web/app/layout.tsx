@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 import './globals.css';
 import './premium.css';
 import './light-blue.css';
@@ -7,6 +8,31 @@ import { Providers } from './providers';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';
 import { AppShell } from '../src/components/shell/AppShell';
+
+/**
+ * Inter, versao variavel, servida do proprio dominio.
+ *
+ * O CSS declarava `Inter` no stack desde sempre, mas nada carregava o arquivo:
+ * quem nao tivesse a fonte instalada localmente via Segoe UI. O design inteiro
+ * estava sendo julgado numa tipografia que nao e a escolhida.
+ *
+ * E `local` em vez de `next/font/google` de proposito:
+ *   - o build nao depende de rede (o de `google` baixa em build time e falha
+ *     em runner sem saida para fonts.gstatic.com);
+ *   - nenhum request sai para CDN de terceiro em producao. Google Fonts entrega
+ *     a fonte a partir do IP do paciente, o que e transferencia de dado pessoal
+ *     a terceiro sem base legal — num produto que faz LGPD isso nao passa.
+ *
+ * Arquivo: subset latin (U+0000-00FF cobre todo o portugues), eixo de peso
+ * 400-700 num unico woff2 de 48KB. Inter e SIL Open Font License 1.1.
+ */
+const inter = localFont({
+  src: './fonts/inter-latin-var.woff2',
+  weight: '400 700',
+  style: 'normal',
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <body>
         {/* Link de acessibilidade: pular para conteudo principal */}
         <a

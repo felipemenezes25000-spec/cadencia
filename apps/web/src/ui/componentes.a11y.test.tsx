@@ -14,6 +14,7 @@ import { ToastProvider } from './ToastProvider';
 import { ChipDeStatus } from './ChipDeStatus';
 import { Avatar } from './Avatar';
 import { Skeleton } from './Skeleton';
+import { Modal } from './Modal';
 
 /* ── Helper ──────────────────────────────────────────────────────── */
 
@@ -155,6 +156,80 @@ describe('Avatar — acessibilidade', () => {
   it('avatar com nome mostra iniciais', async () => {
     const { container } = render(<Avatar nome="Maria Silva" />);
     await expectAxeClean(container, 'Avatar');
+  });
+});
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+
+describe('Modal — acessibilidade', () => {
+  it('expõe role=dialog com nome acessível vindo do título', () => {
+    const { getByRole } = render(
+      <Modal aberto titulo="Convidar usuário" aoFechar={() => {}}>
+        <p>corpo</p>
+      </Modal>,
+    );
+    expect(getByRole('dialog', { name: 'Convidar usuário' })).toBeInTheDocument();
+  });
+
+  it('sem descrição não deixa aria-describedby apontando para o vazio', () => {
+    const { getByRole } = render(
+      <Modal aberto titulo="Sem descrição" aoFechar={() => {}}>
+        <p>corpo</p>
+      </Modal>,
+    );
+    /* Radix gera um id de descrição mesmo quando não há <Description>. Se a prop
+       vazasse, o leitor de tela procuraria um elemento inexistente. */
+    expect(getByRole('dialog')).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('com descrição, o aria-describedby aponta para um elemento que existe', () => {
+    const { getByRole } = render(
+      <Modal aberto titulo="Criar unidade" descricao="Nasce no tenant atual." aoFechar={() => {}}>
+        <p>corpo</p>
+      </Modal>,
+    );
+    const id = getByRole('dialog').getAttribute('aria-describedby');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id as string)).toHaveTextContent('Nasce no tenant atual.');
+  });
+
+  it('marca o resto da página como inerte — a promessa que os modais à mão quebravam', () => {
+    const { queryByRole, getByRole } = render(
+      <div>
+        <button type="button">fora do modal</button>
+        <Modal aberto titulo="Preso" aoFechar={() => {}}>
+          <button type="button">dentro</button>
+        </Modal>
+      </div>,
+    );
+
+    /* O botão de trás continua no DOM... */
+    expect(getByRole('button', { name: 'fora do modal', hidden: true })).toBeInTheDocument();
+    /* ...mas sumiu da árvore de acessibilidade, que é o que `aria-modal`
+       promete. Os modais escritos à mão declaravam a promessa sem cumpri-la:
+       o leitor de tela seguia enxergando a página inteira e o Tab passeava
+       pelo conteúdo de trás. */
+    expect(queryByRole('button', { name: 'fora do modal' })).toBeNull();
+    /* O de dentro segue alcançável. */
+    expect(getByRole('button', { name: 'dentro' })).toBeInTheDocument();
+  });
+
+  it('modal fechado não renderiza nada', () => {
+    const { queryByRole } = render(
+      <Modal aberto={false} titulo="Oculto" aoFechar={() => {}}>
+        <p>corpo</p>
+      </Modal>,
+    );
+    expect(queryByRole('dialog')).toBeNull();
+  });
+
+  it('não tem violações axe', async () => {
+    const { baseElement } = render(
+      <Modal aberto titulo="Auditado" descricao="Descrição." aoFechar={() => {}}>
+        <p>corpo</p>
+      </Modal>,
+    );
+    await expectAxeClean(baseElement as HTMLElement, 'Modal');
   });
 });
 

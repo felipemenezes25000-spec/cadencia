@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { X } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
+import { Modal } from '../ui/Modal';
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -100,21 +100,31 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
     }
   }
 
-  if (!aberto) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-text/25"
-      role="dialog" aria-modal="true" aria-label="Convidar usuario">
-      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Convidar usuário</h2>
-          <button type="button" onClick={() => { resetar(); aoFechar(); }}
-            aria-label="Fechar" className="text-text-muted hover:text-text">
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
+    <Modal
+      aberto={aberto}
+      titulo="Convidar usuário"
+      descricao="A pessoa recebe acesso à unidade atual com o papel escolhido."
+      ocupado={enviando}
+      aoFechar={() => { resetar(); aoFechar(); }}
+      rodape={
+        <>
+          <Botao type="button" variante="secundario" tamanho="md"
+            disabled={enviando}
+            onClick={() => { resetar(); aoFechar(); }}>
+            Cancelar
+          </Botao>
+          {/* `form` liga o submit ao formulário que ficou no corpo rolável —
+              sem isso a ação principal sumiria ao rolar um convite de
+              profissional, que tem quatro campos a mais. */}
+          <Botao type="submit" form="form-convidar-usuario" variante="primario" tamanho="md"
+            disabled={!valida} carregando={enviando}>
+            Convidar
+          </Botao>
+        </>
+      }
+    >
+        <form id="form-convidar-usuario" onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
           <label className="grid gap-1">
             <span className="text-xs text-text-muted">Email</span>
             <input type="email" required
@@ -190,20 +200,7 @@ export function ConvidarUsuario({ aberto, aoFechar, aoConvidar }: ConvidarUsuari
           )}
 
           {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <Botao type="submit" variante="primario" tamanho="md"
-              disabled={!valida} carregando={enviando}>
-              Convidar
-            </Botao>
-            <Botao type="button" variante="secundario" tamanho="md"
-              disabled={enviando}
-              onClick={() => { resetar(); aoFechar(); }}>
-              Cancelar
-            </Botao>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

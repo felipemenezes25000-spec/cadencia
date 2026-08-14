@@ -154,7 +154,7 @@ export function Explorar(p: ExplorarProps) {
           </label>
           <input id="data-inicio" type="date" value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
-            style={{ padding: 'var(--s-2) var(--s-3)', border: 'var(--border)',
+            style={{ padding: 'var(--s-2) var(--s-3)', border: '1px solid var(--border)',
                      borderRadius: 'var(--r-md)', fontSize: 'var(--fs-14)',
                      background: 'var(--surface)', color: 'var(--text)' }} />
         </div>
@@ -166,7 +166,7 @@ export function Explorar(p: ExplorarProps) {
           </label>
           <input id="data-fim" type="date" value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
-            style={{ padding: 'var(--s-2) var(--s-3)', border: 'var(--border)',
+            style={{ padding: 'var(--s-2) var(--s-3)', border: '1px solid var(--border)',
                      borderRadius: 'var(--r-md)', fontSize: 'var(--fs-14)',
                      background: 'var(--surface)', color: 'var(--text)' }} />
         </div>
@@ -275,7 +275,7 @@ export function Explorar(p: ExplorarProps) {
                 </label>
                 <input id="nome-visao" type="text" value={nomeVisao}
                   onChange={(e) => setNomeVisao(e.target.value)}
-                  style={{ padding: 'var(--s-2) var(--s-3)', border: 'var(--border)',
+                  style={{ padding: 'var(--s-2) var(--s-3)', border: '1px solid var(--border)',
                            borderRadius: 'var(--r-md)', fontSize: 'var(--fs-14)',
                            background: 'var(--surface)', color: 'var(--text)',
                            minWidth: 200 }} />

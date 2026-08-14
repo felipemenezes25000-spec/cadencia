@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { X } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
+import { Modal } from '../ui/Modal';
 
 const FUSOS = [
   ['America/Sao_Paulo', 'Brasília (UTC-3)'],
@@ -69,21 +69,28 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
     }
   }
 
-  if (!aberto) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-text/25"
-      role="dialog" aria-modal="true" aria-label="Criar unidade">
-      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Criar unidade</h2>
-          <button type="button" onClick={() => { resetar(); aoFechar(); }}
-            aria-label="Fechar" className="text-text-muted hover:text-text">
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
+    <Modal
+      aberto={aberto}
+      titulo="Criar unidade"
+      descricao="A unidade nasce vinculada ao tenant atual."
+      ocupado={enviando}
+      aoFechar={() => { resetar(); aoFechar(); }}
+      rodape={
+        <>
+          <Botao type="button" variante="secundario" tamanho="md"
+            disabled={enviando}
+            onClick={() => { resetar(); aoFechar(); }}>
+            Cancelar
+          </Botao>
+          <Botao type="submit" form="form-criar-clinica" variante="primario" tamanho="md"
+            disabled={!valida} carregando={enviando}>
+            Criar
+          </Botao>
+        </>
+      }
+    >
+        <form id="form-criar-clinica" onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
           <label className="grid gap-1">
             <span className="text-xs text-text-muted">Nome da unidade</span>
             <input type="text" required minLength={2}
@@ -116,20 +123,7 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
           </label>
 
           {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <Botao type="submit" variante="primario" tamanho="md"
-              disabled={!valida} carregando={enviando}>
-              Criar
-            </Botao>
-            <Botao type="button" variante="secundario" tamanho="md"
-              disabled={enviando}
-              onClick={() => { resetar(); aoFechar(); }}>
-              Cancelar
-            </Botao>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

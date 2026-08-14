@@ -13,6 +13,16 @@ interface SkeletonProps {
   readonly lines?: number;
   /** Label de acessibilidade customizado */
   readonly ariaLabel?: string;
+  /**
+   * Não anuncia nada: sem `role="status"`, sem `aria-label`, marcado como
+   * `aria-hidden`.
+   *
+   * Cada Skeleton é uma região live por padrão. Numa tela de carregamento com
+   * uma dúzia deles, o leitor de tela repete "Carregando..." uma dúzia de
+   * vezes. Quem compõe várias barras deve declarar UMA região no contêiner e
+   * passar `decorativo` nas barras — é o que SkeletonDePagina faz.
+   */
+  readonly decorativo?: boolean;
   /** Classes adicionais */
   readonly className?: string;
 }
@@ -56,21 +66,22 @@ export function Skeleton({
   height,
   lines = 1,
   ariaLabel = "Carregando...",
+  decorativo = false,
   className,
 }: SkeletonProps) {
   // Estilos dinâmicos apenas quando o usuário fornece width/height custom
   const dynamicStyle: React.CSSProperties | undefined =
     width || height ? { ...(width ? { width } : {}), ...(height ? { height } : {}) } : undefined;
 
+  /* Ou anuncia, ou some da árvore — nunca os dois pela metade. */
+  const anuncio = decorativo
+    ? ({ "aria-hidden": true } as const)
+    : ({ role: "status", "aria-busy": true, "aria-label": ariaLabel } as const);
+
   // --- Variante text com múltiplas linhas ---
   if (variant === "text" && lines > 1) {
     return (
-      <div
-        role="status"
-        aria-busy="true"
-        aria-label={ariaLabel}
-        className={cn("flex flex-col gap-2", className)}
-      >
+      <div {...anuncio} className={cn("flex flex-col gap-2", className)}>
         {Array.from({ length: lines }, (_, i) => (
           <ShimmerBar
             key={i}
@@ -85,9 +96,7 @@ export function Skeleton({
   if (variant === "table-row") {
     return (
       <div
-        role="status"
-        aria-busy="true"
-        aria-label={ariaLabel}
+        {...anuncio}
         className={cn("flex w-full items-stretch gap-[2px]", className)}
         style={dynamicStyle}
       >
@@ -110,9 +119,7 @@ export function Skeleton({
   // --- Variantes simples: text (1 linha), avatar, card ---
   return (
     <div
-      role="status"
-      aria-busy="true"
-      aria-label={ariaLabel}
+      {...anuncio}
       className={cn(shimmerClasses, variantClasses[variant], className)}
       style={dynamicStyle}
     />
