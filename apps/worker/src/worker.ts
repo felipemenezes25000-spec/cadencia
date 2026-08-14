@@ -12,6 +12,7 @@ import { materializeDailyRollup } from './jobs/daily-rollup';
 import { scheduleReminders } from './jobs/reminder-scheduler';
 import { selarTrilha, vigiarSelo } from './jobs/audit-seal';
 import { reprojetarGuiaTiss } from './jobs/reprojetar-guia-tiss';
+import { syncCalendars } from './jobs/calendar-sync';
 import {
   createFakeMessagingProvider, createFakePaymentProvider,
   createFakeEmailProvider,
@@ -19,7 +20,7 @@ import {
 import {
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
   FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
-  FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL,
+  FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL, FILA_CALENDAR_SYNC,
 } from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
@@ -192,6 +193,13 @@ export async function startWorker(): Promise<PgBoss> {
     }
   });
 
+  // -- Sincronizacao de calendarios -----------------------------------------------
+  await boss.work(FILA_CALENDAR_SYNC, async () => {
+    const r = await syncCalendars();
+    process.stdout.write(
+      `[worker] calendar-sync: ${r.usersProcessed} usuarios, ${r.eventsSynced} eventos\n`);
+  });
+
   // -- Schedules ----------------------------------------------------------------
   await boss.schedule(FILA_RASCUNHOS, '0 3 * * *');
   await boss.schedule(FILA_OUTBOX, '*/5 * * * * *');       // cada 5 segundos
@@ -205,6 +213,7 @@ export async function startWorker(): Promise<PgBoss> {
   // 4h10: depois do selo da trilha (2h30) e da reconciliação (4h). Expurgo
   // rodando antes do selo deixaria a destruição fora do dia selado.
   await boss.schedule(FILA_EXPURGO, '10 4 * * *');
+  await boss.schedule(FILA_CALENDAR_SYNC, '*/15 * * * *');
 
   return boss;
 }

@@ -55,6 +55,7 @@ import { channelRoutes } from './routes/channels';
 import { drugRoutes } from './routes/drugs';
 import { documentTemplateRoutes } from './routes/documento-templates';
 import { teleconsultaRoutes } from './routes/teleconsultas';
+import { calendarRoutes } from './routes/calendar';
 
 /**
  * Nível de log. Estava `false` fixo, o que significa API muda em produção: um
@@ -179,6 +180,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(drugRoutes);
   await app.register(documentTemplateRoutes);
   await app.register(teleconsultaRoutes);
+  await app.register(calendarRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: {
