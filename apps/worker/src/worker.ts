@@ -13,6 +13,8 @@ import { scheduleReminders } from './jobs/reminder-scheduler';
 import { selarTrilha, vigiarSelo } from './jobs/audit-seal';
 import { reprojetarGuiaTiss } from './jobs/reprojetar-guia-tiss';
 import { syncCalendars } from './jobs/calendar-sync';
+import { expireTrials } from './jobs/trial-expiration';
+import { generateInvoices } from './jobs/invoice-generation';
 import {
   createFakeMessagingProvider, createFakePaymentProvider,
   createFakeEmailProvider,
@@ -21,6 +23,7 @@ import {
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
   FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
   FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL, FILA_CALENDAR_SYNC,
+  FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
 } from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
@@ -200,6 +203,20 @@ export async function startWorker(): Promise<PgBoss> {
       `[worker] calendar-sync: ${r.usersProcessed} usuarios, ${r.eventsSynced} eventos\n`);
   });
 
+  // -- Expiracao de trial -------------------------------------------------------
+  await boss.work(FILA_TRIAL_EXPIRACAO, async () => {
+    const r = await expireTrials();
+    process.stdout.write(
+      `[worker] trial-expiration: ${r.expired} expirados, ${r.skipped} pulados\n`);
+  });
+
+  // -- Geracao de faturas -------------------------------------------------------
+  await boss.work(FILA_FATURA_GERACAO, async () => {
+    const r = await generateInvoices();
+    process.stdout.write(
+      `[worker] invoice-generation: ${r.generated} geradas, ${r.skipped} puladas\n`);
+  });
+
   // -- Schedules ----------------------------------------------------------------
   await boss.schedule(FILA_RASCUNHOS, '0 3 * * *');
   await boss.schedule(FILA_OUTBOX, '*/5 * * * * *');       // cada 5 segundos
@@ -214,6 +231,8 @@ export async function startWorker(): Promise<PgBoss> {
   // rodando antes do selo deixaria a destruição fora do dia selado.
   await boss.schedule(FILA_EXPURGO, '10 4 * * *');
   await boss.schedule(FILA_CALENDAR_SYNC, '*/15 * * * *');
+  await boss.schedule(FILA_TRIAL_EXPIRACAO, '0 6 * * *');
+  await boss.schedule(FILA_FATURA_GERACAO, '0 5 1 * *');
 
   return boss;
 }
