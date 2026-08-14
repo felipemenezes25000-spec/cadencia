@@ -36,7 +36,7 @@ CREATE TYPE app.lgpd_request_status AS ENUM (
 CREATE TABLE app.lgpd_consent (
   id              uuid        NOT NULL DEFAULT gen_random_uuid(),
   tenant_id       uuid        NOT NULL REFERENCES app.tenant(id),
-  patient_id      uuid        NOT NULL REFERENCES clin.patient(id),
+  patient_id      uuid        NOT NULL,
   purpose         app.lgpd_consent_purpose NOT NULL,
   granted         boolean     NOT NULL DEFAULT false,
   granted_at      timestamptz,
@@ -45,7 +45,8 @@ CREATE TABLE app.lgpd_consent (
   ip_address      inet,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  FOREIGN KEY (tenant_id, patient_id) REFERENCES clin.patient(tenant_id, id)
 );
 
 CREATE UNIQUE INDEX lgpd_consent_unique_active
@@ -53,6 +54,7 @@ CREATE UNIQUE INDEX lgpd_consent_unique_active
   WHERE revoked_at IS NULL;
 
 ALTER TABLE app.lgpd_consent ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.lgpd_consent FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY lgpd_consent_tenant ON app.lgpd_consent
   USING (tenant_id = current_setting('app.tenant_id')::uuid);
@@ -62,7 +64,7 @@ GRANT SELECT, INSERT, UPDATE ON app.lgpd_consent TO app_rw;
 CREATE TABLE app.lgpd_data_request (
   id              uuid        NOT NULL DEFAULT gen_random_uuid(),
   tenant_id       uuid        NOT NULL REFERENCES app.tenant(id),
-  patient_id      uuid        NOT NULL REFERENCES clin.patient(id),
+  patient_id      uuid        NOT NULL,
   request_type    app.lgpd_request_type NOT NULL,
   status          app.lgpd_request_status NOT NULL DEFAULT 'pendente',
   requested_by    uuid        NOT NULL REFERENCES id."user"(id),
@@ -72,10 +74,12 @@ CREATE TABLE app.lgpd_data_request (
   created_at      timestamptz NOT NULL DEFAULT now(),
   processed_at    timestamptz,
   expires_at      timestamptz NOT NULL DEFAULT now() + INTERVAL '15 days',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  FOREIGN KEY (tenant_id, patient_id) REFERENCES clin.patient(tenant_id, id)
 );
 
 ALTER TABLE app.lgpd_data_request ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.lgpd_data_request FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY lgpd_data_request_tenant ON app.lgpd_data_request
   USING (tenant_id = current_setting('app.tenant_id')::uuid);

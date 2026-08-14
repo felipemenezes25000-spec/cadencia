@@ -49,6 +49,24 @@
       ]
     }
   },
+  "app.lgpd_consent": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.lgpd_data_request": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "app.membership": {
     "table": {
       "app_rw": [
