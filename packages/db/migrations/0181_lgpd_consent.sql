@@ -82,14 +82,6 @@ CREATE POLICY lgpd_data_request_tenant ON app.lgpd_data_request
 
 GRANT SELECT, INSERT, UPDATE ON app.lgpd_data_request TO app_rw;
 
--- Audit keys for LGPD events
-INSERT INTO audit.event_meta (key, label_pt) VALUES
-  ('LGPD_CONSENT_GRANTED',   'Consentimento LGPD concedido'),
-  ('LGPD_CONSENT_REVOKED',   'Consentimento LGPD revogado'),
-  ('LGPD_DATA_REQUEST',      'Solicitacao de direito LGPD'),
-  ('LGPD_DATA_REQUEST_DONE', 'Solicitacao LGPD concluida')
-ON CONFLICT (key) DO NOTHING;
-
 -- ---------------------------------------------------------------------------
 -- audit.meta_keys_ok: acrescenta patient_id, purpose, request_type, new_status
 -- (chaves gravadas por apps/api/src/routes/lgpd.ts via audit.log).
