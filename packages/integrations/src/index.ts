@@ -55,3 +55,6 @@ export { createFakeEmailProvider, type FakeEmailOptions, type SentEmail } from '
 export { createSmtpEmailProvider, type SmtpEmailConfig } from './adapters/smtp-email';
 export { conviteEquipeEmail, type ConviteEquipeVars } from './email-templates/convite-equipe';
 export { lembreteConsultaEmail, type LembreteConsultaVars } from './email-templates/lembrete-consulta';
+export type { TeleconsultProvider, CreateRoomInput, TeleconsultRoom } from './contracts/teleconsult';
+export { createFakeTeleconsultProvider, type FakeTeleconsultOptions, type CreatedRoom as CreatedTeleconsultRoom } from './fakes/teleconsult-fake';
+export { createJitsiTeleconsultProvider } from './adapters/jitsi-teleconsult';

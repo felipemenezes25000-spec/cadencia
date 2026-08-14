@@ -207,6 +207,11 @@ export const ACTIONS = [
     roles: ['admin_clinico'] },
   { key: 'channel.write', description: 'Configurar canais',
     roles: ['admin_clinico'] },
+  // ── Fase 8 · Teleconsulta ──────────────────────────────────────────────
+  { key: 'teleconsult.read', description: 'Ver teleconsultas',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  { key: 'teleconsult.write', description: 'Criar e encerrar teleconsulta',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   // ── Tenancy / Admin ───────────────────────────────────────────────────
   { key: 'tenant.read', description: 'Ver dados do tenant e clínicas',
     roles: ['admin_clinico', 'diretor_tecnico'] },

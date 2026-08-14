@@ -5,10 +5,11 @@ import {
   createFakePrescriptionProvider, createFakeSignatureProvider,
   createFakeMessagingProvider, createFakePaymentProvider,
   createFakeEmailProvider, createSmtpEmailProvider,
+  createFakeTeleconsultProvider, createJitsiTeleconsultProvider,
   createMemedProvider,
   type PrescriptionProvider, type SignatureProvider,
   type MessagingProvider, type PaymentProvider,
-  type EmailProvider,
+  type EmailProvider, type TeleconsultProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
@@ -18,6 +19,7 @@ export interface Providers {
   readonly payment: PaymentProvider;
   readonly transcription: TranscriptionProvider;
   readonly email: EmailProvider;
+  readonly teleconsult: TeleconsultProvider;
 }
 
 let cache: Providers | null = null;
@@ -106,6 +108,7 @@ export function providers(): Providers {
       payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
       transcription: transcricaoConfigurada(),
       email: emailConfigurado(),
+      teleconsult: createJitsiTeleconsultProvider(),
     };
     cache = soMemed;
     return soMemed;
@@ -119,6 +122,7 @@ export function providers(): Providers {
       payment: createFakePaymentProvider(),
       transcription: createFakeTranscriptionProvider(),
       email: createFakeEmailProvider(),
+      teleconsult: createFakeTeleconsultProvider(),
     };
     cache = comFakes;
     return comFakes;
@@ -156,6 +160,7 @@ export function providers(): Providers {
     payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
     transcription: transcricaoConfigurada(),
     email: emailConfigurado(),
+    teleconsult: createJitsiTeleconsultProvider(),
   };
   cache = reais;
   return reais;

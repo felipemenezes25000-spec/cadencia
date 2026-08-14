@@ -1,5 +1,5 @@
 {
-  "checksum": "8a38d41e68a0962019f82ce9e0ab27f5ce8b5433bd965036c4da6c7dd980a738",
+  "checksum": "03e4aacb66c8c88b237164bd11847bc699eb166711d5c5190ab6a4c203475c19",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -587,6 +587,26 @@
         "admin_clinico",
         "diretor_tecnico",
         "financeiro"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "teleconsult.read",
+      "description": "Ver teleconsultas",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "teleconsult.write",
+      "description": "Criar e encerrar teleconsulta",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional"
       ],
       "requiresMfa": false
     },
