@@ -4,9 +4,11 @@ import {
   type TranscriptionProvider,
   createFakePrescriptionProvider, createFakeSignatureProvider,
   createFakeMessagingProvider, createFakePaymentProvider,
+  createFakeEmailProvider, createSmtpEmailProvider,
   createMemedProvider,
   type PrescriptionProvider, type SignatureProvider,
   type MessagingProvider, type PaymentProvider,
+  type EmailProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
@@ -15,6 +17,7 @@ export interface Providers {
   readonly messaging: MessagingProvider;
   readonly payment: PaymentProvider;
   readonly transcription: TranscriptionProvider;
+  readonly email: EmailProvider;
 }
 
 let cache: Providers | null = null;
@@ -47,6 +50,26 @@ function transcricaoConfigurada(): TranscriptionProvider {
   const chave = process.env['OPENAI_API_KEY'];
   if (chave === undefined || chave === '') return createFakeTranscriptionProvider();
   return createOpenAiTranscriptionProvider({ apiKey: chave });
+}
+
+/**
+ * SMTP quando ha host configurado; fake quando nao ha.
+ *
+ * Mesmo raciocinio da transcricao: email e ASSISTENCIA. A clinica que nao
+ * configurou SMTP continua operando — so nao envia email transacional.
+ * Derrubar o boot porque falta credencial de email trocaria uma notificacao
+ * ausente por um sistema fora do ar.
+ */
+function emailConfigurado(): EmailProvider {
+  const host = process.env['SMTP_HOST'];
+  if (host === undefined || host === '') return createFakeEmailProvider();
+  return createSmtpEmailProvider({
+    host,
+    port: Number(process.env['SMTP_PORT'] ?? '587'),
+    user: exigir('SMTP_USER'),
+    pass: exigir('SMTP_PASS'),
+    from: exigir('SMTP_FROM'),
+  });
 }
 
 export function providers(): Providers {
@@ -82,6 +105,7 @@ export function providers(): Providers {
       messaging: createFakeMessagingProvider({ appSecret: exigir('WHATSAPP_APP_SECRET') }),
       payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
       transcription: transcricaoConfigurada(),
+      email: emailConfigurado(),
     };
     cache = soMemed;
     return soMemed;
@@ -94,6 +118,7 @@ export function providers(): Providers {
       messaging: createFakeMessagingProvider(),
       payment: createFakePaymentProvider(),
       transcription: createFakeTranscriptionProvider(),
+      email: createFakeEmailProvider(),
     };
     cache = comFakes;
     return comFakes;
@@ -130,6 +155,7 @@ export function providers(): Providers {
     messaging: createFakeMessagingProvider({ appSecret: exigir('WHATSAPP_APP_SECRET') }),
     payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
     transcription: transcricaoConfigurada(),
+    email: emailConfigurado(),
   };
   cache = reais;
   return reais;

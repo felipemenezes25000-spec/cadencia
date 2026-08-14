@@ -47,3 +47,6 @@ export type {
 export { createFakeTranscriptionProvider } from './fakes/transcription-fake';
 export { createOpenAiTranscriptionProvider,
   type OpenAiTranscricaoConfig } from './adapters/openai-transcricao';
+export type { EmailProvider, EmailEnvelope } from './contracts/email';
+export { createFakeEmailProvider, type FakeEmailOptions, type SentEmail } from './fakes/email-fake';
+export { createSmtpEmailProvider, type SmtpEmailConfig } from './adapters/smtp-email';
