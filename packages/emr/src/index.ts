@@ -16,3 +16,13 @@ export {
   finalizeEncounter, amendEncounter, verifyVersionHash,
   type AmendInput, type FinalizeFailure, type FinalizeInput, type VersionKind,
 } from './finalize';
+export {
+  CONDICOES_DA_FACE, CONDICOES_DO_DENTE, DENTES_DECIDUOS, DENTES_PERMANENTES,
+  FACES, ODONTOGRAMA_VAZIO,
+  ROTULO_DA_CONDICAO_DA_FACE, ROTULO_DA_CONDICAO_DO_DENTE, ROTULO_DA_FACE,
+  contarMarcados, dentesDaDenticao, ehAnterior, ehDenteValido,
+  escreverOdontograma, lerOdontograma,
+  type CondicaoDaFace, type CondicaoDoDente, type Dente, type DenteDeciduo,
+  type DentePermanente, type Denticao, type EstadoDoDente, type Face,
+  type Odontograma,
+} from './odontograma';

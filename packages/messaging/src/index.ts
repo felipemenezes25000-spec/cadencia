@@ -17,6 +17,7 @@ export {
   handleAppointmentCreated,
   type AppointmentCreatedPayload,
   type AutomationRule,
+  AUTOMATION_TRIGGERS, exigeConsentimentoDeMarketing,
   type AutomationTrigger,
   type ConfirmationOutboxEntry,
 } from './automations/confirmation';

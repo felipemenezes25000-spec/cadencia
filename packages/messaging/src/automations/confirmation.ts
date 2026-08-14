@@ -7,11 +7,48 @@
  * O messaging NÃO importa scheduling — a composição é pelo worker/L3.
  */
 
+/**
+ * Gatilhos de automação. Espelha o CHECK de msg.automation_rule (migration
+ * 0182) — se divergir, a regra é aceita no app e recusada pelo banco.
+ *
+ * `exigeConsentimentoDeMarketing` abaixo diz quais NÃO se apoiam na tutela da
+ * saúde e precisam de consentimento LGPD próprio.
+ */
 export type AutomationTrigger =
   | 'appointment_created'
   | 'appointment_reminder'
   | 'encounter_finalized'
-  | 'nps_due';
+  | 'nps_due'
+  | 'appointment_no_show'
+  | 'patient_birthday'
+  | 'patient_inactive'
+  | 'recall_due'
+  | 'payment_overdue';
+
+export const AUTOMATION_TRIGGERS: readonly AutomationTrigger[] = [
+  'appointment_created',
+  'appointment_reminder',
+  'encounter_finalized',
+  'nps_due',
+  'appointment_no_show',
+  'patient_birthday',
+  'patient_inactive',
+  'recall_due',
+  'payment_overdue',
+];
+
+/**
+ * Aniversário e reativação são relacionamento/marketing: o tratamento não cabe
+ * na base legal de tutela da saúde (LGPD art. 7, VIII) e exige consentimento
+ * do titular com finalidade 'marketing' (app.lgpd_consent).
+ *
+ * Lembrete, confirmação, retorno clínico e cobrança de título vencido são
+ * execução do próprio atendimento ou do contrato — não dependem de consentimento
+ * separado.
+ */
+export function exigeConsentimentoDeMarketing(t: AutomationTrigger): boolean {
+  return t === 'patient_birthday' || t === 'patient_inactive';
+}
 
 export interface AutomationRule {
   readonly id: string;

@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { cn } from '../lib/cn';
+import { Odontograma } from './Odontograma';
 import type { CampoDaFicha, SecaoDaFicha } from '../lib/ficha-tipos';
 
 export type { ComponenteDoCampo, CampoDaFicha, SecaoDaFicha } from '../lib/ficha-tipos';
@@ -242,6 +243,16 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
         />
         {campo.label}
       </label>
+    );
+  }
+
+  if (campo.kind === 'odontograma') {
+    return (
+      <Odontograma
+        rotulo={campo.label}
+        valor={valor}
+        aoMudar={(json) => aoMudar(campo.fieldId, json)}
+      />
     );
   }
 

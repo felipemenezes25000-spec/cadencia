@@ -28,8 +28,13 @@ const SECOES: SecaoDaFicha[] = [
         ],
       },
       {
-        fieldId: 'f-exotico', code: 'odonto', label: 'Odontograma',
+        fieldId: 'f-odonto', code: 'odonto', label: 'Odontograma',
         kind: 'odontograma', generation: 1, required: false,
+        unit: null, options: null, refSource: null, observationCode: null, componentes: [],
+      },
+      {
+        fieldId: 'f-exotico', code: 'oculos', label: 'Prescrição de óculos',
+        kind: 'oculos', generation: 1, required: false,
         unit: null, options: null, refSource: null, observationCode: null, componentes: [],
       },
     ],
@@ -84,7 +89,15 @@ describe('FichaClinica', () => {
     montar();
     // Sumir com o campo faria a clínica achar que configurou algo que não existe
     // e o dado nunca ser coletado, sem ninguém perceber.
-    expect(screen.getByText(/odontograma.*ainda não|não suportado/i)).toBeInTheDocument();
+    expect(screen.getByText(/oculos.*ainda não|não suportado/i)).toBeInTheDocument();
+  });
+
+  it('campo de odontograma renderiza a arcada, não o aviso de não suportado', () => {
+    montar();
+    // Sem odontograma o produto não entra em clínica odontológica. A persistência
+    // e o registro de tipo já existiam; faltava só a tela.
+    expect(screen.getByRole('list', { name: 'Arcada superior' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Arcada inferior' })).toBeInTheDocument();
   });
 
   it('digitar alergia avisa o pai com o fieldId', () => {

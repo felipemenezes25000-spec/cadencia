@@ -129,6 +129,9 @@ importers:
       '@cadencia/authz':
         specifier: workspace:*
         version: link:../../packages/authz
+      '@cadencia/emr':
+        specifier: workspace:*
+        version: link:../../packages/emr
       '@cadencia/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel

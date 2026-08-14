@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@cadencia/authz": "workspace:*",
+    "@cadencia/emr": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "@cadencia/reports": "workspace:*",
     "@cadencia/scheduling": "workspace:*",
