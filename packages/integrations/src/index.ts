@@ -50,3 +50,5 @@ export { createOpenAiTranscriptionProvider,
 export type { EmailProvider, EmailEnvelope } from './contracts/email';
 export { createFakeEmailProvider, type FakeEmailOptions, type SentEmail } from './fakes/email-fake';
 export { createSmtpEmailProvider, type SmtpEmailConfig } from './adapters/smtp-email';
+export { conviteEquipeEmail, type ConviteEquipeVars } from './email-templates/convite-equipe';
+export { lembreteConsultaEmail, type LembreteConsultaVars } from './email-templates/lembrete-consulta';

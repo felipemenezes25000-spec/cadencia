@@ -3,6 +3,7 @@ import { closePools } from '@cadencia/db';
 import { autoFinalizeStaleDrafts } from './jobs/auto-finalize-drafts';
 import { dispatchOutbox } from './jobs/outbox-dispatcher';
 import { sendMessage, type SendMessageInput } from './jobs/send-message';
+import { sendEmail, type SendEmailInput } from './jobs/send-email';
 import { reconcilePayments } from './jobs/payment-reconciliation';
 import { gerarLinkDePagamento, type GerarLinkInput } from './jobs/gerar-link-de-pagamento';
 import { expurgarRetencao } from './jobs/expurgo-retencao';
@@ -13,11 +14,12 @@ import { selarTrilha, vigiarSelo } from './jobs/audit-seal';
 import { reprojetarGuiaTiss } from './jobs/reprojetar-guia-tiss';
 import {
   createFakeMessagingProvider, createFakePaymentProvider,
+  createFakeEmailProvider,
 } from '@cadencia/integrations';
 import {
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
   FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
-  FILA_EXPURGO, FILA_REPROJECAO_TISS,
+  FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL,
 } from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
@@ -38,6 +40,9 @@ export async function startWorker(): Promise<PgBoss> {
     throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
   })();
   const payment = usarFakes ? createFakePaymentProvider() : (() => {
+    throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
+  })();
+  const email = usarFakes ? createFakeEmailProvider() : (() => {
     throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
   })();
 
@@ -119,6 +124,16 @@ export async function startWorker(): Promise<PgBoss> {
       // (dado de referência TUSS carregando, por exemplo). Atendimento sem
       // versão é terminal: não há o que reprojetar.
       if (r.status === 'falhou') throw new Error(r.detalhe);
+    }
+  });
+
+  // -- Envio de email (convites, lembretes) --------------------------------------
+  await boss.work(FILA_EMAIL, async (jobs) => {
+    for (const job of jobs) {
+      const d = job.data as SendEmailInput & { tenantId: string };
+      const r = await sendEmail(d, email);
+      process.stdout.write(`[worker] email: ${d.to} -> ${r.status}\n`);
+      if (r.status === 'provedor_indisponivel') throw new Error('email provider unavailable');
     }
   });
 
