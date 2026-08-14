@@ -1,8 +1,9 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useCallback } from 'react';
 import { useQueryState } from 'nuqs';
 import { Desempenho } from '../../src/telas/desempenho/Desempenho';
+import type { DadosDoPanorama } from '../../src/telas/desempenho/Panorama';
 import type {
   DataFreshness, DrillDownResult, Period, SuggestedAction,
   VariationIndicator, WaterfallFactor,
@@ -16,6 +17,12 @@ interface FatorDaApi {
   delta_cents?: number;
   deltaCents?: number;
 }
+
+/* 30 dias e a janela do painel operacional, e nao o mes do seletor acima de
+   proposito: os indicadores de variacao comparam MES FECHADO contra mes fechado,
+   que e o recorte do contador; o panorama responde "como esta a operacao agora",
+   e no dia 2 do mes um recorte de mes fechado mostraria dois dias de dados. */
+const DIAS_DO_PANORAMA = 30;
 
 function mesAtual(): string {
   return new Date().toISOString().slice(0, 7);
@@ -88,6 +95,13 @@ function DesempenhoInner() {
     return r.factors;
   };
 
+  /* `useCallback` e obrigatorio, nao estilo: o `useEffect` do Panorama depende
+     desta funcao, e uma closure nova a cada render dispararia refetch em laco. */
+  const carregarPanorama = useCallback(
+    () => apiFetch<DadosDoPanorama>(
+      `/v1/painel/graficos?dias=${DIAS_DO_PANORAMA}`, { clinicId, csrfToken }),
+    [clinicId, csrfToken]);
+
   return (
     <Desempenho
       period={periodo}
@@ -134,6 +148,8 @@ function DesempenhoInner() {
 
         return { result, actions };
       }}
+      diasDoPanorama={DIAS_DO_PANORAMA}
+      carregarPanorama={carregarPanorama}
     />
   );
 }

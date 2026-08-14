@@ -13,7 +13,6 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 
 /* ── Mock global de next/navigation ────────────────────────────────── */
 
@@ -231,14 +230,34 @@ describe('Auditoria de acessibilidade', () => {
     expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
   });
 
+  /* Este teste auditava `telas/Desempenho.tsx`, que era uma tela-fantasma: quatro
+     abas contendo uma frase cada, seletor de periodo que nao filtrava nada, zero
+     chamadas de API. Nenhuma rota a renderizava — `app/desempenho/page.tsx`
+     sempre montou `telas/desempenho/Desempenho`. O arquivo foi removido, e a
+     auditoria passa a rodar contra a tela que o usuario realmente ve. */
   it('Desempenho nao tem violacoes de acessibilidade', async () => {
-    const { Desempenho } = await import('../Desempenho');
+    const { Desempenho } = await import('../desempenho/Desempenho');
     const { container } = render(
-      <NuqsTestingAdapter searchParams={{ periodo: 'mes', aba: 'explorar' }}>
-        <Desempenho />
-      </NuqsTestingAdapter>,
+      <Desempenho
+        period={{ current: '2026-08', previous: '2026-07' }}
+        aoMudarPeriodo={() => {}}
+        carregarIndicadores={async () => ({
+          indicators: [
+            { metric: 'receita', deltaAbsolute: 120_00, deltaPercent: 8.4 },
+            { metric: 'ticket_medio', deltaAbsolute: -5_00, deltaPercent: -2.1 },
+            { metric: 'ocupacao', deltaAbsolute: 3, deltaPercent: 5.0 },
+          ],
+          freshness: { source: 'live', refreshedAt: null },
+        })}
+        carregarWaterfall={async () => []}
+        carregarDrillDown={async () => ({
+          result: { dimension: 'profissional', groups: [], totalCount: 0 },
+          actions: [],
+        })}
+      />,
     );
-    expect(screen.getByRole('heading', { name: /Desempenho/ })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 1, name: /Desempenho/ })).toBeVisible());
     expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
   });
 

@@ -16,7 +16,6 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 
 /* ── Mock global de next/navigation ────────────────────────────────── */
 
@@ -366,18 +365,36 @@ describe('Auditoria responsiva', () => {
     });
   });
 
+  /* Auditava a tela-fantasma `telas/Desempenho.tsx`, removida — ela nunca foi
+     renderizada por rota nenhuma. A verificacao aqui era por CLASSE CSS
+     (`.max-sm:flex-col`), que passa mesmo numa tela sem conteudo. Contra a tela
+     real, o que importa e a grade de indicadores: uma coluna no telefone, tres
+     no desktop. */
   describe('Desempenho adapta para mobile', () => {
-    it('header e seletor empilham no mobile (max-sm:flex-col)', async () => {
-      const { Desempenho } = await import('../Desempenho');
+    it('indicadores empilham no mobile e viram três colunas no desktop', async () => {
+      const { Desempenho } = await import('../desempenho/Desempenho');
       const { container } = render(
-        <NuqsTestingAdapter searchParams={{ periodo: 'mes', aba: 'explorar' }}>
-          <Desempenho />
-        </NuqsTestingAdapter>,
+        <Desempenho
+          period={{ current: '2026-08', previous: '2026-07' }}
+          aoMudarPeriodo={() => {}}
+          carregarIndicadores={async () => ({
+            indicators: [
+              { metric: 'receita', deltaAbsolute: 120_00, deltaPercent: 8.4 },
+              { metric: 'ticket_medio', deltaAbsolute: -5_00, deltaPercent: -2.1 },
+              { metric: 'ocupacao', deltaAbsolute: 3, deltaPercent: 5.0 },
+            ],
+            freshness: { source: 'live', refreshedAt: null },
+          })}
+          carregarWaterfall={async () => []}
+          carregarDrillDown={async () => ({
+            result: { dimension: 'profissional', groups: [], totalCount: 0 },
+            actions: [],
+          })}
+        />,
       );
-      expect(screen.getByRole('heading', { name: /Desempenho/ })).toBeVisible();
-      // O container flex do header+seletor deve ter max-sm:flex-col
-      const headerContainer = container.querySelector('.max-sm\\:flex-col');
-      expect(headerContainer).toBeTruthy();
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { level: 1, name: /Desempenho/ })).toBeVisible());
+      expect(container.querySelector('.lg\\:grid-cols-3')).toBeTruthy();
     });
   });
 });

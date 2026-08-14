@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { buildVariationPhrase, formatPeriodLabel } from './format';
 import { WaterfallChart } from './WaterfallChart';
+import { Panorama, type DadosDoPanorama } from './Panorama';
 import { Skeleton } from '../../ui/Skeleton';
 import { PageHeader } from '../../ui/PageHeader';
 import { cn } from '../../lib/cn';
@@ -29,6 +30,10 @@ export interface DesempenhoProps {
     result: DrillDownResult;
     actions: SuggestedAction[];
   }>;
+  /* Opcional para que os testes existentes da decomposicao nao precisem montar
+     o panorama inteiro so para exercitar o waterfall. Ausente, a secao some. */
+  readonly carregarPanorama?: () => Promise<DadosDoPanorama>;
+  readonly diasDoPanorama?: number;
 }
 
 function formatFreshnessTime(iso: string): string {
@@ -245,6 +250,23 @@ export function Desempenho(p: DesempenhoProps) {
               </div>
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {/* Os graficos vem DEPOIS da decomposicao, e nao antes, porque a leitura
+          da tela e "o que mudou → por que mudou → como esta a operacao". Subir o
+          panorama para o topo transformaria a tela num mural de graficos, que e
+          exatamente o que ela nao deve ser: o topo responde uma pergunta. */}
+      {p.carregarPanorama !== undefined ? (
+        <section aria-label="Panorama da clínica" className="grid gap-4">
+          <div>
+            <p className="cadencia-eyebrow">Panorama</p>
+            <h2 className="mt-1 text-lg font-bold tracking-[-0.025em] text-text">Como está a operação</h2>
+            <p className="mt-1 text-xs text-text-muted">
+              Volume, mix e perfil de atendimento no período — independente da variação do mês.
+            </p>
+          </div>
+          <Panorama dias={p.diasDoPanorama ?? 30} carregarDados={p.carregarPanorama} />
         </section>
       ) : null}
     </div>
