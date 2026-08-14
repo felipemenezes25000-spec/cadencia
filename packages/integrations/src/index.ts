@@ -33,6 +33,9 @@ export {
   createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord,
 } from './fakes/messaging-fake';
 export {
+  createFakeSmsProvider, type FakeSmsOptions,
+} from './fakes/sms-fake';
+export {
   PAYMENT_STATUSES, isPaymentStatus,
   type PaymentLinkInput, type PaymentLinkResult, type PaymentProvider,
   type PaymentSnapshot, type PaymentStatus, type Settlement,

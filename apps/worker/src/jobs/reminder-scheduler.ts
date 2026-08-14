@@ -68,6 +68,8 @@ export async function scheduleReminders(boss: PgBoss): Promise<ReminderScheduleR
       }
 
       try {
+        // channelKind vem de msg.automation_rule.channel ('whatsapp' | 'sms').
+        // O roteamento para o provider correto acontece no handler do job.
         await boss.send('messaging.send_reminder', {
           tenantId: rule.tenant_id,
           appointmentId: appt.appointment_id,
