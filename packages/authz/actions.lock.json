@@ -1,5 +1,5 @@
 {
-  "checksum": "03e4aacb66c8c88b237164bd11847bc699eb166711d5c5190ab6a4c203475c19",
+  "checksum": "0584a863d1233d47eb8b6135ddcd24d618bb54628963edc970440e53f7d531da",
   "rows": [
     {
       "key": "ai.transcribe",
@@ -327,6 +327,46 @@
         "financeiro"
       ],
       "requiresMfa": false
+    },
+    {
+      "key": "lgpd.consent.read",
+      "description": "Ver consentimentos LGPD do paciente",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "lgpd.consent.write",
+      "description": "Registrar ou revogar consentimento LGPD",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico",
+        "profissional",
+        "recepcao"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "lgpd.data_request.read",
+      "description": "Ver solicitacoes de direito LGPD",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico"
+      ],
+      "requiresMfa": false
+    },
+    {
+      "key": "lgpd.data_request.write",
+      "description": "Criar solicitacao de portabilidade ou eliminacao",
+      "roles": [
+        "admin_clinico",
+        "diretor_tecnico"
+      ],
+      "requiresMfa": true
     },
     {
       "key": "membership.edit",

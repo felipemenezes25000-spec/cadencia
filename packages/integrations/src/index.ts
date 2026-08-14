@@ -60,3 +60,15 @@ export { createFakeTeleconsultProvider, type FakeTeleconsultOptions, type Create
 export { createJitsiTeleconsultProvider } from './adapters/jitsi-teleconsult';
 export type { CalendarProvider, CalendarEvent, CalendarInfo } from './contracts/calendar';
 export { createFakeCalendarProvider, type FakeCalendarOptions, type CreatedCalendarEvent } from './fakes/calendar-fake';
+export { createAsaasPaymentProvider, type AsaasConfig } from './adapters/asaas-payment';
+export { createWhatsAppCloudProvider, type WhatsAppCloudConfig } from './adapters/whatsapp-messaging';
+export { createTwilioSmsProvider, type TwilioSmsConfig } from './adapters/twilio-sms';
+export { createGoogleCalendarProvider } from './adapters/google-calendar';
+export type {
+  TissTransportProvider, TissGuiaConsulta, TissGuiaSadt, TissLote,
+  TissSubmissaoResult,
+} from './contracts/tiss-transport';
+export { createTissSoapTransportProvider } from './adapters/tiss-soap-transport';
+export { serializeLoteXml, wrapInSoapEnvelope } from './adapters/tiss-xml';
+export { createBirdIdSignatureProvider, type BirdIdConfig } from './adapters/birdid-signature';
+export { createFakeTissTransportProvider } from './fakes/tiss-transport-fake';

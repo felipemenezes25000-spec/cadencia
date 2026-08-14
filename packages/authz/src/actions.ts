@@ -212,6 +212,15 @@ export const ACTIONS = [
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
   { key: 'teleconsult.write', description: 'Criar e encerrar teleconsulta',
     roles: ['admin_clinico', 'diretor_tecnico', 'profissional'] },
+  // ── LGPD ───────────────────────────────────────────────────────────────
+  { key: 'lgpd.consent.read', description: 'Ver consentimentos LGPD do paciente',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'lgpd.consent.write', description: 'Registrar ou revogar consentimento LGPD',
+    roles: ['admin_clinico', 'diretor_tecnico', 'profissional', 'recepcao'] },
+  { key: 'lgpd.data_request.read', description: 'Ver solicitacoes de direito LGPD',
+    roles: ['admin_clinico', 'diretor_tecnico'] },
+  { key: 'lgpd.data_request.write', description: 'Criar solicitacao de portabilidade ou eliminacao',
+    roles: ['admin_clinico', 'diretor_tecnico'], requiresMfa: true },
   // ── Tenancy / Admin ───────────────────────────────────────────────────
   { key: 'tenant.read', description: 'Ver dados do tenant e clínicas',
     roles: ['admin_clinico', 'diretor_tecnico'] },

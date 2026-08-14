@@ -1,20 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 import { providers, type Providers } from './providers';
 
-/**
- * Ambiente mínimo de um modo que não é `fake`.
- *
- * Os segredos de webhook entram aqui junto das chaves da Memed porque são
- * exigência do MESMO nível: `real` e `memed` registram as rotas de webhook, que
- * atendem sem sessão e têm o HMAC como única barreira.
- */
-function ambienteNaoFake(): void {
+function ambienteMemed(): void {
   process.env['MEMED_BASE_URL'] ??= 'https://api.memed.test/v1';
   process.env['MEMED_SCRIPT_URL'] ??= 'https://memed.test/s.js';
   process.env['MEMED_API_KEY'] ??= 'k';
   process.env['MEMED_SECRET_KEY'] ??= 's';
   process.env['PSP_WEBHOOK_SECRET'] ??= 'segredo-de-teste-psp';
   process.env['WHATSAPP_APP_SECRET'] ??= 'segredo-de-teste-whatsapp';
+}
+
+function ambienteReal(): void {
+  ambienteMemed();
+  process.env['BIRDID_CLIENT_ID'] ??= 'bid';
+  process.env['BIRDID_CLIENT_SECRET'] ??= 'bsec';
+  process.env['WHATSAPP_ACCESS_TOKEN'] ??= 'wa-tok';
+  process.env['WHATSAPP_PHONE_NUMBER_ID'] ??= 'wa-phone';
+  process.env['TWILIO_ACCOUNT_SID'] ??= 'AC-test';
+  process.env['TWILIO_AUTH_TOKEN'] ??= 'tw-tok';
+  process.env['TWILIO_FROM_NUMBER'] ??= '+5511999999999';
+  process.env['ASAAS_API_KEY'] ??= 'asaas-k';
+  process.env['ASAAS_WEBHOOK_TOKEN'] ??= 'asaas-wh';
 }
 
 async function recarregarProviders(): Promise<() => Providers> {
@@ -52,14 +58,11 @@ describe('modo so-prescricao', () => {
     // qualificada, então a trava estava protegendo o documento errado.
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'memed';
-    ambienteNaoFake();
+    ambienteMemed();
     const recarregado = await recarregarProviders();
     try {
       const p = recarregado() as Providers;
       expect(p.prescription.id).toBe('memed');
-      // Assinatura NÃO é fake: é a que RECUSA. O fake assina com sucesso e
-      // reporta 'valida' — num modo que emite receita de verdade isso gravaria
-      // atestado 'assinado' sem valor legal, indistinguível no banco.
       expect(p.signature.id).toBe('signature-nao-contratado');
     } finally {
       if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
@@ -72,13 +75,10 @@ describe('assinatura fora de desenvolvimento', () => {
   it('modo memed NAO usa assinatura fake', async () => {
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'memed';
-    ambienteNaoFake();
+    ambienteMemed();
     const recarregado = await recarregarProviders();
     try {
       const p = recarregado() as Providers;
-      // O fake ASSINA e reporta 'valida'. Num ambiente que emite documento de
-      // verdade isso grava atestado com estado 'assinado' e sem valor legal —
-      // e ninguém consegue distinguir depois. Aqui tem que recusar.
       expect(p.signature.id).toBe('signature-nao-contratado');
       expect(p.signature.capabilities.has('ad-rt')).toBe(false);
     } finally {
@@ -87,18 +87,14 @@ describe('assinatura fora de desenvolvimento', () => {
     }
   });
 
-  it('modo real SOBE — documento nasce pendente em vez de o sistema nao subir', async () => {
+  it('modo real usa BirdID para assinatura ICP-Brasil', async () => {
     const anterior = process.env['CADENCIA_PROVIDERS'];
     process.env['CADENCIA_PROVIDERS'] = 'real';
-    ambienteNaoFake();
+    ambienteReal();
     const recarregado = await recarregarProviders();
     try {
-      // Antes isto lançava no boot. Travar o sistema inteiro não protegia
-      // ninguém: com a API no chão ninguém emite documento nenhum, nem os que
-      // funcionam. Com o provedor que recusa, a clínica opera e o atestado fica
-      // explicitamente pendente até haver PSC.
       const p = recarregado() as Providers;
-      expect(p.signature.id).toBe('signature-nao-contratado');
+      expect(p.signature.id).toBe('signature-birdid');
     } finally {
       if (anterior === undefined) delete process.env['CADENCIA_PROVIDERS'];
       else process.env['CADENCIA_PROVIDERS'] = anterior;
@@ -107,31 +103,17 @@ describe('assinatura fora de desenvolvimento', () => {
 });
 
 describe('segredo de webhook fora de desenvolvimento', () => {
-  /**
-   * `POST /v1/payments/webhook` e `POST /v1/messaging/webhook/:channel` são
-   * registradas sem sessão: quem chama é o PSP e a Meta. A única coisa que
-   * separa um evento legítimo de um forjado é o HMAC.
-   *
-   * Os adaptadores reais ainda não existem, então os dois modos de produção
-   * usam o fake — e o fake tem segredo DEFAULT escrito no repositório
-   * (`fake-payment-secret`). Subir assim significa que qualquer leitor deste
-   * código assina um `payment.confirmed` válido e marca lançamento como pago,
-   * em qualquer tenant, sem que dinheiro nenhum tenha entrado.
-   *
-   * Este teste existe para que o default NUNCA mais chegue a produção: fora de
-   * `fake`, sem segredo no ambiente, o processo tem de recusar subir.
-   */
-  for (const [modo, variavel] of [
-    ['real', 'PSP_WEBHOOK_SECRET'],
-    ['real', 'WHATSAPP_APP_SECRET'],
-    ['memed', 'PSP_WEBHOOK_SECRET'],
-    ['memed', 'WHATSAPP_APP_SECRET'],
+  for (const [modo, variavel, ambienteFn] of [
+    ['real', 'ASAAS_WEBHOOK_TOKEN', ambienteReal],
+    ['real', 'WHATSAPP_APP_SECRET', ambienteReal],
+    ['memed', 'PSP_WEBHOOK_SECRET', ambienteMemed],
+    ['memed', 'WHATSAPP_APP_SECRET', ambienteMemed],
   ] as const) {
     it(`modo ${modo} nao sobe sem ${variavel}`, async () => {
       const antesModo = process.env['CADENCIA_PROVIDERS'];
       const antesVar = process.env[variavel];
       process.env['CADENCIA_PROVIDERS'] = modo;
-      ambienteNaoFake();
+      (ambienteFn as () => void)();
       delete process.env[variavel];
       const recarregado = await recarregarProviders();
       try {

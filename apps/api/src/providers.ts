@@ -8,20 +8,31 @@ import {
   createFakeTeleconsultProvider, createJitsiTeleconsultProvider,
   createFakeCalendarProvider,
   createMemedProvider,
+  createFakeSmsProvider,
+  createFakeTissTransportProvider,
+  createAsaasPaymentProvider,
+  createWhatsAppCloudProvider,
+  createTwilioSmsProvider,
+  createGoogleCalendarProvider,
+  createBirdIdSignatureProvider,
+  createTissSoapTransportProvider,
   type PrescriptionProvider, type SignatureProvider,
   type MessagingProvider, type PaymentProvider,
   type EmailProvider, type TeleconsultProvider, type CalendarProvider,
+  type TissTransportProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
   readonly signature: SignatureProvider;
   readonly prescription: PrescriptionProvider;
   readonly messaging: MessagingProvider;
+  readonly sms: MessagingProvider;
   readonly payment: PaymentProvider;
   readonly transcription: TranscriptionProvider;
   readonly email: EmailProvider;
   readonly teleconsult: TeleconsultProvider;
   readonly calendar: CalendarProvider;
+  readonly tissTransport: TissTransportProvider;
 }
 
 let cache: Providers | null = null;
@@ -107,11 +118,13 @@ export function providers(): Providers {
       }),
       signature: createUncontractedSignatureProvider(),
       messaging: createFakeMessagingProvider({ appSecret: exigir('WHATSAPP_APP_SECRET') }),
+      sms: createFakeSmsProvider(),
       payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
       transcription: transcricaoConfigurada(),
       email: emailConfigurado(),
       teleconsult: createJitsiTeleconsultProvider(),
       calendar: createFakeCalendarProvider(),
+      tissTransport: createFakeTissTransportProvider(),
     };
     cache = soMemed;
     return soMemed;
@@ -122,11 +135,13 @@ export function providers(): Providers {
       signature: createFakeSignatureProvider(),
       prescription: createFakePrescriptionProvider(),
       messaging: createFakeMessagingProvider(),
+      sms: createFakeSmsProvider(),
       payment: createFakePaymentProvider(),
       transcription: createFakeTranscriptionProvider(),
       email: createFakeEmailProvider(),
       teleconsult: createFakeTeleconsultProvider(),
       calendar: createFakeCalendarProvider(),
+      tissTransport: createFakeTissTransportProvider(),
     };
     cache = comFakes;
     return comFakes;
@@ -134,38 +149,34 @@ export function providers(): Providers {
 
   const reais: Providers = {
     prescription: createMemedProvider({
-      // A base já inclui /v1. Homologação e produção são hosts diferentes, e a
-      // diferença entre eles é "receita de teste" contra "receita que a farmácia
-      // dispensa": nunca deduzir, sempre configurar.
       baseUrl: exigir('MEMED_BASE_URL'),
       scriptUrl: exigir('MEMED_SCRIPT_URL'),
       apiKey: exigir('MEMED_API_KEY'),
       secretKey: exigir('MEMED_SECRET_KEY'),
     }),
-    // Ainda sem adaptador de PSC. Antes isto LANÇAVA no boot, e travar o
-    // sistema inteiro não protegia ninguém: com a API no chão ninguém emite
-    // documento nenhum, nem os que funcionam — receita pela Memed inclusive.
-    // O provedor que recusa preserva a garantia real (nada sai assinado sem
-    // PSC) sem derrubar o que não depende dele.
-    signature: createUncontractedSignatureProvider(),
-    /**
-     * Ainda não há adaptador real de PSP nem de WhatsApp, mas o segredo do
-     * webhook NÃO pode continuar sendo o default do fake.
-     *
-     * `POST /v1/payments/webhook` e `POST /v1/messaging/webhook/:channel` são
-     * registradas sem sessão: o HMAC é a única barreira. Com o default embutido
-     * (`fake-payment-secret`, `fake-whatsapp-secret`), qualquer pessoa que leia
-     * este repositório assina um evento válido e marca lançamento como pago, em
-     * qualquer tenant. Exigindo do ambiente, um deploy sem o segredo configurado
-     * não sobe — que é o desfecho certo — e o fake vira um PSP de verdade do
-     * ponto de vista de quem tenta forjar entrada.
-     */
-    messaging: createFakeMessagingProvider({ appSecret: exigir('WHATSAPP_APP_SECRET') }),
-    payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
+    signature: createBirdIdSignatureProvider({
+      clientId: exigir('BIRDID_CLIENT_ID'),
+      clientSecret: exigir('BIRDID_CLIENT_SECRET'),
+    }),
+    messaging: createWhatsAppCloudProvider({
+      accessToken: exigir('WHATSAPP_ACCESS_TOKEN'),
+      phoneNumberId: exigir('WHATSAPP_PHONE_NUMBER_ID'),
+      appSecret: exigir('WHATSAPP_APP_SECRET'),
+    }),
+    sms: createTwilioSmsProvider({
+      accountSid: exigir('TWILIO_ACCOUNT_SID'),
+      authToken: exigir('TWILIO_AUTH_TOKEN'),
+      fromNumber: exigir('TWILIO_FROM_NUMBER'),
+    }),
+    payment: createAsaasPaymentProvider({
+      apiKey: exigir('ASAAS_API_KEY'),
+      webhookToken: exigir('ASAAS_WEBHOOK_TOKEN'),
+    }),
     transcription: transcricaoConfigurada(),
     email: emailConfigurado(),
     teleconsult: createJitsiTeleconsultProvider(),
-    calendar: createFakeCalendarProvider(),
+    calendar: createGoogleCalendarProvider(),
+    tissTransport: createTissSoapTransportProvider(),
   };
   cache = reais;
   return reais;
