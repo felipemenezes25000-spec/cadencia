@@ -26,6 +26,57 @@ interface Clinica {
   nome: string;
 }
 
+/**
+ * O agrupamento da matriz sai de `action.key` — 'patient.read' vira o grupo
+ * 'patient'. A chave e identificador de codigo e nunca foi traduzida, entao a
+ * tela de Permissoes exibia 'patient', 'encounter', 'messaging', 'drug' como
+ * titulo de secao: o unico lugar do produto onde o usuario final lia ingles.
+ * A traducao mora aqui e nao em `@cadencia/authz` de proposito — a chave e
+ * contrato de autorizacao (vai para o banco, para o seed e para o audit) e
+ * traduzi-la la seria misturar identidade com apresentacao.
+ */
+const ROTULO_DOMINIO: Record<string, string> = {
+  ai: 'Inteligência artificial',
+  appointment: 'Agendamentos',
+  attachment: 'Anexos',
+  audit: 'Auditoria',
+  bank_account: 'Contas bancárias',
+  billing: 'Assinatura e faturamento',
+  catalog: 'Catálogos',
+  channel: 'Canais de mensagem',
+  clinic: 'Unidades',
+  data: 'Dados e portabilidade',
+  document: 'Documentos',
+  document_template: 'Modelos de documento',
+  drug: 'Bulário',
+  encounter: 'Atendimentos',
+  /* Não "Financeiro": esse é o nome de um dos papéis e vira coluna da matriz.
+     Ler "Financeiro" como título de linha E como cabeçalho de coluna, na mesma
+     tabela, com sentidos diferentes, é ambíguo para quem configura acesso. */
+  finance: 'Operação financeira',
+  inventory: 'Estoque',
+  lgpd: 'LGPD',
+  membership: 'Equipe e vínculos',
+  messaging: 'Mensagens',
+  mfa: 'Autenticação em duas etapas',
+  notification: 'Notificações',
+  patient: 'Pacientes',
+  payment: 'Pagamentos',
+  prescription: 'Prescrições',
+  record: 'Prontuário',
+  report: 'Relatórios',
+  teleconsult: 'Teleconsulta',
+  tenant: 'Organização',
+  tiss: 'Convênios (TISS)',
+  waitlist: 'Lista de espera',
+};
+
+/** Um domínio novo em `@cadencia/authz` não pode derrubar a tela: sem rótulo
+ *  cadastrado, mostra a própria chave em vez de `undefined`. */
+function rotuloDominio(dominio: string): string {
+  return ROTULO_DOMINIO[dominio] ?? dominio;
+}
+
 function agrupar(actions: readonly ActionDef[]): Map<string, ActionDef[]> {
   const grupos = new Map<string, ActionDef[]>();
   for (const a of actions) {
@@ -333,7 +384,7 @@ function GroupFragment({
     <>
       <tr className="bg-surface/80">
         <td colSpan={ROLES.length + 1} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-text-faint">
-          {dominio}
+          {rotuloDominio(dominio)}
         </td>
       </tr>
       {acoes.map((a) => (

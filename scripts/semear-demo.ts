@@ -178,12 +178,217 @@ async function refrescar(
   return { tenantId: anterior, clinicId: cl[0]?.id as string };
 }
 
+/**
+ * Terminologia clinica: CID-10, CID-11 e TUSS.
+ *
+ * A semente nunca carregou nenhuma das tres, e as tabelas nascem vazias das
+ * migrations. O efeito no ambiente de demonstracao: Catalogos, e a busca de
+ * diagnostico dentro do atendimento, respondiam 503 `catalogo_nao_carregado` em
+ * toda consulta. A API e a tela tratavam isso corretamente — a mensagem diz que
+ * o catalogo nao foi carregado NESTE AMBIENTE — mas quem esta avaliando o
+ * produto le "nao funciona", e nao esta errado: um bulario e um CID vazios nao
+ * demonstram nada.
+ *
+ * ESTE RECORTE NAO E O CATALOGO OFICIAL e nao pretende ser. A CID-10 tem cerca
+ * de 14 mil subcategorias, a TUSS passa de 200 mil linhas, e as duas se carregam
+ * dos arquivos publicados (DATASUS, ANS, OMS) por `pnpm cid10:load`,
+ * `pnpm cid11:load` e a carga de TUSS. O que entra aqui e uma amostra de
+ * atencao primaria, suficiente para as telas terem o que mostrar.
+ *
+ * NAO SOBRESCREVE NADA. Se a tabela ja tem linha, a semente sai de fininho: o
+ * ambiente carregou o catalogo de verdade e um recorte de demonstracao por cima
+ * seria degradacao, nao ajuda. Alem disso o EXCLUDE de vigencia recusaria a
+ * insercao — cada codigo aceita uma unica linha por intervalo de datas.
+ */
+async function semearTerminologia(c: PoolClient): Promise<{
+  cid10: number; cid11: number; tuss: number;
+}> {
+  /* Vigencia aberta a direita: o recorte vale de 2008 em diante e nunca expira,
+     entao a busca por qualquer data de atendimento o encontra. `daterange` com
+     limite superior nulo e ilimitado. */
+  const DE = '2008-01-01';
+
+  const cid10: readonly [string, string, number][] = [
+    ['A09', 'Diarreia e gastroenterite de origem infecciosa presumível', 1],
+    ['B34.9', 'Infecção viral não especificada', 1],
+    ['E03.9', 'Hipotireoidismo não especificado', 4],
+    ['E11.9', 'Diabetes mellitus tipo 2 sem complicações', 4],
+    ['E66.0', 'Obesidade devida a excesso de calorias', 4],
+    ['E78.5', 'Hiperlipidemia não especificada', 4],
+    ['F32.1', 'Episódio depressivo moderado', 5],
+    ['F41.1', 'Ansiedade generalizada', 5],
+    ['F51.0', 'Insônia não orgânica', 5],
+    ['G43.9', 'Enxaqueca não especificada', 6],
+    ['H10.9', 'Conjuntivite não especificada', 7],
+    ['H66.9', 'Otite média não especificada', 8],
+    ['I10', 'Hipertensão essencial (primária)', 9],
+    ['I25.9', 'Doença isquêmica crônica do coração não especificada', 9],
+    ['I83.9', 'Varizes dos membros inferiores sem úlcera ou inflamação', 9],
+    ['J00', 'Nasofaringite aguda (resfriado comum)', 10],
+    ['J01.9', 'Sinusite aguda não especificada', 10],
+    ['J02.9', 'Faringite aguda não especificada', 10],
+    ['J03.9', 'Amigdalite aguda não especificada', 10],
+    ['J06.9', 'Infecção aguda das vias aéreas superiores não especificada', 10],
+    ['J11.1', 'Influenza com outras manifestações respiratórias', 10],
+    ['J18.9', 'Pneumonia não especificada', 10],
+    ['J30.4', 'Rinite alérgica não especificada', 10],
+    ['J45.9', 'Asma não especificada', 10],
+    ['K21.9', 'Doença de refluxo gastroesofágico sem esofagite', 11],
+    ['K29.7', 'Gastrite não especificada', 11],
+    ['K52.9', 'Gastroenterite e colite não infecciosas não especificadas', 11],
+    ['K59.0', 'Constipação', 11],
+    ['L20.9', 'Dermatite atópica não especificada', 12],
+    ['L23.9', 'Dermatite alérgica de contato de causa não especificada', 12],
+    ['L30.9', 'Dermatite não especificada', 12],
+    ['M06.9', 'Artrite reumatoide não especificada', 13],
+    ['M15.9', 'Poliartrose não especificada', 13],
+    ['M54.4', 'Lumbago com ciática', 13],
+    ['M54.5', 'Dor lombar baixa', 13],
+    ['M79.1', 'Mialgia', 13],
+    ['N39.0', 'Infecção do trato urinário de localização não especificada', 14],
+    ['N76.0', 'Vaginite aguda', 14],
+    ['R05', 'Tosse', 18],
+    ['R10.4', 'Outras dores abdominais e as não especificadas', 18],
+    ['R42', 'Tontura e instabilidade', 18],
+    ['R50.9', 'Febre não especificada', 18],
+    ['R51', 'Cefaleia', 18],
+    ['R53', 'Mal-estar e fadiga', 18],
+    ['Z00.0', 'Exame médico geral', 21],
+    ['Z01.4', 'Exame ginecológico de rotina', 21],
+    ['Z76.0', 'Emissão de prescrição de repetição', 21],
+  ];
+
+  /* ATENCAO AO CAMPO `uri`: na CID-11 a identidade estavel e a URI da entidade
+     na fundacao, nao o codigo — e por isso que `ref.cid11_term` a guarda. As
+     URIs abaixo sao PLACEHOLDERS bem-formados, nao identificadores reais da OMS.
+     Servem para a coluna nao ficar nula e para as telas exercitarem o caminho
+     completo; nao servem para resolver a entidade contra a API da OMS. Quem
+     precisa das URIs verdadeiras roda `pnpm cid11:load` com o release oficial,
+     e a competencia deixa de ser 'DEMO00'. */
+  const cid11: readonly [string, string, string, string][] = [
+    ['1A40', 'Gastroenterite ou colite de origem infecciosa', '01', 'http://id.who.int/icd/entity/1868000442'],
+    ['5A11', 'Diabetes mellitus tipo 2', '05', 'http://id.who.int/icd/entity/1697349837'],
+    ['5B81', 'Obesidade', '05', 'http://id.who.int/icd/entity/149403041'],
+    ['5C80', 'Hiperlipoproteinemia', '05', 'http://id.who.int/icd/entity/1848013730'],
+    ['5A00', 'Hipotireoidismo', '05', 'http://id.who.int/icd/entity/1734163728'],
+    ['6A70', 'Transtorno depressivo de episódio único', '06', 'http://id.who.int/icd/entity/578635574'],
+    ['6B00', 'Transtorno de ansiedade generalizada', '06', 'http://id.who.int/icd/entity/1712535455'],
+    ['7A00', 'Insônia crônica', '07', 'http://id.who.int/icd/entity/1900861317'],
+    ['8A80', 'Enxaqueca', '08', 'http://id.who.int/icd/entity/1385587472'],
+    ['9A60', 'Conjuntivite', '09', 'http://id.who.int/icd/entity/1868698455'],
+    ['AA9Z', 'Otite média não especificada', '10', 'http://id.who.int/icd/entity/1421413343'],
+    ['BA00', 'Hipertensão essencial', '11', 'http://id.who.int/icd/entity/1549449275'],
+    ['CA00', 'Nasofaringite aguda', '12', 'http://id.who.int/icd/entity/1735179225'],
+    ['CA02', 'Faringite aguda', '12', 'http://id.who.int/icd/entity/1868863398'],
+    ['CA07', 'Rinite alérgica', '12', 'http://id.who.int/icd/entity/1435254666'],
+    ['CA23', 'Asma', '12', 'http://id.who.int/icd/entity/1435254667'],
+    ['CA40', 'Pneumonia', '12', 'http://id.who.int/icd/entity/1435254668'],
+    ['DA22', 'Doença do refluxo gastroesofágico', '13', 'http://id.who.int/icd/entity/1729859185'],
+    ['DA42', 'Gastrite', '13', 'http://id.who.int/icd/entity/1729859186'],
+    ['EA80', 'Dermatite atópica', '14', 'http://id.who.int/icd/entity/7376283'],
+    ['FA20', 'Artrite reumatoide', '15', 'http://id.who.int/icd/entity/1853777991'],
+    ['FA01', 'Osteoartrite', '15', 'http://id.who.int/icd/entity/1853777992'],
+    ['ME84.2', 'Dor lombar baixa', '21', 'http://id.who.int/icd/entity/1189318509'],
+    ['GC08', 'Infecção do trato urinário de localização não especificada', '16', 'http://id.who.int/icd/entity/1922375426'],
+    ['MD11', 'Tosse', '21', 'http://id.who.int/icd/entity/1043332217'],
+    ['MG26', 'Cefaleia', '21', 'http://id.who.int/icd/entity/1043332218'],
+    ['MG50', 'Febre', '21', 'http://id.who.int/icd/entity/1043332219'],
+    ['MG22', 'Fadiga', '21', 'http://id.who.int/icd/entity/1043332220'],
+    ['QA00', 'Exame médico geral', '24', 'http://id.who.int/icd/entity/1043332221'],
+  ];
+
+  /* Tabela 22 da ANS: procedimentos e eventos em saude — a que a guia de
+     consulta e a de SP/SADT referenciam. */
+  const tuss: readonly [string, string][] = [
+    ['10101012', 'Consulta em consultório (horário normal ou preestabelecido)'],
+    ['10101039', 'Consulta em domicílio'],
+    ['10101020', 'Consulta em pronto-socorro'],
+    ['10102010', 'Visita hospitalar (paciente internado)'],
+    ['20101015', 'Acompanhamento clínico ambulatorial'],
+    ['40301010', 'Ácido úrico — pesquisa e/ou dosagem'],
+    ['40301028', 'Albumina — pesquisa e/ou dosagem'],
+    ['40301117', 'Amilase — pesquisa e/ou dosagem'],
+    ['40302016', 'Bilirrubinas total e frações'],
+    ['40301150', 'Cálcio — pesquisa e/ou dosagem'],
+    ['40301206', 'Colesterol total'],
+    ['40301214', 'Colesterol HDL'],
+    ['40301222', 'Colesterol LDL'],
+    ['40301273', 'Creatinina — pesquisa e/ou dosagem'],
+    ['40301494', 'Glicose — pesquisa e/ou dosagem'],
+    ['40301508', 'Hemoglobina glicada'],
+    ['40304361', 'Hemograma com contagem de plaquetas'],
+    ['40316734', 'TSH — hormônio tireoestimulante'],
+    ['40316750', 'T4 livre'],
+    ['40301842', 'Triglicerídeos — pesquisa e/ou dosagem'],
+    ['40301877', 'Ureia — pesquisa e/ou dosagem'],
+    ['40311046', 'Urina — análise de caracteres físicos, elementos e sedimento'],
+    ['40310015', 'Urocultura com antibiograma'],
+    ['40311070', 'Parasitológico de fezes'],
+    ['40202020', 'Vitamina D — 25-hidroxivitamina D'],
+    ['40201040', 'Ferritina — pesquisa e/ou dosagem'],
+    ['41001010', 'Eletrocardiograma convencional'],
+    ['41301021', 'Ecocardiograma transtorácico'],
+    ['40808017', 'Radiografia de tórax — duas incidências'],
+    ['40901165', 'Ultrassonografia de abdome total'],
+    ['40901084', 'Ultrassonografia de tireoide'],
+    ['41401061', 'Espirometria'],
+    ['30101018', 'Drenagem de abscesso'],
+    ['30201018', 'Sutura de ferimento'],
+    ['31602029', 'Retirada de lesão de pele'],
+  ];
+
+  const jaTem = await c.query<{ cid10: boolean; cid11: boolean; tuss: boolean }>(
+    `SELECT EXISTS (SELECT 1 FROM ref.cid10_term) AS cid10,
+            EXISTS (SELECT 1 FROM ref.cid11_term) AS cid11,
+            EXISTS (SELECT 1 FROM ref.tuss_term)  AS tuss`);
+  const estado = jaTem.rows[0]!;
+  const contagem = { cid10: 0, cid11: 0, tuss: 0 };
+
+  if (!estado.cid10) {
+    for (const [codigo, descricao, capitulo] of cid10) {
+      await c.query(
+        `INSERT INTO ref.cid10_term (codigo, descricao, capitulo, vigencia, competencia)
+         VALUES ($1, $2, $3, daterange($4::date, NULL, '[)'), 'DEMO00')`,
+        [codigo, descricao, capitulo, DE]);
+    }
+    contagem.cid10 = cid10.length;
+  }
+
+  if (!estado.cid11) {
+    for (const [codigo, descricao, capitulo, uri] of cid11) {
+      await c.query(
+        `INSERT INTO ref.cid11_term (uri, codigo, descricao, capitulo, vigencia, competencia)
+         VALUES ($1, $2, $3, $4, daterange($5::date, NULL, '[)'), 'DEMO00')`,
+        [uri, codigo, descricao, capitulo, DE]);
+    }
+    contagem.cid11 = cid11.length;
+  }
+
+  if (!estado.tuss) {
+    for (const [codigo, termo] of tuss) {
+      await c.query(
+        `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
+         VALUES (22, $1, $2, daterange($3::date, NULL, '[)'), 'DEMO00', 'inclusao')`,
+        [codigo, termo, DE]);
+    }
+    contagem.tuss = tuss.length;
+  }
+
+  return contagem;
+}
+
 async function main(): Promise<void> {
   const pool = adminPool();
   const c = await pool.connect();
 
   try {
     await c.query('BEGIN');
+
+    /* Antes do tenant de proposito: terminologia e GLOBAL, sem tenant_id e sem
+       RLS, e nao e apagada pelo `refrescar`. Resemear a demo nao recarrega o
+       catalogo, e nem deveria. */
+    const terminologia = await semearTerminologia(c);
+
     const existente = await refrescar(c);
     const reusando = existente !== null;
 
@@ -1014,7 +1219,12 @@ async function main(): Promise<void> {
       `  Pacientes ..... ${pacientes.length}\n` +
       `  Agendamentos .. ${agendamentos.length} (de ${dia(inicio0)})\n` +
       `  Recibos ....... ${numeroRecibo}\n` +
-      `  NPS ........... ${respostasNps.length} respostas\n\n` +
+      `  NPS ........... ${respostasNps.length} respostas\n` +
+      /* Zero aqui significa "ja tinha catalogo carregado", nao falha — a
+         semente nunca sobrescreve terminologia existente. */
+      `  CID-10 ........ ${terminologia.cid10 === 0 ? 'ja carregado' : `${terminologia.cid10} codigos (amostra)`}\n` +
+      `  CID-11 ........ ${terminologia.cid11 === 0 ? 'ja carregado' : `${terminologia.cid11} codigos (amostra)`}\n` +
+      `  TUSS .......... ${terminologia.tuss === 0 ? 'ja carregado' : `${terminologia.tuss} procedimentos (amostra)`}\n\n` +
       `  Entre com qualquer um destes, senha ${SENHA}:\n` +
       equipe.map((p) => `    ${p.email.padEnd(22)} ${p.papel}\n`).join('') +
       `\n`);

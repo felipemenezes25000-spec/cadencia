@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Conversas } from '../../src/telas/Conversas';
 import type { ConversaResumo, FiltroConversas } from '../../src/telas/CaixaDeConversas';
@@ -64,6 +64,14 @@ function ConversasInner() {
     parseAsStringLiteral(FILTROS).withDefault('todas'));
   const [abertaId, setAbertaId] = useQueryState('conversa');
 
+  /* A tela Hoje manda para `/conversas?patientId=<id>` quando a recepção clica
+     em "mensagem" na fila. A caixa só sabia abrir por `?conversa=<id>`, então o
+     link caía na lista genérica e o clique não fazia nada visível — parecia que
+     a conversa não existia. O `patientId` vira `conversa` assim que a lista
+     chega, porque só a lista sabe qual conversa pertence a qual paciente. */
+  const [patientId, setPatientId] = useQueryState('patientId');
+  const resolvido = useRef(false);
+
   return (
     <Conversas
       filtro={filtro as FiltroConversas}
@@ -74,6 +82,15 @@ function ConversasInner() {
       carregarConversas={async (f) => {
         const r = await apiFetch<{ itens: ConversaDaApi[] }>(
           '/v1/conversations', { clinicId, csrfToken });
+
+        /* Uma vez só: se o usuário depois fechar a conversa pelo "voltar", o
+           `patientId` ainda na URL não pode reabri-la no próximo refetch. */
+        if (patientId !== null && !resolvido.current) {
+          resolvido.current = true;
+          const doPaciente = r.itens.find((c) => c.patientId === patientId);
+          void setPatientId(null);
+          if (doPaciente !== undefined) void setAbertaId(doPaciente.conversationId);
+        }
 
         const todas: ConversaResumo[] = r.itens.map((c) => ({
           conversationId: c.conversationId,

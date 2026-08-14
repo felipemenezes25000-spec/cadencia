@@ -84,7 +84,12 @@ function HojeInner() {
       mensagensNaoLidasTotal={0}
       aoMensagem={(linha) => router.push(`/conversas?patientId=${linha.patientId}`)}
       aoCobrar={(linha) => router.push(`/financeiro/a-receber?patientId=${linha.patientId}`)}
-      aoEnviarMensagem={() => router.push('/conversas?nova=1')}
+      /* Era `/conversas?nova=1`. Nada lia `nova` e não existe fluxo de compor
+         conversa nova (abrir uma exige número verificado no canal, que só o
+         inbound do WABA cria hoje), então o botão levava para a caixa e dava a
+         impressão de ter falhado. Sem o parâmetro, o destino é o que de fato
+         acontece: a caixa de entrada. */
+      aoEnviarMensagem={() => router.push('/conversas')}
     />
   );
 }
