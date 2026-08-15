@@ -28,6 +28,7 @@ export {
 export {
   type MessagingProvider, type OutboundBody, type InboundEvent,
   type InboundMessage, type InboundMessageBody, type StatusUpdate,
+  type WebhookVerificationContext,
 } from './contracts/messaging';
 export {
   createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord,
@@ -63,7 +64,7 @@ export { createFakeCalendarProvider, type FakeCalendarOptions, type CreatedCalen
 export { createAsaasPaymentProvider, type AsaasConfig } from './adapters/asaas-payment';
 export { createWhatsAppCloudProvider, type WhatsAppCloudConfig } from './adapters/whatsapp-messaging';
 export { createTwilioSmsProvider, type TwilioSmsConfig } from './adapters/twilio-sms';
-export { createGoogleCalendarProvider } from './adapters/google-calendar';
+export { createGoogleCalendarProvider, calendarEventIdFromIdempotencyKey } from './adapters/google-calendar';
 export type {
   TissTransportProvider, TissGuiaConsulta, TissGuiaSadt, TissLote,
   TissSubmissaoResult,
