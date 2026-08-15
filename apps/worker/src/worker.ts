@@ -36,7 +36,7 @@ export async function startWorker(): Promise<PgBoss> {
   });
   await boss.start();
 
-  const { messaging, sms, payment, email } = workerProviders();
+  const { messaging, sms, payment, email, calendar } = workerProviders();
 
   await boss.work(FILA_RASCUNHOS, async () => {
     const r = await autoFinalizeStaleDrafts({ limiteDias: 7 });
@@ -176,10 +176,21 @@ export async function startWorker(): Promise<PgBoss> {
     }
   });
 
-  await boss.work(FILA_CALENDAR_SYNC, async () => {
-    const r = await syncCalendars();
-    process.stdout.write(
-      `[worker] calendar-sync: ${r.usersProcessed} usuarios, ${r.eventsSynced} eventos\n`);
+  await boss.work(FILA_CALENDAR_SYNC, async (jobs) => {
+    for (const job of jobs) {
+      const d = (job.data ?? {}) as { tenantId?: string; userId?: string; force?: boolean };
+      const r = await syncCalendars(calendar, {
+        ...(d.tenantId === undefined ? {} : { tenantId: d.tenantId }),
+        ...(d.userId === undefined ? {} : { userId: d.userId }),
+        ...(d.force === undefined ? {} : { force: d.force }),
+      });
+      process.stdout.write(
+        `[worker] calendar-sync: ${r.usersProcessed} usuarios, ${r.eventsSynced} eventos, `
+        + `${r.failures} falhas\n`);
+      if (r.failures > 0 && d.force === true) {
+        throw new Error(`calendar-sync falhou em ${r.failures} conexao(oes)`);
+      }
+    }
   });
 
   await boss.work(FILA_TRIAL_EXPIRACAO, async () => {
