@@ -1,0 +1,313 @@
+/*
+ * CADÊNCIA — Product Polish v15
+ *
+ * Última camada do sistema visual autenticado. O objetivo aqui não é adicionar
+ * decoração: é remover atrito. A mesma régua vale para agenda, pacientes,
+ * financeiro, convênios, indicadores, relatórios, mensagens e configurações.
+ */
+
+.cadencia-shell-bg {
+  --content-gap: 20px;
+  --content-gap-sm: 14px;
+}
+
+/* ── Ritmo de página ─────────────────────────────────────────────── */
+.cadencia-shell-bg .cadencia-workspace,
+.cadencia-shell-bg .cadencia-page,
+.cadencia-shell-bg .clinical-page,
+.cadencia-shell-bg .cadencia-page-header {
+  min-width: 0;
+}
+
+.cadencia-shell-bg .cadencia-page-header {
+  margin: 0;
+  padding-bottom: 2px;
+}
+
+.cadencia-shell-bg .cadencia-page-header > div:last-child {
+  min-height: 44px;
+  align-items: flex-start;
+}
+
+.cadencia-shell-bg .cadencia-page-header h1,
+.cadencia-shell-bg .cadencia-page-header h2 {
+  text-wrap: balance;
+}
+
+.cadencia-shell-bg .cadencia-page-header p {
+  text-wrap: pretty;
+}
+
+/* ── Navegação de seção ────────────────────────────────────────────
+ * Financeiro, convênios, desempenho e as tabs da agenda deixam de parecer um
+ * grupo de botões soltos. A navegação vira uma linha de seção limpa, com o
+ * estado atual marcado por sublinhado — mais fácil de escanear e mais estável
+ * quando há muitas abas.
+ */
+.cadencia-shell-bg .cadencia-tabs-list {
+  gap: 2px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.cadencia-shell-bg .cadencia-tab-trigger,
+.cadencia-shell-bg .cadencia-tabs-list > a {
+  position: relative;
+  min-height: 40px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-inline: 13px !important;
+  box-shadow: none !important;
+  color: var(--text-secondary) !important;
+}
+
+.cadencia-shell-bg .cadencia-tab-trigger:hover,
+.cadencia-shell-bg .cadencia-tabs-list > a:hover {
+  background: var(--surface-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.cadencia-shell-bg .cadencia-tab-trigger[data-state='active'],
+.cadencia-shell-bg .cadencia-tabs-list > a[aria-current='page'] {
+  background: transparent !important;
+  color: var(--brand) !important;
+  font-weight: 700 !important;
+}
+
+.cadencia-shell-bg .cadencia-tab-trigger[data-state='active']::after,
+.cadencia-shell-bg .cadencia-tabs-list > a[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: var(--brand);
+}
+
+/* ── Superfícies / cartões ───────────────────────────────────────── */
+.cadencia-shell-bg :is(
+  .cadencia-card,
+  .cadencia-surface,
+  .cadencia-panel,
+  .cadencia-table-shell,
+  .clinical-panel
+) {
+  border-color: #dde8e5 !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .96),
+    0 1px 2px rgb(8 48 49 / .018),
+    0 7px 24px rgb(8 48 49 / .035) !important;
+}
+
+.cadencia-shell-bg .cadencia-card-interactive:hover {
+  transform: translateY(-1px) !important;
+  border-color: #c6dad6 !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 1),
+    0 10px 28px rgb(8 67 65 / .065) !important;
+}
+
+/* ── Formulários ─────────────────────────────────────────────────── */
+.cadencia-shell-bg .cadencia-field {
+  min-height: 42px !important;
+  background: #fff !important;
+}
+
+.cadencia-shell-bg .cadencia-field-group > label {
+  color: #3f5c5e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cadencia-shell-bg .cadencia-field-group :is(input, textarea, select) {
+  font-size: 13px;
+}
+
+.cadencia-shell-bg .cadencia-field:focus-within {
+  box-shadow: 0 0 0 3px rgb(8 118 111 / .09) !important;
+}
+
+/* ── Tabelas ─────────────────────────────────────────────────────── */
+.cadencia-shell-bg .cadencia-table-shell {
+  overflow: hidden;
+}
+
+.cadencia-shell-bg .cadencia-table-shell thead th {
+  height: 38px;
+  background: #f8fbfa;
+  color: #6b8183;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .045em;
+}
+
+.cadencia-shell-bg .cadencia-table-shell tbody td {
+  min-height: 48px;
+  vertical-align: middle;
+}
+
+.cadencia-shell-bg .cadencia-table-shell tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.cadencia-shell-bg .cadencia-table-shell tbody tr:hover {
+  background: #fbfdfc;
+}
+
+/* ── Mensagens ─────────────────────────────────────────────────────
+ * A TopBar mede 72px. A caixa usava 68px e criava 4px de overflow vertical,
+ * suficiente para gerar scroll fantasma e desalinhamento no painel dividido.
+ */
+.cadencia-shell-bg [data-testid='split-view'],
+.cadencia-shell-bg [data-testid='conversas-skeleton'] {
+  height: calc(100dvh - 72px) !important;
+  min-height: 0;
+}
+
+.cadencia-shell-bg [data-testid='split-view'] > aside {
+  width: 384px !important;
+}
+
+.cadencia-shell-bg [data-testid='split-view'] > aside > ul > li > button {
+  min-height: 70px;
+}
+
+/* ── Configurações: Estrutura da organização ───────────────────────
+ * O componente ListaClinicas evoluiu, mas o CSS ainda estiliza os nomes antigos
+ * (.settings-unit-card-meta / .settings-unit-active-badge). Resultado: nome,
+ * subtítulo, badge, CNES e fuso apareciam colados. Estas regras acompanham o DOM
+ * atual e devolvem uma grade legível.
+ */
+.settings-org-section {
+  min-width: 0;
+}
+
+.settings-unit-card {
+  min-width: 0;
+}
+
+.settings-unit-card-top {
+  display: flex;
+  min-width: 0;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.settings-unit-name {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 2px;
+}
+
+.settings-unit-name > strong {
+  display: block;
+  overflow: hidden;
+  color: #173638;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-unit-name > span {
+  display: block;
+  overflow: hidden;
+  color: #718688;
+  font-size: 9px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-unit-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  border: 1px solid #c7e1dc;
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 7px;
+  color: #08766f;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.settings-unit-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.settings-unit-fact {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  border: 1px solid #e0eae8;
+  border-radius: 8px;
+  background: rgb(255 255 255 / .72);
+  padding: 8px 9px;
+}
+
+.settings-unit-fact > span {
+  color: #7b8f91;
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.settings-unit-fact > strong {
+  display: block;
+  overflow: hidden;
+  color: #28494b;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-unit-card.is-active .settings-unit-fact {
+  border-color: #d3e8e4;
+  background: rgb(255 255 255 / .84);
+}
+
+/* ── Responsividade ──────────────────────────────────────────────── */
+@media (max-width: 1279px) and (min-width: 768px) {
+  .cadencia-shell-bg [data-testid='split-view'] > aside {
+    width: 344px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .cadencia-shell-bg .cadencia-tab-trigger,
+  .cadencia-shell-bg .cadencia-tabs-list > a {
+    min-height: 44px !important;
+    padding-inline: 12px !important;
+  }
+
+  .cadencia-shell-bg [data-testid='split-view'],
+  .cadencia-shell-bg [data-testid='conversas-skeleton'] {
+    height: calc(100dvh - 72px - 68px - env(safe-area-inset-bottom)) !important;
+  }
+
+  .settings-unit-facts {
+    grid-template-columns: 1fr;
+  }
+}
