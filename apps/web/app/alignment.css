@@ -1,0 +1,159 @@
+/*
+ * CADÊNCIA ALIGNMENT CONTRACT — Grid System v13
+ *
+ * Uma única malha para o produto autenticado. Este arquivo é carregado depois
+ * do sistema visual e só disciplina geometria: largura, gutters, eixos,
+ * espaçamento e alinhamento. Não altera regras de negócio nem semântica.
+ */
+
+.cadencia-shell-bg {
+  --page-max: 1540px;
+  --page-gutter: clamp(24px, 2.15vw, 40px);
+  --layout-gap: 24px;
+  --layout-gap-sm: 16px;
+  --panel-pad: clamp(20px, 1.55vw, 28px);
+  --control-height: 42px;
+}
+
+/* Todas as páginas compartilham exatamente o mesmo eixo horizontal. */
+.cadencia-shell-bg .cadencia-page,
+.cadencia-shell-bg .clinical-page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.cadencia-shell-bg .cadencia-page > *,
+.cadencia-shell-bg .clinical-page > *,
+.cadencia-shell-bg .cadencia-workspace > * {
+  min-width: 0;
+}
+
+/* Topbar usa a mesma coluna das páginas em vez de flutuar numa malha própria. */
+.cadencia-shell-bg .cadencia-topbar {
+  padding-inline: 0 !important;
+}
+
+.cadencia-topbar-inner {
+  display: flex;
+  width: 100%;
+  max-width: var(--page-max);
+  height: 100%;
+  min-width: 0;
+  margin-inline: auto;
+  align-items: center;
+  gap: 16px;
+  padding-inline: var(--page-gutter);
+}
+
+/* Cabeçalhos: título e ações partem do mesmo topo e nunca “dançam” verticalmente. */
+.cadencia-shell-bg .cadencia-page-header {
+  width: 100%;
+}
+
+.cadencia-shell-bg .cadencia-page-header > div:last-child {
+  align-items: flex-start;
+}
+
+.cadencia-shell-bg .cadencia-page-header > div:last-child > :last-child:not(:first-child) {
+  padding-top: 2px;
+}
+
+/* Superfícies compartilhadas obedecem uma caixa previsível. */
+.cadencia-shell-bg :is(
+  .cadencia-card,
+  .clinical-panel,
+  .cadencia-surface,
+  .cadencia-panel,
+  .cadencia-table-shell,
+  .cadencia-hero-panel
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Tabelas começam e terminam no mesmo eixo visual dos painéis. */
+.cadencia-shell-bg .cadencia-table-shell table,
+.cadencia-shell-bg .clinical-panel table,
+.cadencia-shell-bg .cadencia-panel table {
+  width: 100%;
+}
+
+.cadencia-shell-bg .cadencia-table-shell :is(th, td):first-child,
+.cadencia-shell-bg .clinical-panel :is(th, td):first-child,
+.cadencia-shell-bg .cadencia-panel :is(th, td):first-child {
+  padding-left: 20px;
+}
+
+.cadencia-shell-bg .cadencia-table-shell :is(th, td):last-child,
+.cadencia-shell-bg .clinical-panel :is(th, td):last-child,
+.cadencia-shell-bg .cadencia-panel :is(th, td):last-child {
+  padding-right: 20px;
+}
+
+/* Formulários: label, campo, ajuda e ações compartilham o mesmo eixo. */
+.cadencia-shell-bg .cadencia-field-group,
+.cadencia-shell-bg .cadencia-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.cadencia-shell-bg .cadencia-field {
+  min-height: var(--control-height);
+}
+
+.cadencia-shell-bg .cadencia-field-group > label {
+  line-height: 1.25;
+}
+
+/* Grids de conteúdo não podem estourar por min-width implícito. */
+.cadencia-shell-bg [class*='grid-cols-'] > *,
+.cadencia-shell-bg [class*='grid-cols-['] > * {
+  min-width: 0;
+}
+
+/* Botões e icon buttons compartilham uma linha de centro previsível. */
+.cadencia-shell-bg .cadencia-button,
+.cadencia-shell-bg .cadencia-icon-button {
+  vertical-align: middle;
+}
+
+/* Barra móvel respeita a mesma margem lateral do conteúdo. */
+@media (max-width: 767px) {
+  .cadencia-shell-bg {
+    --page-gutter: 16px;
+    --layout-gap: 18px;
+    --panel-pad: 18px;
+  }
+
+  .cadencia-topbar-inner {
+    gap: 10px;
+    padding-inline: 12px;
+  }
+
+  .cadencia-shell-bg .cadencia-page,
+  .cadencia-shell-bg .clinical-page {
+    padding-inline: var(--page-gutter);
+  }
+
+  .cadencia-shell-bg .cadencia-table-shell :is(th, td):first-child,
+  .cadencia-shell-bg .clinical-panel :is(th, td):first-child,
+  .cadencia-shell-bg .cadencia-panel :is(th, td):first-child {
+    padding-left: 14px;
+  }
+
+  .cadencia-shell-bg .cadencia-table-shell :is(th, td):last-child,
+  .cadencia-shell-bg .clinical-panel :is(th, td):last-child,
+  .cadencia-shell-bg .cadencia-panel :is(th, td):last-child {
+    padding-right: 14px;
+  }
+}
+
+/* Em monitores muito largos, o produto continua legível e centralizado. */
+@media (min-width: 1920px) {
+  .cadencia-shell-bg {
+    --page-max: 1600px;
+    --page-gutter: 44px;
+  }
+}
