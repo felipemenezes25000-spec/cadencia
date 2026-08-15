@@ -15,10 +15,7 @@ import { reprojetarGuiaTiss } from './jobs/reprojetar-guia-tiss';
 import { syncCalendars } from './jobs/calendar-sync';
 import { expireTrials } from './jobs/trial-expiration';
 import { generateInvoices } from './jobs/invoice-generation';
-import {
-  createFakeMessagingProvider, createFakePaymentProvider,
-  createFakeEmailProvider,
-} from '@cadencia/integrations';
+import { workerProviders } from './providers';
 import {
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
   FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
@@ -36,31 +33,16 @@ export async function startWorker(): Promise<PgBoss> {
   });
   await boss.start();
 
-  // pg-boss 10 nao cria mais filas implicitamente em work()/schedule(). O
-  // bootstrap de producao instala o schema e as filas antes deste processo;
-  // migrate:false impede que o worker carregue privilegios de DDL em runtime.
-  const usarFakes = process.env.CADENCIA_PROVIDERS !== 'real';
-  const messaging = usarFakes ? createFakeMessagingProvider() : (() => {
-    throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
-  })();
-  const payment = usarFakes ? createFakePaymentProvider() : (() => {
-    throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
-  })();
-  const email = usarFakes ? createFakeEmailProvider() : (() => {
-    throw new Error('CADENCIA_PROVIDERS=real sem adaptadores reais');
-  })();
+  // O worker precisa usar o mesmo modo de integração da API. Antes o modo
+  // `real` lançava erro aqui mesmo com todos os adapters reais já existentes.
+  const { messaging, sms, payment, email } = workerProviders();
 
-  // -- Job existente: auto-finalização ------------------------------------------
   await boss.work(FILA_RASCUNHOS, async () => {
     const r = await autoFinalizeStaleDrafts({ limiteDias: 7 });
     process.stdout.write(
       `[worker] auto-finalize: ${r.finalizados}/${r.examinados} (falhas: ${r.falhas})\n`);
   });
 
-  // -- Expurgo por retenção (§3.10) ---------------------------------------------
-  //
-  // Uma vez por dia, de madrugada. A JANELA é calculada no banco: nenhum
-  // parâmetro daqui consegue encurtar a guarda legal de 20 anos.
   const armazenamento = process.env['STORAGE_DRIVER'] === 'memory'
     ? new InMemoryStorageAdapter()
     : new FsStorageAdapter(process.env['STORAGE_DIR'] ?? './.armazenamento');
@@ -69,18 +51,13 @@ export async function startWorker(): Promise<PgBoss> {
     const r = await expurgarRetencao({}, armazenamento);
     process.stdout.write(
       `[worker] expurgo: ${r.valoresExpurgados} valores, ${r.anexosExpurgados} anexos, `
-      + `${r.objetosApagados} objetos apagados, ${r.falhas} falhas
-`);
-    // Objeto órfão é lixo recuperável, mas silêncio sobre ele vira disco cheio
-    // de dado que a lei manda destruir. O alarme é o log, e ele é alto.
+      + `${r.objetosApagados} objetos apagados, ${r.falhas} falhas\n`);
     if (r.falhas > 0) {
       process.stderr.write(
-        `[worker] EXPURGO INCOMPLETO: ${r.falhas} objetos permanecem no armazenamento
-`);
+        `[worker] EXPURGO INCOMPLETO: ${r.falhas} objetos permanecem no armazenamento\n`);
     }
   });
 
-  // -- Despachante de outbox (polling a cada 5s) --------------------------------
   await boss.work(FILA_OUTBOX, async () => {
     const r = await dispatchOutbox(boss);
     if (r.dispatched > 0 || r.errors > 0) {
@@ -89,34 +66,24 @@ export async function startWorker(): Promise<PgBoss> {
     }
   });
 
-  // -- Geração de link de pagamento (consome outbox) ---------------------------
   await boss.work(FILA_LINK_PAGAMENTO, async (jobs) => {
     for (const job of jobs) {
       const d = job.data as GerarLinkInput;
       const r = await gerarLinkDePagamento(d, payment);
-      process.stdout.write(`[worker] link-pagamento: ${d.entryId} -> ${r.status}
-`);
-      // Provedor fora do ar é transitório: relançar devolve o job à fila para
-      // nova tentativa. Lançamento inexistente é terminal e sai em silêncio —
-      // retentar para sempre só enche o log.
+      process.stdout.write(`[worker] link-pagamento: ${d.entryId} -> ${r.status}\n`);
       if (r.status === 'provedor_indisponivel') throw new Error(r.detalhe);
     }
   });
 
-  // -- Envio de mensagens (consome outbox de tipo messaging) --------------------
   await boss.work(FILA_ENVIO_MSG, async (jobs) => {
     for (const job of jobs) {
       const data = job.data as SendMessageInput & { tenantId: string };
-      const r = await sendMessage(data, messaging);
+      const r = await sendMessage(data, { whatsapp: messaging, sms });
       process.stdout.write(
         `[worker] send-message: ${r.messageId} -> ${r.status}\n`);
     }
   });
 
-  // -- Reprojeção da guia TISS após retificação/adendo --------------------------
-  //
-  // Sem este consumidor a correção feita no prontuário não chegava na cobrança:
-  // a guia seguia para a operadora com o CID e o valor de antes da retificação.
   await boss.work(FILA_REPROJECAO_TISS, async (jobs) => {
     for (const job of jobs) {
       const d = job.data as { tenantId: string; aggregateId: string };
@@ -124,14 +91,10 @@ export async function startWorker(): Promise<PgBoss> {
         { tenantId: d.tenantId, aggregateId: d.aggregateId });
       process.stdout.write(
         `[worker] reprojecao-tiss: ${d.aggregateId} -> ${r.status}\n`);
-      // Falha de projeção é transitória o bastante para valer nova tentativa
-      // (dado de referência TUSS carregando, por exemplo). Atendimento sem
-      // versão é terminal: não há o que reprojetar.
       if (r.status === 'falhou') throw new Error(r.detalhe);
     }
   });
 
-  // -- Envio de email (convites, lembretes) --------------------------------------
   await boss.work(FILA_EMAIL, async (jobs) => {
     for (const job of jobs) {
       const d = job.data as SendEmailInput & { tenantId: string };
@@ -141,7 +104,6 @@ export async function startWorker(): Promise<PgBoss> {
     }
   });
 
-  // -- Reconciliação noturna ----------------------------------------------------
   await boss.work(FILA_RECONCILIACAO, async () => {
     const r = await reconcilePayments(payment);
     process.stdout.write(
@@ -149,86 +111,63 @@ export async function startWorker(): Promise<PgBoss> {
       + `${r.settlementsFound} settlements, ${r.divergences} divergencias\n`);
   });
 
-  // -- Materialização do daily_rollup -------------------------------------------
   await boss.work(FILA_ROLLUP, async () => {
     const r = await materializeDailyRollup();
     process.stdout.write(
       `[worker] daily-rollup: ${r.rowsUpserted} linhas, ${r.tenantsProcessed} tenants\n`);
   });
 
-  // -- Agendamento de lembretes -------------------------------------------------
   await boss.work(FILA_LEMBRETES, async () => {
     const r = await scheduleReminders(boss);
     process.stdout.write(
       `[worker] reminders: ${r.scheduled} agendados, ${r.skipped} pulados\n`);
   });
 
-  // -- Selo diário da trilha ----------------------------------------------------
-  //
-  // A trilha é append-only, mas só o selo a torna PROVA: sem ele, quem tem
-  // acesso ao banco poderia reescrever o passado sem deixar vestígio. O vigia
-  // roda junto e transforma AUSÊNCIA de execução em alarme — §9 classifica
-  // "selo falha em silêncio" como risco que pode matar o produto, justamente
-  // porque job que para não faz barulho sozinho.
   await boss.work(FILA_SELO, async () => {
     const r = await selarTrilha();
     process.stdout.write(
       `[worker] selo ${r.dia}: ${r.tenantsSelados} selados, `
-      + `${r.jaSelados} ja selados, ${r.adiados} adiados, ${r.falhas} falhas
-`);
+      + `${r.jaSelados} ja selados, ${r.adiados} adiados, ${r.falhas} falhas\n`);
 
     if (r.falhas > 0) {
-      // Sai por stderr de propósito: falha de selo tem que aparecer no canal de
-      // erro do processo, não diluída no log de sucesso.
       process.stderr.write(
         `[worker] SELO COM FALHA em ${r.falhas} tenant(s): `
         + `${r.detalhes.filter((d) => d.outcome !== 'sucesso')
-             .map((d) => `${d.tenantId}=${d.outcome}`).join(', ')}
-`);
+             .map((d) => `${d.tenantId}=${d.outcome}`).join(', ')}\n`);
     }
 
     const vigia = await vigiarSelo();
     if (vigia.atrasado) {
       process.stderr.write(
         `[worker] VIGIA DO SELO: ${vigia.status} — ultima execucao `
-        + `${vigia.ultimaExecucao ?? 'nunca'}
-`);
+        + `${vigia.ultimaExecucao ?? 'nunca'}\n`);
     }
   });
 
-  // -- Sincronizacao de calendarios -----------------------------------------------
   await boss.work(FILA_CALENDAR_SYNC, async () => {
     const r = await syncCalendars();
     process.stdout.write(
       `[worker] calendar-sync: ${r.usersProcessed} usuarios, ${r.eventsSynced} eventos\n`);
   });
 
-  // -- Expiracao de trial -------------------------------------------------------
   await boss.work(FILA_TRIAL_EXPIRACAO, async () => {
     const r = await expireTrials();
     process.stdout.write(
       `[worker] trial-expiration: ${r.expired} expirados, ${r.skipped} pulados\n`);
   });
 
-  // -- Geracao de faturas -------------------------------------------------------
   await boss.work(FILA_FATURA_GERACAO, async () => {
     const r = await generateInvoices();
     process.stdout.write(
       `[worker] invoice-generation: ${r.generated} geradas, ${r.skipped} puladas\n`);
   });
 
-  // -- Schedules ----------------------------------------------------------------
   await boss.schedule(FILA_RASCUNHOS, '0 3 * * *');
-  await boss.schedule(FILA_OUTBOX, '*/5 * * * * *');       // cada 5 segundos
-  await boss.schedule(FILA_RECONCILIACAO, '0 4 * * *');    // 4h da manhã
-  await boss.schedule(FILA_ROLLUP, '30 3 * * *');          // 3h30 da manhã
-  await boss.schedule(FILA_LEMBRETES, '* * * * *');        // a cada minuto
-  // 2h30: depois da meia-noite de qualquer fuso brasileiro, e ANTES do rollup
-  // das 3h30 — selar o dia antes de derivar número dele mantém a ordem
-  // "primeiro prova, depois relatório".
+  await boss.schedule(FILA_OUTBOX, '*/5 * * * * *');
+  await boss.schedule(FILA_RECONCILIACAO, '0 4 * * *');
+  await boss.schedule(FILA_ROLLUP, '30 3 * * *');
+  await boss.schedule(FILA_LEMBRETES, '* * * * *');
   await boss.schedule(FILA_SELO, '30 2 * * *');
-  // 4h10: depois do selo da trilha (2h30) e da reconciliação (4h). Expurgo
-  // rodando antes do selo deixaria a destruição fora do dia selado.
   await boss.schedule(FILA_EXPURGO, '10 4 * * *');
   await boss.schedule(FILA_CALENDAR_SYNC, '*/15 * * * *');
   await boss.schedule(FILA_TRIAL_EXPIRACAO, '0 6 * * *');
