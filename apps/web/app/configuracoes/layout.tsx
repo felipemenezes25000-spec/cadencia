@@ -20,6 +20,7 @@ import {
 import { cn } from '../../src/lib/cn';
 import { useSessao } from '../../src/sessao';
 import './settings.css';
+import './settings-alignment.css';
 
 interface ItemConfiguracao {
   readonly value: string;
