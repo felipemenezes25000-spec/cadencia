@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, type ComponentType } from 'react';
+import { useState } from 'react';
 import {
   CalendarBlank,
   DownloadSimple,
   ShieldCheck,
-  Table,
   UsersThree,
   Wallet,
+  type Icon as PhosphorIcon,
 } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
@@ -30,7 +30,7 @@ interface DatasetOption {
   readonly value: Dataset;
   readonly label: string;
   readonly description: string;
-  readonly icon: ComponentType<{ size?: number; weight?: 'duotone' | 'regular'; 'aria-hidden'?: boolean }>;
+  readonly icon: PhosphorIcon;
 }
 
 const DATASETS: readonly DatasetOption[] = [
@@ -154,7 +154,7 @@ export function ExportarDados(p: ExportarDadosProps) {
                     <input
                       type="date"
                       value={dateTo}
-                      min={dateFrom || undefined}
+                      {...(dateFrom !== '' ? { min: dateFrom } : {})}
                       onChange={(e) => setDateTo(e.target.value)}
                       className="h-10 rounded-[9px] border border-line-field bg-surface px-3 text-xs text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10"
                     />
