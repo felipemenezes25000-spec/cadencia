@@ -6,6 +6,7 @@ import {
   FILA_LINK_PAGAMENTO,
   FILA_ESTORNO_PAGAMENTO,
   FILA_REPROJECAO_TISS,
+  FILA_CALENDAR_SYNC,
 } from '../queues';
 
 /**
@@ -75,13 +76,14 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
           [ev.id],
         );
         dispatched += 1;
-      } catch {
+      } catch (erro) {
+        const detalhe = erro instanceof Error ? erro.message : String(erro);
         await client.query(
           `UPDATE app.outbox
               SET attempts = attempts + 1,
-                  last_error = 'falha ao enfileirar no pg-boss'
+                  last_error = left($2, 1000)
             WHERE id = $1`,
-          [ev.id],
+          [ev.id, detalhe],
         );
         errors += 1;
       }
@@ -103,20 +105,20 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
   }
 }
 
-/** Mapeia event_type para o nome da fila do pg-boss. */
+/**
+ * Só retorna filas que ESTE worker realmente consome.
+ *
+ * O fallback antigo fabricava `outbox.${eventType}` e depois marcava a linha
+ * como despachada, mesmo que nenhuma fila/handler existisse. Isso transforma
+ * typo ou feature incompleta em perda silenciosa. Evento sem consumidor agora
+ * permanece visível no outbox com `event_type_sem_consumidor:*`.
+ */
 function resolveQueue(eventType: string): string {
   if (eventType === 'send_message') return FILA_ENVIO_MSG;
   if (eventType === 'create_payment_link') return FILA_LINK_PAGAMENTO;
   if (eventType === 'refund_payment') return FILA_ESTORNO_PAGAMENTO;
-
-  if (eventType === 'INBOUND_MESSAGE_RECEIVED') return 'messaging.inbound_message_received';
-  if (eventType.startsWith('APPOINTMENT_')) return `messaging.${eventType.toLowerCase()}`;
-  if (eventType === 'ENCOUNTER_FINALIZED') return 'messaging.encounter_finalized';
-
+  if (eventType === 'calendar_sync_requested') return FILA_CALENDAR_SYNC;
   if (eventType === 'ENCOUNTER_AMENDED') return FILA_REPROJECAO_TISS;
 
-  if (eventType === 'PAYMENT_RECEIVED') return 'payments.payment_received';
-  if (eventType === 'PAYMENT_LINK_CREATED') return 'payments.payment_link_created';
-
-  return `outbox.${eventType.toLowerCase()}`;
+  throw new Error(`event_type_sem_consumidor:${eventType}`);
 }
