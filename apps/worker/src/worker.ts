@@ -3,6 +3,7 @@ import { closePools } from '@cadencia/db';
 import { autoFinalizeStaleDrafts } from './jobs/auto-finalize-drafts';
 import { dispatchOutbox } from './jobs/outbox-dispatcher';
 import { sendMessage, type SendMessageInput } from './jobs/send-message';
+import { sendReminder, type SendReminderInput } from './jobs/send-reminder';
 import { sendEmail, type SendEmailInput } from './jobs/send-email';
 import { reconcilePayments } from './jobs/payment-reconciliation';
 import { gerarLinkDePagamento, type GerarLinkInput } from './jobs/gerar-link-de-pagamento';
@@ -17,10 +18,10 @@ import { expireTrials } from './jobs/trial-expiration';
 import { generateInvoices } from './jobs/invoice-generation';
 import { workerProviders } from './providers';
 import {
-  FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_RECONCILIACAO,
-  FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO,
-  FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL, FILA_CALENDAR_SYNC,
-  FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
+  FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_ENVIO_LEMBRETE,
+  FILA_RECONCILIACAO, FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES,
+  FILA_SELO, FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL,
+  FILA_CALENDAR_SYNC, FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
 } from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
@@ -33,8 +34,6 @@ export async function startWorker(): Promise<PgBoss> {
   });
   await boss.start();
 
-  // O worker precisa usar o mesmo modo de integração da API. Antes o modo
-  // `real` lançava erro aqui mesmo com todos os adapters reais já existentes.
   const { messaging, sms, payment, email } = workerProviders();
 
   await boss.work(FILA_RASCUNHOS, async () => {
@@ -81,6 +80,20 @@ export async function startWorker(): Promise<PgBoss> {
       const r = await sendMessage(data, { whatsapp: messaging, sms });
       process.stdout.write(
         `[worker] send-message: ${r.messageId} -> ${r.status}\n`);
+    }
+  });
+
+  await boss.work(FILA_ENVIO_LEMBRETE, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as SendReminderInput;
+      const r = await sendReminder(data, { whatsapp: messaging, sms, email });
+      process.stdout.write(
+        `[worker] reminder: ${data.appointmentId}/${data.ruleId} -> ${r.status}\n`);
+      if (r.status === 'retryable') throw new Error(r.detail);
+      if (r.status === 'indeterminate') {
+        process.stderr.write(
+          `[worker] REMINDER INDETERMINADO: ${data.appointmentId}/${data.ruleId}: ${r.detail}\n`);
+      }
     }
   });
 
