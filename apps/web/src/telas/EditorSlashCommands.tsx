@@ -6,7 +6,7 @@ import {
   useImperativeHandle,
   useState,
 } from "react";
-import { Extension } from "@tiptap/react";
+import { Extension } from "@tiptap/core";
 import Suggestion from "@tiptap/suggestion";
 import type { Editor, Range } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
