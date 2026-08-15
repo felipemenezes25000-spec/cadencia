@@ -1,12 +1,15 @@
 import {
   createAsaasPaymentProvider,
+  createFakeCalendarProvider,
   createFakeEmailProvider,
   createFakeMessagingProvider,
   createFakePaymentProvider,
   createFakeSmsProvider,
+  createGoogleCalendarProvider,
   createSmtpEmailProvider,
   createTwilioSmsProvider,
   createWhatsAppCloudProvider,
+  type CalendarProvider,
   type EmailProvider,
   type MessagingProvider,
   type PaymentProvider,
@@ -17,6 +20,7 @@ export interface WorkerProviders {
   readonly sms: MessagingProvider;
   readonly payment: PaymentProvider;
   readonly email: EmailProvider;
+  readonly calendar: CalendarProvider;
 }
 
 function exigir(nome: string): string {
@@ -42,10 +46,9 @@ function emailConfigurado(): EmailProvider {
 /**
  * Registry do processo assíncrono.
  *
- * Antes, `CADENCIA_PROVIDERS=real` sempre lançava erro no boot do worker,
- * embora a API já tivesse adapters reais. Isso deixava o sistema num estado
- * impossível: a borda HTTP aceitava configuração real, mas a fila que de fato
- * envia mensagem e cria cobrança só sabia usar fake.
+ * `real` precisa usar os mesmos adapters operacionais da API. O worker é quem
+ * executa os efeitos externos; deixar qualquer integração real de fora daqui
+ * faz a borda HTTP prometer uma funcionalidade que nunca sai da fila.
  */
 export function workerProviders(): WorkerProviders {
   const modo = process.env['CADENCIA_PROVIDERS'];
@@ -67,6 +70,7 @@ export function workerProviders(): WorkerProviders {
         webhookToken: exigir('ASAAS_WEBHOOK_TOKEN'),
       }),
       email: emailConfigurado(),
+      calendar: createGoogleCalendarProvider(),
     };
   }
 
@@ -76,6 +80,7 @@ export function workerProviders(): WorkerProviders {
       sms: createFakeSmsProvider(),
       payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
       email: emailConfigurado(),
+      calendar: createFakeCalendarProvider(),
     };
   }
 
@@ -84,5 +89,6 @@ export function workerProviders(): WorkerProviders {
     sms: createFakeSmsProvider(),
     payment: createFakePaymentProvider(),
     email: createFakeEmailProvider(),
+    calendar: createFakeCalendarProvider(),
   };
 }
