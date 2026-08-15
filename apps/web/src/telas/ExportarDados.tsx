@@ -55,11 +55,13 @@ export function ExportarDados(p: ExportarDadosProps) {
     }
   }
 
+  /* Sem `cadencia-page` e com <h2>: app/configuracoes/layout.tsx ja monta o
+     container e o <h1> "Configurações". */
   return (
-    <div className="cadencia-page grid gap-6 max-w-[640px]">
-      <h1 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
+    <div className="grid gap-6 max-w-[640px]">
+      <h2 className="m-0 text-[var(--fs-22)] font-semibold leading-tight">
         Exportar Dados
-      </h1>
+      </h2>
 
       <fieldset className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
         <legend className="px-1 text-[var(--fs-15)] font-semibold">

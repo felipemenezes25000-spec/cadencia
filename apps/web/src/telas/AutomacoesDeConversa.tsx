@@ -228,7 +228,7 @@ function FormularioAutomacao({ automacao, onSalvar, onCancelar }: FormularioAuto
 function AutomacoesSkeleton() {
   return (
     <div
-      className="cadencia-page space-y-6"
+      className="space-y-6"
       role="status"
       aria-busy="true"
       aria-label="Carregando automações"
@@ -307,11 +307,13 @@ export function AutomacoesDeConversa(p: AutomacoesDeConversaProps) {
     setEditandoId(null);
   }
 
+  /* Sem `cadencia-page`: o layout de /conversas ja monta container e <h1>. */
   return (
-    <div className="cadencia-page space-y-6">
+    <div className="space-y-6">
       <PageHeader
         titulo="Automações"
         subtitulo="Configure respostas e ações automáticas para conversas"
+        nivel={2}
         semBreadcrumb
         acoes={
           <Botao variante="primario" iconeEsquerda={Plus} onClick={abrirFormulario}>

@@ -35,10 +35,13 @@ export function TemplatesDeMensagem({
   aoEditar,
   aoExcluir,
 }: TemplatesDeMensagemProps) {
+  /* Sem `cadencia-page`: app/conversas/layout.tsx ja monta o container e o
+     <h1> "Conversas". Repetir os dois dava gutter em dobro e dois <h1>. */
   return (
-    <div className="cadencia-page space-y-4">
+    <div className="space-y-4">
       <PageHeader
         titulo="Templates de mensagem"
+        nivel={2}
         semBreadcrumb
         acoes={
           <Botao variante="primario" iconeEsquerda={Plus} onClick={aoCriar}>

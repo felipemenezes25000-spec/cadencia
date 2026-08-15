@@ -12,6 +12,13 @@ export interface PageHeaderProps {
   readonly semBreadcrumb?: boolean;
   readonly className?: string;
   readonly eyebrow?: string;
+  /**
+   * Nivel do titulo. Use `2` quando a tela vive sob um layout de secao que ja
+   * monta o `<h1>` — /financeiro, /conversas e /configuracoes fazem isso, e
+   * antes disso a pagina saia com DOIS `<h1>` ("Financeiro" e "Recibos").
+   * Em secao com abas a hierarquia correta e h1 = secao, h2 = aba atual.
+   */
+  readonly nivel?: 1 | 2;
 }
 
 export function PageHeader({
@@ -22,7 +29,9 @@ export function PageHeader({
   semBreadcrumb = false,
   className,
   eyebrow,
+  nivel = 1,
 }: PageHeaderProps) {
+  const Titulo = nivel === 2 ? 'h2' : 'h1';
   return (
     <header className={cn("cadencia-page-header min-w-0 max-w-full space-y-3", className)}>
       {!semBreadcrumb && (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
@@ -30,9 +39,12 @@ export function PageHeader({
       <div className="flex min-w-0 items-end justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
         <div className="min-w-0">
           {eyebrow ? <p className="cadencia-eyebrow mb-1.5">{eyebrow}</p> : null}
-          <h1 className="m-0 text-[28px] font-bold leading-[1.08] tracking-[-0.045em] text-text sm:text-[31px]">
+          <Titulo className={cn(
+            "m-0 font-bold leading-[1.08] tracking-[-0.045em] text-text",
+            nivel === 2 ? "text-[22px] sm:text-[25px]" : "text-[28px] sm:text-[31px]",
+          )}>
             {titulo}
-          </h1>
+          </Titulo>
           {subtitulo && (
             <p className="m-0 mt-2 max-w-3xl text-sm leading-[1.65] text-text-muted">
               {subtitulo}

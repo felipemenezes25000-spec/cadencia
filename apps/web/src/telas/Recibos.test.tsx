@@ -33,10 +33,12 @@ function montar(overrides?: Partial<RecibosProps>) {
 }
 
 describe('tela Recibos', () => {
-  it('exibe o título "Recibos"', async () => {
+  it('exibe o título "Recibos" como h2, abaixo do h1 da seção', async () => {
+    /* Nivel 2 de proposito: FinanceiroLayout monta o <h1> "Financeiro" e esta
+       tela e uma aba dentro dele. Como h1, a pagina saia com dois. */
     montar();
     await waitFor(() => expect(
-      screen.getByRole('heading', { level: 1, name: /Recibos/ })).toBeVisible());
+      screen.getByRole('heading', { level: 2, name: /Recibos/ })).toBeVisible());
   });
 
   it('renderiza tabela de recibos', async () => {

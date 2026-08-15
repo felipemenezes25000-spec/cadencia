@@ -117,11 +117,13 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
     try { await fn(); } finally { setSalvando(false); }
   }
 
+  /* Sem `cadencia-page`: FinanceiroLayout ja monta container e <h1>. */
   return (
-    <div className="cadencia-page grid gap-5">
+    <div className="grid gap-5">
       <PageHeader
         titulo="Cadastros do financeiro"
         subtitulo="Fornecedor, conta, centro de custo e lançamentos que se repetem. Preenchidos uma vez, usados todo dia."
+        nivel={2}
         semBreadcrumb
       />
 

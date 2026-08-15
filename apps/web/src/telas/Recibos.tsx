@@ -141,9 +141,10 @@ export function Recibos(p: RecibosProps) {
     );
   }, [recibos, busca]);
 
+  /* Sem `cadencia-page`: FinanceiroLayout ja monta container e <h1>. */
   return (
-    <div className="cadencia-page max-w-5xl space-y-6">
-      <PageHeader titulo="Recibos" semBreadcrumb />
+    <div className="max-w-5xl space-y-6">
+      <PageHeader titulo="Recibos" nivel={2} semBreadcrumb />
 
       {/* Filtros */}
       <div className="flex flex-wrap items-end gap-3">

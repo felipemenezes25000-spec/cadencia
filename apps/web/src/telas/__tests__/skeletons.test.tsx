@@ -170,18 +170,10 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
     expect(container.querySelector('[role="status"]')).toBeInTheDocument();
   });
 
-  it('Financeiro renderiza skeleton enquanto carrega', async () => {
-    const { Financeiro } = await import('../Financeiro');
-    const { container } = render(
-      <Financeiro
-        carregarCaixaDoDia={() => nuncaResolve()}
-        carregarReceitasDoMes={() => nuncaResolve()}
-        carregarAReceber={() => nuncaResolve()}
-        aoEnviarLink={async () => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
+  /* A tela `Financeiro` saiu daqui junto com o arquivo: ela nunca esteve numa
+     rota. Nasceu em bb42109 e nenhuma versao de app/financeiro/page.tsx a
+     importou — a rota /financeiro sempre renderizou FinanceiroVisao, que tem
+     outro contrato de dados. O skeleton que vale e o de FinanceiroVisao. */
 
   it('FinanceiroAPagar renderiza skeleton enquanto carrega', async () => {
     const { FinanceiroAPagar } = await import('../FinanceiroAPagar');
