@@ -1,19 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Cadência">
-  <!--
-    Marca do produto no formato que o Next serve como icone da aba.
-
-    Tres barras de alturas diferentes, espacadas por igual: e a leitura de
-    "cadencia" — ritmo — e tambem a forma da agenda do dia, que e a tela central
-    do produto. Geometria pura de proposito: aos 16px de uma aba, qualquer
-    detalhe fino vira borrao, entao a marca precisa funcionar como silhueta.
-
-    A cor e o brand petrol do Cadência, fixada aqui em hexadecimal porque o
-    favicon e renderizado fora do documento e nao enxerga as variaveis CSS.
-  -->
-  <rect width="32" height="32" rx="8" fill="#075985"/>
-  <g fill="#ffffff">
-    <rect x="8"  y="16" width="4" height="9"  rx="2"/>
-    <rect x="14" y="9"  width="4" height="16" rx="2"/>
-    <rect x="20" y="13" width="4" height="12" rx="2"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Cadência">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0d7770"/>
+      <stop offset="1" stop-color="#042d2f"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="14" y1="12" x2="49" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b8fff8"/>
+      <stop offset="0.46" stop-color="#62d9ce"/>
+      <stop offset="1" stop-color="#17a79d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#bg)"/>
+  <path d="M47 17c-5.7-5-13.2-6.5-20.1-4.4C16.7 15.7 10 24.8 10 35.6c0 10.9 6.8 20 17.2 22.7 7 1.9 14.5.2 20.1-4.7" fill="none" stroke="url(#ring)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M7 36h13l4.8-7.4 7.1 15.6 6.7-18.1 5.3 9.9H57" fill="none" stroke="#effffc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
