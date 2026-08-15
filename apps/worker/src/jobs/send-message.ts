@@ -15,9 +15,25 @@ export interface SendMessageResult {
   readonly providerMessageId: string | null;
 }
 
+export interface MessagingProvidersByChannel {
+  readonly whatsapp: MessagingProvider;
+  readonly sms: MessagingProvider;
+}
+
+function providerDoCanal(
+  providers: MessagingProvider | MessagingProvidersByChannel,
+  channel: string,
+): MessagingProvider | null {
+  // Compatibilidade com testes e consumidores que injetam um único fake.
+  if ('send' in providers) return providers;
+  if (channel === 'whatsapp') return providers.whatsapp;
+  if (channel === 'sms') return providers.sms;
+  return null;
+}
+
 export async function sendMessage(
   input: SendMessageInput,
-  messaging: MessagingProvider,
+  providers: MessagingProvider | MessagingProvidersByChannel,
 ): Promise<SendMessageResult> {
   const actor: Actor = {
     kind: 'system',
@@ -27,7 +43,6 @@ export async function sendMessage(
   };
 
   return withTenantTx(actor, async (tx) => {
-    // Ler a mensagem (coluna real: body_text, não body)
     const { rows: msgRows } = await tx.query<{
       body_text: string; conversation_id: string;
     }>(
@@ -41,8 +56,6 @@ export async function sendMessage(
 
     const msg = msgRows[0]!;
 
-    // Ler a conversa para obter o destinatário e a channel_identity
-    // Coluna real: remote_phone (não remote_address)
     const { rows: convRows } = await tx.query<{
       remote_phone: string; channel_identity_id: string;
     }>(
@@ -60,13 +73,24 @@ export async function sendMessage(
 
     const conv = convRows[0]!;
 
-    // Ler o ref da channel_identity
-    const { rows: ciRows } = await tx.query<{ provider_ref: string }>(
-      `SELECT coalesce(provider_ref, id::text) AS provider_ref
+    const { rows: ciRows } = await tx.query<{
+      provider_ref: string; channel: string;
+    }>(
+      `SELECT coalesce(provider_ref, id::text) AS provider_ref, channel::text AS channel
          FROM msg.channel_identity WHERE id = $1`,
       [conv.channel_identity_id]);
 
-    const channelIdentityRef = ciRows[0]?.provider_ref ?? '';
+    const identidade = ciRows[0];
+    if (identidade === undefined) {
+      await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1`, [input.messageId]);
+      return { messageId: input.messageId, status: 'failed' as const, providerMessageId: null };
+    }
+
+    const messaging = providerDoCanal(providers, identidade.channel);
+    if (messaging === null) {
+      await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1`, [input.messageId]);
+      return { messageId: input.messageId, status: 'failed' as const, providerMessageId: null };
+    }
 
     const ctx = {
       tenantId: input.tenantId,
@@ -77,14 +101,13 @@ export async function sendMessage(
     };
 
     const resultado = await messaging.send(ctx, {
-      channelIdentityRef,
+      channelIdentityRef: identidade.provider_ref,
       to: conv.remote_phone as never,
       body: { kind: 'text', text: msg.body_text ?? '' },
       conversationId: msg.conversation_id,
     });
 
     if (resultado.ok) {
-      // Coluna real: external_id (não provider_message_id)
       await tx.query(
         `UPDATE msg.message
             SET status = 'sent', external_id = $2, sent_at = clock_timestamp()
@@ -94,10 +117,6 @@ export async function sendMessage(
                providerMessageId: resultado.value.providerMessageId };
     }
 
-    // Timeout em operação unsafe: estado indeterminado.
-    // O schema msg.message não tem status 'indeterminate', apenas
-    // queued|sent|delivered|read|failed. Mantemos como 'failed' e
-    // registramos para reconciliação manual.
     await tx.query(
       `UPDATE msg.message SET status = 'failed' WHERE id = $1`,
       [input.messageId]);
