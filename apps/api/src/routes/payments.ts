@@ -18,10 +18,20 @@ function erroDominio(kind: string, status: number, extra: Record<string, unknown
 
 // Mapeamento status BD (português) <-> API (inglês)
 const STATUS_DB_TO_API: Record<string, string> = {
-  pago: 'confirmed', estornado: 'refunded', pendente: 'pending', cancelado: 'failed',
+  pago: 'confirmed',
+  estornado: 'refunded',
+  estorno_pendente: 'refund_pending',
+  estorno_indeterminado: 'refund_indeterminate',
+  pendente: 'pending',
+  cancelado: 'failed',
 };
 const STATUS_API_TO_DB: Record<string, string> = {
-  confirmed: 'pago', refunded: 'estornado', pending: 'pendente', failed: 'cancelado',
+  confirmed: 'pago',
+  refunded: 'estornado',
+  refund_pending: 'estorno_pendente',
+  refund_indeterminate: 'estorno_indeterminado',
+  pending: 'pendente',
+  failed: 'cancelado',
 };
 
 // Nomes de exibição para auto-provisionamento de método de pagamento
@@ -102,19 +112,10 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
        paymentMethodId, b.description ?? 'Pagamento',
        b.categoryId ?? null, `pay:${paymentId}`]);
 
-    // Calcular o repasse do profissional na MESMA transação do pagamento.
-    //
-    // Esta rota reimplementa `recordPayment` de @cadencia/payments, e a cópia
-    // perdeu justamente esta chamada — a única linha que alimenta `fin.split`.
-    // Sem ela nenhuma regra de repasse produz valor: `closeRepassePeriod` acha
-    // zero splits, o extrato sai R$ 0,00 e o profissional simplesmente não
-    // recebe. A função é SECURITY DEFINER, tem GRANT para app_rw (migration
-    // 0096) e só age em receita paga, então chamar aqui é seguro e idempotente.
     await tx.query(
       `SELECT fin.calculate_splits(app.require_tenant_id(), $1)`,
       [paymentId]);
 
-    // Alocar número sequencial de recibo via fin.receipt_counter
     const { rows: counterRows } = await tx.query<{ consumed: string }>(
       `INSERT INTO fin.receipt_counter (tenant_id, next_value)
        VALUES (app.require_tenant_id(), 2)
@@ -122,7 +123,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
        RETURNING next_value - 1 AS consumed`);
     const receiptNumber = Number(counterRows[0]!.consumed);
 
-    // Gerar recibo
     await tx.query(
       `INSERT INTO fin.receipt (id, entry_id, receipt_number)
        VALUES ($1, $2, $3)`,
@@ -138,7 +138,9 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       querystring: z.object({
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        status: z.enum(['confirmed', 'refunded', 'pending', 'failed']).optional(),
+        status: z.enum([
+          'confirmed', 'refunded', 'refund_pending', 'refund_indeterminate', 'pending', 'failed',
+        ]).optional(),
         patientId: z.string().uuid().optional(),
         limit: z.coerce.number().int().min(1).max(200).optional(),
         cursor: z.string().optional(),
@@ -248,20 +250,17 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
           refundId: z.string().uuid(),
           status: z.literal('refunded'),
         }),
+        202: z.object({
+          paymentId: z.string().uuid(),
+          refundId: z.string().uuid(),
+          status: z.literal('refund_pending'),
+        }),
       },
     },
-  }, rota('payment.refund', async (tx, ctx, req) => {
+  }, rota('payment.refund', async (tx, ctx, req, reply) => {
     const p = req.params as { id: string };
     const b = req.body as { reason: string; amountCents?: number };
 
-    // Verificar que o lançamento existe, é receita desta unidade e está pago.
-    //
-    // A RLS filtra o TENANT, não a clínica: sem `clinic_id` aqui, quem tem
-    // `payment.refund` numa unidade estorna o pagamento de qualquer outra
-    // unidade do mesmo grupo — e a rota que CRIA o lançamento grava
-    // `clinic_id = ctx.actor.clinicId`, então o escopo existe e só não estava
-    // sendo respeitado. `kind = 'receita'` pelo mesmo motivo: sem ele o id de
-    // uma DESPESA (contas a pagar) entra por aqui e vira "estornado".
     const { rows: payRows } = await tx.query<{
       id: string; status: string; amount_cents: string;
       external_ref: string | null;
@@ -275,39 +274,49 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     const pay = payRows[0]!;
     if (pay.status !== 'pago') erroDominio('pagamento_nao_estornavel', 422);
 
-    // Estorno parcial não existe no domínio: `fin.entry` tem um único status e
-    // `refundPayment` de @cadencia/payments só conhece estorno integral. Aceitar
-    // `amountCents` menor e marcar o lançamento INTEIRO como estornado tirava do
-    // caixa um valor diferente do que o operador pediu, em silêncio. Enquanto
-    // não houver lançamento compensatório, o pedido parcial é recusado.
     if (b.amountCents !== undefined && b.amountCents !== Number(pay.amount_cents)) {
       erroDominio('estorno_parcial_nao_suportado', 422);
     }
 
     const refundId = uuidv7();
+    const amountCents = b.amountCents ?? Number(pay.amount_cents);
 
-    // Para pagamentos com PSP, enfileirar no outbox
     if (pay.external_ref !== null) {
+      // PSP e assíncrono: `202` significa pedido aceito, NÃO dinheiro devolvido.
+      // O mesmo transaction boundary grava o estado pendente e o outbox; nunca
+      // existe pedido sem job nem job sem o estado correspondente.
       await tx.query(
         `INSERT INTO app.outbox (event_type, aggregate_id, payload)
          VALUES ('refund_payment', $1::uuid,
                  jsonb_build_object('paymentId', $2::text, 'externalRef', $3::text,
                    'amountCents', $4::bigint, 'reason', $5::text, 'refundId', $6::text))`,
-        [p.id, p.id, pay.external_ref,
-         b.amountCents ?? Number(pay.amount_cents), b.reason, refundId]);
+        [p.id, p.id, pay.external_ref, amountCents, b.reason, refundId]);
+
+      await tx.query(
+        `UPDATE fin.entry SET status = 'estorno_pendente' WHERE id = $1`,
+        [p.id]);
+
+      await tx.query(
+        `SELECT audit.log('PAYMENT_REFUND_REQUESTED', 'fin', 'entry', $1, 'sucesso',
+                jsonb_build_object('amount_cents', $2::bigint, 'reason', $3::text,
+                                   'status', 'estorno_pendente'::text), $4)`,
+        [p.id, amountCents, b.reason, ctx.actor.clinicId]);
+
+      void reply.code(202);
+      return { paymentId: p.id, refundId, status: 'refund_pending' as const };
     }
 
-    // Atualizar status do lançamento
+    // Dinheiro/Pix registrado manualmente não possui PSP para chamar. Aqui a
+    // própria transação local é a confirmação definitiva do estorno.
     await tx.query(
       `UPDATE fin.entry SET status = 'estornado' WHERE id = $1`,
       [p.id]);
 
-    // Registrar na auditoria
     await tx.query(
       `SELECT audit.log('PAYMENT_REFUND', 'fin', 'entry', $1, 'sucesso',
               jsonb_build_object('amount_cents', $2::bigint, 'reason', $3::text,
                                  'status', 'estornado'::text), $4)`,
-      [p.id, b.amountCents ?? Number(pay.amount_cents), b.reason, ctx.actor.clinicId]);
+      [p.id, amountCents, b.reason, ctx.actor.clinicId]);
 
     return { paymentId: p.id, refundId, status: 'refunded' as const };
   }));
@@ -336,7 +345,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
 
     const entryId = uuidv7();
 
-    // Resolver (ou auto-provisionar) método de pagamento 'link'
     const { rows: pmRows } = await tx.query<{ id: string }>(
       `SELECT id FROM fin.payment_method WHERE kind = 'link'::fin.payment_method_kind LIMIT 1`);
 
@@ -352,7 +360,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       paymentMethodId = newPmId;
     }
 
-    // Criar lançamento pendente (fin.entry com status='pendente')
     await tx.query(
       `INSERT INTO fin.entry
          (id, kind, patient_id, clinic_id, professional_id, amount_cents,
@@ -362,13 +369,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       [entryId, b.patientId, ctx.actor.clinicId, b.amountCents,
        paymentMethodId, b.description, `link:${entryId}`]);
 
-    // Enfileirar no outbox para criação do link no PSP. A chamada ao parceiro
-    // NÃO acontece aqui: HTTP a terceiro dentro da transação segura a conexão do
-    // banco pelo tempo do parceiro, e parceiro lento vira pool esgotado.
-    //
-    // `solicitadoPor` viaja no evento porque no consumidor o ator é o sistema e
-    // `app.current_user_id()` é NULL. Link de cobrança sem autor identificado é
-    // cobrança por que ninguém responde.
     await tx.query(
       `INSERT INTO app.outbox (event_type, aggregate_id, payload)
        VALUES ('create_payment_link', $1::uuid,
@@ -386,7 +386,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
    * A criação é assíncrona (outbox), então a tela que pediu o link precisa de
    * um lugar para perguntar. Enquanto não saiu, `url` é null e `status` diz
    * `processando` — que é diferente de "não existe" e diferente de "falhou".
-   * Devolver string vazia faria a tela mostrar um link quebrado ao paciente.
    */
   r.get('/v1/payment-links/:id', {
     schema: {
@@ -402,8 +401,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     },
   }, rota('payment.read', async (tx, _ctx, req, reply) => {
     const p = req.params as { id: string };
-    // O id devolvido pelo POST é o do LANÇAMENTO (entry), não o do link — o link
-    // ainda não existia naquele momento. Por isso a busca é por entry_id.
     const { rows } = await tx.query<{ id: string; url: string | null }>(
       `SELECT l.id, l.url
          FROM fin.payment_link l
@@ -458,15 +455,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     if (rows.length === 0) erroDominio('recibo_nao_encontrado', 404);
     const rec = rows[0]!;
 
-    // Gerar HTML simples do recibo (PDF real será implementado pelo worker)
-    //
-    // `nome do paciente`, `nome da clinica` e `forma de pagamento` são texto
-    // livre digitado por quem usa o sistema, e esta página volta como text/html
-    // na ORIGEM DA API. Sem escape, um paciente cadastrado como
-    // `<img src=x onerror=...>` executa script nessa origem ao abrir o recibo —
-    // e o cookie de CSRF nasce com httpOnly:false, então o script leria o token
-    // e emitiria requisição autenticada. O projeto já resolve isso em todo
-    // documento gerado por `@cadencia/documents`; aqui faltava usar.
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Recibo ${escapeHtml(rec.receipt_id)}</title></head>
@@ -481,10 +469,6 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
 </body></html>`;
 
     void reply.header('content-type', 'text/html; charset=utf-8');
-    // Segunda camada, para o caso de um campo novo entrar aqui sem escape:
-    // `default-src 'none'` derruba script, imagem e fetch, e sem `unsafe-inline`
-    // em script-src o navegador ignora handler inline (onerror, onload). O
-    // recibo só precisa dos atributos `style`, que style-src libera.
     void reply.header('content-security-policy',
       "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'");
     void reply.header('content-disposition',
