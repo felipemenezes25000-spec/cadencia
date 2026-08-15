@@ -23,14 +23,26 @@ describe('calendar-fake', () => {
     const r = await p.createEvent(ctx, { accessToken: 'tok', event: evento });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.value.externalEventId).toBe('fake-cal-event-1');
+    expect(r.value.externalEventId).toMatch(/^[a-f0-9]{64}$/);
+    expect(p.events).toHaveLength(1);
+    expect(p.events[0]?.externalEventId).toBe(r.value.externalEventId);
   });
 
-  it('accumulates events', async () => {
+  it('upserts the same external event when an idempotent create is retried', async () => {
     const p = createFakeCalendarProvider();
-    await p.createEvent(ctx, { accessToken: 'tok', event: evento });
-    await p.createEvent(ctx, { accessToken: 'tok', event: { ...evento, summary: 'Outro' } });
-    expect(p.events).toHaveLength(2);
+    const first = await p.createEvent(ctx, { accessToken: 'tok', event: evento });
+    const second = await p.createEvent(ctx, {
+      accessToken: 'tok',
+      event: { ...evento, summary: 'Consulta atualizada' },
+    });
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+
+    expect(second.value.externalEventId).toBe(first.value.externalEventId);
+    expect(p.events).toHaveLength(1);
+    expect(p.events[0]?.event.summary).toBe('Consulta atualizada');
   });
 
   it('deletes event', async () => {
