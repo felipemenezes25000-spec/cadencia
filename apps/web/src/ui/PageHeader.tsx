@@ -33,11 +33,11 @@ export function PageHeader({
 }: PageHeaderProps) {
   const Titulo = nivel === 2 ? 'h2' : 'h1';
   return (
-    <header className={cn("cadencia-page-header min-w-0 max-w-full space-y-3", className)}>
+    <header className={cn("cadencia-page-header min-w-0 w-full space-y-3", className)}>
       {!semBreadcrumb && (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
 
-      <div className="flex min-w-0 items-end justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
-        <div className="min-w-0">
+      <div className="flex min-w-0 items-start justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
+        <div className="min-w-0 flex-1">
           {eyebrow ? <p className="cadencia-eyebrow mb-1.5">{eyebrow}</p> : null}
           <Titulo className={cn(
             "m-0 font-bold leading-[1.08] tracking-[-0.045em] text-text",
@@ -53,7 +53,7 @@ export function PageHeader({
         </div>
 
         {acoes && (
-          <div className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center justify-end gap-2 max-sm:w-full max-sm:justify-start">
+          <div className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center justify-end gap-2 pt-0.5 max-sm:w-full max-sm:justify-start max-sm:pt-0">
             {acoes}
           </div>
         )}
