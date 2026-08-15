@@ -25,13 +25,6 @@ export function hashSessionToken(token: string): Buffer {
   return createHash('sha256').update(token, 'utf8').digest();
 }
 
-/**
- * O id da sessão é gerado pelo PostgreSQL 18 (`uuidv7()` nativo, DEFAULT da
- * coluna) e não pelo Node: `authn` não pode importar o gerador do kernel
- * (§2.2 regra 2) e duplicar o algoritmo seria pior. O efeito colateral é
- * desejável — o componente temporal do id vem do mesmo relógio que carimba
- * created_at, que é a fonte de tempo persistido do sistema (§3).
- */
 export async function createSession(
   db: Queryable,
   input: {
@@ -67,43 +60,61 @@ export async function createSession(
 export async function resolveSession(
   db: Queryable, token: string,
 ): Promise<Result<ResolvedSession, SessionFailure>> {
-  const { rows } = await db.query(
-    `SELECT s.id, s.user_id, s.active_tenant_id, s.active_clinic_id, s.mfa_at,
-            s.revoked_at IS NOT NULL                       AS revogada,
-            s.idle_expires_at     < clock_timestamp()      AS idle_expirou,
-            s.absolute_expires_at < clock_timestamp()      AS absoluta_expirou
-       FROM id.session s
-       JOIN id."user" u
-         ON u.id = s.user_id
-        AND u.disabled_at IS NULL
-        AND u.status = 'ativo'
-      WHERE s.token_hash = $1`,
-    [hashSessionToken(token)],
-  );
-  const row = rows[0];
-  // Conta desativada deliberadamente é indistinguível de sessão inexistente.
-  // Desativar uma pessoa da equipe precisa cortar o acesso na próxima request,
-  // não só quando o cookie completar 30 min/12 h.
-  if (!row) return err('nao_encontrada');
-  if (row.revogada) return err('revogada');
-  if (row.absoluta_expirou) return err('expirada_absoluta');
-  if (row.idle_expirou) return err('expirada_inatividade');
+  const tokenHash = hashSessionToken(token);
 
-  await db.query(
-    `UPDATE id.session
+  // Resolver e renovar sao UMA operacao atomica. O WHERE revalida todas as
+  // condições no instante do UPDATE; se uma revogação/desativação concorrente
+  // vencer a corrida, nenhuma linha retorna e esta request não herda uma sessão
+  // que era válida alguns microssegundos antes.
+  const { rows } = await db.query(
+    `UPDATE id.session s
         SET last_seen_at = clock_timestamp(),
             idle_expires_at = clock_timestamp() + make_interval(mins => $2::int)
-      WHERE id = $1`,
-    [row.id, SESSION_IDLE_MINUTES],
+       FROM id."user" u
+      WHERE s.token_hash = $1
+        AND u.id = s.user_id
+        AND u.disabled_at IS NULL
+        AND u.status = 'ativo'
+        AND s.revoked_at IS NULL
+        AND s.idle_expires_at >= clock_timestamp()
+        AND s.absolute_expires_at >= clock_timestamp()
+      RETURNING s.id, s.user_id, s.active_tenant_id, s.active_clinic_id, s.mfa_at`,
+    [tokenHash, SESSION_IDLE_MINUTES],
   );
 
-  return ok({
-    sessionId: row.id as string,
-    userId: row.user_id as string,
-    activeTenantId: (row.active_tenant_id as string | null) ?? null,
-    activeClinicId: (row.active_clinic_id as string | null) ?? null,
-    mfaAt: (row.mfa_at as Date | null) ?? null,
-  });
+  const row = rows[0];
+  if (row) {
+    return ok({
+      sessionId: row.id as string,
+      userId: row.user_id as string,
+      activeTenantId: (row.active_tenant_id as string | null) ?? null,
+      activeClinicId: (row.active_clinic_id as string | null) ?? null,
+      mfaAt: (row.mfa_at as Date | null) ?? null,
+    });
+  }
+
+  // Segunda leitura só CLASSIFICA a falha para telemetria/testes. Ela nunca pode
+  // transformar a resposta em sucesso, portanto uma nova corrida aqui não abre
+  // acesso. Conta inativa continua indistinguível de token inexistente.
+  const falha = await db.query(
+    `SELECT s.revoked_at IS NOT NULL AS revogada,
+            s.idle_expires_at < clock_timestamp() AS idle_expirou,
+            s.absolute_expires_at < clock_timestamp() AS absoluta_expirou,
+            (u.id IS NOT NULL AND u.disabled_at IS NULL AND u.status = 'ativo') AS usuario_ativo
+       FROM id.session s
+       LEFT JOIN id."user" u ON u.id = s.user_id
+      WHERE s.token_hash = $1`,
+    [tokenHash],
+  );
+  const motivo = falha.rows[0];
+  if (!motivo || !motivo.usuario_ativo) return err('nao_encontrada');
+  if (motivo.revogada) return err('revogada');
+  if (motivo.absoluta_expirou) return err('expirada_absoluta');
+  if (motivo.idle_expirou) return err('expirada_inatividade');
+
+  // Estado mudou durante a classificação (por exemplo, uma revogação recém
+  // commitada). Falhar fechado é sempre mais seguro do que tentar de novo.
+  return err('nao_encontrada');
 }
 
 export async function revokeSession(
