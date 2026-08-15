@@ -6,7 +6,7 @@ import {
   useImperativeHandle,
   useState,
 } from "react";
-import { Extension } from "@tiptap/core";
+import * as TiptapReact from "@tiptap/react";
 import Suggestion from "@tiptap/suggestion";
 import type { Editor, Range } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
@@ -356,7 +356,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
 
 /* ── extensão TipTap ──────────────────────────────────────────────────── */
 
-export const SlashCommandExtension = Extension.create({
+export const SlashCommandExtension = TiptapReact.Extension.create({
   name: "slashCommand",
 
   addOptions() {
