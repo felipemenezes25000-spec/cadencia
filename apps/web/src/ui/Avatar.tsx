@@ -18,9 +18,9 @@ function iniciaisDe(nome: string): string {
 /** Avatar textual compartilhado. Fotos podem ser adicionadas sem mudar a geometria. */
 export function Avatar({ nome, iniciais, tamanho = 'md', className }: AvatarProps) {
   const tamanhos = {
-    sm: 'size-7 text-[10px]',
-    md: 'size-9 text-xs',
-    lg: 'size-11 text-sm',
+    sm: 'size-8 text-[10px]',
+    md: 'size-10 text-xs',
+    lg: 'size-12 text-sm',
     xl: 'size-16 text-lg',
   } as const;
 
@@ -29,7 +29,7 @@ export function Avatar({ nome, iniciais, tamanho = 'md', className }: AvatarProp
       role="img"
       aria-label={`Avatar de ${nome}`}
       className={cn(
-        'inline-grid shrink-0 place-items-center rounded-full bg-accent-soft font-bold text-accent ring-1 ring-inset ring-accent/10',
+        'inline-grid shrink-0 place-items-center rounded-full border border-accent/12 bg-[linear-gradient(145deg,var(--brand-soft),var(--surface))] font-bold text-accent shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8),0_4px_12px_rgb(7_118_111_/_0.06)] ring-1 ring-inset ring-accent/5',
         tamanhos[tamanho],
         className,
       )}

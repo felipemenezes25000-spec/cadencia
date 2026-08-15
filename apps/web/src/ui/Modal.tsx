@@ -56,12 +56,12 @@ export function Modal({
       onOpenChange={(open) => { if (!open && !ocupado) aoFechar(); }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[var(--z-modal)] bg-text/25 transition-opacity duration-200 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
+        <Dialog.Overlay className="fixed inset-0 z-[var(--z-modal)] bg-[#06181d]/38 backdrop-blur-[5px] transition-opacity duration-200 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
         <Dialog.Content
           className={[
-            'fixed z-[calc(var(--z-modal)+1)] overflow-hidden border border-line bg-surface shadow-elev-3 focus:outline-none',
+            'fixed z-[calc(var(--z-modal)+1)] overflow-hidden border border-line bg-surface/98 shadow-elev-3 backdrop-blur-xl focus:outline-none',
             /* Desktop: caixa centrada. */
-            'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl',
+            'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[20px]',
             LARGURA[largura],
             'max-h-[calc(100dvh-48px)]',
             /* Celular: folha de baixo. Centrado com `top-1/2` o modal se
@@ -78,9 +78,9 @@ export function Modal({
              o Radix loga aviso de acessibilidade em toda abertura. */
           {...(descricao === undefined ? { 'aria-describedby': undefined } : {})}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-line bg-[linear-gradient(180deg,var(--surface),var(--surface-subtle))] px-5 py-4.5">
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-bold text-text">{titulo}</Dialog.Title>
+              <Dialog.Title className="text-[17px] font-bold tracking-[-0.025em] text-text">{titulo}</Dialog.Title>
               {descricao === undefined ? null : (
                 <Dialog.Description className="mt-1 text-sm leading-relaxed text-text-muted">
                   {descricao}
@@ -97,7 +97,7 @@ export function Modal({
           </div>
 
           {rodape === undefined ? null : (
-            <div className="flex justify-end gap-2 border-t border-line px-5 py-3">
+            <div className="flex justify-end gap-2 border-t border-line bg-surface-subtle/72 px-5 py-3.5">
               {rodape}
             </div>
           )}

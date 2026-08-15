@@ -33,16 +33,16 @@ const TAMANHO_ICONE: Record<TamanhoBotao, number> = {
 };
 
 const classesVariante: Record<VarianteBotao, string> = {
-  primario: 'border border-accent bg-accent text-accent-on shadow-[0_5px_14px_rgb(8_119_131_/_0.18),inset_0_1px_0_rgb(255_255_255_/_0.16)] hover:border-accent-hover hover:bg-accent-hover hover:shadow-[0_8px_20px_rgb(8_119_131_/_0.22)]',
-  secundario: 'border border-line bg-surface text-text shadow-[inset_0_1px_0_rgb(255_255_255_/_0.85)] hover:border-accent/25 hover:bg-surface-raised hover:shadow-elev-1',
+  primario: 'border border-accent bg-accent text-accent-on shadow-[0_8px_20px_rgb(7_118_111_/_0.18),inset_0_1px_0_rgb(255_255_255_/_0.18)] hover:border-accent-hover hover:bg-accent-hover hover:shadow-[0_12px_26px_rgb(7_118_111_/_0.23)]',
+  secundario: 'border border-line bg-surface/95 text-text shadow-[inset_0_1px_0_rgb(255_255_255_/_0.92),0_3px_10px_rgb(8_46_48_/_0.035)] hover:border-accent/25 hover:bg-surface-raised hover:shadow-elev-1',
   fantasma: 'border border-transparent bg-transparent text-text-muted hover:bg-surface-subtle hover:text-text',
-  perigo: 'border border-danger bg-danger text-white hover:brightness-95',
+  perigo: 'border border-danger bg-danger text-white shadow-[0_8px_18px_rgb(174_58_72_/_0.16)] hover:brightness-95',
 };
 
 const classesTamanho: Record<TamanhoBotao, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-9 px-3.5 text-sm gap-2',
-  lg: 'h-10 px-4 text-sm gap-2',
+  sm: 'h-[34px] px-3 text-xs gap-1.5',
+  md: 'h-[38px] px-3.5 text-sm gap-2',
+  lg: 'h-[42px] px-4 text-sm gap-2',
 };
 
 export function Botao({
@@ -69,9 +69,9 @@ export function Botao({
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(
-        'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[10px] font-semibold tracking-[-0.008em]',
+        'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[11px] font-semibold tracking-[-0.012em]',
         /* Alvo de toque de 44px so no touch. Os tres tamanhos do botao sao
-           32/36/40px — todos abaixo do minimo, e o `md` (36px), que e o
+           34/38/42px — todos abaixo do minimo, e o `md` (38px), que e o
            padrao, aparece 202 vezes. No desktop a altura visual continua a
            mesma; aqui a caixa de acerto e que cresce. */
         'max-md:min-h-11 max-md:min-w-11',

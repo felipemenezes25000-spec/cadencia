@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -42,7 +42,7 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
   }
 
   return (
-    <div className="cadencia-shell-bg flex min-h-screen bg-canvas">
+    <div className="cadencia-shell-bg flex min-h-screen bg-canvas" style={{ '--nav-width': collapsed ? '76px' : '248px' } as CSSProperties}>
       <Sidebar collapsed={collapsed} onToggle={toggle} sessao={session} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />

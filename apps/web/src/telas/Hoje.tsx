@@ -5,6 +5,8 @@ import {
   CalendarBlank,
   ChatCircle,
   CheckCircle,
+  ArrowRight,
+  Sparkle,
   Circle,
   Clock,
   CurrencyDollar,
@@ -251,28 +253,39 @@ export function Hoje(props: HojeProps) {
   const next = aguardando[0] ?? fila.find((item) => item.status === 'confirmado' || item.status === 'agendado') ?? null;
 
   return (
-    <div className="cadencia-page space-y-5 pb-28 md:pb-12">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 aria-label="Hoje" className="text-[28px] font-bold leading-tight tracking-[-0.035em] text-text">
-            Hoje <span className="font-medium text-text">· {dataPorExtenso(props.dia)}</span>
-          </h1>
-          <p className="mt-1.5 text-sm text-text-muted">
-            <span className="font-semibold text-text">{contadores.agendados} atendimentos</span>
-            {' · '}{aguardando.length} em espera{' · '}{emAtendimento.length} em atendimento
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <span className="mr-1 inline-flex items-center gap-2 text-xs text-text-faint">
-            <span className="size-2 rounded-full bg-ok" aria-hidden /> Atualizado agora
-          </span>
-          <Botao variante="secundario" iconeEsquerda={ChatCircle} onClick={props.aoEnviarMensagem}>
-            Enviar mensagem{props.mensagensNaoLidasTotal > 0 ? ` (${props.mensagensNaoLidasTotal})` : ''}
-          </Botao>
+    <div className="cadencia-page cadencia-today-page space-y-5 pb-28 md:pb-12">
+      <header className="cadencia-today-hero cadencia-hero-panel overflow-hidden px-5 py-5 sm:px-6 sm:py-6">
+        <div className="relative z-[1] flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="cadencia-kicker inline-flex items-center gap-1.5 rounded-full border border-accent/15 bg-accent-soft/70 px-2.5 py-1">
+                <Sparkle size={12} weight="fill" aria-hidden /> Cockpit operacional
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/15 bg-ok-soft/60 px-2.5 py-1 text-[10px] font-bold text-ok">
+                <span className="cadencia-live-dot !size-1.5 !shadow-none" aria-hidden /> Unidade online
+              </span>
+            </div>
+            <h1 aria-label="Hoje" className="text-[29px] font-bold leading-[1.08] tracking-[-0.045em] text-text sm:text-[33px]">
+              Hoje <span className="font-medium text-text-muted">· {dataPorExtenso(props.dia)}</span>
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-text-muted">
+              <span className="font-bold text-text">{contadores.agendados} atendimentos</span> programados
+              <span className="mx-2 text-line-strong">•</span>{aguardando.length} em espera
+              <span className="mx-2 text-line-strong">•</span>{emAtendimento.length} em atendimento
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+            <span className="mr-1 inline-flex items-center gap-2 rounded-full bg-surface/65 px-3 py-2 text-[11px] font-semibold text-text-faint ring-1 ring-inset ring-line">
+              <span className="size-1.5 rounded-full bg-ok" aria-hidden /> Atualizado agora
+            </span>
+            <Botao variante="secundario" iconeEsquerda={ChatCircle} onClick={props.aoEnviarMensagem}>
+              Enviar mensagem{props.mensagensNaoLidasTotal > 0 ? ` (${props.mensagensNaoLidasTotal})` : ''}
+            </Botao>
+          </div>
         </div>
       </header>
 
-      <section aria-label="Resumo do dia" className="grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-surface lg:grid-cols-4">
+      <section aria-label="Resumo do dia" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric icon={CalendarBlank} value={contadores.agendados} label="Hoje" />
         <Metric icon={Pulse} value={emAtendimento.length} label="Em atendimento" tone="success" />
         <Metric icon={Clock} value={aguardando.length} label="Aguardando" tone="warning" />
@@ -289,10 +302,18 @@ export function Hoje(props: HojeProps) {
       ) : null}
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_350px]">
-        <section id="fluxo-de-hoje" aria-labelledby="titulo-fluxo" className="order-1 overflow-hidden rounded-2xl border border-line bg-surface">
-          <div className="border-b border-line px-4 pt-4 sm:px-5">
-            <h2 id="titulo-fluxo" className="text-lg font-bold tracking-tight text-text">Fluxo de hoje</h2>
-            <div className="mt-3 flex gap-5 overflow-x-auto scrollbar-thin">
+        <section id="fluxo-de-hoje" aria-labelledby="titulo-fluxo" className="cadencia-flow-panel order-1 overflow-hidden rounded-[18px] border border-line bg-surface shadow-elev-1">
+          <div className="border-b border-line bg-[linear-gradient(180deg,var(--surface),var(--surface-subtle))] px-4 pt-4 sm:px-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="cadencia-kicker mb-1">Operação em tempo real</p>
+                <h2 id="titulo-fluxo" className="text-[18px] font-bold tracking-[-0.025em] text-text">Fluxo de hoje</h2>
+              </div>
+              <span className="hidden items-center gap-2 rounded-full border border-line bg-surface px-2.5 py-1 text-[10px] font-semibold text-text-faint sm:inline-flex">
+                <span className="cadencia-live-dot !size-1.5 !shadow-none" aria-hidden /> Atualização automática
+              </span>
+            </div>
+            <div className="mt-4 flex gap-5 overflow-x-auto scrollbar-thin">
               <FlowTab active={!props.filtro} label="Todos" count={contadores.agendados} onClick={() => props.aoMudarFiltro(undefined)} />
               <FlowTab active={props.filtro === 'espera'} label="Em espera" count={aguardando.length} onClick={() => props.aoMudarFiltro('espera')} />
               <FlowTab active={props.filtro === 'atendimento'} label="Em atendimento" count={emAtendimento.length} onClick={() => props.aoMudarFiltro('atendimento')} />
@@ -300,7 +321,7 @@ export function Hoje(props: HojeProps) {
               <FlowTab active={props.filtro === 'concluidos'} label="Concluídos" count={fila.filter((x) => x.status === 'atendido' || x.status === 'faltou').length} onClick={() => props.aoMudarFiltro('concluidos')} />
             </div>
           </div>
-          <div className="hidden grid-cols-[72px_minmax(220px,1fr)_88px_148px_136px_36px] gap-x-4 border-b border-line bg-surface-subtle px-4 py-2 text-[10px] font-bold uppercase tracking-[.07em] text-text-faint md:grid">
+          <div className="hidden grid-cols-[72px_minmax(220px,1fr)_88px_150px_140px_38px] gap-x-4 border-b border-line bg-surface-sunken/45 px-5 py-2.5 text-[9px] font-bold uppercase tracking-[.11em] text-text-faint md:grid">
             <span>Horário</span><span>Paciente / atendimento</span><span>Espera</span><span>Situação</span><span>Ação</span><span><span className="sr-only">Mais</span></span>
           </div>
           {filaVisivel.length > 0 ? (
@@ -379,12 +400,19 @@ function Metric({ icon: Icone, value, label, tone = 'neutral' }: {
   readonly tone?: 'neutral' | 'success' | 'warning' | 'danger';
 }) {
   return (
-    <div className="flex min-h-[78px] items-center gap-3 border-b border-r border-line px-4 py-3 last:border-r-0 lg:border-b-0">
+    <div className={cn(
+      'cadencia-stat-card group relative flex min-h-[88px] items-center gap-3 overflow-hidden rounded-[16px] border border-line bg-surface px-4 py-3 shadow-elev-1 transition-all duration-150 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-elev-2',
+      tone === 'danger' && value > 0 ? 'ring-1 ring-inset ring-danger/5' : '',
+    )}>
       <span className={cn(
-        'grid size-9 shrink-0 place-items-center rounded-lg',
-        tone === 'success' ? 'bg-ok-soft text-ok' : tone === 'warning' ? 'bg-warn-soft text-warn' : tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-accent-soft text-accent',
-      )}><Icone size={19} aria-hidden /></span>
-      <span><strong className="block text-xl leading-none text-text tabular-nums">{value}</strong><span className="mt-1 block text-xs font-semibold text-text-muted">{label}</span></span>
+        'relative z-[1] grid size-10 shrink-0 place-items-center rounded-xl border shadow-[inset_0_1px_0_rgb(255_255_255_/_0.65)]',
+        tone === 'success' ? 'border-ok/12 bg-ok-soft text-ok' : tone === 'warning' ? 'border-warn/12 bg-warn-soft text-warn' : tone === 'danger' ? 'border-danger/12 bg-danger-soft text-danger' : 'border-accent/12 bg-accent-soft text-accent',
+      )}><Icone size={19} weight="duotone" aria-hidden /></span>
+      <span className="relative z-[1] min-w-0"><strong className="block text-[23px] font-bold leading-none tracking-[-0.04em] text-text tabular-nums">{value}</strong><span className="mt-1.5 block truncate text-[11px] font-semibold text-text-muted">{label}</span></span>
+      <span className={cn(
+        'absolute -bottom-8 -right-6 size-24 rounded-full opacity-[.08] blur-xl transition-transform duration-300 group-hover:scale-125',
+        tone === 'success' ? 'bg-ok' : tone === 'warning' ? 'bg-warn' : tone === 'danger' ? 'bg-danger' : 'bg-accent',
+      )} aria-hidden />
     </div>
   );
 }
@@ -394,19 +422,22 @@ function AttentionBanner({ precisa, total }: { readonly precisa: PrecisaDeVoce |
   const detalhes = PENDENCIAS.filter((item) => precisa[item.chave] > 0).slice(0, 3);
   if (total === 0) {
     return (
-      <section aria-label="Atenção necessária" className="flex min-h-14 items-center gap-3 rounded-xl border border-ok/20 bg-ok-soft/60 px-4 py-3 text-sm text-ok">
-        <CheckCircle size={20} aria-hidden /><strong>Nenhuma pendência operacional agora</strong>
+      <section aria-label="Atenção necessária" className="flex min-h-[64px] items-center gap-3 rounded-[16px] border border-ok/15 bg-[linear-gradient(90deg,var(--success-soft),var(--surface))] px-4 py-3 text-sm text-ok shadow-elev-1">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ok text-white shadow-[0_8px_18px_rgb(35_119_77/.18)]"><CheckCircle size={19} weight="fill" aria-hidden /></span>
+        <div><strong className="block text-sm text-text">Operação sob controle</strong><span className="text-xs text-text-muted">Nenhuma pendência operacional agora</span></div>
       </section>
     );
   }
   return (
-    <section aria-label="Atenção necessária" className="flex flex-col gap-3 rounded-xl border border-warn/20 bg-warn-soft/55 px-4 py-3 sm:flex-row sm:items-center">
-      <WarningCircle size={20} weight="fill" className="shrink-0 text-warn" aria-hidden />
-      <strong className="text-sm text-text">{total} {total === 1 ? 'item precisa' : 'itens precisam'} da sua atenção</strong>
-      <p className="min-w-0 flex-1 text-xs text-text-muted">
-        {detalhes.map((item) => `${precisa[item.chave]} ${item.rotulo.toLocaleLowerCase('pt-BR')}`).join(' · ')}
-      </p>
-      <a href="#painel-unidade" className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-warn px-3 text-xs font-semibold text-white hover:brightness-95">Resolver</a>
+    <section aria-label="Atenção necessária" className="group relative flex flex-col gap-3 overflow-hidden rounded-[16px] border border-warn/18 bg-[linear-gradient(110deg,var(--warning-soft),var(--surface)_68%)] px-4 py-3.5 shadow-elev-1 sm:flex-row sm:items-center sm:px-5">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-warn/15 bg-warn text-white shadow-[0_8px_20px_rgb(163_98_16/.18)]"><WarningCircle size={21} weight="fill" aria-hidden /></span>
+      <div className="min-w-0 flex-1">
+        <strong className="block text-sm text-text">{total} {total === 1 ? 'item precisa' : 'itens precisam'} da sua atenção</strong>
+        <p className="mt-1 truncate text-xs text-text-muted">
+          {detalhes.map((item) => `${precisa[item.chave]} ${item.rotulo.toLocaleLowerCase('pt-BR')}`).join(' · ')}
+        </p>
+      </div>
+      <a href="#painel-unidade" className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-warn bg-warn px-3.5 text-xs font-bold text-white shadow-[0_7px_18px_rgb(163_98_16/.16)] transition-all duration-150 hover:-translate-y-px hover:brightness-95">Resolver <ArrowRight size={14} weight="bold" aria-hidden /></a>
     </section>
   );
 }
@@ -418,9 +449,12 @@ function FlowTab({ active, label, count, onClick }: {
   readonly onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={cn('relative shrink-0 pb-3 text-xs font-semibold transition-colors-fast', active ? 'text-accent' : 'text-text-muted hover:text-text')}>
-      {label} <span className="ml-1 text-[10px] tabular-nums">{count}</span>
-      {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" aria-hidden /> : null}
+    <button type="button" onClick={onClick} aria-pressed={active} className={cn(
+      'relative shrink-0 rounded-t-lg px-0.5 pb-3 text-xs font-semibold transition-colors-fast',
+      active ? 'text-accent' : 'text-text-muted hover:text-text',
+    )}>
+      {label} <span className={cn('ml-1 inline-flex min-w-5 justify-center rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums', active ? 'bg-accent-soft text-accent' : 'bg-surface-sunken text-text-faint')}>{count}</span>
+      {active ? <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-accent shadow-[0_0_10px_var(--brand)]" aria-hidden /> : null}
     </button>
   );
 }
@@ -433,40 +467,89 @@ function UnitPanel({ now, next, precisa, timezone, onNow, onNext }: {
   readonly onNow: () => void;
   readonly onNext: () => void;
 }) {
+  const total = precisa ? Object.values(precisa).reduce((a, b) => a + b, 0) : 0;
   return (
-    <aside id="painel-unidade" aria-labelledby="titulo-painel-unidade" className="order-2 overflow-hidden rounded-2xl border border-line bg-surface lg:sticky lg:top-[88px]">
-      <h2 id="titulo-painel-unidade" className="border-b border-line px-5 py-4 text-lg font-bold tracking-tight text-text">Painel da unidade</h2>
-      <section className="border-b border-line p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-text"><span className="size-2 rounded-full bg-ok" aria-hidden />Agora</h3>
+    <aside
+      id="painel-unidade"
+      aria-labelledby="titulo-painel-unidade"
+      className="cadencia-unit-panel order-2 overflow-hidden rounded-[18px] border border-line bg-surface shadow-elev-1 lg:sticky lg:top-[92px]"
+    >
+      <div className="relative overflow-hidden border-b border-line bg-[linear-gradient(135deg,var(--nav),color-mix(in_srgb,var(--nav)_82%,var(--brand)))] px-5 py-4 text-white">
+        <div className="absolute -right-8 -top-12 size-32 rounded-full bg-accent/20 blur-2xl" aria-hidden />
+        <div className="relative z-[1] flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.14em] text-white/45">Tempo real</p>
+            <h2 id="titulo-painel-unidade" className="mt-1 text-[17px] font-bold tracking-[-0.025em] text-white">Painel da unidade</h2>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.06] px-2.5 py-1 text-[10px] font-semibold text-white/72 backdrop-blur">
+            <span className="size-1.5 rounded-full bg-[#72e0b0] shadow-[0_0_10px_#72e0b0]" aria-hidden /> Ao vivo
+          </span>
+        </div>
+      </div>
+
+      <section className="border-b border-line px-5 py-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[.075em] text-text-muted"><span className="size-2 rounded-full bg-ok shadow-[0_0_0_3px_var(--success-soft)]" aria-hidden />Agora</h3>
+          {now ? <span className="font-mono text-[10px] font-semibold text-text-faint tabular-nums">{horaNaClinica(now.startsAt, timezone)}</span> : null}
+        </div>
         {now ? (
-          <div>
-            <div className="flex items-start gap-3"><Avatar nome={now.displayName} /><div className="min-w-0"><p title={now.displayName} className="truncate text-sm font-bold text-text">{now.displayName}</p><p className="mt-0.5 text-xs text-text-muted">{horaNaClinica(now.startsAt, timezone)} · {now.procedureNome ?? 'Atendimento'}</p><p className="text-xs text-text-muted">{now.professionalNome ?? now.professionalId}</p></div></div>
-            <div className="mt-3"><ChipDeStatus status={now.status} /></div>
-            <Botao fullWidth className="mt-4" onClick={onNow}>Continuar atendimento</Botao>
+          <div className="rounded-[14px] border border-accent/12 bg-[linear-gradient(135deg,var(--brand-soft),var(--surface)_72%)] p-3.5">
+            <div className="flex items-start gap-3">
+              <Avatar nome={now.displayName} tamanho="lg" />
+              <div className="min-w-0 flex-1">
+                <p title={now.displayName} className="truncate text-sm font-bold tracking-[-0.018em] text-text">{now.displayName}</p>
+                <p className="mt-1 truncate text-xs font-medium text-text-muted">{now.procedureNome ?? 'Atendimento'}</p>
+                <p className="mt-0.5 truncate text-[11px] text-text-faint">{now.professionalNome ?? now.professionalId}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2"><ChipDeStatus status={now.status} /><span className="text-[10px] font-semibold text-accent">Em andamento</span></div>
+            <Botao fullWidth className="mt-3.5" onClick={onNow}>Continuar atendimento</Botao>
           </div>
-        ) : <p className="text-sm text-text-muted">Nenhum atendimento clínico em andamento.</p>}
+        ) : (
+          <div className="rounded-[14px] border border-dashed border-line bg-surface-subtle/65 px-4 py-5 text-center">
+            <Pulse size={20} className="mx-auto text-text-faint" aria-hidden />
+            <p className="mt-2 text-xs font-semibold text-text-muted">Nenhum atendimento clínico em andamento.</p>
+          </div>
+        )}
       </section>
-      <section className="border-b border-line p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-text"><span className="size-2 rounded-full bg-warning" aria-hidden />Próximo</h3>
+
+      <section className="border-b border-line px-5 py-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[.075em] text-text-muted"><span className="size-2 rounded-full bg-warn shadow-[0_0_0_3px_var(--warning-soft)]" aria-hidden />Próximo</h3>
+          {next ? <span className="font-mono text-[10px] font-semibold text-text-faint tabular-nums">{horaNaClinica(next.startsAt, timezone)}</span> : null}
+        </div>
         {next ? (
-          <div>
-            <p className="text-sm font-bold text-text">{next.displayName}</p>
-            <p className="mt-1 text-xs text-text-muted">{horaNaClinica(next.startsAt, timezone)} · {next.procedureNome ?? 'Atendimento'}</p>
-            <p className="mt-2 text-xs font-medium text-warn">{next.status === 'aguardando' ? 'Aguardando na fila' : 'Ainda não chegou'}</p>
-            <Botao variante="secundario" fullWidth className="mt-4" onClick={onNext}>{getPrimaryAction(next.status).label}</Botao>
+          <div className="rounded-[14px] border border-line bg-surface-subtle/55 p-3.5">
+            <p className="truncate text-sm font-bold tracking-[-0.015em] text-text">{next.displayName}</p>
+            <p className="mt-1 truncate text-xs text-text-muted">{next.procedureNome ?? 'Atendimento'}</p>
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold text-warn">{next.status === 'aguardando' ? 'Aguardando na fila' : 'Ainda não chegou'}</p>
+              <ChipDeStatus status={next.status} />
+            </div>
+            <Botao variante="secundario" fullWidth className="mt-3.5" onClick={onNext}>{getPrimaryAction(next.status).label}</Botao>
           </div>
-        ) : <p className="text-sm text-text-muted">Sem próximo atendimento no fluxo.</p>}
+        ) : (
+          <p className="rounded-[14px] border border-dashed border-line bg-surface-subtle/55 px-4 py-4 text-center text-xs text-text-muted">Sem próximo atendimento no fluxo.</p>
+        )}
       </section>
+
       <section>
-        <div className="flex items-center justify-between px-5 pb-2 pt-4"><h3 className="text-sm font-bold text-text">Pendências</h3><span className="rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{precisa ? Object.values(precisa).reduce((a, b) => a + b, 0) : 0}</span></div>
+        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.12em] text-text-faint">Backoffice</p>
+            <h3 className="mt-0.5 text-sm font-bold text-text">Pendências</h3>
+          </div>
+          <span className={cn('grid min-w-7 place-items-center rounded-full px-2 py-1 text-[10px] font-bold', total > 0 ? 'bg-danger-soft text-danger' : 'bg-ok-soft text-ok')}>{total}</span>
+        </div>
         {precisa ? (
-          <ul className="m-0 list-none p-0">
+          <ul className="m-0 list-none px-2 pb-2 pt-1">
             {PENDENCIAS.filter((item) => precisa[item.chave] > 0).map((item) => (
-              <li key={item.chave} className="flex items-start gap-3 border-t border-line px-5 py-3 first:border-t-0">
-                <span className={cn('mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold', item.prioridade === 'Alta' ? 'bg-danger-soft text-danger' : item.prioridade === 'Média' ? 'bg-warn-soft text-warn' : 'bg-surface-subtle text-text-muted')}>{item.prioridade}</span>
-                <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-text">{precisa[item.chave]} {item.rotulo.toLocaleLowerCase('pt-BR')}</span><span className="block text-[11px] text-text-faint">{item.apoio}</span></span>
+              <li key={item.chave} className="flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-subtle">
+                <span className={cn('mt-0.5 rounded-full px-2 py-0.5 text-[9px] font-bold', item.prioridade === 'Alta' ? 'bg-danger-soft text-danger' : item.prioridade === 'Média' ? 'bg-warn-soft text-warn' : 'bg-surface-sunken text-text-muted')}>{item.prioridade}</span>
+                <span className="min-w-0 flex-1"><span className="block text-[11px] font-semibold text-text">{precisa[item.chave]} {item.rotulo.toLocaleLowerCase('pt-BR')}</span><span className="mt-0.5 block truncate text-[10px] text-text-faint">{item.apoio}</span></span>
               </li>
             ))}
+            {total === 0 ? <li className="px-3 py-4 text-center text-xs text-text-muted">Tudo em dia por aqui.</li> : null}
           </ul>
         ) : <div className="px-5 pb-5"><Skeleton variant="text" width="100%" /></div>}
       </section>

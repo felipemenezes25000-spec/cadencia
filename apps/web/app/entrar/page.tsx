@@ -108,37 +108,37 @@ export default function PaginaEntrar() {
   return (
     <main
       id="conteudo-principal"
-      className="relative min-h-screen overflow-hidden bg-[#eaf4ff] text-text"
+      className="relative min-h-screen overflow-hidden bg-[#071f24] text-text"
     >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 56% 50%, rgba(96, 165, 250, .30), transparent 28%), linear-gradient(135deg, #f3f8ff 0%, #dbeafe 52%, #bfdbfe 100%)',
+            'radial-gradient(circle at 38% 28%, rgba(98,217,206,.18), transparent 25%), radial-gradient(circle at 74% 76%, rgba(8,118,111,.12), transparent 30%), linear-gradient(135deg,#0a292f 0%,#071f24 58%,#06191e 100%)',
         }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-[540px] left-[4%] hidden size-[900px] rounded-full border border-[#60a5fa]/25 shadow-[0_0_90px_rgba(59,130,246,0.13)] lg:block"
+        className="pointer-events-none absolute -bottom-[540px] left-[4%] hidden size-[900px] rounded-full border border-[#62d9ce]/15 shadow-[0_0_90px_rgba(98,217,206,0.08)] lg:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-[430px] left-[22%] hidden size-[760px] rounded-full border border-white/45 lg:block"
+        className="pointer-events-none absolute -top-[430px] left-[22%] hidden size-[760px] rounded-full border border-white/8 lg:block"
       />
 
       <div className="relative z-10 grid min-h-screen lg:grid-cols-[minmax(0,1.15fr)_minmax(500px,0.85fr)]">
-        <aside className="hidden min-h-screen flex-col px-12 py-10 lg:flex xl:px-16 xl:py-12">
+        <aside className="hidden min-h-screen flex-col px-12 py-10 text-white lg:flex xl:px-16 xl:py-12">
           <Marca />
 
           <div className="my-auto max-w-[670px] py-14">
-            <p className="text-xs font-bold uppercase tracking-[.28em] text-text-muted">
+            <p className="text-xs font-bold uppercase tracking-[.28em] text-white/48">
               Sistema de gestão clínica
             </p>
-            <p className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-text xl:text-6xl">
-              O controle que sua <span className="text-brand-hover">clínica</span> precisa
+            <p className="mt-5 max-w-[650px] text-5xl font-bold leading-[1.04] tracking-[-0.045em] text-white xl:text-6xl">
+              O controle que sua <span className="text-[#62d9ce]">clínica</span> precisa
             </p>
-            <p className="mt-6 max-w-[610px] text-base leading-7 text-text-muted xl:text-lg xl:leading-8">
+            <p className="mt-6 max-w-[610px] text-base leading-7 text-white/62 xl:text-lg xl:leading-8">
               Operação, atendimento e gestão financeira integrados em uma única plataforma.
               Menos retrabalho, mais cuidado.
             </p>
@@ -146,36 +146,36 @@ export default function PaginaEntrar() {
             <div className="mt-10 space-y-5">
               {BENEFICIOS.map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-center gap-4">
-                  <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-[#93c5fd]/55 bg-white/65 shadow-[0_12px_30px_rgba(30,64,175,0.08)] backdrop-blur-sm">
-                    <Icon size={22} weight="duotone" className="text-brand-hover" />
+                  <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[.055] shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+                    <Icon size={22} weight="duotone" className="text-[#62d9ce]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-text">{label}</p>
-                    <p className="mt-1 text-sm text-text-muted">{desc}</p>
+                    <p className="text-sm font-semibold text-white">{label}</p>
+                    <p className="mt-1 text-sm text-white/52">{desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-6 text-xs text-text-muted xl:text-sm">
-            <div className="flex items-center gap-2 rounded-xl border border-[#93c5fd]/55 bg-white/55 px-4 py-2.5 backdrop-blur-sm">
-              <ShieldCheck size={17} weight="duotone" className="text-brand-hover" />
+          <div className="flex items-center justify-between gap-6 text-xs text-white/48 xl:text-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.055] px-4 py-2.5 backdrop-blur-sm">
+              <ShieldCheck size={17} weight="duotone" className="text-[#62d9ce]" />
               <span>Em conformidade com a LGPD</span>
             </div>
             <p>© 2026 Cadência · Todos os direitos reservados</p>
           </div>
         </aside>
 
-        <section className="flex min-h-screen items-center justify-center bg-[#f7fbff]/85 px-4 py-7 text-text backdrop-blur-[2px] sm:px-6 lg:px-10 lg:py-10">
+        <section className="flex min-h-screen items-center justify-center bg-[#f5f8f7] px-4 py-7 text-text sm:px-6 lg:px-10 lg:py-10">
           <div className="w-full max-w-[570px]">
             <div className="mb-6 flex justify-center lg:hidden">
               <Marca compacta />
             </div>
 
-            <div className="rounded-[28px] border border-white bg-white p-6 shadow-[0_30px_85px_rgba(30,64,175,0.16)] sm:p-9 lg:rounded-[34px] lg:p-11 xl:p-12">
-              <div className="mx-auto mb-7 grid size-[88px] place-items-center rounded-full bg-brand/10 ring-8 ring-[#60a5fa]/10">
-                <div className="grid size-[64px] place-items-center rounded-full bg-gradient-to-br from-[#60a5fa] to-brand-hover shadow-[0_12px_28px_rgba(37,99,235,0.28)]">
+            <div className="rounded-[28px] border border-[#dce6e4] bg-white p-6 shadow-[0_32px_90px_rgba(5,35,38,0.14)] sm:p-9 lg:rounded-[34px] lg:p-11 xl:p-12">
+              <div className="mx-auto mb-7 grid size-[88px] place-items-center rounded-full bg-brand-soft ring-8 ring-[#dff3ef]">
+                <div className="grid size-[64px] place-items-center rounded-full bg-gradient-to-br from-[#62d9ce] to-brand shadow-[0_12px_28px_rgba(8,118,111,0.25)]">
                   <Pulse size={34} weight="bold" className="text-white" />
                 </div>
               </div>
@@ -199,7 +199,7 @@ export default function PaginaEntrar() {
             </div>
 
             <div className="mt-5 flex items-center justify-center gap-2 text-xs text-text-muted lg:hidden">
-              <ShieldCheck size={15} weight="fill" className="text-brand-hover" />
+              <ShieldCheck size={15} weight="fill" className="text-[#62d9ce]" />
               Dados protegidos · LGPD
             </div>
           </div>
@@ -212,11 +212,11 @@ export default function PaginaEntrar() {
 function Marca({ compacta = false }: { compacta?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className={`${compacta ? 'size-11 rounded-xl' : 'size-12 rounded-[14px]'} grid place-items-center border border-[#93c5fd]/60 bg-brand shadow-[0_12px_28px_rgba(37,99,235,0.20)]`}>
+      <div className={`${compacta ? 'size-11 rounded-xl' : 'size-12 rounded-[14px]'} grid place-items-center border border-[#62d9ce]/20 bg-gradient-to-br from-[#62d9ce] to-brand shadow-[0_12px_28px_rgba(8,118,111,0.22)]`}>
         <Pulse size={compacta ? 24 : 27} weight="bold" className="text-white" />
       </div>
       <div>
-        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-text`}>Cadência</p>
+        <p className={`${compacta ? 'text-lg' : 'text-xl'} font-bold tracking-[-0.03em] text-current`}>Cadência</p>
         <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[.28em] text-text-muted">Clinical OS</p>
       </div>
     </div>
@@ -261,7 +261,7 @@ function FormContent({
       <header className="mb-8 text-center">
         {passo.nome === 'credenciais' ? (
           <h1 className="text-2xl font-bold tracking-[-0.035em] text-text sm:text-[30px]">
-            Bem-<span className="text-brand-hover">vindo</span> de volta
+            Bem-<span className="text-[#62d9ce]">vindo</span> de volta
           </h1>
         ) : (
           <h1 className="text-2xl font-bold tracking-[-0.03em] text-text sm:text-[28px]">
@@ -300,7 +300,7 @@ function FormContent({
             <button
               type="button"
               onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute bottom-3 right-3 grid size-8 place-items-center max-md:size-11 rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              className="absolute bottom-3 right-3 grid size-8 place-items-center max-md:size-11 rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {mostrarSenha ? <EyeSlash size={18} /> : <Eye size={18} />}
@@ -317,9 +317,9 @@ function FormContent({
 
       {passo.nome === 'mfa' && (
         <form onSubmit={(e) => { void onConfirmarMfa(e); }} className="space-y-5">
-          <div className="flex items-center gap-3 rounded-xl border border-[#93c5fd]/45 bg-[#eff6ff] p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-accent/15 bg-accent-soft/60 p-4">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-white shadow-sm">
-              <Fingerprint size={23} className="text-brand-hover" weight="duotone" />
+              <Fingerprint size={23} className="text-[#62d9ce]" weight="duotone" />
             </div>
             <div>
               <p className="text-sm font-semibold text-brand-strong">Autenticação em duas etapas</p>
@@ -357,11 +357,11 @@ function FormContent({
                   .then(() => window.location.assign('/hoje'))
                   .catch((e: unknown) => setErro(mensagem(e)));
               }}
-              className="w-full rounded-xl border border-line bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#60a5fa] hover:shadow-[0_12px_28px_rgba(37,99,235,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25"
+              className="w-full rounded-xl border border-line bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent/45 hover:shadow-[0_12px_28px_rgba(8,118,111,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-11 place-items-center rounded-xl bg-[#e8f1ff]">
-                  <Stethoscope size={21} className="text-brand-hover" weight="duotone" />
+                <div className="grid size-11 place-items-center rounded-xl bg-accent-soft">
+                  <Stethoscope size={21} className="text-[#62d9ce]" weight="duotone" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-text">{v.clinicNome}</p>
@@ -377,13 +377,13 @@ function FormContent({
       )}
 
       {erro !== null && (
-        <div role="alert" className="mt-5 rounded-xl border border-[#ef6370]/20 bg-[#fff0f2] px-4 py-3.5">
-          <p className="text-sm font-medium text-[#d44d5b]">{erro}</p>
+        <div role="alert" className="mt-5 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3.5">
+          <p className="text-sm font-medium text-danger">{erro}</p>
         </div>
       )}
 
       {passo.nome === 'credenciais' && (
-        <div className="mt-7 border-t border-[#e6edf5] pt-6 text-center">
+        <div className="mt-7 border-t border-line pt-6 text-center">
           <p className="text-xs leading-5 text-text-muted">
             Problemas para acessar?{' '}
             <span className="font-semibold text-text-muted">Fale com a administração da sua clínica.</span>

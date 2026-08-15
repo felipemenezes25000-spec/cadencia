@@ -15,7 +15,7 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <RadixTabs.List
       className={cn(
-        "cadencia-tabs-list flex min-w-0 w-full max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-line bg-surface-subtle/85 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)] backdrop-blur-sm scrollbar-thin sm:w-fit",
+        "cadencia-tabs-list flex min-w-0 w-full max-w-full items-center gap-1 overflow-x-auto rounded-[14px] border border-line bg-surface-subtle/78 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.92),0_5px_16px_rgb(8_46_48_/_0.035)] backdrop-blur-sm scrollbar-thin sm:w-fit",
         className,
       )}
     >
@@ -36,13 +36,13 @@ export function TabsTrigger({ children, value, badge, className }: TabsTriggerPr
     <RadixTabs.Trigger
       value={value}
       className={cn(
-        "cadencia-tab-trigger inline-flex min-h-9 items-center rounded-lg px-3 py-1.5",
+        "cadencia-tab-trigger inline-flex min-h-9 items-center rounded-[10px] px-3.5 py-1.5",
         /* 36px viram 44px no toque. Atinge toda barra de abas do produto. */
         "max-md:min-h-11",
         "whitespace-nowrap text-sm font-medium text-text-muted outline-none",
         "transition-[background-color,color,box-shadow,transform] duration-150",
         "hover:bg-surface hover:text-text",
-        "data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-accent data-[state=active]:shadow-elev-1",
+        "data-[state=active]:bg-surface data-[state=active]:font-bold data-[state=active]:text-accent data-[state=active]:shadow-[0_5px_14px_rgb(8_46_48_/_0.07),inset_0_1px_0_rgb(255_255_255_/.95)]",
         "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1",
         "cursor-pointer select-none",
         className,

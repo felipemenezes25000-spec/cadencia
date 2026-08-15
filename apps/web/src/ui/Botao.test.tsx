@@ -38,24 +38,24 @@ describe('Botao', () => {
 
   it('renderiza nos 3 tamanhos', () => {
     const { rerender } = render(<Botao tamanho="sm">A</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-8/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[34px\]/);
 
     rerender(<Botao tamanho="md">B</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-9/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[38px\]/);
 
     rerender(<Botao tamanho="lg">C</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-10/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[42px\]/);
   });
 
   it('suporta prop altura legada para compatibilidade', () => {
     const { rerender } = render(<Botao altura={28}>A</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-8/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[34px\]/);
 
     rerender(<Botao altura={32}>B</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-9/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[38px\]/);
 
     rerender(<Botao altura={40}>C</Botao>);
-    expect(screen.getByRole('button').className).toMatch(/h-10/);
+    expect(screen.getByRole('button').className).toMatch(/h-\[42px\]/);
   });
 
   it('renderiza ícone à esquerda', () => {

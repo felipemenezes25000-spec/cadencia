@@ -38,9 +38,9 @@ export function ChipDeStatus({ status, className }: ChipDeStatusProps) {
     <span
       className={cn(
         'inline-flex items-center gap-[var(--s-2)]',
-        'text-[11px] font-semibold',
-        'px-2.5 py-1',
-        'rounded-full',
+        'text-[10px] font-bold tracking-[-0.005em]',
+        'px-2.5 py-1.5',
+        'rounded-full shadow-[inset_0_1px_0_rgb(255_255_255_/_0.55)]',
         c.classes,
         className,
       )}

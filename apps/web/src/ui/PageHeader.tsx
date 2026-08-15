@@ -24,17 +24,17 @@ export function PageHeader({
   eyebrow,
 }: PageHeaderProps) {
   return (
-    <header className={cn("cadencia-page-header min-w-0 max-w-full space-y-2.5", className)}>
+    <header className={cn("cadencia-page-header min-w-0 max-w-full space-y-3", className)}>
       {!semBreadcrumb && (breadcrumbs ? <Breadcrumb itens={breadcrumbs} /> : <Breadcrumb />)}
 
       <div className="flex min-w-0 items-end justify-between gap-6 max-sm:flex-col max-sm:items-stretch">
         <div className="min-w-0">
           {eyebrow ? <p className="cadencia-eyebrow mb-1.5">{eyebrow}</p> : null}
-          <h1 className="m-0 text-[27px] font-bold leading-[1.12] tracking-[-0.035em] text-text sm:text-[29px]">
+          <h1 className="m-0 text-[28px] font-bold leading-[1.08] tracking-[-0.045em] text-text sm:text-[31px]">
             {titulo}
           </h1>
           {subtitulo && (
-            <p className="m-0 mt-1.5 max-w-3xl text-sm leading-relaxed text-text-muted">
+            <p className="m-0 mt-2 max-w-3xl text-sm leading-[1.65] text-text-muted">
               {subtitulo}
             </p>
           )}

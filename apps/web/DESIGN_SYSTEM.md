@@ -1,4 +1,4 @@
-# Cadência Clinical OS — Design System v7
+# Cadência Clinical OS — Design System v11 · Precision Aurora
 
 Este documento é o contrato visual oficial do Cadência. O produto usa **um único tema claro**, com um shell clínico de alto contraste e superfícies operacionais claras. Não existe dark mode, seletor de tema ou adaptação baseada no tema do sistema.
 
@@ -23,7 +23,7 @@ Princípios:
 9. O usuário não navega para obter contexto que cabe em um painel lateral.
 10. Toda tela operacional deve deixar óbvio o que está acontecendo agora e o que acontece depois.
 
-## 2. Identidade: Clinical Intelligence
+## 2. Identidade: Precision Aurora
 
 O Cadência deve parecer um sistema operacional clínico premium, e não um dashboard SaaS genérico. A assinatura vem do contraste entre um **chrome tecnológico** e uma **superfície clínica extremamente legível**:
 
@@ -44,25 +44,25 @@ Os tokens vivem em `app/globals.css` e são expostos ao Tailwind por `@theme`.
 
 | Token | Valor | Uso |
 |---|---:|---|
-| `--canvas` | `#F3F6F7` | fundo global |
+| `--canvas` | `#F4F7F6` | fundo global |
 | `--surface` | `#FFFFFF` | painéis e controles |
-| `--surface-subtle` | `#F7FAFB` | agrupamento discreto |
-| `--surface-sunken` | `#EEF3F6` | fundos internos |
-| `--border` | `#DCE5E9` | divisores e bordas |
-| `--text-primary` | `#17313B` | conteúdo principal |
-| `--text-secondary` | `#5B707A` | metadados |
-| `--text-tertiary` | `#657983` | micro-hierarquia AA |
-| `--brand` | `#087783` | ação e seleção |
-| `--brand-hover` | `#056873` | interação |
-| `--brand-strong` | `#064C55` | ênfase de marca |
-| `--brand-soft` | `#DFF3F4` | seleção discreta |
-| `--nav` | `#102735` | shell desktop/mobile |
-| `--nav-active` | `#193847` | item ativo no shell |
-| `--nav-accent` | `#70CAD6` | sinalização no shell |
-| `--success` | `#24724C` | concluído/confirmado |
-| `--warning` | `#9A5B13` | espera/atenção |
-| `--danger` | `#A13B43` | erro/bloqueio |
-| `--info` | `#315F9A` | informação operacional |
+| `--surface-subtle` | `#F8FAF9` | agrupamento discreto |
+| `--surface-sunken` | `#EDF3F2` | fundos internos |
+| `--border` | `#DCE6E4` | divisores e bordas |
+| `--text-primary` | `#122F31` | conteúdo principal |
+| `--text-secondary` | `#526B6D` | metadados |
+| `--text-tertiary` | `#5C7072` | micro-hierarquia AA |
+| `--brand` | `#08766F` | ação e seleção |
+| `--brand-hover` | `#065F5A` | interação |
+| `--brand-strong` | `#064F4B` | ênfase de marca |
+| `--brand-soft` | `#E4F5F1` | seleção discreta |
+| `--nav` | `#071F24` | shell desktop/mobile |
+| `--nav-active` | `#0E3237` | item ativo no shell |
+| `--nav-accent` | `#62D9CE` | sinalização no shell |
+| `--success` | `#28774F` | concluído/confirmado |
+| `--warning` | `#9B6218` | espera/atenção |
+| `--danger` | `#A93F4B` | erro/bloqueio |
+| `--info` | `#365F99` | informação operacional |
 
 Não introduza cores literais em componentes quando existir token semântico equivalente.
 
@@ -99,10 +99,10 @@ O `AppShell` é compartilhado por todas as rotas privadas.
 
 ### Desktop
 
-- Sidebar: 240 px; recolhida: 72 px.
+- Sidebar: 248 px; recolhida: 76 px.
 - Sidebar usa `--nav` e é a principal assinatura visual do produto.
-- Topbar: 68 px, sticky e translúcida, com blur controlado sobre o workspace.
-- Conteúdo: flexível, máximo de 1760 px para páginas convencionais.
+- Topbar: 72 px, sticky e translúcida, com blur controlado sobre o workspace.
+- Conteúdo: flexível, máximo de 1740 px (`--page-max`) para páginas convencionais.
 - Busca global abre com `Ctrl/⌘ K`.
 - Busca é um comando do sistema, não apenas um campo decorativo.
 

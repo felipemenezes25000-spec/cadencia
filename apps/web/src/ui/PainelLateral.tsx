@@ -56,7 +56,7 @@ export function PainelLateral({
           <Dialog.Portal forceMount>
             <Dialog.Overlay asChild>
               <motion.div
-                className="fixed inset-0 z-40 bg-text/25"
+                className="fixed inset-0 z-40 bg-[#06181d]/38 backdrop-blur-[5px]"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -71,7 +71,7 @@ export function PainelLateral({
               <motion.div
                 className={cn(
                   'fixed right-0 top-0 z-50 flex h-full flex-col',
-                  'border-l border-line bg-surface shadow-elev-3',
+                  'border-l border-line bg-surface/98 shadow-elev-3 backdrop-blur-xl',
                   'max-md:w-[calc(100%-16px)]',
                   larguraClasses[largura],
                   className,
@@ -81,10 +81,10 @@ export function PainelLateral({
                 exit={{ x: '100%' }}
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="flex min-h-16 items-start justify-between gap-4 border-b border-line px-5 py-4">
+                <div className="relative flex min-h-[72px] items-start justify-between gap-4 overflow-hidden border-b border-line bg-[linear-gradient(180deg,var(--surface),var(--surface-subtle))] px-5 py-4.5">
                   <div className="min-w-0">
                     {titulo && (
-                      <Dialog.Title className="text-lg font-bold tracking-tight text-text">
+                      <Dialog.Title className="text-[18px] font-bold tracking-[-0.025em] text-text">
                         {titulo}
                       </Dialog.Title>
                     )}
@@ -108,10 +108,10 @@ export function PainelLateral({
                   </Dialog.Close>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto p-5 scrollbar-thin">
+                <div className="min-h-0 flex-1 overflow-y-auto bg-surface p-5 scrollbar-thin">
                   {children}
                 </div>
-                {rodape ? <footer className="shrink-0 border-t border-line bg-surface px-5 py-4">{rodape}</footer> : null}
+                {rodape ? <footer className="shrink-0 border-t border-line bg-surface-subtle/72 px-5 py-4 backdrop-blur">{rodape}</footer> : null}
               </motion.div>
             </Dialog.Content>
           </Dialog.Portal>
