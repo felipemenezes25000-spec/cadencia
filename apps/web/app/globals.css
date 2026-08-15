@@ -213,7 +213,27 @@ body {
 }
 
 ::selection { background: var(--brand-soft); color: var(--brand-strong); }
-a { color: inherit; text-decoration: none; }
+
+/* PRECISA ficar em @layer base. Regra sem camada vence QUALQUER @layer,
+   independente de especificidade — e as utilitarias do Tailwind moram em
+   @layer utilities. Solta, `a { color: inherit }` anulava `text-accent-on`,
+   `text-text-faint` e toda cor de texto em TODO link do produto: o rotulo do
+   botao primario saia escuro sobre o teal (2.59:1) e os links da sidebar
+   midnight herdavam o texto do corpo, ficando ilegiveis. Dentro de base, a
+   utilitaria volta a vencer e o default continua valendo onde nao ha classe. */
+@layer base {
+  a { color: inherit; text-decoration: none; }
+
+  /* Mesmo motivo: solta, esta regra impedia qualquer `text-*` num <th>. */
+  thead th {
+    color: var(--color-text-faint);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+}
+
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
@@ -326,13 +346,7 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 }
 
 table { border-collapse: separate; border-spacing: 0; }
-thead th {
-  color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .045em;
-  text-transform: uppercase;
-}
+/* Movida para @layer base junto com `a` — ver comentario la em cima. */
 tbody tr { transition: background-color var(--dur-1) ease; }
 
 /*
@@ -1262,6 +1276,22 @@ body {
 
 /* O shell volta a ser uma assinatura inequívoca. O conteúdo clínico continua
    claro e de alto contraste; somente a navegação usa midnight. */
+/*
+ * A sidebar e o unico subtree com tema proprio: midnight enquanto o resto do
+ * produto e claro. Redeclarar so os primitivos (--surface, --text-primary...)
+ * NAO funciona, e este foi o bug mais caro do redesign.
+ *
+ * O @theme la em cima declara `--color-text-faint: var(--text-tertiary)` no
+ * :root. Propriedade customizada substitui o var() no elemento onde e
+ * DECLARADA: o alias ja resolve para o valor claro em :root, e os
+ * descendentes herdam a cor pronta. Trocar --text-tertiary aqui embaixo nao
+ * alcanca o alias, entao `text-text-faint` num link da sidebar continuava
+ * saindo #5c7072 — 3.04:1 sobre o midnight, praticamente ilegivel.
+ *
+ * Por isso o tema de escopo redeclara os ALIASES, que e o que as utilitarias
+ * de fato leem. Os primitivos ficam porque as regras escritas a mao neste
+ * arquivo usam var(--surface)/var(--brand) dentro da sidebar.
+ */
 .cadencia-sidebar {
   --surface: #0a252a;
   --surface-subtle: #0d2c31;
@@ -1277,6 +1307,29 @@ body {
   --brand-hover: #79e5db;
   --brand-strong: #c0fff9;
   --brand-soft: rgb(98 217 206 / .12);
+
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-secondary);
+  --color-text-faint: var(--text-tertiary);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--brand);
+  --color-accent-hover: var(--brand-hover);
+  --color-accent-soft: var(--brand-soft);
+  --color-accent-on: #052529;
 
   border-color: #16383c !important;
   background:

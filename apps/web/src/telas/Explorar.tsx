@@ -40,6 +40,9 @@ export interface ExplorarProps {
     sort: readonly ReportSort[];
     chartKind: ChartKind;
   }) => Promise<{ viewId: string }>;
+  /** Falha vinda da rota (carga das visões, exportação). Renderizada aqui
+      dentro para cair no mesmo gutter do resto da página. */
+  readonly erro?: string | null;
 }
 
 const HEADER_MAP: Record<string, string> = {
@@ -91,12 +94,18 @@ export function Explorar(p: ExplorarProps) {
 
   return (
     <div className="cadencia-page grid gap-5 pb-28 md:pb-12">
+      {/* `semBreadcrumb` como nas outras 10 telas que montam o proprio header:
+          o Breadcrumb le usePathname(), que so existe sob o App Router. */}
       <PageHeader
         titulo="Explorar"
         eyebrow="Inteligência clínica"
         subtitulo="Transforme a operação em respostas sem perder rastreabilidade da origem dos dados."
         semBreadcrumb
       />
+
+      {p.erro != null && p.erro !== '' ? (
+        <p role="alert" className="text-sm text-danger">{p.erro}</p>
+      ) : null}
 
       <section aria-label="Visões salvas" className="cadencia-card rounded-[18px] p-4 sm:p-5">
         <div className="mb-3 flex items-center gap-2">

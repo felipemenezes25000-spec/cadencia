@@ -30,7 +30,7 @@ function contraste(corA: readonly number[], corB: readonly number[]): number {
   return (maior! + 0.05) / (menor! + 0.05);
 }
 
-test('sidebar usa o tema azul-claro com texto legível', async ({ page, isMobile }) => {
+test('sidebar usa o shell midnight com texto legível', async ({ page, isMobile }) => {
   test.skip(isMobile, 'No mobile, a navegação principal fica no dock inferior.');
   await page.route('**/v1/**', async (route) => {
     const caminho = new URL(route.request().url()).pathname;
@@ -58,8 +58,27 @@ test('sidebar usa o tema azul-claro com texto legível', async ({ page, isMobile
     };
   });
 
-  expect(aparencia.fundo).toContain('rgb(239, 247, 255)');
+  /* Antes este teste fixava `rgb(239, 247, 255)`: a sidebar era azul-clara
+     porque a folha light-blue vencia a camada premium. O Precision Aurora v11
+     assumiu o shell midnight de vez, entao cravar um hex so registraria a cor
+     da vez. O que precisa continuar verdadeiro e o contrato: o shell e escuro
+     e o texto dele se le.
+
+     A medicao usa as paradas OPACAS do gradiente — as rgba() por cima sao
+     brilhos decorativos. A pior das paradas para um texto claro e a mais
+     clara delas, entao e contra ela que o contraste tem de fechar. */
+  const paradasOpacas = [...aparencia.fundo.matchAll(/rgb\((\d+), (\d+), (\d+)\)/g)]
+    .map((m) => [Number(m[1]), Number(m[2]), Number(m[3])] as const);
+  expect(paradasOpacas.length, 'nenhuma parada opaca no gradiente da sidebar').toBeGreaterThan(0);
+
+  const maisClara = paradasOpacas.reduce((a, b) => (luminancia(a) > luminancia(b) ? a : b));
+  expect(luminancia(maisClara), `shell deixou de ser escuro: rgb(${maisClara.join(', ')})`)
+    .toBeLessThan(0.05);
+
   const canaisDoTexto = aparencia.texto.match(/\d+/g)?.map(Number);
   expect(canaisDoTexto).toHaveLength(3);
-  expect(contraste(canaisDoTexto!, [239, 247, 255])).toBeGreaterThanOrEqual(4.5);
+  expect(
+    contraste(canaisDoTexto!, maisClara),
+    `texto ${aparencia.texto} sobre rgb(${maisClara.join(', ')})`,
+  ).toBeGreaterThanOrEqual(4.5);
 });

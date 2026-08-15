@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { SavedView } from '@cadencia/reports';
 import { Explorar, type ResultadoConsulta } from '../../src/telas/Explorar';
-import { PageHeader } from '../../src/ui/PageHeader';
 import { apiFetch, apiFetchBlobUrl } from '../../src/api';
 import { useSessao } from '../../src/sessao';
 
@@ -34,35 +33,30 @@ export default function PaginaExplorar() {
     });
   }, [clinicId, csrfToken]);
 
+  /* A tela ja renderiza o proprio `PageHeader` e o container `.cadencia-page`,
+     como as outras 12 telas do produto. Esta rota tambem renderizava os dois:
+     saiam DOIS <h1> "Explorar" na pagina e o gutter era aplicado em dobro. */
   return (
-    <div className="cadencia-page grid gap-6">
-      <PageHeader
-        titulo="Explorar"
-        subtitulo="Consulta livre sobre os dados da clínica, com filtros e exportação."
-      />
-
-      {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
-
-      <Explorar
-        visoesSalvas={visoes}
-        aoConsultar={consultar}
-        aoExportar={async (p) => {
-          // Exportação passa pelo POST e volta como arquivo. `apiFetchBlobUrl`
-          // porque navegação direta não carrega `x-clinic-id` e a rota recusaria
-          // — o mesmo motivo do PDF de documento.
-          const url = await apiFetchBlobUrl(
-            `/v1/reports/export?formato=${p.format}`, { clinicId, csrfToken })
-            .catch(() => null);
-          if (url === null) {
-            setErro('Exportação indisponível para esta consulta.');
-            return;
-          }
-          window.open(url, '_blank', 'noopener');
-        }}
-        aoSalvarVisao={async (p) => apiFetch<{ viewId: string }>(
-          '/v1/reports/views/custom',
-          { method: 'POST', body: p, clinicId, csrfToken })}
-      />
-    </div>
+    <Explorar
+      erro={erro}
+      visoesSalvas={visoes}
+      aoConsultar={consultar}
+      aoExportar={async (p) => {
+        // Exportação passa pelo POST e volta como arquivo. `apiFetchBlobUrl`
+        // porque navegação direta não carrega `x-clinic-id` e a rota recusaria
+        // — o mesmo motivo do PDF de documento.
+        const url = await apiFetchBlobUrl(
+          `/v1/reports/export?formato=${p.format}`, { clinicId, csrfToken })
+          .catch(() => null);
+        if (url === null) {
+          setErro('Exportação indisponível para esta consulta.');
+          return;
+        }
+        window.open(url, '_blank', 'noopener');
+      }}
+      aoSalvarVisao={async (p) => apiFetch<{ viewId: string }>(
+        '/v1/reports/views/custom',
+        { method: 'POST', body: p, clinicId, csrfToken })}
+    />
   );
 }
