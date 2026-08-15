@@ -1,0 +1,305 @@
+/*
+ * Acabamento exclusivo da rota /entrar.
+ * O navegador costuma injetar uma cor própria no autofill; aqui o estado
+ * preenchido passa a fazer parte do campo, sem o retângulo azul interno.
+ */
+
+#conteudo-principal {
+  --login-accent: #08766f;
+  --login-accent-soft: rgba(8, 118, 111, 0.11);
+  --login-ink: #173638;
+  --login-field: #fbfdfc;
+  --login-field-filled: #f6fbf9;
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      )
+  ) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transform: translateZ(0);
+  background: var(--login-field);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease;
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      )
+  )::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(98, 217, 206, 0.14), transparent 42%),
+    linear-gradient(110deg, rgba(255, 255, 255, 0.92), rgba(241, 250, 247, 0.92));
+  transition: opacity 220ms ease;
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      )
+  )::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  right: 18px;
+  bottom: 0;
+  left: 18px;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scaleX(0.18);
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, #62d9ce 24%, #08766f 50%, #62d9ce 76%, transparent);
+  transition:
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):not(:placeholder-shown)
+  ) {
+  border-color: #7ea39f;
+  background: var(--login-field-filled);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 5px 16px rgba(8, 70, 67, 0.045);
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus
+  ),
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus-visible
+  ) {
+  border-color: var(--login-accent);
+  background: var(--login-field-filled);
+  box-shadow:
+    0 0 0 4px var(--login-accent-soft),
+    0 12px 28px rgba(8, 78, 74, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  transform: translateY(-1px);
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus
+  )::before,
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus-visible
+  )::before {
+  opacity: 1;
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus
+  )::after,
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus-visible
+  )::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      )
+  ) > span:first-child,
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      )
+  ) > span:first-child * {
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus
+  ) > span:first-child,
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):focus
+  ) > span:first-child * {
+  color: var(--login-accent) !important;
+  transform: scale(1.035);
+}
+
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  ) {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  caret-color: var(--login-accent);
+  background: transparent !important;
+  color: var(--login-ink);
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  )::selection {
+  color: #103435;
+  background: rgba(98, 217, 206, 0.3);
+}
+
+/* Chrome / Edge / Safari: remove a placa azul/amarela criada pelo autofill. */
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  ):-webkit-autofill,
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  ):-webkit-autofill:hover,
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  ):-webkit-autofill:focus,
+#conteudo-principal form input:is(
+    [autocomplete='username'],
+    [autocomplete='current-password'],
+    [autocomplete='one-time-code']
+  ):-webkit-autofill:active {
+  -webkit-text-fill-color: var(--login-ink) !important;
+  caret-color: var(--login-accent) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Estado preenchido por gerenciador de senhas/autofill, sem bloco interno. */
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):autofill
+  ) {
+  border-color: #6f9d98;
+  background: var(--login-field-filled);
+}
+
+#conteudo-principal form div:has(
+    > input:is(
+        [autocomplete='username'],
+        [autocomplete='current-password'],
+        [autocomplete='one-time-code']
+      ):autofill
+  )::after {
+  opacity: 0.42;
+  transform: scaleX(0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #conteudo-principal form div:has(
+      > input:is(
+          [autocomplete='username'],
+          [autocomplete='current-password'],
+          [autocomplete='one-time-code']
+        )
+    ),
+  #conteudo-principal form div:has(
+      > input:is(
+          [autocomplete='username'],
+          [autocomplete='current-password'],
+          [autocomplete='one-time-code']
+        )
+    )::before,
+  #conteudo-principal form div:has(
+      > input:is(
+          [autocomplete='username'],
+          [autocomplete='current-password'],
+          [autocomplete='one-time-code']
+        )
+    )::after,
+  #conteudo-principal form div:has(
+      > input:is(
+          [autocomplete='username'],
+          [autocomplete='current-password'],
+          [autocomplete='one-time-code']
+        )
+    ) > span:first-child,
+  #conteudo-principal form div:has(
+      > input:is(
+          [autocomplete='username'],
+          [autocomplete='current-password'],
+          [autocomplete='one-time-code']
+        )
+    ) > span:first-child * {
+    transition: none !important;
+  }
+}
