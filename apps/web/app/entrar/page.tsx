@@ -14,6 +14,7 @@ import {
 } from '@phosphor-icons/react';
 import { apiFetch, ApiError } from '../../src/api';
 import { lerCsrf, rotulo, type Vinculo } from '../../src/sessao';
+import { useSubmitUnico, type ResultadoDeAcao } from '../../src/lib/acao-unica';
 import { Botao } from '../../src/ui/Botao';
 import { Campo } from '../../src/ui/Campo';
 
@@ -236,8 +237,8 @@ interface FormContentProps {
   enviando: boolean;
   mostrarSenha: boolean;
   setMostrarSenha: (v: boolean) => void;
-  onEntrar: (e: FormEvent) => void;
-  onConfirmarMfa: (e: FormEvent) => void;
+  onEntrar: (e: FormEvent) => ResultadoDeAcao;
+  onConfirmarMfa: (e: FormEvent) => ResultadoDeAcao;
 }
 
 function FormContent({
@@ -256,6 +257,12 @@ function FormContent({
   onEntrar,
   onConfirmarMfa,
 }: FormContentProps) {
+  // Login repetido cria uma segunda sessão e uma segunda linha de auditoria
+  // para a mesma entrada; MFA repetido queima o código antes de o primeiro
+  // POST responder.
+  const entrarUmaVez = useSubmitUnico(onEntrar);
+  const confirmarMfaUmaVez = useSubmitUnico(onConfirmarMfa);
+
   return (
     <>
       <header className="mb-8 text-center">
@@ -276,7 +283,7 @@ function FormContent({
       </header>
 
       {passo.nome === 'credenciais' && (
-        <form onSubmit={(e) => { void onEntrar(e); }} className="space-y-5">
+        <form onSubmit={entrarUmaVez} className="space-y-5">
           <Campo
             rotulo="E-mail"
             type="email"
@@ -316,7 +323,7 @@ function FormContent({
       )}
 
       {passo.nome === 'mfa' && (
-        <form onSubmit={(e) => { void onConfirmarMfa(e); }} className="space-y-5">
+        <form onSubmit={confirmarMfaUmaVez} className="space-y-5">
           <div className="flex items-center gap-3 rounded-xl border border-accent/15 bg-accent-soft/60 p-4">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-white shadow-sm">
               <Fingerprint size={23} className="text-[#62d9ce]" weight="duotone" />

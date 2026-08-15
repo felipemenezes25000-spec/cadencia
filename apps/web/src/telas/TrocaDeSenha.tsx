@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Key } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
+import { useSubmitUnico } from '../lib/acao-unica';
 
 export interface TrocaDeSenhaProps {
   readonly aoTrocar: (senhaAtual: string, senhaNova: string) => Promise<void>;
@@ -45,8 +46,10 @@ export function TrocaDeSenha({ aoTrocar }: TrocaDeSenhaProps) {
     }
   }
 
+  const submeterUmaVez = useSubmitUnico(submeter);
+
   return (
-    <form onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
+    <form onSubmit={submeterUmaVez} className="grid gap-4">
       <div className="flex items-center gap-2">
         <Key size={20} className="text-accent" />
         <h3 className="text-sm font-semibold">Trocar senha</h3>

@@ -114,7 +114,7 @@ export function Explorar(p: ExplorarProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           {p.visoesSalvas.map((v) => (
-            <Botao key={v.id} variante={visaoAtual?.id === v.id ? 'primario' : 'secundario'} tamanho="sm" onClick={() => { void consultar(v); }}>
+            <Botao key={v.id} variante={visaoAtual?.id === v.id ? 'primario' : 'secundario'} tamanho="sm" onClick={() => consultar(v)}>
               {v.name}
             </Botao>
           ))}
@@ -130,8 +130,8 @@ export function Explorar(p: ExplorarProps) {
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <Botao variante="secundario" iconeEsquerda={Funnel} onClick={() => { if (visaoAtual !== null) void consultar(visaoAtual); }}>Aplicar filtro</Botao>
             <span className="hidden h-7 w-px bg-line sm:block" aria-hidden />
-            <Botao variante="fantasma" tamanho="sm" iconeEsquerda={DownloadSimple} onClick={() => { void exportar('csv'); }}>CSV</Botao>
-            <Botao variante="fantasma" tamanho="sm" iconeEsquerda={DownloadSimple} onClick={() => { void exportar('xlsx'); }}>XLSX</Botao>
+            <Botao variante="fantasma" tamanho="sm" iconeEsquerda={DownloadSimple} onClick={() => exportar('csv')}>CSV</Botao>
+            <Botao variante="fantasma" tamanho="sm" iconeEsquerda={DownloadSimple} onClick={() => exportar('xlsx')}>XLSX</Botao>
           </div>
         </div>
       </section>
@@ -185,7 +185,7 @@ export function Explorar(p: ExplorarProps) {
           {salvando ? (
             <div className="flex flex-1 flex-col gap-2 sm:max-w-xl sm:flex-row sm:items-end sm:justify-end">
               <Campo rotulo="Nome da visão" id="nome-visao" type="text" value={nomeVisao} onChange={(e) => setNomeVisao(e.target.value)} className="w-full sm:max-w-xs" />
-              <div className="flex gap-2"><Botao iconeEsquerda={FloppyDisk} onClick={() => { void salvarVisao(); }}>Confirmar</Botao><Botao variante="fantasma" onClick={() => { setSalvando(false); setNomeVisao(''); }}>Cancelar</Botao></div>
+              <div className="flex gap-2"><Botao iconeEsquerda={FloppyDisk} onClick={() => salvarVisao()}>Confirmar</Botao><Botao variante="fantasma" onClick={() => { setSalvando(false); setNomeVisao(''); }}>Cancelar</Botao></div>
             </div>
           ) : (
             <Botao variante="secundario" iconeEsquerda={FloppyDisk} onClick={() => setSalvando(true)}>Salvar visão</Botao>

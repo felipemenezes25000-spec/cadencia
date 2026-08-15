@@ -346,7 +346,7 @@ export function PainelDeSadt(p: PainelDeSadtProps) {
           iconeEsquerda={FlaskIcon}
           disabled={particular || itens.length === 0}
           carregando={emitindo}
-          onClick={() => { void emitir(); }}
+          onClick={() => emitir()}
         >
           {p.emitirAoFinalizar === true ? 'Incluir na finalização' : 'Emitir guia'}
         </Botao>

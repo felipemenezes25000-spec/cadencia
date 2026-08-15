@@ -167,7 +167,7 @@ export function Desempenho(p: DesempenhoProps) {
                 type="button"
                 aria-label={phrase}
                 aria-expanded={isSelected}
-                onClick={() => { void onIndicatorClick(ind.metric); }}
+                onClick={() => onIndicatorClick(ind.metric)}
                 className={cn(
                   'group min-h-[122px] p-5 text-left transition-colors-fast sm:p-6',
                   isSelected ? 'bg-accent-soft/55' : 'hover:bg-surface-subtle',

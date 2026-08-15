@@ -4,6 +4,7 @@ import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'rea
 import * as Popover from '@radix-ui/react-popover';
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
 import { cn } from '../lib/cn';
+import { useSubmitUnico } from '../lib/acao-unica';
 import { ComboboxDePaciente, type PacienteHit } from '../ui/ComboboxDePaciente';
 import { Campo } from '../ui/Campo';
 import { Botao } from '../ui/Botao';
@@ -227,13 +228,16 @@ export function CompositorInline(p: CompositorInlineProps) {
     }
   }
 
+  const enviarUmaVez = useSubmitUnico(
+    handleSubmit((dados) => submitInterno(dados, false)));
+
   const formulario = (
     <form
       role="form"
       aria-label="Novo agendamento"
       onKeyDown={aoTeclar}
       onChange={() => setTocado(true)}
-      onSubmit={handleSubmit((dados) => submitInterno(dados, false))}
+      onSubmit={enviarUmaVez}
       className={cn(
         'grid gap-[var(--s-4)] p-[var(--s-5)]',
         !isPopover &&

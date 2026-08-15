@@ -133,7 +133,7 @@ export function PainelDeTranscricao(p: PainelDeTranscricaoProps) {
         </p>
 
         {!gravando && !processando && (
-          <Botao iconeEsquerda={Microphone} onClick={() => { void comecar(); }}>
+          <Botao iconeEsquerda={Microphone} onClick={() => comecar()}>
             Começar a gravar
           </Botao>
         )}

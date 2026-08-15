@@ -114,7 +114,7 @@ export function Explorar(p: ExplorarProps) {
         <Botao
           variante="secundario"
           altura={28}
-          onClick={() => { void p.aoSalvarVisao('Nova visão', p.filters, p.chartKind); }}
+          onClick={() => p.aoSalvarVisao('Nova visão', p.filters, p.chartKind)}
         >
           Salvar visão
         </Botao>

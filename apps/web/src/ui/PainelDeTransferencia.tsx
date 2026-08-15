@@ -138,7 +138,7 @@ export function PainelDeTransferencia(p: PainelDeTransferenciaProps) {
         {erro !== null && <p role="alert" className="text-sm text-danger">{erro}</p>}
 
         <Botao iconeEsquerda={ArrowsLeftRight} disabled={incompleto}
-          carregando={enviando} onClick={() => { void transferir(); }}>
+          carregando={enviando} onClick={() => transferir()}>
           Transferir
         </Botao>
       </div>

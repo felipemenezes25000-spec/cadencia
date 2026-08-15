@@ -152,14 +152,14 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
               </label>
               <Botao iconeEsquerda={Plus} disabled={fNome.trim() === ''}
                 carregando={salvando}
-                onClick={() => { void comSalvando(async () => {
+                onClick={() => comSalvando(async () => {
                   // Só o nome é obrigatório: exigir CNPJ com a nota na mão faz
                   // quem está com pressa inventar número.
                   await p.aoCriarFornecedor(fCnpj === ''
                     ? { name: fNome.trim() }
                     : { name: fNome.trim(), cnpj: fCnpj });
                   setFNome(''); setFCnpj('');
-                }); }}>
+                })}>
                 Adicionar fornecedor
               </Botao>
             </div>
@@ -218,7 +218,7 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                   // única razão de ela existir aqui.
                   disabled={cNome.trim() === '' || cBanco.trim() === ''
                     || cAgencia.trim() === '' || cNumero.trim() === ''}
-                  onClick={() => { void comSalvando(async () => {
+                  onClick={() => comSalvando(async () => {
                     await p.aoCriarConta({
                       name: cNome.trim(), bankCode: cBanco.trim(),
                       agency: cAgencia.trim(), accountNumber: cNumero.trim(),
@@ -226,7 +226,7 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                     });
                     setCNome(''); setCBanco(''); setCAgencia('');
                     setCNumero(''); setCSaldo('');
-                  }); }}>
+                  })}>
                   Adicionar conta
                 </Botao>
               </div>
@@ -268,11 +268,11 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
               </label>
               <Botao iconeEsquerda={Plus} carregando={salvando}
                 disabled={ccNome.trim() === '' || ccCodigo.trim() === ''}
-                onClick={() => { void comSalvando(async () => {
+                onClick={() => comSalvando(async () => {
                   await p.aoCriarCentroDeCusto({
                     name: ccNome.trim(), code: ccCodigo.trim() });
                   setCcNome(''); setCcCodigo('');
-                }); }}>
+                })}>
                 Adicionar centro
               </Botao>
             </div>
@@ -314,8 +314,8 @@ export function CadastrosFinanceiros(p: CadastrosFinanceirosProps) {
                   {confirmando === r.recurringId ? (
                     <div className="mt-2 flex gap-2">
                       <Botao variante="perigo" tamanho="sm"
-                        onClick={() => { void p.aoRemoverRecorrencia(r.recurringId)
-                          .then(() => setConfirmando(null)); }}>
+                        onClick={() => p.aoRemoverRecorrencia(r.recurringId)
+                          .then(() => setConfirmando(null))}>
                         Confirmar
                       </Botao>
                       <Botao variante="fantasma" tamanho="sm"

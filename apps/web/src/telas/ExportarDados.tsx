@@ -181,7 +181,7 @@ export function ExportarDados(p: ExportarDadosProps) {
         altura={40}
         disabled={!canExport}
         carregando={exporting}
-        onClick={() => { void handleExport(); }}
+        onClick={() => handleExport()}
       >
         Exportar
       </Botao>

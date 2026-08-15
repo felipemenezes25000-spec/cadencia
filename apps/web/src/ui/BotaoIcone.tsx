@@ -1,14 +1,18 @@
 'use client';
 
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
+import { useGuardaDeReentrada, type ResultadoDeAcao } from '../lib/acao-unica';
 
-export interface BotaoIconeProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface BotaoIconeProps
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
   readonly icone: PhosphorIcon;
   readonly rotulo: string;
   readonly tamanho?: 'sm' | 'md';
   readonly variante?: 'contorno' | 'fantasma';
+  /** Ver `Botao`: devolver a promessa segura o botão pela ação inteira. */
+  readonly onClick?: ((evento: MouseEvent<HTMLButtonElement>) => ResultadoDeAcao) | undefined;
 }
 
 export function BotaoIcone({
@@ -17,13 +21,25 @@ export function BotaoIcone({
   tamanho = 'md',
   variante = 'contorno',
   className,
+  onClick,
   ...props
 }: BotaoIconeProps) {
+  const guarda = useGuardaDeReentrada();
+
+  function tratarClique(evento: MouseEvent<HTMLButtonElement>): void {
+    if (guarda.bloqueado()) {
+      evento.preventDefault();
+      return;
+    }
+    guarda.executar(() => onClick?.(evento));
+  }
+
   return (
     <button
       type="button"
       aria-label={rotulo}
       title={rotulo}
+      onClick={tratarClique}
       className={cn(
         'cadencia-icon-button inline-grid shrink-0 place-items-center rounded-lg text-text-muted transition-colors-fast disabled:cursor-not-allowed disabled:opacity-50',
         /* Ver Botao.tsx: 32/36px viram 44px de area no toque. */

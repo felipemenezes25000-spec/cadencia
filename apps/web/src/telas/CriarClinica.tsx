@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Botao } from '../ui/Botao';
 import { Modal } from '../ui/Modal';
+import { useSubmitUnico } from '../lib/acao-unica';
 
 const FUSOS = [
   ['America/Sao_Paulo', 'Brasília (UTC-3)'],
@@ -69,6 +70,8 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
     }
   }
 
+  const submeterUmaVez = useSubmitUnico(submeter);
+
   return (
     <Modal
       aberto={aberto}
@@ -90,7 +93,7 @@ export function CriarClinica({ aberto, aoFechar, aoCriar }: CriarClinicaProps) {
         </>
       }
     >
-        <form id="form-criar-clinica" onSubmit={(ev) => { void submeter(ev); }} className="grid gap-4">
+        <form id="form-criar-clinica" onSubmit={submeterUmaVez} className="grid gap-4">
           <label className="grid gap-1">
             <span className="text-xs text-text-muted">Nome da unidade</span>
             <input type="text" required minLength={2}

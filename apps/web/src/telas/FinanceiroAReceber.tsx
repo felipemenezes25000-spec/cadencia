@@ -500,8 +500,8 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
         largura="md"
         rodape={selecionada ? (
           <div className="grid gap-2 sm:grid-cols-2">
-            <Botao variante="secundario" carregando={processando} onClick={() => { void executar(p.aoEnviarLink); }}>Enviar cobrança</Botao>
-            <Botao carregando={processando} onClick={() => { void executar(p.aoMarcarPago); }}>Registrar pagamento</Botao>
+            <Botao variante="secundario" carregando={processando} onClick={() => executar(p.aoEnviarLink)}>Enviar cobrança</Botao>
+            <Botao carregando={processando} onClick={() => executar(p.aoMarcarPago)}>Registrar pagamento</Botao>
           </div>
         ) : undefined}
       >
@@ -520,7 +520,7 @@ export function FinanceiroAReceber(p: FinanceiroAReceberProps) {
               {selecionada.categoryName ? <p className="mt-1 text-xs text-text-faint">Categoria: {selecionada.categoryName}</p> : null}
             </section>
             {erro ? <p role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger">{erro}</p> : null}
-            <Botao variante="fantasma" fullWidth onClick={() => { void executar(p.aoCobrar); }}>Gerar novo link de cobrança</Botao>
+            <Botao variante="fantasma" fullWidth onClick={() => executar(p.aoCobrar)}>Gerar novo link de cobrança</Botao>
           </div>
         ) : null}
       </PainelLateral>

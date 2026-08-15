@@ -207,7 +207,7 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
               {!collapsed ? (
                 <button
                   type="button"
-                  onClick={() => { void sessao.sair(); }}
+                  onClick={() => sessao.sair()}
                   aria-label="Sair"
                   title="Sair"
                   className="grid size-8 place-items-center rounded-lg text-text-faint transition-colors hover:bg-surface-sunken hover:text-text"

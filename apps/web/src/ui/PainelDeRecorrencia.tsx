@@ -203,7 +203,7 @@ export function PainelDeRecorrencia(p: PainelDeRecorrenciaProps) {
           iconeEsquerda={ArrowsClockwise}
           disabled={incompleto}
           carregando={criando}
-          onClick={() => { void criar(); }}
+          onClick={() => criar()}
         >
           Criar série
         </Botao>

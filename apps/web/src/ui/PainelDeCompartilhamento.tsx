@@ -174,7 +174,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
             iconeEsquerda={ShareNetwork}
             disabled={incompleto}
             carregando={salvando}
-            onClick={() => { void compartilhar(); }}
+            onClick={() => compartilhar()}
           >
             Liberar acesso
           </Botao>
@@ -221,7 +221,7 @@ export function PainelDeCompartilhamento(p: PainelDeCompartilhamentoProps) {
                       <Botao
                         variante="perigo"
                         tamanho="sm"
-                        onClick={() => { void revogar(c.shareId); }}
+                        onClick={() => revogar(c.shareId)}
                       >
                         Confirmar
                       </Botao>

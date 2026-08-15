@@ -146,7 +146,7 @@ export function PainelDeDocumentos(p: PainelDeDocumentosProps) {
         {emitido === null ? (
           <Botao
             iconeEsquerda={FileText}
-            onClick={() => { void emitir(); }}
+            onClick={() => emitir()}
             disabled={emitindo}
           >
             {emitindo ? 'Emitindo…' : 'Emitir'}

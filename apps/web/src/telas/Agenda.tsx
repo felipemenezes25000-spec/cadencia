@@ -948,7 +948,7 @@ export function Agenda(p: AgendaProps) {
         confirmarRotulo="Confirmar reagendamento"
         carregando={movendo}
         erro={erroAoMover}
-        aoConfirmar={() => { void confirmarMovimento(); }}
+        aoConfirmar={() => confirmarMovimento()}
         aoFechar={() => {
           setMovimentoPendente(null);
           setErroAoMover(null);

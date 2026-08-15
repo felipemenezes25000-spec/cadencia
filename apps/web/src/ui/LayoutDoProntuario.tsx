@@ -91,7 +91,7 @@ export function LayoutDoProntuario(p: LayoutDoProntuarioProps) {
             carregando={salvando}
             // Lista vazia apaga a personalização: a partir daí o médico volta a
             // receber as mudanças que a clínica fizer no padrão.
-            onClick={() => { void salvar([]); }}>
+            onClick={() => salvar([])}>
             Voltar ao padrão da clínica
           </Botao>
         )}
@@ -144,14 +144,14 @@ export function LayoutDoProntuario(p: LayoutDoProntuarioProps) {
           // daí o médico deixaria de receber as mudanças da clínica.
           disabled={!mexeu || nenhumaVisivel}
           carregando={salvando}
-          onClick={() => { void salvar(ordem.map((s, i) => ({
+          onClick={() => salvar(ordem.map((s, i) => ({
             sectionId: s.sectionId,
             // Renumerado de 1 a N: buraco de ordinal deixaria a próxima
             // reordenação ambígua.
             ordinal: i + 1,
             visible: s.visible,
             collapsed: s.collapsed,
-          }))); }}>
+          })))}>
           Salvar minha ordem
         </Botao>
       </div>

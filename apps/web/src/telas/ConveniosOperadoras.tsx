@@ -388,7 +388,7 @@ export function ConveniosOperadoras(p: ConveniosOperadorasProps) {
         destrutivo
         carregando={excluindo}
         erro={erroExclusao}
-        aoConfirmar={() => { void confirmarExclusao(); }}
+        aoConfirmar={() => confirmarExclusao()}
         aoFechar={() => {
           setOperadoraParaExcluir(null);
           setErroExclusao(null);

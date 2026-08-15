@@ -303,7 +303,7 @@ export function ConveniosAFaturar(p: ConveniosAFaturarProps) {
             tamanho="sm"
             iconeEsquerda={Package}
             disabled={criandoLote || operadoraDaSelecao === null}
-            onClick={() => { void criarLote(); }}
+            onClick={() => criarLote()}
           >
             {criandoLote ? 'Criando lote...' : 'Criar lote'}
           </Botao>

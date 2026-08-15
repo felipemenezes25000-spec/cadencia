@@ -1,15 +1,17 @@
 'use client';
 
-import type { ReactNode, ButtonHTMLAttributes } from 'react';
+import type { ReactNode, ButtonHTMLAttributes, MouseEvent } from 'react';
 import { type Icon as PhosphorIcon, SpinnerGap } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
+import { useGuardaDeReentrada, type ResultadoDeAcao } from '../lib/acao-unica';
 
 export type VarianteBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo';
 export type TamanhoBotao = 'sm' | 'md' | 'lg';
 /** @deprecated Use `tamanho` instead */
 export type AlturaBotao = 28 | 32 | 40;
 
-export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+export interface BotaoProps
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onClick'> {
   readonly variante?: VarianteBotao;
   readonly tamanho?: TamanhoBotao;
   readonly altura?: AlturaBotao;
@@ -18,6 +20,11 @@ export interface BotaoProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>
   readonly carregando?: boolean;
   readonly fullWidth?: boolean;
   readonly children: ReactNode;
+  /**
+   * Pode devolver a promessa da ação. Quando devolve, o botão ignora novos
+   * cliques até ela terminar — sem depender de `carregando` ter commitado.
+   */
+  readonly onClick?: ((evento: MouseEvent<HTMLButtonElement>) => ResultadoDeAcao) | undefined;
 }
 
 const ALTURA_PARA_TAMANHO: Record<AlturaBotao, TamanhoBotao> = {
@@ -56,16 +63,29 @@ export function Botao({
   children,
   disabled,
   className,
+  onClick,
   ...resto
 }: BotaoProps) {
   const tamanhoResolvido: TamanhoBotao = tamanho ?? (altura ? ALTURA_PARA_TAMANHO[altura] : 'md');
   const tamanhoIcone = TAMANHO_ICONE[tamanhoResolvido];
   const desabilitado = disabled === true || carregando;
+  const guarda = useGuardaDeReentrada();
+
+  function tratarClique(evento: MouseEvent<HTMLButtonElement>): void {
+    if (guarda.bloqueado()) {
+      // `preventDefault` porque em `type="submit"` é o clique, e não o
+      // `onClick`, que dispara o `onSubmit` do formulário.
+      evento.preventDefault();
+      return;
+    }
+    guarda.executar(() => onClick?.(evento));
+  }
 
   return (
     <button
       type="button"
       {...resto}
+      onClick={tratarClique}
       disabled={desabilitado}
       aria-busy={carregando}
       className={cn(

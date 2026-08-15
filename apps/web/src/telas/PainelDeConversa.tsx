@@ -282,7 +282,7 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
             placeholder="Escreva uma mensagem…"
             className="min-h-10 max-h-[132px] flex-1 resize-none rounded-[12px] border border-line bg-surface px-3.5 py-2.5 font-sans text-sm text-text shadow-elev-1 outline-none transition-colors-fast placeholder:text-text-faint focus:border-accent focus:ring-2 focus:ring-accent/10"
           />
-          <button type="button" aria-label="Enviar" disabled={enviando || texto.trim() === ''} onClick={() => { void enviar(); }} className="grid size-10 shrink-0 place-items-center rounded-[10px] border border-accent bg-accent text-white shadow-elev-1 transition-colors-fast hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45">
+          <button type="button" aria-label="Enviar" disabled={enviando || texto.trim() === ''} onClick={() => enviar()} className="grid size-10 shrink-0 place-items-center rounded-[10px] border border-accent bg-accent text-white shadow-elev-1 transition-colors-fast hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45">
             <CaretRight size={18} weight="bold" aria-hidden />
           </button>
         </div>

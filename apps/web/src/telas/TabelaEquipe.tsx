@@ -123,7 +123,7 @@ export function TabelaEquipe({
                         <div className="flex gap-2">
                           <Botao variante={confirmando.tipo === 'papel' ? 'primario' : 'perigo'}
                             tamanho="sm" carregando={executando}
-                            onClick={() => { void confirmar(); }}>
+                            onClick={() => confirmar()}>
                             Confirmar
                           </Botao>
                           <Botao variante="secundario" tamanho="sm"

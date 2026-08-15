@@ -18,6 +18,7 @@ import { Campo } from './Campo';
 import { Icone } from './Icone';
 import { useToast } from './ToastProvider';
 import { cn } from '../lib/cn';
+import { useSubmitUnico } from '../lib/acao-unica';
 
 export type MetodoPagamento = 'pix' | 'dinheiro' | 'credito' | 'debito' | 'boleto';
 
@@ -130,6 +131,8 @@ export function PainelDeCobranca({
     toast({ tipo: 'sucesso', mensagem: 'Link copiado!' });
   }
 
+  const enviarUmaVez = useSubmitUnico(handleSubmit(onSubmit));
+
   return (
     <PainelLateral
       aberto={aberto}
@@ -138,7 +141,7 @@ export function PainelDeCobranca({
       largura="sm"
     >
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={enviarUmaVez}
         className="flex flex-col gap-[var(--s-6)]"
       >
         {/* Informações do paciente */}

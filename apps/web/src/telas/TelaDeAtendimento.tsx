@@ -468,7 +468,7 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
               variante="primario"
               iconeEsquerda={Check}
               carregando={finalizandoVisual}
-              onClick={() => { void finalizar(); }}
+              onClick={() => finalizar()}
             >
               Finalizar atendimento
             </Botao>

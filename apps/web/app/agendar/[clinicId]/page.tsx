@@ -248,7 +248,7 @@ export default function PaginaAgendarOnline() {
           <button
             type="button"
             disabled={marcando}
-            onClick={() => { void marcar(); }}
+            onClick={() => marcar()}
             className="rounded-[var(--r-sm)] bg-accent px-4 py-3 text-base font-medium text-accent-on disabled:opacity-60"
           >
             {marcando ? 'Marcando…' : `Marcar ${hora(escolhida.inicio, fuso)}`}

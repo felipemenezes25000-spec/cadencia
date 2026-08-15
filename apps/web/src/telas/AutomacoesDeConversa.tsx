@@ -13,6 +13,7 @@ import {
   Robot,
 } from '@phosphor-icons/react';
 import { cn } from '../lib/cn';
+import { useSubmitUnico } from '../lib/acao-unica';
 import { PageHeader } from '../ui/PageHeader';
 import { PainelLateral } from '../ui/PainelLateral';
 import { Campo } from '../ui/Campo';
@@ -179,8 +180,10 @@ function FormularioAutomacao({ automacao, onSalvar, onCancelar }: FormularioAuto
       : { nome: '', descricao: '', timing: '', canal: '', templateNome: '' },
   });
 
+  const enviarUmaVez = useSubmitUnico(handleSubmit(onSalvar));
+
   return (
-    <form onSubmit={handleSubmit(onSalvar)} className="space-y-4">
+    <form onSubmit={enviarUmaVez} className="space-y-4">
       <Campo
         rotulo="Nome"
         {...register('nome', { required: 'Nome obrigatório' })}

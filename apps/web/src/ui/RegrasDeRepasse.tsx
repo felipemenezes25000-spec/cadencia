@@ -146,7 +146,7 @@ export function RegrasDeRepasse(p: RegrasDeRepasseProps) {
 
       <div>
         <Botao iconeEsquerda={Plus} disabled={incompleto} carregando={salvando}
-          onClick={() => { void criar(); }}>
+          onClick={() => criar()}>
           Adicionar regra
         </Botao>
       </div>

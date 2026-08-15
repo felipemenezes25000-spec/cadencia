@@ -228,7 +228,7 @@ export default function PaginaFichaDoPaciente(
           <Botao
             variante="secundario"
             iconeEsquerda={ArrowsClockwise}
-            onClick={() => { void abrirRecorrencia(); }}
+            onClick={() => abrirRecorrencia()}
           >
             Repetir consulta
           </Botao>
@@ -237,7 +237,7 @@ export default function PaginaFichaDoPaciente(
               variante="secundario"
               iconeEsquerda={FileArrowDown}
               carregando={exportando}
-              onClick={() => { void exportarProntuario(); }}
+              onClick={() => exportarProntuario()}
             >
               Exportar prontuário
             </Botao>
@@ -246,7 +246,7 @@ export default function PaginaFichaDoPaciente(
             <Botao
               variante="secundario"
               iconeEsquerda={ShareNetwork}
-              onClick={() => { void abrirCompartilhamento(); }}
+              onClick={() => abrirCompartilhamento()}
             >
               Compartilhar
             </Botao>

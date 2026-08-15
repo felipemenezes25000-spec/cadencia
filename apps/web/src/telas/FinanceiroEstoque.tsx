@@ -150,7 +150,7 @@ export function FinanceiroEstoque(p: FinanceiroEstoqueProps) {
         <Botao
           variante="secundario"
           tamanho="md"
-          onClick={() => { void p.aoRegistrarMovimentacao(); }}
+          onClick={() => p.aoRegistrarMovimentacao()}
         >
           Nova movimentação
         </Botao>

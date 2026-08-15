@@ -42,7 +42,7 @@ function NpsInner() {
           <button
             key={n}
             type="button"
-            onClick={() => { void setDias(n); }}
+            onClick={() => setDias(n)}
             className={dias === n
               ? 'rounded-[var(--r-sm)] bg-accent px-3 py-1.5 text-sm text-accent-on'
               : 'rounded-[var(--r-sm)] border border-line px-3 py-1.5 text-sm text-text hover:bg-surface-hover'}

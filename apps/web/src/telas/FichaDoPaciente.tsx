@@ -772,7 +772,7 @@ export function FichaDoPaciente(p: FichaDoPacienteProps) {
               icone={WarningCircle}
               titulo="Não foi possível carregar o financeiro"
               descricao={erroFinanceiro}
-              acao={<Botao variante="secundario" onClick={() => { void carregarFinanceiro(); }}>Tentar novamente</Botao>}
+              acao={<Botao variante="secundario" onClick={() => carregarFinanceiro()}>Tentar novamente</Botao>}
             />
           ) : <FinanceiroTab lancamentos={lancamentos} veFinanceiro={veFinanceiro} />}
         </TabsContent>

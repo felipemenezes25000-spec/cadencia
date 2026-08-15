@@ -78,7 +78,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
           <CheckCircle size={18} weight="fill" className="text-accent" />
           <span className="text-sm font-medium text-accent">MFA ativo</span>
           <Botao variante="fantasma" tamanho="sm" className="ml-auto"
-            onClick={() => { void iniciar(); }}>
+            onClick={() => iniciar()}>
             Reconfigurar
           </Botao>
         </div>
@@ -91,7 +91,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
             Use um app autenticador como Google Authenticator, Authy ou 1Password.
           </p>
           <Botao variante="secundario" tamanho="md" carregando={carregando}
-            onClick={() => { void iniciar(); }}>
+            onClick={() => iniciar()}>
             Configurar MFA
           </Botao>
         </div>
@@ -106,7 +106,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
 
           <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 font-mono text-sm">
             <span className="flex-1 select-all break-all">{segredo}</span>
-            <button type="button" onClick={() => { void copiar(); }}
+            <button type="button" onClick={() => copiar()}
               className="shrink-0 rounded p-1 hover:bg-surface-hover max-md:min-h-11 max-md:min-w-11 max-md:inline-grid max-md:place-items-center"
               aria-label="Copiar segredo">
               {copiado
@@ -132,7 +132,7 @@ export function CadastroMfa({ mfaCadastrado, aoIniciar, aoConfirmar }: CadastroM
 
           <Botao variante="primario" tamanho="md" carregando={carregando}
             disabled={codigo.length !== 6}
-            onClick={() => { void confirmar(); }}>
+            onClick={() => confirmar()}>
             Confirmar
           </Botao>
         </div>

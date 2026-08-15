@@ -94,6 +94,27 @@ describe('PainelDeDocumentos', () => {
     expect(screen.queryByText(/sem assinatura/i)).not.toBeInTheDocument();
   });
 
+  it('duplo clique em Emitir gera UM documento, não dois', async () => {
+    const aoEmitir = vi.fn(async () => {
+      await new Promise((r) => { setTimeout(r, 50); });
+      return { documentId: 'doc-1', urlPdf: '/x.pdf', assinado: true };
+    });
+    montar({ aoEmitir });
+
+    // Os dois eventos saem no mesmo tick, como o navegador entrega duplo
+    // clique. `disabled={emitindo}` não segurava: estado só vira `disabled` no
+    // DOM depois do commit, e o segundo clique chegava antes disso — dois
+    // atestados assinados para o mesmo atendimento.
+    const botao = screen.getByRole('button', { name: /emitir/i });
+    await act(async () => {
+      botao.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      botao.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await new Promise((r) => { setTimeout(r, 100); });
+    });
+
+    expect(aoEmitir).toHaveBeenCalledTimes(1);
+  });
+
   it('depois de emitir oferece o link para imprimir', async () => {
     montar();
     await act(async () => {

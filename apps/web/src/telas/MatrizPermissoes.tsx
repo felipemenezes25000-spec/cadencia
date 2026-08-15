@@ -262,7 +262,7 @@ export function MatrizPermissoes() {
               variante="primario" tamanho="sm"
               iconeEsquerda={FloppyDisk}
               carregando={salvando}
-              onClick={() => { void salvar(); }}
+              onClick={() => salvar()}
             >
               Salvar alterações
             </Botao>

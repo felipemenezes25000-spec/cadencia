@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { WarningCircle, X } from '@phosphor-icons/react';
 import { Botao } from './Botao';
 import { BotaoIcone } from './BotaoIcone';
+import type { ResultadoDeAcao } from '../lib/acao-unica';
 
 export interface DialogoDeConfirmacaoProps {
   readonly aberto: boolean;
@@ -13,7 +14,12 @@ export interface DialogoDeConfirmacaoProps {
   readonly carregando?: boolean;
   readonly erro?: string | null;
   readonly destrutivo?: boolean;
-  readonly aoConfirmar: () => void;
+  /**
+   * Devolver a promessa faz o botão ignorar cliques repetidos até a ação
+   * terminar. Importante aqui: este diálogo confirma exclusão e cancelamento,
+   * onde repetir a chamada é o pior caso.
+   */
+  readonly aoConfirmar: () => ResultadoDeAcao;
   readonly aoFechar: () => void;
 }
 

@@ -206,7 +206,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
             iconeEsquerda={Prohibit}
             disabled={incompleto}
             carregando={salvando}
-            onClick={() => { void criar(); }}
+            onClick={() => criar()}
           >
             Bloquear
           </Botao>
@@ -247,7 +247,7 @@ export function PainelDeBloqueios(p: PainelDeBloqueiosProps) {
                       <Botao
                         variante="perigo"
                         tamanho="sm"
-                        onClick={() => { void remover(b.blockId); }}
+                        onClick={() => remover(b.blockId)}
                       >
                         Confirmar remoção
                       </Botao>

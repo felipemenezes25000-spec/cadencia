@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../src/api';
+import { useSubmitUnico } from '../../src/lib/acao-unica';
 import { useSessao } from '../../src/sessao';
 import { ListaClinicas, type ClinicaResumo } from '../../src/telas/ListaClinicas';
 import { CriarClinica, type DadosCriacaoClinica } from '../../src/telas/CriarClinica';
@@ -91,6 +92,8 @@ export default function PaginaConfiguracoes() {
     setClinicas(lista.itens);
   }
 
+  const salvarUmaVez = useSubmitUnico(salvar);
+
   if (clinica === null) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
@@ -119,7 +122,7 @@ export default function PaginaConfiguracoes() {
           Unidade
         </h2>
 
-        <form onSubmit={(e) => { void salvar(e); }} className="grid max-w-lg gap-4">
+        <form onSubmit={salvarUmaVez} className="grid max-w-lg gap-4">
           <label className="grid gap-1.5">
             <span className="text-sm font-medium">Nome da unidade</span>
             <input
