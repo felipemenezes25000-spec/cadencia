@@ -43,7 +43,6 @@ export async function createSession(
   },
 ): Promise<{ sessionId: string; token: string }> {
   const token = randomBytes(SESSION_TOKEN_BYTES).toString('base64url');
-  // As janelas sao calculadas com clock_timestamp(), nunca com o relogio do Node.
   const { rows } = await db.query(
     `INSERT INTO id.session
        (user_id, token_hash, active_tenant_id, active_clinic_id,
@@ -74,10 +73,17 @@ export async function resolveSession(
             s.idle_expires_at     < clock_timestamp()      AS idle_expirou,
             s.absolute_expires_at < clock_timestamp()      AS absoluta_expirou
        FROM id.session s
+       JOIN id."user" u
+         ON u.id = s.user_id
+        AND u.disabled_at IS NULL
+        AND u.status = 'ativo'
       WHERE s.token_hash = $1`,
     [hashSessionToken(token)],
   );
   const row = rows[0];
+  // Conta desativada deliberadamente é indistinguível de sessão inexistente.
+  // Desativar uma pessoa da equipe precisa cortar o acesso na próxima request,
+  // não só quando o cookie completar 30 min/12 h.
   if (!row) return err('nao_encontrada');
   if (row.revogada) return err('revogada');
   if (row.absoluta_expirou) return err('expirada_absoluta');
