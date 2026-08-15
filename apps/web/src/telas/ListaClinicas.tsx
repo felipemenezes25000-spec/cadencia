@@ -1,5 +1,6 @@
 'use client';
 
+import { Clock, Plus, Stethoscope } from '@phosphor-icons/react';
 import { Botao } from '../ui/Botao';
 
 export interface ClinicaResumo {
@@ -30,51 +31,42 @@ const FUSOS_LABEL: Record<string, string> = {
 
 export function ListaClinicas({ clinicas, clinicaAtivaId, podeCriar, aoCriar }: ListaClinicasProps) {
   return (
-    <section className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Todas as unidades
-        </h2>
-        {podeCriar && (
-          <Botao variante="primario" tamanho="sm" onClick={aoCriar}>
-            Criar unidade
-          </Botao>
-        )}
+    <section className="settings-units" aria-labelledby="unidades-organizacao-titulo">
+      <div className="settings-units-header">
+        <div>
+          <h3 id="unidades-organizacao-titulo">Estrutura da organização</h3>
+          <p>Veja todas as unidades vinculadas ao mesmo ambiente Cadência.</p>
+        </div>
+        {podeCriar ? (
+          <Botao variante="secundario" tamanho="sm" iconeEsquerda={Plus} onClick={aoCriar}>Nova unidade</Botao>
+        ) : null}
       </div>
 
       {clinicas.length === 0 ? (
-        <p className="text-sm text-text-muted">Nenhuma unidade cadastrada.</p>
+        <div className="rounded-[15px] border border-dashed border-line bg-surface-subtle p-6 text-center text-sm text-text-muted">
+          Nenhuma unidade cadastrada.
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-line text-left text-xs text-text-muted">
-                <th className="pb-2 font-medium">Nome</th>
-                <th className="pb-2 font-medium">CNES</th>
-                <th className="pb-2 font-medium">Fuso</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clinicas.map((c) => (
-                <tr key={c.clinicId} className="border-b border-line/50">
-                  <td className="py-2.5">
-                    <span>{c.nome}</span>
-                    {c.clinicId === clinicaAtivaId && (
-                      <span className="ml-2 rounded bg-accent/10 px-1.5 py-0.5 text-xs text-accent">
-                        ativa
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2.5 font-mono text-text-muted">
-                    {c.cnes ?? '—'}
-                  </td>
-                  <td className="py-2.5 text-text-muted">
-                    {FUSOS_LABEL[c.timezone] ?? c.timezone}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="settings-units-grid">
+          {clinicas.map((clinica) => {
+            const ativa = clinica.clinicId === clinicaAtivaId;
+            return (
+              <article key={clinica.clinicId} className={`settings-unit-card ${ativa ? 'is-active' : ''}`}>
+                <div className="settings-unit-card-top">
+                  <span className="settings-unit-icon"><Stethoscope size={18} weight="duotone" aria-hidden /></span>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate">{clinica.nome}</h4>
+                    <div className="settings-unit-card-meta">
+                      <span><Clock size={11} aria-hidden />{FUSOS_LABEL[clinica.timezone] ?? clinica.timezone}</span>
+                      <span>CNES {clinica.cnes ?? '—'}</span>
+                      <span>CNPJ {clinica.cnpj ?? '—'}</span>
+                    </div>
+                  </div>
+                  {ativa ? <span className="settings-unit-active-badge">Em uso</span> : null}
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
