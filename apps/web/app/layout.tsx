@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import './luminous.css';
 import { Providers } from './providers';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';
