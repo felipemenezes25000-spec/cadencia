@@ -1156,9 +1156,6 @@
         "SELECT",
         "UPDATE"
       ],
-      "jobs": [
-        "SELECT"
-      ],
       "rpt_owner": [
         "SELECT"
       ],
