@@ -9,11 +9,12 @@ export interface SendMessageInput {
   readonly conversationId: string;
 }
 
-export interface SendMessageResult {
-  readonly messageId: string;
-  readonly status: 'sent' | 'failed';
-  readonly providerMessageId: string | null;
-}
+export type SendMessageResult =
+  | { readonly messageId: string; readonly status: 'sent'; readonly providerMessageId: string | null }
+  | { readonly messageId: string; readonly status: 'retryable'; readonly providerMessageId: null; readonly detail: string }
+  | { readonly messageId: string; readonly status: 'indeterminate'; readonly providerMessageId: null; readonly detail: string }
+  | { readonly messageId: string; readonly status: 'failed'; readonly providerMessageId: null; readonly detail: string }
+  | { readonly messageId: string; readonly status: 'ignored'; readonly providerMessageId: string | null; readonly detail: string };
 
 export interface MessagingProvidersByChannel {
   readonly whatsapp: MessagingProvider;
@@ -24,7 +25,6 @@ function providerDoCanal(
   providers: MessagingProvider | MessagingProvidersByChannel,
   channel: string,
 ): MessagingProvider | null {
-  // Compatibilidade com testes e consumidores que injetam um único fake.
   if ('send' in providers) return providers;
   if (channel === 'whatsapp') return providers.whatsapp;
   if (channel === 'sms') return providers.sms;
@@ -42,85 +42,141 @@ export async function sendMessage(
     requestId: uuidv7(),
   };
 
-  return withTenantTx(actor, async (tx) => {
-    const { rows: msgRows } = await tx.query<{
-      body_text: string; conversation_id: string;
-    }>(
-      `SELECT body_text, conversation_id FROM msg.message WHERE id = $1`,
-      [input.messageId]);
-
-    if (msgRows.length === 0) {
-      return { messageId: input.messageId, status: 'failed' as const,
-               providerMessageId: null };
-    }
-
-    const msg = msgRows[0]!;
-
-    const { rows: convRows } = await tx.query<{
-      remote_phone: string; channel_identity_id: string;
-    }>(
-      `SELECT remote_phone, channel_identity_id
-         FROM msg.conversation WHERE id = $1`,
-      [msg.conversation_id]);
-
-    if (convRows.length === 0) {
-      await tx.query(
-        `UPDATE msg.message SET status = 'failed' WHERE id = $1`,
-        [input.messageId]);
-      return { messageId: input.messageId, status: 'failed' as const,
-               providerMessageId: null };
-    }
-
-    const conv = convRows[0]!;
-
-    const { rows: ciRows } = await tx.query<{
+  // Primeira transação: resolve tudo e CLAIM a mensagem. Nenhuma chamada HTTP
+  // acontece enquanto uma conexão do PostgreSQL está presa.
+  const preparo = await withTenantTx(actor, async (tx) => {
+    const { rows } = await tx.query<{
+      body_text: string | null; conversation_id: string; status: string;
+      external_id: string | null; remote_phone: string;
       provider_ref: string; channel: string;
     }>(
-      `SELECT coalesce(provider_ref, id::text) AS provider_ref, channel::text AS channel
-         FROM msg.channel_identity WHERE id = $1`,
-      [conv.channel_identity_id]);
+      `SELECT m.body_text, m.conversation_id, m.status, m.external_id,
+              c.remote_phone,
+              coalesce(ci.provider_ref, ci.id::text) AS provider_ref,
+              ci.channel::text AS channel
+         FROM msg.message m
+         JOIN msg.conversation c
+           ON c.tenant_id = m.tenant_id AND c.id = m.conversation_id
+         JOIN msg.channel_identity ci
+           ON ci.tenant_id = c.tenant_id AND ci.id = c.channel_identity_id
+        WHERE m.id = $1 AND m.conversation_id = $2
+        FOR UPDATE OF m`,
+      [input.messageId, input.conversationId],
+    );
 
-    const identidade = ciRows[0];
-    if (identidade === undefined) {
-      await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1`, [input.messageId]);
-      return { messageId: input.messageId, status: 'failed' as const, providerMessageId: null };
+    const row = rows[0];
+    if (row === undefined) return { kind: 'missing' as const };
+    if (row.status === 'sent' || row.status === 'delivered' || row.status === 'read') {
+      return { kind: 'already-sent' as const, externalId: row.external_id };
     }
-
-    const messaging = providerDoCanal(providers, identidade.channel);
-    if (messaging === null) {
-      await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1`, [input.messageId]);
-      return { messageId: input.messageId, status: 'failed' as const, providerMessageId: null };
+    if (row.status === 'sending' || row.status === 'indeterminate') {
+      // Reexecutar uma operação unsafe sem conseguir saber se o provedor a
+      // recebeu pode duplicar mensagem. Sinalizamos para reconciliação humana.
+      return { kind: 'indeterminate' as const };
     }
+    if (row.status === 'failed') return { kind: 'failed' as const };
 
-    const ctx = {
-      tenantId: input.tenantId,
-      actorUserId: null,
-      requestId: actor.requestId,
-      idempotencyKey: `msg-${input.messageId}`,
-      deadlineMs: 10_000,
+    const claimed = await tx.query(
+      `UPDATE msg.message
+          SET status = 'sending', send_attempted_at = clock_timestamp()
+        WHERE id = $1 AND status = 'queued'`,
+      [input.messageId],
+    );
+    if (claimed.rowCount === 0) return { kind: 'indeterminate' as const };
+
+    return {
+      kind: 'ready' as const,
+      bodyText: row.body_text ?? '',
+      conversationId: row.conversation_id,
+      remotePhone: row.remote_phone,
+      providerRef: row.provider_ref,
+      channel: row.channel,
     };
+  });
 
-    const resultado = await messaging.send(ctx, {
-      channelIdentityRef: identidade.provider_ref,
-      to: conv.remote_phone as never,
-      body: { kind: 'text', text: msg.body_text ?? '' },
-      conversationId: msg.conversation_id,
+  if (preparo.kind === 'missing') {
+    return { messageId: input.messageId, status: 'ignored', providerMessageId: null,
+      detail: 'mensagem_ou_conversa_nao_encontrada' };
+  }
+  if (preparo.kind === 'already-sent') {
+    return { messageId: input.messageId, status: 'sent', providerMessageId: preparo.externalId };
+  }
+  if (preparo.kind === 'indeterminate') {
+    return { messageId: input.messageId, status: 'indeterminate', providerMessageId: null,
+      detail: 'envio_anterior_sem_resultado_conclusivo' };
+  }
+  if (preparo.kind === 'failed') {
+    return { messageId: input.messageId, status: 'failed', providerMessageId: null,
+      detail: 'falha_terminal_ja_registrada' };
+  }
+
+  const messaging = providerDoCanal(providers, preparo.channel);
+  if (messaging === null) {
+    await withTenantTx(actor, async (tx) => {
+      await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1 AND status = 'sending'`,
+        [input.messageId]);
     });
+    return { messageId: input.messageId, status: 'failed', providerMessageId: null,
+      detail: `canal_nao_suportado:${preparo.channel}` };
+  }
 
-    if (resultado.ok) {
+  const ctx = {
+    tenantId: input.tenantId,
+    actorUserId: null,
+    requestId: actor.requestId,
+    idempotencyKey: `msg-${input.messageId}`,
+    deadlineMs: 10_000,
+  };
+
+  // HTTP fora da transação. O estado `sending` protege contra reexecução cega
+  // se o processo morrer depois que o provedor recebeu a mensagem.
+  const resultado = await messaging.send(ctx, {
+    channelIdentityRef: preparo.providerRef,
+    to: preparo.remotePhone,
+    body: { kind: 'text', text: preparo.bodyText },
+    conversationId: preparo.conversationId,
+  });
+
+  if (resultado.ok) {
+    await withTenantTx(actor, async (tx) => {
       await tx.query(
         `UPDATE msg.message
-            SET status = 'sent', external_id = $2, sent_at = clock_timestamp()
-          WHERE id = $1`,
-        [input.messageId, resultado.value.providerMessageId]);
-      return { messageId: input.messageId, status: 'sent' as const,
-               providerMessageId: resultado.value.providerMessageId };
-    }
+            SET status = 'sent', external_id = $2,
+                sent_at = coalesce(sent_at, clock_timestamp())
+          WHERE id = $1 AND status = 'sending'`,
+        [input.messageId, resultado.value.providerMessageId],
+      );
+    });
+    return { messageId: input.messageId, status: 'sent',
+      providerMessageId: resultado.value.providerMessageId };
+  }
 
-    await tx.query(
-      `UPDATE msg.message SET status = 'failed' WHERE id = $1`,
+  if (resultado.error.retrySafe) {
+    // O provider garante que repetir é seguro: volta para queued e o handler
+    // lança erro para o pg-boss aplicar retry/backoff.
+    await withTenantTx(actor, async (tx) => {
+      await tx.query(`UPDATE msg.message SET status = 'queued' WHERE id = $1 AND status = 'sending'`,
+        [input.messageId]);
+    });
+    return { messageId: input.messageId, status: 'retryable', providerMessageId: null,
+      detail: resultado.error.detail };
+  }
+
+  if (resultado.error.kind === 'timeout') {
+    await withTenantTx(actor, async (tx) => {
+      await tx.query(
+        `UPDATE msg.message SET status = 'indeterminate' WHERE id = $1 AND status = 'sending'`,
+        [input.messageId],
+      );
+    });
+    return { messageId: input.messageId, status: 'indeterminate', providerMessageId: null,
+      detail: resultado.error.detail };
+  }
+
+  await withTenantTx(actor, async (tx) => {
+    await tx.query(`UPDATE msg.message SET status = 'failed' WHERE id = $1 AND status = 'sending'`,
       [input.messageId]);
-    return { messageId: input.messageId, status: 'failed' as const,
-             providerMessageId: null };
   });
+  return { messageId: input.messageId, status: 'failed', providerMessageId: null,
+    detail: resultado.error.detail };
 }
