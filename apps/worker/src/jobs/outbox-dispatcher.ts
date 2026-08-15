@@ -1,6 +1,11 @@
 // apps/worker/src/jobs/outbox-dispatcher.ts
 import { jobsPool } from '@cadencia/db';
 import PgBoss from 'pg-boss';
+import {
+  FILA_ENVIO_MSG,
+  FILA_LINK_PAGAMENTO,
+  FILA_REPROJECAO_TISS,
+} from '../queues';
 
 /**
  * Despachante de outbox — polling a cada 5s.
@@ -16,10 +21,6 @@ export interface DispatchResult {
   readonly errors: number;
 }
 
-/**
- * Quantos eventos um ciclo reivindica. O lock fica aberto somente durante os
- * inserts no pg-boss (mesmo PostgreSQL), nunca durante chamadas a provedores.
- */
 const LOTE_POR_CICLO = 100;
 
 export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
@@ -31,15 +32,6 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
   try {
     await client.query('BEGIN');
 
-    /**
-     * IMPORTANTE: não marcamos nada como despachado nesta seleção.
-     *
-     * A implementação anterior fazia UPDATE ... SET dispatched_at = now()
-     * RETURNING e só depois chamava boss.send(). Se o worker morresse nessa
-     * janela, o evento ficava para sempre com dispatched_at preenchido sem ter
-     * chegado à fila. `FOR UPDATE SKIP LOCKED` mantém exclusão entre workers sem
-     * sacrificar durabilidade: crash => ROLLBACK => a linha volta a ser elegível.
-     */
     const { rows: events } = await client.query<{
       id: string; event_type: string; aggregate_id: string;
       payload: Record<string, unknown>; tenant_id: string;
@@ -75,8 +67,6 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
         );
         dispatched += 1;
       } catch {
-        // A linha continua pendente. Só contabilizamos a tentativa e guardamos
-        // diagnóstico; o ciclo seguinte pode tentar novamente até o limite.
         await client.query(
           `UPDATE app.outbox
               SET attempts = attempts + 1,
@@ -106,18 +96,21 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
 
 /** Mapeia event_type para o nome da fila do pg-boss. */
 function resolveQueue(eventType: string): string {
-  // Eventos de mensageria
+  // Eventos gerados diretamente pelas rotas HTTP usam snake_case.
+  // Eles precisam cair nas MESMAS filas que o worker consome; o fallback
+  // `outbox.${eventType}` fazia `send_message` virar `outbox.send_message`,
+  // uma fila inexistente, e a mensagem ficava perdida no limbo.
+  if (eventType === 'send_message') return FILA_ENVIO_MSG;
+  if (eventType === 'create_payment_link') return FILA_LINK_PAGAMENTO;
+
   if (eventType === 'INBOUND_MESSAGE_RECEIVED') return 'messaging.inbound_message_received';
   if (eventType.startsWith('APPOINTMENT_')) return `messaging.${eventType.toLowerCase()}`;
   if (eventType === 'ENCOUNTER_FINALIZED') return 'messaging.encounter_finalized';
 
-  // Eventos TISS
-  if (eventType === 'ENCOUNTER_AMENDED') return 'tiss.encounter_amended';
+  if (eventType === 'ENCOUNTER_AMENDED') return FILA_REPROJECAO_TISS;
 
-  // Eventos financeiros
   if (eventType === 'PAYMENT_RECEIVED') return 'payments.payment_received';
   if (eventType === 'PAYMENT_LINK_CREATED') return 'payments.payment_link_created';
 
-  // Fallback genérico
   return `outbox.${eventType.toLowerCase()}`;
 }
