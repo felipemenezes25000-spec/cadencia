@@ -63,13 +63,13 @@ describe('TabelaEquipe', () => {
     expect(within(drRow).getByRole('button', { name: /revogar/i })).toBeDefined();
   });
 
-  it('botão desativar MFA visível apenas se temTotp', () => {
+  it('ação MFA visível apenas se temTotp', () => {
     montar();
     const rows = screen.getAllByRole('row');
     const drRow = rows[2]!;
-    expect(within(drRow).queryByRole('button', { name: /desativar mfa/i })).toBeNull();
+    expect(within(drRow).queryByRole('button', { name: /^MFA$/i })).toBeNull();
     const anaRow = rows[3]!;
-    expect(within(anaRow).getByRole('button', { name: /desativar mfa/i })).toBeDefined();
+    expect(within(anaRow).getByRole('button', { name: /^MFA$/i })).toBeDefined();
   });
 
   it('chama aoRevogar com confirmação', async () => {
@@ -94,7 +94,7 @@ describe('TabelaEquipe', () => {
     const rows = screen.getAllByRole('row');
     const anaRow = rows[3]!;
 
-    await user.click(within(anaRow).getByRole('button', { name: /desativar mfa/i }));
+    await user.click(within(anaRow).getByRole('button', { name: /^MFA$/i }));
     expect(screen.getByRole('button', { name: /confirmar/i })).toBeDefined();
 
     await user.click(screen.getByRole('button', { name: /confirmar/i }));
@@ -114,31 +114,31 @@ describe('TabelaEquipe', () => {
     expect(screen.queryByRole('button', { name: /confirmar/i })).toBeNull();
   });
 
-  it('mostra botão alterar papel para admin com callback', () => {
+  it('mostra ação de papel para admin com callback', () => {
     montar({ aoAlterarPapel: vi.fn(async () => {}) });
     const rows = screen.getAllByRole('row');
     const drRow = rows[2]!;
-    expect(within(drRow).getByRole('button', { name: /alterar papel/i })).toBeDefined();
+    expect(within(drRow).getByRole('button', { name: /^Papel$/i })).toBeDefined();
   });
 
-  it('oculta botão alterar papel para si mesmo', () => {
+  it('oculta ação de papel para si mesmo', () => {
     montar({ aoAlterarPapel: vi.fn(async () => {}) });
     const rows = screen.getAllByRole('row');
     const adminRow = rows[1]!;
-    expect(within(adminRow).queryByRole('button', { name: /alterar papel/i })).toBeNull();
+    expect(within(adminRow).queryByRole('button', { name: /^Papel$/i })).toBeNull();
   });
 
-  it('não mostra botão alterar papel sem callback', () => {
+  it('não mostra ação de papel sem callback', () => {
     montar();
-    expect(screen.queryByRole('button', { name: /alterar papel/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Papel$/i })).toBeNull();
   });
 
-  it('mostra select ao clicar em alterar papel', async () => {
+  it('mostra select ao clicar em papel', async () => {
     montar({ aoAlterarPapel: vi.fn(async () => {}) });
     const user = userEvent.setup();
     const rows = screen.getAllByRole('row');
     const drRow = rows[2]!;
-    await user.click(within(drRow).getByRole('button', { name: /alterar papel/i }));
+    await user.click(within(drRow).getByRole('button', { name: /^Papel$/i }));
     expect(screen.getByRole('combobox', { name: /novo papel/i })).toBeDefined();
   });
 
@@ -148,7 +148,7 @@ describe('TabelaEquipe', () => {
     const user = userEvent.setup();
     const rows = screen.getAllByRole('row');
     const anaRow = rows[3]!;
-    await user.click(within(anaRow).getByRole('button', { name: /alterar papel/i }));
+    await user.click(within(anaRow).getByRole('button', { name: /^Papel$/i }));
     const select = screen.getByRole('combobox', { name: /novo papel/i });
     await user.selectOptions(select, 'financeiro');
     await user.click(screen.getByRole('button', { name: /confirmar/i }));
