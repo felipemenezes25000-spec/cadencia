@@ -1,10 +1,21 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { uuidv7 } from '@cadencia/kernel';
+import { aes256KeyFromBase64, sealSecret, uuidv7 } from '@cadencia/kernel';
 import { rota } from '../guard';
 
 const CalendarProviderEnum = z.enum(['google', 'apple', 'outlook']);
+const ConnectProviderEnum = z.literal('google');
+
+function integrationTokenKey(): Buffer {
+  const raw = process.env['CADENCIA_INTEGRATION_TOKEN_KEY'];
+  if (raw === undefined || raw === '') {
+    throw new Error(
+      'CADENCIA_INTEGRATION_TOKEN_KEY ausente — tokens de integracao nao podem ser persistidos',
+    );
+  }
+  return aes256KeyFromBase64(raw, 'CADENCIA_INTEGRATION_TOKEN_KEY');
+}
 
 export async function calendarRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -50,17 +61,21 @@ export async function calendarRoutes(app: FastifyInstance): Promise<void> {
   r.post('/v1/calendar/connect', {
     schema: {
       body: z.object({
-        provider: CalendarProviderEnum,
+        // Só Google tem adapter contratado no backend. Aceitar Apple/Outlook
+        // aqui era sucesso fictício: a conexão era salva e nunca sincronizada.
+        provider: ConnectProviderEnum,
         accessToken: z.string().min(1),
         refreshToken: z.string().optional(),
+        calendarId: z.string().min(1).max(1024).optional(),
       }),
       response: {
-        201: z.object({ id: z.string().uuid(), provider: CalendarProviderEnum }),
+        201: z.object({ id: z.string().uuid(), provider: ConnectProviderEnum }),
         409: z.object({ erro: z.literal('conexao_ja_existe') }),
       },
     },
   }, rota('tenant.write', async (tx, ctx, req, reply) => {
-    const body = req.body as { provider: string; accessToken: string; refreshToken?: string };
+    const body = req.body as {
+      provider: 'google'; accessToken: string; refreshToken?: string; calendarId?: string };
 
     const { rows: existing } = await tx.query<{ id: string }>(
       `SELECT id FROM app.calendar_sync
@@ -71,22 +86,35 @@ export async function calendarRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(409).send({ erro: 'conexao_ja_existe' as const });
     }
 
+    const key = integrationTokenKey();
     const id = uuidv7();
     await tx.query(
       `INSERT INTO app.calendar_sync
-         (id, tenant_id, user_id, provider, access_token_enc, refresh_token_enc)
-       VALUES ($1, app.require_tenant_id(), $2, $3, $4, $5)`,
+         (id, tenant_id, user_id, provider, external_id,
+          access_token_enc, refresh_token_enc)
+       VALUES ($1, app.require_tenant_id(), $2, $3, $4, $5, $6)`,
       [
         id,
         ctx.actor.userId,
         body.provider,
-        Buffer.from(body.accessToken, 'utf8'),
-        body.refreshToken !== undefined ? Buffer.from(body.refreshToken, 'utf8') : null,
+        body.calendarId ?? 'primary',
+        sealSecret(body.accessToken, key),
+        body.refreshToken !== undefined ? sealSecret(body.refreshToken, key) : null,
       ],
     );
 
+    // A primeira sincronização segue o mesmo caminho assíncrono e observável do
+    // botão "sincronizar agora". Salvar uma conexão não carimba sucesso antes do
+    // provider criar os eventos.
+    await tx.query(
+      `INSERT INTO app.outbox (event_type, aggregate_id, payload)
+       VALUES ('calendar_sync_requested', $1::uuid,
+               jsonb_build_object('userId', $1::text, 'force', true))`,
+      [ctx.actor.userId],
+    );
+
     void reply.code(201);
-    return { id, provider: body.provider as 'google' | 'apple' | 'outlook' };
+    return { id, provider: body.provider };
   }));
 
   r.delete('/v1/calendar/disconnect/:id', {
@@ -114,17 +142,30 @@ export async function calendarRoutes(app: FastifyInstance): Promise<void> {
   r.post('/v1/calendar/sync', {
     schema: {
       response: {
-        200: z.object({ synced: z.number().int() }),
+        202: z.object({ queued: z.literal(true) }),
       },
     },
-  }, rota('tenant.write', async (tx, ctx) => {
-    const { rows } = await tx.query<{ id: string }>(
-      `UPDATE app.calendar_sync
-          SET last_sync_at = clock_timestamp()
-        WHERE user_id = $1 AND enabled = true
-        RETURNING id`,
+  }, rota('tenant.write', async (tx, ctx, _req, reply) => {
+    const { rows } = await tx.query<{ existe: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM app.calendar_sync
+          WHERE user_id = $1 AND enabled = true AND provider = 'google'
+       ) AS existe`,
       [ctx.actor.userId],
     );
-    return { synced: rows.length };
+
+    // Idempotente para a UI: pedir sync sem conexão não fabrica `last_sync_at`
+    // nem finge que sincronizou. O worker simplesmente não terá nada a fazer.
+    if (rows[0]?.existe === true) {
+      await tx.query(
+        `INSERT INTO app.outbox (event_type, aggregate_id, payload)
+         VALUES ('calendar_sync_requested', $1::uuid,
+                 jsonb_build_object('userId', $1::text, 'force', true))`,
+        [ctx.actor.userId],
+      );
+    }
+
+    void reply.code(202);
+    return { queued: true as const };
   }));
 }
