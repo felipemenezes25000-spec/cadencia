@@ -5,6 +5,7 @@ import './globals.css';
 import './luminous.css';
 import './alignment.css';
 import './settings-scale.css';
+import './polish.css';
 import { Providers } from './providers';
 import { ErrorBoundary } from '../src/ui/ErrorBoundary';
 import { ConnectivityStatus } from '../src/ui/ConnectivityStatus';
