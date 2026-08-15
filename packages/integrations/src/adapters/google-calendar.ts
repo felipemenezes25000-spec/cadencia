@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { isoFromMs, systemClock } from '@cadencia/kernel';
 import {
   asRfc3339, failure, success,
-  type ProviderCtx, type ProviderResult, type Rfc3339,
+  type ProviderCtx, type ProviderFailure, type ProviderResult, type Rfc3339,
 } from '../contracts/common';
 import type { CalendarInfo, CalendarProvider } from '../contracts/calendar';
 
@@ -10,6 +10,10 @@ const GCAL_BASE = 'https://www.googleapis.com/calendar/v3';
 
 function agora(): Rfc3339 {
   return asRfc3339(isoFromMs(systemClock.nowMs())) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
+}
+
+function temCodigo(error: ProviderFailure, code: string): boolean {
+  return 'code' in error && error.code === code;
 }
 
 export function calendarEventIdFromIdempotencyKey(key: string): string {
@@ -91,11 +95,8 @@ export function createGoogleCalendarProvider(): CalendarProvider {
         { method: 'POST', body: { id: eventId, ...mutableBody } },
       );
       if (insert.ok) return success({ externalEventId: insert.value.id }, insert.value.id);
-      if (insert.error.code !== 'GCAL_409') return insert;
+      if (!temCodigo(insert.error, 'GCAL_409')) return insert;
 
-      // O mesmo ID já existe: é retry OU atualização de horário/status do mesmo
-      // agendamento. O id é definido só na criação; no PUT mandamos apenas os
-      // campos mutáveis do evento.
       const update = await gcalRequest<{ id: string }>(
         `${GCAL_BASE}/calendars/${encodeURIComponent(ev.calendarId)}/events/${eventId}`,
         input.accessToken, ctx, { method: 'PUT', body: mutableBody },
@@ -108,7 +109,7 @@ export function createGoogleCalendarProvider(): CalendarProvider {
       const url = `${GCAL_BASE}/calendars/${encodeURIComponent(input.calendarId)}/events/${encodeURIComponent(input.externalEventId)}`;
       const r = await gcalRequest<Record<string, never>>(
         url, input.accessToken, ctx, { method: 'DELETE' });
-      if (!r.ok && r.error.code === 'GCAL_404') return success({}, input.externalEventId);
+      if (!r.ok && temCodigo(r.error, 'GCAL_404')) return success({}, input.externalEventId);
       return r;
     },
 
