@@ -179,6 +179,20 @@
   min-height: 70px;
 }
 
+/* ── Atendimento ───────────────────────────────────────────────────
+ * O consultório também descontava 68px de uma TopBar de 72px. O seletor por
+ * valor literal existe para corrigir a geometria sem tocar na lógica clínica.
+ */
+.cadencia-shell-bg .cadencia-workspace > div[class*='min-h-[calc(100dvh-68px)]'] {
+  min-height: calc(100dvh - 72px) !important;
+}
+
+@media (min-width: 1024px) {
+  .cadencia-shell-bg .cadencia-workspace > div[class*='min-h-[calc(100dvh-68px)]'] {
+    height: calc(100dvh - 72px) !important;
+  }
+}
+
 /* ── Configurações: Estrutura da organização ───────────────────────
  * O componente ListaClinicas evoluiu, mas o CSS ainda estiliza os nomes antigos
  * (.settings-unit-card-meta / .settings-unit-active-badge). Resultado: nome,
