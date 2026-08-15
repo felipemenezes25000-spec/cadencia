@@ -4,13 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { contrasteHex, lerToken } from './contrast';
 
 /*
- * Havia três folhas empilhadas — globals, premium e light-blue — cada uma
- * redefinindo o mesmo `:root`. Este teste chegou a ler a errada: conferia
- * valores OKLCH em globals.css que o produto não usava mais, ou seja validava
- * números dentro do próprio arquivo de teste e não a cor que chega na tela.
- *
- * Agora é uma folha só, com um `:root` só e cada token declarado uma vez —
- * então ler o arquivo é ler o que o navegador computa.
+ * A paleta global vive em globals.css. Folhas adicionais podem existir para
+ * acabamento de componentes, mas NÃO podem abrir outro :root nem redefinir o
+ * color-scheme: isso preserva a invariante que este teste realmente protege.
  */
 const CSS = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8');
 const TEMA = CSS;
@@ -62,9 +58,6 @@ describe('paleta clinica — contraste medido sobre o tema que realmente carrega
   });
 
   it('o botao primario passa: branco sobre a marca e sobre o hover', () => {
-    /* Este era o furo mais caro da paleta anterior. O azul de marca dava
-       4.1:1 com branco, ou seja, o rotulo do botao principal do produto
-       reprovava em AA — e nada no CI pegava. */
     for (const marca of ['brand', 'brand-hover', 'brand-strong'] as const) {
       const r = contrasteHex('#ffffff', token(marca));
       expect(r, `branco sobre --${marca} = ${r}:1`).toBeGreaterThanOrEqual(AA_TEXTO);
@@ -79,8 +72,6 @@ describe('paleta clinica — contraste medido sobre o tema que realmente carrega
   });
 
   it('--border-field cumpre 1.4.11: contorno de campo em 3:1', () => {
-    /* --border continua leve de proposito: separador decorativo em 3:1 deixa
-       a interface com cara de wireframe. Quem carrega affordance e o campo. */
     for (const fundo of ['surface', 'canvas'] as const) {
       const r = contrasteHex(token('border-field'), token(fundo));
       expect(r, `--border-field sobre --${fundo} = ${r}:1`).toBeGreaterThanOrEqual(AA_COMPONENTE);
@@ -94,18 +85,10 @@ describe('paleta clinica — contraste medido sobre o tema que realmente carrega
     expect(TEMA).not.toContain('@media (prefers-color-scheme: dark)');
   });
 
-  it('a paleta vive em UM arquivo, com UM :root e cada token declarado uma vez', () => {
-    /* Eram tres folhas empilhadas, cada uma redefinindo o mesmo :root, com ~30
-       `!important` se anulando em pares. Funcionava so porque a ultima
-       espelhava regra por regra o que a segunda declarava — mudar uma cor era
-       imprevisivel. Se este teste falhar, a pilha voltou. */
+  it('a paleta vive em UM :root e cada token global e declarado uma vez', () => {
     expect((CSS.match(/^:root\s*\{/gm) ?? []).length,
-      'mais de um bloco :root').toBe(1);
+      'mais de um bloco :root em globals.css').toBe(1);
 
-    /* Só DENTRO do :root. Fora dele a redeclaração é técnica deliberada:
-       `.cadencia-sidebar` redefine --surface/--text-primary/--brand no próprio
-       subtree para ganhar tema próprio, e media query redefine --page-gutter.
-       Isso é sombreamento com escopo, não a pilha que o teste persegue. */
     const corpo = /^:root\s*\{([\s\S]*?)^\}/m.exec(CSS)?.[1] ?? '';
     expect(corpo, ':root vazio — regex do teste quebrou').not.toBe('');
     const declaracoes = [...corpo.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]);
@@ -113,13 +96,20 @@ describe('paleta clinica — contraste medido sobre o tema que realmente carrega
     expect([...new Set(repetidos)], 'token declarado duas vezes no :root').toEqual([]);
   });
 
-  it('nao voltou a existir uma segunda folha de tema', () => {
-    /* O `@import` do layout aponta so para globals.css. Uma folha nova
-       carregada depois recomeça exatamente o problema que a consolidacao
-       resolveu. */
+  it('folhas globais adicionais nao criam uma segunda paleta', () => {
     const layout = readFileSync(resolve(__dirname, '../../app/layout.tsx'), 'utf8');
     const importsDeCss = [...layout.matchAll(/import\s+'\.\/([\w-]+\.css)'/g)].map((m) => m[1]);
-    expect(importsDeCss).toEqual(['globals.css']);
+
+    expect(importsDeCss[0]).toBe('globals.css');
+    expect(importsDeCss.filter((x) => x === 'globals.css')).toHaveLength(1);
+
+    for (const folha of importsDeCss.slice(1)) {
+      const css = readFileSync(resolve(__dirname, `../../app/${folha}`), 'utf8');
+      expect((css.match(/^:root\s*\{/gm) ?? []).length,
+        `${folha} abriu um segundo :root global`).toBe(0);
+      expect(css, `${folha} redefiniu color-scheme`).not.toMatch(/\bcolor-scheme\s*:/);
+      expect(css, `${folha} reintroduziu dark mode`).not.toContain('@media (prefers-color-scheme: dark)');
+    }
   });
 
   it('prefers-reduced-motion reduz animacoes e transicoes', () => {
