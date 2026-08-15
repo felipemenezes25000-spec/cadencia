@@ -1,6 +1,7 @@
 'use client';
 
-import { Clock, Plus, Stethoscope } from '@phosphor-icons/react';
+import { Buildings, Plus } from '@phosphor-icons/react';
+import { cn } from '../lib/cn';
 import { Botao } from '../ui/Botao';
 
 export interface ClinicaResumo {
@@ -31,38 +32,45 @@ const FUSOS_LABEL: Record<string, string> = {
 
 export function ListaClinicas({ clinicas, clinicaAtivaId, podeCriar, aoCriar }: ListaClinicasProps) {
   return (
-    <section className="settings-units" aria-labelledby="unidades-organizacao-titulo">
-      <div className="settings-units-header">
-        <div>
-          <h3 id="unidades-organizacao-titulo">Estrutura da organização</h3>
+    <section className="settings-org-section" aria-labelledby="estrutura-organizacao-titulo">
+      <header className="settings-subsection-header">
+        <div className="settings-subsection-header-copy">
+          <h3 id="estrutura-organizacao-titulo">Estrutura da organização</h3>
           <p>Veja todas as unidades vinculadas ao mesmo ambiente Cadência.</p>
         </div>
         {podeCriar ? (
-          <Botao variante="secundario" tamanho="sm" iconeEsquerda={Plus} onClick={aoCriar}>Nova unidade</Botao>
+          <Botao variante="secundario" tamanho="sm" iconeEsquerda={Plus} onClick={aoCriar}>
+            Nova unidade
+          </Botao>
         ) : null}
-      </div>
+      </header>
 
       {clinicas.length === 0 ? (
-        <div className="rounded-[15px] border border-dashed border-line bg-surface-subtle p-6 text-center text-sm text-text-muted">
-          Nenhuma unidade cadastrada.
-        </div>
+        <div className="settings-units-empty">Nenhuma unidade cadastrada.</div>
       ) : (
         <div className="settings-units-grid">
           {clinicas.map((clinica) => {
             const ativa = clinica.clinicId === clinicaAtivaId;
             return (
-              <article key={clinica.clinicId} className={`settings-unit-card ${ativa ? 'is-active' : ''}`}>
+              <article key={clinica.clinicId} className={cn('settings-unit-card', ativa && 'is-active')}>
                 <div className="settings-unit-card-top">
-                  <span className="settings-unit-icon"><Stethoscope size={18} weight="duotone" aria-hidden /></span>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="truncate">{clinica.nome}</h4>
-                    <div className="settings-unit-card-meta">
-                      <span><Clock size={11} aria-hidden />{FUSOS_LABEL[clinica.timezone] ?? clinica.timezone}</span>
-                      <span>CNES {clinica.cnes ?? '—'}</span>
-                      <span>CNPJ {clinica.cnpj ?? '—'}</span>
-                    </div>
+                  <span className="settings-unit-icon"><Buildings size={17} weight="duotone" aria-hidden /></span>
+                  <div className="settings-unit-name">
+                    <strong>{clinica.nome}</strong>
+                    <span>{clinica.cnpj ? `CNPJ ${clinica.cnpj}` : 'Cadastro da unidade'}</span>
                   </div>
-                  {ativa ? <span className="settings-unit-active-badge">Em uso</span> : null}
+                  {ativa ? <span className="settings-unit-badge">Em uso</span> : null}
+                </div>
+
+                <div className="settings-unit-facts">
+                  <div className="settings-unit-fact">
+                    <span>CNES</span>
+                    <strong>{clinica.cnes ?? 'Não informado'}</strong>
+                  </div>
+                  <div className="settings-unit-fact">
+                    <span>Fuso</span>
+                    <strong>{FUSOS_LABEL[clinica.timezone] ?? clinica.timezone}</strong>
+                  </div>
                 </div>
               </article>
             );
