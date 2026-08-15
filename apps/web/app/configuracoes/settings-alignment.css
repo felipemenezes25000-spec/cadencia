@@ -1,14 +1,16 @@
 /*
- * CONFIGURAÇÕES — Alignment Pass v13
- * Corrige a malha da tela e evita que regras locais sobrescrevam breakpoints
- * utilitários do Tailwind. Carregado depois de settings.css.
+ * CONFIGURAÇÕES — Clinical Settings Layout v14
+ *
+ * Estrutura deliberadamente simples: título compacto, navegação por tópicos à
+ * esquerda e conteúdo direto à direita. Menos caixas, menos decoração, mais
+ * área útil e leitura operacional.
  */
 
 .settings-page {
   width: 100%;
   max-width: var(--page-max);
-  gap: 24px;
-  padding-top: 28px !important;
+  gap: 16px;
+  padding-top: 20px !important;
 }
 
 .settings-hero,
@@ -18,34 +20,69 @@
 .settings-clinic-page,
 .settings-form-card,
 .settings-org-section {
-  min-width: 0;
   width: 100%;
+  min-width: 0;
 }
 
+/* Cabeçalho deixa de ser um “hero de landing page”. */
 .settings-hero {
-  min-height: 128px;
-  padding: 28px 32px;
+  min-height: 0;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid #e3ece9;
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 0 18px;
+  box-shadow: none;
+}
+
+.settings-hero::after {
+  display: none;
 }
 
 .settings-hero-copy {
   align-items: center;
+  gap: 12px;
+}
+
+.settings-hero-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.settings-eyebrow {
+  margin-bottom: 3px;
+  font-size: 9px;
+  letter-spacing: .09em;
+}
+
+.settings-hero h1 {
+  font-size: 27px;
+  line-height: 1.08;
+  letter-spacing: -.04em;
+}
+
+.settings-hero-copy p:last-child {
+  margin-top: 5px;
+  max-width: 640px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .settings-context-card {
-  min-width: 240px;
+  min-width: 210px;
+  max-width: 280px;
+  border-radius: 9px;
+  padding: 8px 10px;
+  box-shadow: none;
 }
 
-/*
- * Este era o erro visível na captura: settings.css declarava display:grid fora
- * de @layer e vencia o `lg:hidden`. A navegação mobile agora é mobile de fato.
- */
-.settings-mobile-nav {
-  display: none !important;
-}
-
+/* Navegação iClinic-like: coluna compacta e tópicos fáceis de escanear. */
 .settings-layout {
-  grid-template-columns: 272px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 226px minmax(0, 1fr);
+  gap: 18px;
 }
 
 .settings-nav,
@@ -54,98 +91,232 @@
 }
 
 .settings-nav-sticky {
-  top: 96px;
-  gap: 16px;
-  border-radius: 20px;
-  padding: 12px;
+  top: 88px;
+  gap: 12px;
+  max-height: calc(100vh - 106px);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 4px 18px rgb(12 53 54 / .025);
 }
 
 .settings-search {
-  height: 44px;
+  height: 38px;
+  border-radius: 8px;
+  padding-inline: 10px;
+}
+
+.settings-search input {
+  font-size: 11px;
 }
 
 .settings-nav-groups {
-  gap: 20px;
-}
-
-.settings-nav-group {
-  gap: 8px;
-}
-
-.settings-nav-link {
-  min-height: 56px;
-  padding: 9px 10px;
-}
-
-.settings-stage {
-  border-radius: 22px;
-}
-
-.settings-stage-header {
-  min-height: 108px;
-  padding: 22px 28px;
-}
-
-.settings-stage-title {
   gap: 14px;
 }
 
+.settings-nav-group {
+  gap: 5px;
+}
+
+.settings-nav-group-heading {
+  gap: 0;
+  padding: 0 8px;
+}
+
+.settings-nav-group-heading > span {
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+/* O texto auxiliar duplicava informação e aumentava demais a coluna. */
+.settings-nav-group-heading > small,
+.settings-nav-link small {
+  display: none;
+}
+
+.settings-nav-links {
+  gap: 2px;
+}
+
+.settings-nav-link {
+  min-height: 40px;
+  gap: 9px;
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+
+.settings-nav-link:hover {
+  transform: none;
+}
+
+.settings-nav-link.is-active {
+  box-shadow: inset 3px 0 0 #08766f;
+}
+
+.settings-nav-link-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+.settings-nav-link strong {
+  font-size: 11px;
+  font-weight: 680;
+}
+
+.settings-nav-link-caret {
+  display: none;
+}
+
+.settings-security-note {
+  gap: 8px;
+  padding: 10px 7px 2px;
+}
+
+.settings-security-note span {
+  display: none;
+}
+
+/* O seletor de celular nunca aparece no desktop. */
+.settings-mobile-nav {
+  display: none !important;
+}
+
+/* Conteúdo: uma superfície só, sem “card dentro de card dentro de card”. */
+.settings-stage {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgb(11 52 52 / .03);
+}
+
+.settings-stage-header {
+  min-height: 72px;
+  gap: 16px;
+  border-bottom-color: #e5ecea;
+  background: #fbfdfc;
+  padding: 14px 18px;
+}
+
+.settings-stage-title {
+  gap: 10px;
+}
+
+.settings-stage-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.settings-stage-breadcrumb {
+  margin-bottom: 2px;
+  font-size: 8px;
+}
+
 .settings-stage-title h2 {
-  line-height: 1.05;
+  font-size: 19px;
+  line-height: 1.08;
+  letter-spacing: -.025em;
+}
+
+.settings-stage-title p {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.settings-stage-status {
+  padding: 5px 8px;
+  font-size: 8px;
 }
 
 .settings-content-body {
-  padding: 28px;
+  padding: 18px;
 }
 
-/* A raiz da aba Clínica segue a mesma cadência vertical do stage. */
+.settings-content-body > .grid,
+.settings-content-body > .space-y-6 {
+  gap: 18px;
+}
+
+.settings-content-body h2[class*='uppercase'] {
+  font-size: 13px !important;
+}
+
+/* Clínica */
 .settings-clinic-page {
   display: grid;
-  gap: 24px;
+  gap: 18px;
 }
 
 .settings-clinic-summary {
   width: 100%;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: none;
 }
 
 .settings-clinic-summary-top {
   align-items: center;
 }
 
+.settings-clinic-title-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.settings-clinic-title h3 {
+  font-size: 14px;
+}
+
 .settings-clinic-facts {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .settings-clinic-fact {
   min-width: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .settings-form-card {
   overflow: hidden;
+  border-radius: 10px;
+  box-shadow: none;
 }
 
 .settings-form-card-header,
 .settings-form-card-body,
 .settings-form-actions {
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 .settings-form-card-header {
-  min-height: 78px;
+  min-height: 64px;
   align-items: center;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+
+.settings-form-card-header h3 {
+  font-size: 13px;
+}
+
+.settings-form-card-header p {
+  margin-top: 3px;
+  font-size: 10px;
 }
 
 .settings-form-card-body {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .settings-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 20px;
+  gap: 14px 16px;
   align-items: start;
 }
 
@@ -160,13 +331,14 @@
 }
 
 .settings-select-field {
-  min-height: 42px;
+  min-height: 40px;
+  border-radius: 9px;
 }
 
 .settings-form-actions {
-  min-height: 70px;
+  min-height: 58px;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .settings-form-actions-buttons {
@@ -174,181 +346,103 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 7px;
 }
 
-/* Estrutura da organização: ocupa o stage inteiro e usa cartões de mesma malha. */
-.settings-org-section {
+/* Estrutura da organização */
+.settings-org-section,
+.settings-units {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
-.settings-subsection-header {
+.settings-subsection-header,
+.settings-units-header {
   display: flex;
   min-width: 0;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
-.settings-subsection-header-copy {
+.settings-subsection-header-copy,
+.settings-units-header > div {
   min-width: 0;
 }
 
-.settings-subsection-header h3 {
+.settings-subsection-header h3,
+.settings-units-header h3 {
   margin: 0;
   color: #173638;
-  font-size: 14px;
-  font-weight: 750;
-  letter-spacing: -.018em;
+  font-size: 13px;
+  font-weight: 720;
+  letter-spacing: -.012em;
 }
 
-.settings-subsection-header p {
-  margin: 4px 0 0;
+.settings-subsection-header p,
+.settings-units-header p {
+  margin: 3px 0 0;
   color: #718688;
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 .settings-units-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.settings-unit-card {
-  display: grid;
-  min-width: 0;
-  gap: 14px;
-  border: 1px solid #e0eae8;
-  border-radius: 16px;
-  background: #fbfdfc;
-  padding: 14px;
-  box-shadow: inset 0 1px 0 #fff;
-}
-
-.settings-unit-card.is-active {
-  border-color: #bfe0da;
-  background:
-    radial-gradient(circle at 100% 0%, rgb(98 217 206 / .13), transparent 12rem),
-    #f5fbf9;
-}
-
-.settings-unit-card-top {
-  display: flex;
-  min-width: 0;
-  align-items: center;
   gap: 10px;
 }
 
+.settings-unit-card {
+  min-width: 0;
+  border-radius: 9px;
+  padding: 11px;
+  box-shadow: none;
+}
+
+.settings-unit-card-top {
+  gap: 9px;
+}
+
 .settings-unit-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 10px;
-  background: #eaf8f5;
-  color: #08766f;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
 }
 
-.settings-unit-name {
-  min-width: 0;
-  flex: 1;
-}
-
-.settings-unit-name strong,
-.settings-unit-name span {
-  display: block;
-}
-
-.settings-unit-name strong {
-  overflow: hidden;
-  color: #173638;
-  font-size: 12px;
-  font-weight: 730;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-unit-name span {
-  margin-top: 2px;
-  color: #718688;
-  font-size: 9px;
-}
-
-.settings-unit-badge {
-  flex: 0 0 auto;
-  border: 1px solid #bce1da;
-  border-radius: 999px;
-  background: #fff;
-  padding: 4px 7px;
-  color: #08766f;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-.settings-unit-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.settings-unit-fact {
-  min-width: 0;
-  border-radius: 10px;
-  background: #fff;
-  padding: 9px 10px;
-  box-shadow: inset 0 0 0 1px #e6eeec;
-}
-
-.settings-unit-fact span,
-.settings-unit-fact strong {
-  display: block;
-}
-
-.settings-unit-fact span {
-  color: #829496;
-  font-size: 8px;
-  font-weight: 750;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-.settings-unit-fact strong {
-  margin-top: 3px;
-  overflow: hidden;
-  color: #365557;
-  font-size: 10px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-units-empty {
-  display: grid;
-  min-height: 110px;
-  place-items: center;
-  border: 1px dashed #cddfdb;
-  border-radius: 16px;
-  background: #fbfdfc;
-  color: #718688;
+.settings-unit-card h4 {
   font-size: 11px;
-  text-align: center;
+}
+
+.settings-unit-card-meta {
+  margin-top: 3px;
+  gap: 6px;
+  font-size: 8px;
+}
+
+.settings-unit-active-badge {
+  padding: 3px 6px;
+  font-size: 7px;
+}
+
+/* Tabelas das subseções seguem a mesma densidade. */
+.settings-content-body thead th {
+  padding: 9px 10px;
+  font-size: 8px;
+}
+
+.settings-content-body tbody td {
+  padding: 10px;
 }
 
 @media (max-width: 1279px) {
   .settings-layout {
-    grid-template-columns: 248px minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 16px;
   }
 
-  .settings-stage-header,
-  .settings-content-body {
-    padding-left: 24px;
-    padding-right: 24px;
+  .settings-context-card {
+    min-width: 190px;
   }
 }
 
@@ -363,8 +457,8 @@
 
   .settings-stage-header,
   .settings-content-body {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .settings-units-grid {
@@ -374,18 +468,21 @@
 
 @media (max-width: 767px) {
   .settings-page {
-    gap: 16px;
-    padding-top: 18px !important;
+    gap: 14px;
+    padding-top: 16px !important;
   }
 
   .settings-hero {
-    min-height: auto;
     align-items: flex-start;
-    padding: 20px;
+    padding-bottom: 14px;
   }
 
   .settings-hero-copy {
     align-items: flex-start;
+  }
+
+  .settings-hero h1 {
+    font-size: 24px;
   }
 
   .settings-context-card {
@@ -395,9 +492,9 @@
   }
 
   .settings-stage-header {
-    min-height: auto;
-    padding-top: 18px;
-    padding-bottom: 18px;
+    min-height: 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
   }
 
   .settings-stage-status {
@@ -405,24 +502,23 @@
   }
 
   .settings-content-body {
-    padding: 18px;
+    padding: 14px;
   }
 
   .settings-clinic-page {
-    gap: 18px;
+    gap: 14px;
   }
 
   .settings-clinic-facts,
-  .settings-form-grid,
-  .settings-unit-facts {
+  .settings-form-grid {
     grid-template-columns: 1fr;
   }
 
   .settings-form-card-header,
   .settings-form-card-body,
   .settings-form-actions {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .settings-form-actions {
@@ -439,7 +535,8 @@
     flex: 1 1 auto;
   }
 
-  .settings-subsection-header {
+  .settings-subsection-header,
+  .settings-units-header {
     align-items: flex-start;
     flex-direction: column;
   }
