@@ -1,0 +1,446 @@
+/*
+ * CONFIGURAÇÕES — Alignment Pass v13
+ * Corrige a malha da tela e evita que regras locais sobrescrevam breakpoints
+ * utilitários do Tailwind. Carregado depois de settings.css.
+ */
+
+.settings-page {
+  width: 100%;
+  max-width: var(--page-max);
+  gap: 24px;
+  padding-top: 28px !important;
+}
+
+.settings-hero,
+.settings-layout,
+.settings-stage,
+.settings-content-body,
+.settings-clinic-page,
+.settings-form-card,
+.settings-org-section {
+  min-width: 0;
+  width: 100%;
+}
+
+.settings-hero {
+  min-height: 128px;
+  padding: 28px 32px;
+}
+
+.settings-hero-copy {
+  align-items: center;
+}
+
+.settings-context-card {
+  min-width: 240px;
+}
+
+/*
+ * Este era o erro visível na captura: settings.css declarava display:grid fora
+ * de @layer e vencia o `lg:hidden`. A navegação mobile agora é mobile de fato.
+ */
+.settings-mobile-nav {
+  display: none !important;
+}
+
+.settings-layout {
+  grid-template-columns: 272px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.settings-nav,
+.settings-stage {
+  min-width: 0;
+}
+
+.settings-nav-sticky {
+  top: 96px;
+  gap: 16px;
+  border-radius: 20px;
+  padding: 12px;
+}
+
+.settings-search {
+  height: 44px;
+}
+
+.settings-nav-groups {
+  gap: 20px;
+}
+
+.settings-nav-group {
+  gap: 8px;
+}
+
+.settings-nav-link {
+  min-height: 56px;
+  padding: 9px 10px;
+}
+
+.settings-stage {
+  border-radius: 22px;
+}
+
+.settings-stage-header {
+  min-height: 108px;
+  padding: 22px 28px;
+}
+
+.settings-stage-title {
+  gap: 14px;
+}
+
+.settings-stage-title h2 {
+  line-height: 1.05;
+}
+
+.settings-content-body {
+  padding: 28px;
+}
+
+/* A raiz da aba Clínica segue a mesma cadência vertical do stage. */
+.settings-clinic-page {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-clinic-summary {
+  width: 100%;
+  padding: 20px;
+}
+
+.settings-clinic-summary-top {
+  align-items: center;
+}
+
+.settings-clinic-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-clinic-fact {
+  min-width: 0;
+}
+
+.settings-form-card {
+  overflow: hidden;
+}
+
+.settings-form-card-header,
+.settings-form-card-body,
+.settings-form-actions {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.settings-form-card-header {
+  min-height: 78px;
+  align-items: center;
+}
+
+.settings-form-card-body {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.settings-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  align-items: start;
+}
+
+.settings-span-2 {
+  grid-column: 1 / -1;
+}
+
+.settings-field-label,
+.settings-select-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-select-field {
+  min-height: 42px;
+}
+
+.settings-form-actions {
+  min-height: 70px;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-form-actions-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Estrutura da organização: ocupa o stage inteiro e usa cartões de mesma malha. */
+.settings-org-section {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-subsection-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-subsection-header-copy {
+  min-width: 0;
+}
+
+.settings-subsection-header h3 {
+  margin: 0;
+  color: #173638;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -.018em;
+}
+
+.settings-subsection-header p {
+  margin: 4px 0 0;
+  color: #718688;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.settings-units-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-unit-card {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  border: 1px solid #e0eae8;
+  border-radius: 16px;
+  background: #fbfdfc;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.settings-unit-card.is-active {
+  border-color: #bfe0da;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(98 217 206 / .13), transparent 12rem),
+    #f5fbf9;
+}
+
+.settings-unit-card-top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-unit-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: #eaf8f5;
+  color: #08766f;
+}
+
+.settings-unit-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-unit-name strong,
+.settings-unit-name span {
+  display: block;
+}
+
+.settings-unit-name strong {
+  overflow: hidden;
+  color: #173638;
+  font-size: 12px;
+  font-weight: 730;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-unit-name span {
+  margin-top: 2px;
+  color: #718688;
+  font-size: 9px;
+}
+
+.settings-unit-badge {
+  flex: 0 0 auto;
+  border: 1px solid #bce1da;
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 7px;
+  color: #08766f;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.settings-unit-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.settings-unit-fact {
+  min-width: 0;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 10px;
+  box-shadow: inset 0 0 0 1px #e6eeec;
+}
+
+.settings-unit-fact span,
+.settings-unit-fact strong {
+  display: block;
+}
+
+.settings-unit-fact span {
+  color: #829496;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.settings-unit-fact strong {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #365557;
+  font-size: 10px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-units-empty {
+  display: grid;
+  min-height: 110px;
+  place-items: center;
+  border: 1px dashed #cddfdb;
+  border-radius: 16px;
+  background: #fbfdfc;
+  color: #718688;
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 1279px) {
+  .settings-layout {
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .settings-stage-header,
+  .settings-content-body {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .settings-mobile-nav {
+    display: grid !important;
+  }
+
+  .settings-layout {
+    display: block;
+  }
+
+  .settings-stage-header,
+  .settings-content-body {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-units-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page {
+    gap: 16px;
+    padding-top: 18px !important;
+  }
+
+  .settings-hero {
+    min-height: auto;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .settings-hero-copy {
+    align-items: flex-start;
+  }
+
+  .settings-context-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .settings-stage-header {
+    min-height: auto;
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .settings-stage-status {
+    display: none;
+  }
+
+  .settings-content-body {
+    padding: 18px;
+  }
+
+  .settings-clinic-page {
+    gap: 18px;
+  }
+
+  .settings-clinic-facts,
+  .settings-form-grid,
+  .settings-unit-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-form-card-header,
+  .settings-form-card-body,
+  .settings-form-actions {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .settings-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-form-actions-buttons {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .settings-form-actions-buttons > * {
+    flex: 1 1 auto;
+  }
+
+  .settings-subsection-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
