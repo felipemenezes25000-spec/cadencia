@@ -35,17 +35,7 @@ export async function syncCalendars(
     id: string; tenant_id: string; user_id: string; provider: string;
     access_token_enc: Buffer; external_id: string | null; last_sync_at: Date | null;
   }>(
-    `SELECT id, tenant_id, user_id, provider,
-            access_token_enc, external_id, last_sync_at
-       FROM app.calendar_sync
-      WHERE enabled = true
-        AND provider = 'google'
-        AND ($1::uuid IS NULL OR tenant_id = $1::uuid)
-        AND ($2::uuid IS NULL OR user_id = $2::uuid)
-        AND ($3::boolean = true
-          OR last_sync_at IS NULL
-          OR last_sync_at < clock_timestamp() - interval '14 minutes')
-      ORDER BY tenant_id, user_id, id`,
+    `SELECT * FROM app.calendar_sync_candidates($1::uuid, $2::uuid, $3::boolean)`,
     [filter.tenantId ?? null, filter.userId ?? null, filter.force ?? false],
   );
 
@@ -68,26 +58,7 @@ export async function syncCalendars(
       patient_name: string; clinic_name: string; procedure_name: string | null;
       updated_at: Date;
     }>(
-      `SELECT a.id, a.starts_at, a.ends_at, a.status::text,
-              pat.display_name AS patient_name,
-              cl.nome AS clinic_name,
-              pr.nome AS procedure_name,
-              a.updated_at
-         FROM sched.appointment a
-         JOIN app.professional prof
-           ON prof.tenant_id = a.tenant_id AND prof.id = a.professional_id
-         JOIN clin.patient pat
-           ON pat.tenant_id = a.tenant_id AND pat.id = a.patient_id
-         JOIN app.clinic cl
-           ON cl.tenant_id = a.tenant_id AND cl.id = a.clinic_id
-         LEFT JOIN sched.procedure pr
-           ON pr.tenant_id = a.tenant_id AND pr.id = a.procedure_id
-        WHERE a.tenant_id = $1
-          AND prof.user_id = $2
-          AND a.starts_at >= clock_timestamp() - interval '7 days'
-          AND a.starts_at < clock_timestamp() + interval '365 days'
-          AND ($3::timestamptz IS NULL OR a.updated_at >= $3::timestamptz)
-        ORDER BY a.updated_at, a.id`,
+      `SELECT * FROM app.calendar_sync_appointments($1::uuid, $2::uuid, $3::timestamptz)`,
       [connection.tenant_id, connection.user_id, connection.last_sync_at],
     );
 
@@ -144,7 +115,7 @@ export async function syncCalendars(
       // falha no meio deixa o mesmo conjunto elegível; IDs determinísticos fazem
       // a reexecução convergir em vez de duplicar eventos.
       await pool.query(
-        `UPDATE app.calendar_sync SET last_sync_at = clock_timestamp() WHERE id = $1`,
+        `SELECT app.calendar_sync_mark_success($1::uuid)`,
         [connection.id],
       );
     }
