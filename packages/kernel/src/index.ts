@@ -4,6 +4,7 @@ export * from './uuid';
 export * from './clock';
 export * from './money';
 export * from './canonical';
+export * from './secret-box';
 export * from './br/cpf';
 export * from './br/cnpj';
 export * from './br/cns';
