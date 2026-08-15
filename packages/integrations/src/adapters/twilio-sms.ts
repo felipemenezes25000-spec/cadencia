@@ -16,6 +16,18 @@ function agora(): Rfc3339 {
   return asRfc3339(isoFromMs(systemClock.nowMs())) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
 }
 
+function assinaturaTwilio(url: string, raw: Buffer, authToken: string): string {
+  // Para application/x-www-form-urlencoded a Twilio assina a URL pública
+  // EXATA seguida de todos os parâmetros POST, ordenados pelo nome, sem
+  // delimitador. Assinar apenas o body (implementação antiga) nunca valida um
+  // webhook real.
+  const pares = [...new URLSearchParams(raw.toString('utf-8')).entries()]
+    .sort(([ka, va], [kb, vb]) => ka === kb ? (va < vb ? -1 : va > vb ? 1 : 0) : (ka < kb ? -1 : 1));
+  let base = url;
+  for (const [chave, valor] of pares) base += `${chave}${valor}`;
+  return createHmac('sha1', authToken).update(base, 'utf8').digest('base64');
+}
+
 export function createTwilioSmsProvider(cfg: TwilioSmsConfig): MessagingProvider {
   const base = `https://api.twilio.com/2010-04-01/Accounts/${cfg.accountSid}`;
   const authHeader = 'Basic ' + Buffer.from(`${cfg.accountSid}:${cfg.authToken}`).toString('base64');
@@ -123,15 +135,19 @@ export function createTwilioSmsProvider(cfg: TwilioSmsConfig): MessagingProvider
       return success(null, '');
     },
 
-    verifyWebhook(raw, headers) {
+    verifyWebhook(raw, headers, context) {
       const sig = headers['x-twilio-signature'];
       if (sig === undefined) {
         return { valid: false, reason: 'header x-twilio-signature ausente' };
       }
-      const expected = createHmac('sha1', cfg.authToken).update(raw).digest('base64');
+      if (context?.url === undefined || context.url === '') {
+        return { valid: false, reason: 'URL publica do webhook ausente' };
+      }
+
+      const expected = assinaturaTwilio(context.url, raw, cfg.authToken);
       try {
         const valid = timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
-        return valid ? { valid: true } : { valid: false, reason: 'HMAC invalido' };
+        return valid ? { valid: true } : { valid: false, reason: 'assinatura Twilio invalida' };
       } catch {
         return { valid: false, reason: 'tamanho de assinatura incompativel' };
       }
@@ -142,11 +158,12 @@ export function createTwilioSmsProvider(cfg: TwilioSmsConfig): MessagingProvider
       const sid = params.get('MessageSid') ?? params.get('SmsSid');
       const from = params.get('From');
       const body = params.get('Body');
-      const status = params.get('MessageStatus');
+      const status = params.get('MessageStatus') ?? params.get('SmsStatus');
 
       if (sid && status && !body) {
         const mapped = status === 'delivered' ? 'delivered'
-          : status === 'sent' ? 'sent'
+          : status === 'sent' || status === 'queued' || status === 'accepted' ? 'sent'
+          : status === 'read' ? 'read'
           : status === 'failed' || status === 'undelivered' ? 'failed'
           : null;
         if (mapped) {
@@ -158,7 +175,7 @@ export function createTwilioSmsProvider(cfg: TwilioSmsConfig): MessagingProvider
         }
       }
 
-      if (sid && from && body) {
+      if (sid && from && body !== null) {
         const msg: InboundMessage = {
           kind: 'message', providerMessageId: sid,
           from: from.startsWith('+') ? from : `+${from}`,
