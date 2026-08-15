@@ -194,13 +194,9 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
             WHERE user_id = $1`,
           [linha.id, MAX_TENTATIVAS, BLOQUEIO_MINUTOS]);
       }
-      // Mesma resposta para e-mail inexistente e senha errada: distinguir os dois
-      // transforma o login em oraculo de "quem trabalha nesta clinica".
       return reply.code(401).send({ erro: 'credenciais_invalidas' });
     }
 
-    // A checagem da trava vem DEPOIS da senha, nao antes: responder
-    // 'conta_bloqueada' a quem errou a senha diria "este e-mail existe".
     if (linha.travada) {
       return reply.code(423).send({ erro: 'conta_bloqueada' });
     }
@@ -284,9 +280,6 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     if (sessao === null) return reply.code(401).send({ erro: 'sem_sessao' });
 
     const { clinicId } = req.body as { clinicId: string };
-    // A lista vem da funcao de bootstrap, nao do corpo da requisicao: e ela que
-    // define o que este usuario pode assumir. Escolher unidade e um SELECT
-    // dentro de um conjunto fechado, nunca um valor que o cliente informa.
     const vinculo = (await vinculosDe(sessao.userId)).find((v) => v.clinicId === clinicId);
     if (vinculo === undefined) {
       return reply.code(403).send({ erro: 'sem_vinculo_na_unidade' });
@@ -322,9 +315,6 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     const r = await verifyTotpForUser(db, sessao.userId, codigo, chaveTotp(), relogioTotp);
     if (!r.ok) return reply.code(401).send({ erro: r.error });
 
-    // O carimbo vive na SESSAO, nao no usuario: o step-up vale para este
-    // navegador e morre com ele. MFA gravado na pessoa faria a segunda aba,
-    // em outra maquina, herdar um fator que ninguem apresentou ali.
     await db.query(
       `UPDATE id.session SET mfa_at = clock_timestamp()
         WHERE id = $1 AND revoked_at IS NULL`, [sessao.sessionId]);
@@ -340,9 +330,6 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
     if (!csrfOk(req)) return reply.code(403).send({ erro: 'csrf_invalido' });
 
     const sessao = await sessaoDaRequisicao(req);
-    // Sair de uma sessão que já morreu é sucesso, não erro: o efeito desejado
-    // ("não estou mais logado") já vale, e devolver 401 aqui só ensina o front
-    // a tratar como falha algo que não é.
     if (sessao !== null) {
       await revokeSession(appPool(), sessao.sessionId, 'logout');
     }
@@ -386,16 +373,37 @@ export async function sessaoRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(422).send({ erro: 'senha_fraca' });
     }
 
+    // Argon2 roda antes de abrir a transação: hashing é CPU-bound e não deve
+    // segurar uma conexão do pool. A partir do primeiro write, porém, tudo é
+    // uma unidade atômica: senha nova + revogação + sessão substituta.
     const novoHash = await hashPassword(senhaNova);
-    await db.query(
-      `UPDATE id.user_credential SET password_hash = $1 WHERE user_id = $2`,
-      [novoHash, sessao.userId]);
+    const client = await db.connect();
+    let conexaoQuebrada = false;
+    let token: string;
 
-    await revokeAllSessionsOfUser(db, sessao.userId, 'troca_de_senha');
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `UPDATE id.user_credential SET password_hash = $1 WHERE user_id = $2`,
+        [novoHash, sessao.userId]);
 
-    const { token } = await createSession(db, { userId: sessao.userId });
+      await revokeAllSessionsOfUser(client, sessao.userId, 'troca_de_senha');
+      ({ token } = await createSession(client, { userId: sessao.userId }));
+      await client.query('COMMIT');
+    } catch (erro) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        conexaoQuebrada = true;
+      }
+      throw erro;
+    } finally {
+      client.release(
+        conexaoQuebrada ? new Error('conexao descartada: rollback da troca de senha falhou') : undefined,
+      );
+    }
+
     emitirCookies(reply, token);
-
     return reply.code(200).send({ ok: true as const });
   });
 
