@@ -1,27 +1,40 @@
 /*
- * CADÊNCIA ALIGNMENT CONTRACT — Grid System v13
+ * CADÊNCIA ALIGNMENT CONTRACT — Grid System v14
  *
- * Uma única malha para o produto autenticado. Este arquivo é carregado depois
- * do sistema visual e só disciplina geometria: largura, gutters, eixos,
- * espaçamento e alinhamento. Não altera regras de negócio nem semântica.
+ * Malha operacional inspirada no princípio de layout dos sistemas clínicos
+ * maduros: navegação fixa, conteúdo útil começando imediatamente após o shell,
+ * densidade previsível e nenhuma centralização que desperdice a tela.
+ *
+ * Esta camada disciplina geometria. Não altera regras de negócio.
  */
 
 .cadencia-shell-bg {
-  --page-max: 1540px;
-  --page-gutter: clamp(24px, 2.15vw, 40px);
-  --layout-gap: 24px;
-  --layout-gap-sm: 16px;
-  --panel-pad: clamp(20px, 1.55vw, 28px);
-  --control-height: 42px;
+  --page-max: 1920px;
+  --page-gutter: clamp(18px, 1.45vw, 28px);
+  --layout-gap: 20px;
+  --layout-gap-sm: 14px;
+  --panel-pad: clamp(18px, 1.25vw, 24px);
+  --control-height: 40px;
+
+  /* A interface interna fica mais clínica e menos “landing page”. */
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+  --r-2xl: 14px;
 }
 
-/* Todas as páginas compartilham exatamente o mesmo eixo horizontal. */
+/*
+ * O conteúdo NÃO é centralizado no espaço restante. Ele nasce no mesmo eixo
+ * logo após a sidebar e cresce para a direita, como em sistemas operacionais
+ * clínicos e ERPs. Isso elimina a sensação de tudo estar “jogado à direita”.
+ */
 .cadencia-shell-bg .cadencia-page,
 .cadencia-shell-bg .clinical-page {
   width: 100%;
   max-width: var(--page-max);
-  margin-inline: auto;
-  padding-inline: var(--page-gutter);
+  margin-left: 0;
+  margin-right: auto;
+  padding: 22px var(--page-gutter) 44px;
 }
 
 .cadencia-shell-bg .cadencia-page > *,
@@ -30,7 +43,7 @@
   min-width: 0;
 }
 
-/* Topbar usa a mesma coluna das páginas em vez de flutuar numa malha própria. */
+/* Topbar e páginas compartilham o MESMO eixo esquerdo. */
 .cadencia-shell-bg .cadencia-topbar {
   padding-inline: 0 !important;
 }
@@ -41,13 +54,14 @@
   max-width: var(--page-max);
   height: 100%;
   min-width: 0;
-  margin-inline: auto;
+  margin-left: 0;
+  margin-right: auto;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   padding-inline: var(--page-gutter);
 }
 
-/* Cabeçalhos: título e ações partem do mesmo topo e nunca “dançam” verticalmente. */
+/* Cabeçalhos: título e ações partem do mesmo topo. */
 .cadencia-shell-bg .cadencia-page-header {
   width: 100%;
 }
@@ -57,20 +71,29 @@
 }
 
 .cadencia-shell-bg .cadencia-page-header > div:last-child > :last-child:not(:first-child) {
-  padding-top: 2px;
+  padding-top: 1px;
 }
 
-/* Superfícies compartilhadas obedecem uma caixa previsível. */
+/*
+ * Menos “cartão de marketing”: cantos menores e profundidade discreta.
+ * A hierarquia passa a vir do espaçamento e do conteúdo, não de caixas enormes.
+ */
 .cadencia-shell-bg :is(
   .cadencia-card,
   .clinical-panel,
   .cadencia-surface,
   .cadencia-panel,
-  .cadencia-table-shell,
-  .cadencia-hero-panel
+  .cadencia-table-shell
 ) {
   min-width: 0;
   max-width: 100%;
+  border-radius: 12px !important;
+}
+
+.cadencia-shell-bg .cadencia-hero-panel {
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 14px !important;
 }
 
 /* Tabelas começam e terminam no mesmo eixo visual dos painéis. */
@@ -83,13 +106,13 @@
 .cadencia-shell-bg .cadencia-table-shell :is(th, td):first-child,
 .cadencia-shell-bg .clinical-panel :is(th, td):first-child,
 .cadencia-shell-bg .cadencia-panel :is(th, td):first-child {
-  padding-left: 20px;
+  padding-left: 18px;
 }
 
 .cadencia-shell-bg .cadencia-table-shell :is(th, td):last-child,
 .cadencia-shell-bg .clinical-panel :is(th, td):last-child,
 .cadencia-shell-bg .cadencia-panel :is(th, td):last-child {
-  padding-right: 20px;
+  padding-right: 18px;
 }
 
 /* Formulários: label, campo, ajuda e ações compartilham o mesmo eixo. */
@@ -101,30 +124,47 @@
 
 .cadencia-shell-bg .cadencia-field {
   min-height: var(--control-height);
+  border-radius: 9px !important;
 }
 
 .cadencia-shell-bg .cadencia-field-group > label {
   line-height: 1.25;
 }
 
-/* Grids de conteúdo não podem estourar por min-width implícito. */
-.cadencia-shell-bg [class*='grid-cols-'] > *,
-.cadencia-shell-bg [class*='grid-cols-['] > * {
+/* Grids não estouram por min-width implícito. */
+.cadencia-shell-bg [class*='grid-cols-'] > * {
   min-width: 0;
 }
 
-/* Botões e icon buttons compartilham uma linha de centro previsível. */
 .cadencia-shell-bg .cadencia-button,
 .cadencia-shell-bg .cadencia-icon-button {
   vertical-align: middle;
 }
 
-/* Barra móvel respeita a mesma margem lateral do conteúdo. */
+/* O shell interno também fica mais enxuto e menos ornamental. */
+.cadencia-shell-bg .cadencia-sidebar {
+  box-shadow: inset -1px 0 0 rgb(255 255 255 / .8), 8px 0 24px rgb(9 48 49 / .025) !important;
+}
+
+.cadencia-shell-bg .cadencia-sidebar a[aria-current='page'] {
+  border-radius: 9px !important;
+}
+
+.cadencia-shell-bg .cadencia-topbar {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .95), 0 3px 14px rgb(12 47 49 / .025) !important;
+}
+
+@media (max-width: 1279px) {
+  .cadencia-shell-bg {
+    --page-gutter: 20px;
+  }
+}
+
 @media (max-width: 767px) {
   .cadencia-shell-bg {
     --page-gutter: 16px;
-    --layout-gap: 18px;
-    --panel-pad: 18px;
+    --layout-gap: 16px;
+    --panel-pad: 16px;
   }
 
   .cadencia-topbar-inner {
@@ -134,7 +174,7 @@
 
   .cadencia-shell-bg .cadencia-page,
   .cadencia-shell-bg .clinical-page {
-    padding-inline: var(--page-gutter);
+    padding: 18px var(--page-gutter) calc(88px + env(safe-area-inset-bottom));
   }
 
   .cadencia-shell-bg .cadencia-table-shell :is(th, td):first-child,
@@ -150,10 +190,10 @@
   }
 }
 
-/* Em monitores muito largos, o produto continua legível e centralizado. */
-@media (min-width: 1920px) {
+/* Em telas realmente gigantes ainda existe um teto, mas ele fica ancorado à esquerda. */
+@media (min-width: 2200px) {
   .cadencia-shell-bg {
-    --page-max: 1600px;
-    --page-gutter: 44px;
+    --page-max: 2048px;
+    --page-gutter: 30px;
   }
 }
