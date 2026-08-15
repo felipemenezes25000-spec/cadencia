@@ -48,7 +48,6 @@ export function createFakeCalendarProvider(
 
   return {
     id: 'calendar-fake',
-    channel: undefined as never,
     capabilities: new Set(['residency:br']),
     safety: { createEvent: 'idempotent', deleteEvent: 'idempotent', listCalendars: 'safe' },
 
