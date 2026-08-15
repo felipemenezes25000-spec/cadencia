@@ -1,14 +1,10 @@
 // packages/integrations/src/contracts/messaging.ts
 import type { E164, Provider, ProviderCtx, ProviderResult } from './common';
 
-// -- Outbound body ----------------------------------------------------------
-
 export type OutboundBody =
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'template'; readonly templateName: string;
       readonly language: string; readonly variables: readonly string[] };
-
-// -- Inbound events ---------------------------------------------------------
 
 export type InboundMessageBody =
   | { readonly kind: 'text'; readonly text: string }
@@ -22,8 +18,8 @@ export type InboundMessageBody =
 export interface InboundMessage {
   readonly kind: 'message';
   readonly providerMessageId: string;
-  readonly from: string;          // E164 bruto do parceiro
-  readonly timestamp: string;     // Rfc3339 bruto do parceiro
+  readonly from: string;
+  readonly timestamp: string;
   readonly body: InboundMessageBody;
 }
 
@@ -38,7 +34,10 @@ export interface StatusUpdate {
 
 export type InboundEvent = InboundMessage | StatusUpdate;
 
-// -- Contrato principal -----------------------------------------------------
+export interface WebhookVerificationContext {
+  /** URL pública exata usada pelo parceiro para calcular a assinatura. */
+  readonly url?: string;
+}
 
 export interface MessagingProvider extends Provider {
   readonly channel: 'whatsapp' | 'sms' | 'email';
@@ -70,6 +69,7 @@ export interface MessagingProvider extends Provider {
   verifyWebhook(
     raw: Buffer,
     headers: Record<string, string>,
+    context?: WebhookVerificationContext,
   ): { valid: boolean; reason?: string };
 
   parseInbound(raw: Buffer): InboundEvent[];
