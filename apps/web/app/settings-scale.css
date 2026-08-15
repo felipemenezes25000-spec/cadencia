@@ -1,0 +1,94 @@
+/* Configurações — escala da navegação lateral.
+ * O layout v14 priorizou densidade demais nesta coluna. Esta camada devolve
+ * legibilidade e área de clique sem voltar ao excesso de largura anterior.
+ */
+
+.settings-layout {
+  grid-template-columns: 292px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.settings-nav-sticky {
+  gap: 15px;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.settings-search {
+  height: 44px;
+  border-radius: 10px;
+  padding-inline: 12px;
+}
+
+.settings-search input {
+  font-size: 12px;
+}
+
+.settings-nav-groups {
+  gap: 18px;
+}
+
+.settings-nav-group {
+  gap: 7px;
+}
+
+.settings-nav-group-heading {
+  padding-inline: 10px;
+}
+
+.settings-nav-group-heading > span {
+  font-size: 9.5px;
+  letter-spacing: .085em;
+}
+
+.settings-nav-links {
+  gap: 3px;
+}
+
+.settings-nav-link {
+  min-height: 48px;
+  gap: 11px;
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+
+.settings-nav-link-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.settings-nav-link strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-security-note {
+  gap: 10px;
+  padding: 12px 9px 4px;
+}
+
+.settings-security-note strong {
+  font-size: 10px;
+}
+
+@media (max-width: 1279px) {
+  .settings-layout {
+    grid-template-columns: 258px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .settings-nav-sticky {
+    padding: 10px;
+  }
+
+  .settings-nav-link {
+    min-height: 45px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .settings-layout {
+    display: block;
+  }
+}
