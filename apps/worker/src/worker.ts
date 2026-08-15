@@ -94,6 +94,11 @@ export async function startWorker(): Promise<PgBoss> {
       const r = await sendMessage(data, { whatsapp: messaging, sms });
       process.stdout.write(
         `[worker] send-message: ${r.messageId} -> ${r.status}\n`);
+      if (r.status === 'retryable') throw new Error(r.detail);
+      if (r.status === 'indeterminate') {
+        process.stderr.write(
+          `[worker] MENSAGEM INDETERMINADA: ${r.messageId}: ${r.detail}\n`);
+      }
     }
   });
 
