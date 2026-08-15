@@ -4,6 +4,7 @@ import PgBoss from 'pg-boss';
 import {
   FILA_ENVIO_MSG,
   FILA_LINK_PAGAMENTO,
+  FILA_ESTORNO_PAGAMENTO,
   FILA_REPROJECAO_TISS,
 } from '../queues';
 
@@ -50,12 +51,20 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
     for (const ev of events) {
       try {
         const queueName = resolveQueue(ev.event_type);
-        await boss.send(queueName, {
-          outboxEventId: ev.id,
-          tenantId: ev.tenant_id,
-          aggregateId: ev.aggregate_id,
-          ...ev.payload,
-        });
+        await boss.send(
+          queueName,
+          {
+            outboxEventId: ev.id,
+            tenantId: ev.tenant_id,
+            aggregateId: ev.aggregate_id,
+            ...ev.payload,
+          },
+          {
+            retryLimit: 5,
+            retryDelay: 30,
+            retryBackoff: true,
+          },
+        );
 
         await client.query(
           `UPDATE app.outbox
@@ -96,12 +105,9 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
 
 /** Mapeia event_type para o nome da fila do pg-boss. */
 function resolveQueue(eventType: string): string {
-  // Eventos gerados diretamente pelas rotas HTTP usam snake_case.
-  // Eles precisam cair nas MESMAS filas que o worker consome; o fallback
-  // `outbox.${eventType}` fazia `send_message` virar `outbox.send_message`,
-  // uma fila inexistente, e a mensagem ficava perdida no limbo.
   if (eventType === 'send_message') return FILA_ENVIO_MSG;
   if (eventType === 'create_payment_link') return FILA_LINK_PAGAMENTO;
+  if (eventType === 'refund_payment') return FILA_ESTORNO_PAGAMENTO;
 
   if (eventType === 'INBOUND_MESSAGE_RECEIVED') return 'messaging.inbound_message_received';
   if (eventType.startsWith('APPOINTMENT_')) return `messaging.${eventType.toLowerCase()}`;
