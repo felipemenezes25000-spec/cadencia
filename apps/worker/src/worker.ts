@@ -7,6 +7,7 @@ import { sendReminder, type SendReminderInput } from './jobs/send-reminder';
 import { sendEmail, type SendEmailInput } from './jobs/send-email';
 import { reconcilePayments } from './jobs/payment-reconciliation';
 import { gerarLinkDePagamento, type GerarLinkInput } from './jobs/gerar-link-de-pagamento';
+import { refundPaymentAtProvider, type RefundPaymentJobInput } from './jobs/refund-payment';
 import { expurgarRetencao } from './jobs/expurgo-retencao';
 import { FsStorageAdapter, InMemoryStorageAdapter } from '@cadencia/storage';
 import { materializeDailyRollup } from './jobs/daily-rollup';
@@ -19,9 +20,10 @@ import { generateInvoices } from './jobs/invoice-generation';
 import { workerProviders } from './providers';
 import {
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_ENVIO_LEMBRETE,
-  FILA_RECONCILIACAO, FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES,
-  FILA_SELO, FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL,
-  FILA_CALENDAR_SYNC, FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
+  FILA_RECONCILIACAO, FILA_LINK_PAGAMENTO, FILA_ESTORNO_PAGAMENTO,
+  FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO, FILA_EXPURGO,
+  FILA_REPROJECAO_TISS, FILA_EMAIL, FILA_CALENDAR_SYNC,
+  FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
 } from './queues';
 
 export async function startWorker(): Promise<PgBoss> {
@@ -71,6 +73,18 @@ export async function startWorker(): Promise<PgBoss> {
       const r = await gerarLinkDePagamento(d, payment);
       process.stdout.write(`[worker] link-pagamento: ${d.entryId} -> ${r.status}\n`);
       if (r.status === 'provedor_indisponivel') throw new Error(r.detalhe);
+    }
+  });
+
+  await boss.work(FILA_ESTORNO_PAGAMENTO, async (jobs) => {
+    for (const job of jobs) {
+      const d = job.data as RefundPaymentJobInput;
+      const r = await refundPaymentAtProvider(d, payment);
+      process.stdout.write(`[worker] refund-payment: ${d.paymentId} -> ${r.status}\n`);
+      if (r.status === 'indeterminate') {
+        process.stderr.write(
+          `[worker] ESTORNO INDETERMINADO: ${d.paymentId}: ${r.detail}\n`);
+      }
     }
   });
 
