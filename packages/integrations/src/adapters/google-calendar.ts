@@ -79,8 +79,7 @@ export function createGoogleCalendarProvider(): CalendarProvider {
     async createEvent(ctx, input) {
       const ev = input.event;
       const eventId = calendarEventIdFromIdempotencyKey(ctx.idempotencyKey);
-      const body = {
-        id: eventId,
+      const mutableBody = {
         summary: ev.summary,
         start: { dateTime: ev.startIso },
         end: { dateTime: ev.endIso },
@@ -88,17 +87,18 @@ export function createGoogleCalendarProvider(): CalendarProvider {
       };
       const insert = await gcalRequest<{ id: string }>(
         `${GCAL_BASE}/calendars/${encodeURIComponent(ev.calendarId)}/events`,
-        input.accessToken, ctx, { method: 'POST', body },
+        input.accessToken, ctx,
+        { method: 'POST', body: { id: eventId, ...mutableBody } },
       );
       if (insert.ok) return success({ externalEventId: insert.value.id }, insert.value.id);
       if (insert.error.code !== 'GCAL_409') return insert;
 
       // O mesmo ID já existe: é retry OU atualização de horário/status do mesmo
-      // agendamento. PUT no recurso determinístico transforma createEvent em
-      // upsert sem gerar um segundo compromisso no calendário.
+      // agendamento. O id é definido só na criação; no PUT mandamos apenas os
+      // campos mutáveis do evento.
       const update = await gcalRequest<{ id: string }>(
         `${GCAL_BASE}/calendars/${encodeURIComponent(ev.calendarId)}/events/${eventId}`,
-        input.accessToken, ctx, { method: 'PUT', body },
+        input.accessToken, ctx, { method: 'PUT', body: mutableBody },
       );
       if (!update.ok) return update;
       return success({ externalEventId: update.value.id || eventId }, update.value.id || eventId);
