@@ -1,10 +1,15 @@
 /* Configurações — escala da navegação lateral.
  * O layout v14 priorizou densidade demais nesta coluna. Esta camada devolve
  * legibilidade e área de clique sem voltar ao excesso de largura anterior.
+ *
+ * `!important` na coluna é intencional: settings-alignment.css também declara
+ * grid-template-columns e pode ser emitido depois pelo chunk da rota. A escala
+ * final precisa ser determinística em produção, independentemente da ordem de
+ * carregamento dos chunks CSS do App Router.
  */
 
 .settings-layout {
-  grid-template-columns: 292px minmax(0, 1fr);
+  grid-template-columns: 292px minmax(0, 1fr) !important;
   gap: 22px;
 }
 
@@ -74,7 +79,7 @@
 
 @media (max-width: 1279px) {
   .settings-layout {
-    grid-template-columns: 258px minmax(0, 1fr);
+    grid-template-columns: 258px minmax(0, 1fr) !important;
     gap: 18px;
   }
 
@@ -90,5 +95,6 @@
 @media (max-width: 1023px) {
   .settings-layout {
     display: block;
+    grid-template-columns: none !important;
   }
 }
