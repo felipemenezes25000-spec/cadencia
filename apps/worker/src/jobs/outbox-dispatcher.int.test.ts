@@ -5,6 +5,7 @@ import { uuidv7 } from '@cadencia/kernel';
 import PgBoss from 'pg-boss';
 import { Pool } from 'pg';
 import { dispatchOutbox } from './outbox-dispatcher';
+import { FILA_ENVIO_MSG } from '../queues';
 
 function adminUrl(): string {
   const url = process.env['DATABASE_URL_ADMIN'];
@@ -34,14 +35,15 @@ beforeAll(async () => {
        VALUES ($1, $2, 'Unidade Ob', '2077508', 'America/Sao_Paulo')`,
       [tenantId, clinicId]);
 
-    // Inserir evento de outbox pendente na tabela única app.outbox
+    // Usa um event_type que possui consumidor real. Eventos desconhecidos devem
+    // continuar falhando fechados e permanecer visíveis no outbox.
     await c.query(
       `INSERT INTO app.outbox
          (tenant_id, id, event_type, aggregate_id, payload,
           created_at)
-       VALUES ($1, $2, 'PAYMENT_RECEIVED', $3,
+       VALUES ($1, $2, 'send_message', $3,
                '{"messageId":"m1","conversationId":"c1"}'::jsonb,
-               clock_timestamp() - interval '1 second')`,
+               clock_timestamp() - interval '1 day')`,
       [tenantId, outboxEventId, uuidv7()]);
 
     await c.query('COMMIT');
@@ -58,6 +60,7 @@ beforeAll(async () => {
     schema: 'pgboss',
   });
   await boss.start();
+  await boss.createQueue(FILA_ENVIO_MSG);
 });
 
 afterAll(async () => {
@@ -66,12 +69,12 @@ afterAll(async () => {
 });
 
 describe('despachante de outbox', () => {
-  it('despacha eventos pendentes e marca dispatched_at', async () => {
+  it('despacha evento suportado e marca dispatched_at', async () => {
     const r = await dispatchOutbox(boss);
     expect(r.dispatched).toBeGreaterThanOrEqual(1);
-    expect(r.errors).toBe(0);
 
-    // Verificar que o evento foi marcado com dispatched_at
+    // A suíte compartilha o banco e pode conter eventos desconhecidos criados
+    // por outros testes. O contrato relevante aqui é o nosso evento suportado.
     const { rows } = await jobsPool().query<{ dispatched_at: string | null }>(
       `SELECT dispatched_at::text FROM app.outbox WHERE id = $1`, [outboxEventId]);
     expect(rows[0]?.dispatched_at).not.toBeNull();
