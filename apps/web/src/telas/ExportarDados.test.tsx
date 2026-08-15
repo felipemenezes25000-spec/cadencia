@@ -6,14 +6,22 @@ import { ExportarDados } from './ExportarDados';
 
 const noop = vi.fn().mockResolvedValue(undefined);
 
+function dataset(name: string) {
+  return screen.getByRole('radio', { name: new RegExp(`^${name}`) });
+}
+
+function exportButton() {
+  return screen.getByRole('button', { name: 'Gerar arquivo' });
+}
+
 describe('ExportarDados', () => {
   it('renderiza todas as opções de dataset', () => {
     render(<ExportarDados aoExportar={noop} />);
 
-    expect(screen.getByLabelText('Pacientes')).toBeInTheDocument();
-    expect(screen.getByLabelText('Equipe')).toBeInTheDocument();
-    expect(screen.getByLabelText('Agendamentos')).toBeInTheDocument();
-    expect(screen.getByLabelText('Financeiro')).toBeInTheDocument();
+    expect(dataset('Pacientes')).toBeInTheDocument();
+    expect(dataset('Equipe')).toBeInTheDocument();
+    expect(dataset('Agendamentos')).toBeInTheDocument();
+    expect(dataset('Financeiro')).toBeInTheDocument();
   });
 
   it('mostra campos de período para agendamentos', async () => {
@@ -22,7 +30,7 @@ describe('ExportarDados', () => {
 
     expect(screen.queryByLabelText('De')).not.toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Agendamentos'));
+    await user.click(dataset('Agendamentos'));
 
     expect(screen.getByLabelText('De')).toBeInTheDocument();
     expect(screen.getByLabelText('Até')).toBeInTheDocument();
@@ -32,7 +40,7 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={noop} />);
 
-    await user.click(screen.getByLabelText('Financeiro'));
+    await user.click(dataset('Financeiro'));
 
     expect(screen.getByLabelText('De')).toBeInTheDocument();
     expect(screen.getByLabelText('Até')).toBeInTheDocument();
@@ -42,7 +50,7 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={noop} />);
 
-    await user.click(screen.getByLabelText('Pacientes'));
+    await user.click(dataset('Pacientes'));
 
     expect(screen.queryByLabelText('De')).not.toBeInTheDocument();
   });
@@ -51,7 +59,7 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={noop} />);
 
-    await user.click(screen.getByLabelText('Equipe'));
+    await user.click(dataset('Equipe'));
 
     expect(screen.queryByLabelText('De')).not.toBeInTheDocument();
   });
@@ -61,9 +69,9 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={handler} />);
 
-    await user.click(screen.getByLabelText('Pacientes'));
-    await user.click(screen.getByLabelText('XLSX'));
-    await user.click(screen.getByRole('button', { name: 'Exportar' }));
+    await user.click(dataset('Pacientes'));
+    await user.click(screen.getByRole('radio', { name: /xlsx/i }));
+    await user.click(exportButton());
 
     expect(handler).toHaveBeenCalledWith({
       dataset: 'pacientes',
@@ -76,10 +84,10 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={handler} />);
 
-    await user.click(screen.getByLabelText('Agendamentos'));
+    await user.click(dataset('Agendamentos'));
     await user.type(screen.getByLabelText('De'), '2026-01-01');
     await user.type(screen.getByLabelText('Até'), '2026-06-30');
-    await user.click(screen.getByRole('button', { name: 'Exportar' }));
+    await user.click(exportButton());
 
     expect(handler).toHaveBeenCalledWith({
       dataset: 'agendamentos',
@@ -97,10 +105,10 @@ describe('ExportarDados', () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={slow} />);
 
-    await user.click(screen.getByLabelText('Equipe'));
-    await user.click(screen.getByRole('button', { name: 'Exportar' }));
+    await user.click(dataset('Equipe'));
+    await user.click(exportButton());
 
-    expect(screen.getByRole('button')).toBeDisabled();
+    expect(exportButton()).toBeDisabled();
     expect(screen.getByTestId('spinner-carregando')).toBeInTheDocument();
 
     resolve!();
@@ -108,16 +116,16 @@ describe('ExportarDados', () => {
 
   it('desabilita botão sem dataset selecionado', () => {
     render(<ExportarDados aoExportar={noop} />);
-    expect(screen.getByRole('button', { name: 'Exportar' })).toBeDisabled();
+    expect(exportButton()).toBeDisabled();
   });
 
   it('desabilita botão quando agendamentos sem período', async () => {
     const user = userEvent.setup();
     render(<ExportarDados aoExportar={noop} />);
 
-    await user.click(screen.getByLabelText('Agendamentos'));
+    await user.click(dataset('Agendamentos'));
 
-    expect(screen.getByRole('button', { name: 'Exportar' })).toBeDisabled();
+    expect(exportButton()).toBeDisabled();
   });
 
   it('acessibilidade (axe)', async () => {
