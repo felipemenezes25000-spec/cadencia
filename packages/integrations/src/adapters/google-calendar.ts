@@ -12,11 +12,7 @@ function agora(): Rfc3339 {
   return asRfc3339(isoFromMs(systemClock.nowMs())) ?? ('1970-01-01T00:00:00.000Z' as Rfc3339);
 }
 
-/**
- * O Google aceita id de evento em base32hex. SHA-256 em hexadecimal usa apenas
- * 0-9/a-f (subconjunto válido) e é estável para a chave de idempotência.
- */
-function eventIdFromIdempotencyKey(key: string): string {
+export function calendarEventIdFromIdempotencyKey(key: string): string {
   return createHash('sha256').update(key, 'utf8').digest('hex');
 }
 
@@ -42,8 +38,7 @@ async function gcalRequest<T>(
         detail: 'rate limit' });
     }
     if (res.status >= 500) {
-      return failure({ kind: 'unavailable', retrySafe: true,
-        detail: `gcal ${res.status}` });
+      return failure({ kind: 'unavailable', retrySafe: true, detail: `gcal ${res.status}` });
     }
     if (res.status === 204 || res.headers.get('content-length') === '0') {
       return success({} as T, '');
@@ -83,47 +78,44 @@ export function createGoogleCalendarProvider(): CalendarProvider {
 
     async createEvent(ctx, input) {
       const ev = input.event;
-      const eventId = eventIdFromIdempotencyKey(ctx.idempotencyKey);
-      const r = await gcalRequest<{ id: string }>(
+      const eventId = calendarEventIdFromIdempotencyKey(ctx.idempotencyKey);
+      const body = {
+        id: eventId,
+        summary: ev.summary,
+        start: { dateTime: ev.startIso },
+        end: { dateTime: ev.endIso },
+        ...(ev.description !== undefined ? { description: ev.description } : {}),
+      };
+      const insert = await gcalRequest<{ id: string }>(
         `${GCAL_BASE}/calendars/${encodeURIComponent(ev.calendarId)}/events`,
-        input.accessToken, ctx,
-        {
-          method: 'POST',
-          body: {
-            id: eventId,
-            summary: ev.summary,
-            start: { dateTime: ev.startIso },
-            end: { dateTime: ev.endIso },
-            ...(ev.description !== undefined ? { description: ev.description } : {}),
-          },
-        },
+        input.accessToken, ctx, { method: 'POST', body },
       );
-      if (!r.ok) {
-        // Se uma tentativa anterior entrou no Google e a resposta se perdeu, a
-        // reentrega recebe 409 para o MESMO id. Isso prova que a intenção já foi
-        // materializada e deve ser tratada como sucesso, não gerar outro evento.
-        if (r.error.code === 'GCAL_409') {
-          return success({ externalEventId: eventId }, eventId);
-        }
-        return r;
-      }
-      return success({ externalEventId: r.value.id }, r.value.id);
+      if (insert.ok) return success({ externalEventId: insert.value.id }, insert.value.id);
+      if (insert.error.code !== 'GCAL_409') return insert;
+
+      // O mesmo ID já existe: é retry OU atualização de horário/status do mesmo
+      // agendamento. PUT no recurso determinístico transforma createEvent em
+      // upsert sem gerar um segundo compromisso no calendário.
+      const update = await gcalRequest<{ id: string }>(
+        `${GCAL_BASE}/calendars/${encodeURIComponent(ev.calendarId)}/events/${eventId}`,
+        input.accessToken, ctx, { method: 'PUT', body },
+      );
+      if (!update.ok) return update;
+      return success({ externalEventId: update.value.id || eventId }, update.value.id || eventId);
     },
 
     async deleteEvent(ctx, input) {
       const url = `${GCAL_BASE}/calendars/${encodeURIComponent(input.calendarId)}/events/${encodeURIComponent(input.externalEventId)}`;
       const r = await gcalRequest<Record<string, never>>(
         url, input.accessToken, ctx, { method: 'DELETE' });
-      // DELETE idempotente: ausência após uma tentativa anterior já produz o
-      // estado desejado. 404 não deve transformar retry em falha terminal.
       if (!r.ok && r.error.code === 'GCAL_404') return success({}, input.externalEventId);
       return r;
     },
 
     async listCalendars(ctx, input) {
-      const r = await gcalRequest<{
-        items: Array<{ id: string; summary: string }>;
-      }>(`${GCAL_BASE}/users/me/calendarList`, input.accessToken, ctx);
+      const r = await gcalRequest<{ items: Array<{ id: string; summary: string }> }>(
+        `${GCAL_BASE}/users/me/calendarList`, input.accessToken, ctx,
+      );
       if (!r.ok) return r;
       const calendars: CalendarInfo[] = (r.value.items ?? []).map((c) => ({
         id: c.id, name: c.summary,
