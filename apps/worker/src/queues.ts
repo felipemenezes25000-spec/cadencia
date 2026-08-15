@@ -4,6 +4,7 @@ export const FILA_ENVIO_MSG = 'messaging.send_message';
 export const FILA_ENVIO_LEMBRETE = 'messaging.send_reminder';
 export const FILA_RECONCILIACAO = 'payments.reconciliation';
 export const FILA_LINK_PAGAMENTO = 'outbox.create_payment_link';
+export const FILA_ESTORNO_PAGAMENTO = 'outbox.refund_payment';
 export const FILA_ROLLUP = 'fin.daily-rollup';
 export const FILA_LEMBRETES = 'messaging.schedule-reminders';
 export const FILA_SELO = 'audit.seal-daily';
@@ -16,7 +17,8 @@ export const FILA_FATURA_GERACAO = 'billing.invoice-generation';
 
 export const FILAS = [
   FILA_RASCUNHOS, FILA_OUTBOX, FILA_ENVIO_MSG, FILA_ENVIO_LEMBRETE,
-  FILA_RECONCILIACAO, FILA_LINK_PAGAMENTO, FILA_ROLLUP, FILA_LEMBRETES,
-  FILA_SELO, FILA_EXPURGO, FILA_REPROJECAO_TISS, FILA_EMAIL,
-  FILA_CALENDAR_SYNC, FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
+  FILA_RECONCILIACAO, FILA_LINK_PAGAMENTO, FILA_ESTORNO_PAGAMENTO,
+  FILA_ROLLUP, FILA_LEMBRETES, FILA_SELO, FILA_EXPURGO,
+  FILA_REPROJECAO_TISS, FILA_EMAIL, FILA_CALENDAR_SYNC,
+  FILA_TRIAL_EXPIRACAO, FILA_FATURA_GERACAO,
 ] as const;
