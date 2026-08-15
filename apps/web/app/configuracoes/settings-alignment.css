@@ -79,10 +79,10 @@
   box-shadow: none;
 }
 
-/* Navegação iClinic-like: coluna compacta e tópicos fáceis de escanear. */
+/* Navegação lateral: compacta, mas confortável para leitura e clique. */
 .settings-layout {
-  grid-template-columns: 226px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 268px minmax(0, 1fr);
+  gap: 20px;
 }
 
 .settings-nav,
@@ -92,56 +92,56 @@
 
 .settings-nav-sticky {
   top: 88px;
-  gap: 12px;
+  gap: 14px;
   max-height: calc(100vh - 106px);
-  border-radius: 10px;
-  padding: 8px;
+  border-radius: 12px;
+  padding: 11px;
   box-shadow: 0 4px 18px rgb(12 53 54 / .025);
 }
 
 .settings-search {
-  height: 38px;
-  border-radius: 8px;
-  padding-inline: 10px;
+  height: 42px;
+  border-radius: 9px;
+  padding-inline: 11px;
 }
 
 .settings-search input {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .settings-nav-groups {
-  gap: 14px;
+  gap: 17px;
 }
 
 .settings-nav-group {
-  gap: 5px;
+  gap: 6px;
 }
 
 .settings-nav-group-heading {
   gap: 0;
-  padding: 0 8px;
+  padding: 0 9px;
 }
 
 .settings-nav-group-heading > span {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: .08em;
 }
 
-/* O texto auxiliar duplicava informação e aumentava demais a coluna. */
+/* As descrições continuam ocultas para preservar escaneabilidade da navegação. */
 .settings-nav-group-heading > small,
 .settings-nav-link small {
   display: none;
 }
 
 .settings-nav-links {
-  gap: 2px;
+  gap: 3px;
 }
 
 .settings-nav-link {
-  min-height: 40px;
-  gap: 9px;
-  border-radius: 8px;
-  padding: 5px 8px;
+  min-height: 46px;
+  gap: 10px;
+  border-radius: 9px;
+  padding: 7px 9px;
 }
 
 .settings-nav-link:hover {
@@ -153,14 +153,14 @@
 }
 
 .settings-nav-link-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 31px;
+  height: 31px;
+  border-radius: 8px;
 }
 
 .settings-nav-link strong {
-  font-size: 11px;
-  font-weight: 680;
+  font-size: 12px;
+  font-weight: 690;
 }
 
 .settings-nav-link-caret {
@@ -168,8 +168,12 @@
 }
 
 .settings-security-note {
-  gap: 8px;
-  padding: 10px 7px 2px;
+  gap: 9px;
+  padding: 12px 8px 3px;
+}
+
+.settings-security-note strong {
+  font-size: 11px;
 }
 
 .settings-security-note span {
@@ -437,8 +441,8 @@
 
 @media (max-width: 1279px) {
   .settings-layout {
-    grid-template-columns: 210px minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 242px minmax(0, 1fr);
+    gap: 17px;
   }
 
   .settings-context-card {
