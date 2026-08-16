@@ -51,8 +51,8 @@ function encodeKey(key: string): string {
 }
 
 function wallClockMs(): number {
-  // O projeto proibe Date.now()/new Date() fora do kernel. Para protocolo AWS
-  // precisamos de tempo de parede, nao de um carimbo persistido no dominio.
+  // O projeto reserva leituras diretas do relogio do sistema ao kernel. Para
+  // protocolo AWS precisamos de tempo de parede, nao de um carimbo persistido.
   // timeOrigin + relogio monotono preserva essa separacao e evita drift por
   // ajustes do relogio durante a vida do processo.
   return performance.timeOrigin + performance.now();
