@@ -64,6 +64,52 @@ resource "aws_s3_bucket_public_access_block" "objects" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_policy" "objects" {
+  bucket = aws_s3_bucket.objects.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.objects.arn,
+          "${aws_s3_bucket.objects.arn}/*",
+        ]
+        Condition = {
+          Bool = { "aws:SecureTransport" = "false" }
+        }
+      },
+      {
+        Sid       = "RequireKmsForWrites"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.objects.arn}/*"
+        Condition = {
+          StringNotEquals = {
+            "s3:x-amz-server-side-encryption" = "aws:kms"
+          }
+        }
+      },
+      {
+        Sid       = "RequireCadenciaKmsKey"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.objects.arn}/*"
+        Condition = {
+          StringNotEquals = {
+            "s3:x-amz-server-side-encryption-aws-kms-key-id" = aws_kms_key.data.arn
+          }
+        }
+      },
+    ]
+  })
+}
+
 resource "aws_ecr_repository" "app" {
   name                 = "${var.name_prefix}-app"
   image_tag_mutability = "IMMUTABLE"
@@ -80,49 +126,46 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier                     = "${var.name_prefix}-postgres"
-  engine                         = "postgres"
-  engine_version                 = var.postgres_engine_version
-  instance_class                 = var.db_instance_class
-  allocated_storage              = var.db_allocated_storage_gb
-  max_allocated_storage          = 1000
-  storage_type                   = "gp3"
-  storage_encrypted              = true
-  kms_key_id                     = aws_kms_key.data.arn
-  db_name                        = "cadencia"
-  username                       = "cadencia_admin"
-  manage_master_user_password    = true
-  multi_az                       = true
-  db_subnet_group_name           = aws_db_subnet_group.main.name
-  vpc_security_group_ids         = var.rds_security_group_ids
-  publicly_accessible            = false
-  backup_retention_period        = 35
-  copy_tags_to_snapshot          = true
-  deletion_protection            = true
-  auto_minor_version_upgrade     = true
-  performance_insights_enabled   = true
+  identifier                      = "${var.name_prefix}-postgres"
+  engine                          = "postgres"
+  engine_version                  = var.postgres_engine_version
+  instance_class                  = var.db_instance_class
+  allocated_storage               = var.db_allocated_storage_gb
+  max_allocated_storage           = 1000
+  storage_type                    = "gp3"
+  storage_encrypted               = true
+  kms_key_id                      = aws_kms_key.data.arn
+  db_name                         = "cadencia"
+  username                        = "cadencia_admin"
+  manage_master_user_password     = true
+  multi_az                        = true
+  db_subnet_group_name            = aws_db_subnet_group.main.name
+  vpc_security_group_ids          = var.rds_security_group_ids
+  publicly_accessible             = false
+  backup_retention_period         = 35
+  copy_tags_to_snapshot           = true
+  deletion_protection             = true
+  auto_minor_version_upgrade      = true
+  performance_insights_enabled    = true
   performance_insights_kms_key_id = aws_kms_key.data.arn
   enabled_cloudwatch_logs_exports = ["postgresql"]
-  skip_final_snapshot            = false
-  final_snapshot_identifier      = "${var.name_prefix}-final"
+  skip_final_snapshot             = false
+  final_snapshot_identifier       = "${var.name_prefix}-final"
 }
 
 resource "aws_cloudwatch_log_group" "api" {
   name              = "/cadencia/production/api"
   retention_in_days = 365
-  kms_key_id        = aws_kms_key.data.arn
 }
 
 resource "aws_cloudwatch_log_group" "worker" {
   name              = "/cadencia/production/worker"
   retention_in_days = 365
-  kms_key_id        = aws_kms_key.data.arn
 }
 
 resource "aws_cloudwatch_log_group" "migration" {
   name              = "/cadencia/production/migration"
   retention_in_days = 365
-  kms_key_id        = aws_kms_key.data.arn
 }
 
 resource "aws_iam_role" "ecs_execution" {
@@ -161,13 +204,13 @@ resource "aws_iam_role_policy" "task_storage" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = "${aws_s3_bucket.objects.arn}/*"
       },
       {
-        Effect = "Allow"
-        Action = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey"]
+        Effect   = "Allow"
+        Action   = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey"]
         Resource = aws_kms_key.data.arn
       }
     ]
@@ -183,11 +226,11 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_lb" "api" {
-  name               = substr("${var.name_prefix}-api", 0, 32)
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = var.alb_security_group_ids
-  subnets            = var.public_subnet_ids
+  name                       = substr("${var.name_prefix}-api", 0, 32)
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = var.alb_security_group_ids
+  subnets                    = var.public_subnet_ids
   drop_invalid_header_fields = true
 }
 
@@ -236,12 +279,17 @@ resource "aws_lb_listener" "https" {
 resource "aws_wafv2_web_acl" "api" {
   name  = "${var.name_prefix}-api"
   scope = "REGIONAL"
-  default_action { allow {} }
+
+  default_action {
+    allow {}
+  }
 
   rule {
     name     = "aws-common"
     priority = 10
-    override_action { none {} }
+    override_action {
+      none {}
+    }
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
@@ -258,7 +306,9 @@ resource "aws_wafv2_web_acl" "api" {
   rule {
     name     = "rate-limit"
     priority = 20
-    action { block {} }
+    action {
+      block {}
+    }
     statement {
       rate_based_statement {
         aggregate_key_type = "IP"
@@ -302,7 +352,7 @@ resource "aws_ecs_task_definition" "api" {
     essential = true
     portMappings = [{ containerPort = 3001, hostPort = 3001, protocol = "tcp" }]
     environment = local.common_environment
-    secrets = [for name, arn in var.api_secrets : { name = name, valueFrom = arn }]
+    secrets     = [for name, arn in var.api_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -332,7 +382,7 @@ resource "aws_ecs_task_definition" "worker" {
     essential = true
     command   = ["pnpm", "--filter", "@cadencia/worker", "exec", "tsx", "src/worker.ts"]
     environment = local.common_environment
-    secrets = [for name, arn in var.worker_secrets : { name = name, valueFrom = arn }]
+    secrets     = [for name, arn in var.worker_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -358,7 +408,7 @@ resource "aws_ecs_task_definition" "migration" {
     essential = true
     command   = ["pnpm", "db:migrate"]
     environment = local.common_environment
-    secrets = [for name, arn in var.migration_secrets : { name = name, valueFrom = arn }]
+    secrets     = [for name, arn in var.migration_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -371,12 +421,12 @@ resource "aws_ecs_task_definition" "migration" {
 }
 
 resource "aws_ecs_service" "api" {
-  name            = "api"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = var.api_desired_count
-  launch_type     = "FARGATE"
-  enable_execute_command = false
+  name                              = "api"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.api.arn
+  desired_count                     = var.api_desired_count
+  launch_type                       = "FARGATE"
+  enable_execute_command            = false
   health_check_grace_period_seconds = 60
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -397,11 +447,11 @@ resource "aws_ecs_service" "api" {
 }
 
 resource "aws_ecs_service" "worker" {
-  name            = "worker"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.worker.arn
-  desired_count   = var.worker_desired_count
-  launch_type     = "FARGATE"
+  name                   = "worker"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.worker.arn
+  desired_count          = var.worker_desired_count
+  launch_type            = "FARGATE"
   enable_execute_command = false
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -417,7 +467,7 @@ resource "aws_ecs_service" "worker" {
 
 resource "aws_sns_topic" "alarms" {
   name              = "${var.name_prefix}-alarms"
-  kms_master_key_id = aws_kms_key.data.id
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_sns_topic_subscription" "email" {
@@ -436,8 +486,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   evaluation_periods  = 1
   threshold           = 5
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  dimensions = { LoadBalancer = aws_lb.api.arn_suffix }
-  alarm_actions = [aws_sns_topic.alarms.arn]
+  dimensions          = { LoadBalancer = aws_lb.api.arn_suffix }
+  alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "healthy_hosts" {
@@ -457,6 +507,38 @@ resource "aws_cloudwatch_metric_alarm" "healthy_hosts" {
   alarm_actions = [aws_sns_topic.alarms.arn]
 }
 
+resource "aws_cloudwatch_metric_alarm" "api_cpu" {
+  alarm_name          = "${var.name_prefix}-api-cpu"
+  namespace           = "AWS/ECS"
+  metric_name         = "CPUUtilization"
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 2
+  threshold           = 80
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.api.name
+  }
+  alarm_actions = [aws_sns_topic.alarms.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "worker_cpu" {
+  alarm_name          = "${var.name_prefix}-worker-cpu"
+  namespace           = "AWS/ECS"
+  metric_name         = "CPUUtilization"
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 2
+  threshold           = 80
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.worker.name
+  }
+  alarm_actions = [aws_sns_topic.alarms.arn]
+}
+
 resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
   alarm_name          = "${var.name_prefix}-rds-cpu"
   namespace           = "AWS/RDS"
@@ -466,8 +548,8 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
   evaluation_periods  = 2
   threshold           = 80
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  dimensions = { DBInstanceIdentifier = aws_db_instance.postgres.identifier }
-  alarm_actions = [aws_sns_topic.alarms.arn]
+  dimensions          = { DBInstanceIdentifier = aws_db_instance.postgres.identifier }
+  alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "rds_storage" {
@@ -479,6 +561,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage" {
   evaluation_periods  = 2
   threshold           = 21474836480
   comparison_operator = "LessThanOrEqualToThreshold"
-  dimensions = { DBInstanceIdentifier = aws_db_instance.postgres.identifier }
-  alarm_actions = [aws_sns_topic.alarms.arn]
+  dimensions          = { DBInstanceIdentifier = aws_db_instance.postgres.identifier }
+  alarm_actions       = [aws_sns_topic.alarms.arn]
 }

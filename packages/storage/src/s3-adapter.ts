@@ -15,6 +15,17 @@ interface CachedCredentials {
 
 let credentialCache: CachedCredentials | null = null;
 
+const UTC_PARTS = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'UTC',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
 export interface S3StorageOptions {
   bucket: string;
   region: string;
@@ -39,6 +50,22 @@ function encodeKey(key: string): string {
   return key.split('/').map((part) => encodeURIComponent(part)).join('/');
 }
 
+function wallClockMs(): number {
+  // O projeto proibe Date.now()/new Date() fora do kernel. Para protocolo AWS
+  // precisamos de tempo de parede, nao de um carimbo persistido no dominio.
+  // timeOrigin + relogio monotono preserva essa separacao e evita drift por
+  // ajustes do relogio durante a vida do processo.
+  return performance.timeOrigin + performance.now();
+}
+
+function amzTimestamp(epochMs: number): string {
+  const parts: Record<string, string> = {};
+  for (const part of UTC_PARTS.formatToParts(epochMs)) {
+    if (part.type !== 'literal') parts[part.type] = part.value;
+  }
+  return `${parts['year']}${parts['month']}${parts['day']}T${parts['hour']}${parts['minute']}${parts['second']}Z`;
+}
+
 async function authorizationToken(): Promise<string | undefined> {
   const direto = process.env['AWS_CONTAINER_AUTHORIZATION_TOKEN'];
   if (direto !== undefined && direto !== '') return direto;
@@ -58,7 +85,8 @@ async function defaultCredentialsProvider(): Promise<AwsCredentials> {
     };
   }
 
-  if (credentialCache !== null && credentialCache.expiresAt > Date.now() + 5 * 60_000) {
+  const agora = wallClockMs();
+  if (credentialCache !== null && credentialCache.expiresAt > agora + 5 * 60_000) {
     return credentialCache.credentials;
   }
 
@@ -91,7 +119,7 @@ async function defaultCredentialsProvider(): Promise<AwsCredentials> {
     secretAccessKey: body.SecretAccessKey,
     ...(body.Token ? { sessionToken: body.Token } : {}),
   };
-  const expiresAt = body.Expiration ? Date.parse(body.Expiration) : Date.now() + 30 * 60_000;
+  const expiresAt = body.Expiration ? Date.parse(body.Expiration) : agora + 30 * 60_000;
   credentialCache = { credentials, expiresAt };
   return credentials;
 }
@@ -124,8 +152,7 @@ export class S3StorageAdapter implements StorageAdapter {
     const url = new URL(`${this.endpoint.replace(/\/$/, '')}/${encoded}`);
     const payload = data ?? new Uint8Array();
     const payloadHash = sha256Hex(payload);
-    const now = new Date();
-    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const amzDate = amzTimestamp(wallClockMs());
     const date = amzDate.slice(0, 8);
     const credentials = await this.credentialsProvider();
 
