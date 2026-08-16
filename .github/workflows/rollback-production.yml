@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 20
     environment: production
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_PRODUCTION_ROLE_ARN }}
           aws-region: sa-east-1

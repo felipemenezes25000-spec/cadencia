@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 45
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: exige CI, release gate e restore drill recentes
         env:
@@ -62,7 +62,7 @@ jobs:
           done
           case "$PRODUCTION_API_URL" in https://*) ;; *) echo 'PRODUCTION_API_URL deve usar https' >&2; exit 1;; esac
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_PRODUCTION_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
