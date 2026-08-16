@@ -1,0 +1,52 @@
+name: rollback-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_task_definition:
+        description: 'ARN ou family:revision da API para restaurar'
+        required: true
+        type: string
+      worker_task_definition:
+        description: 'ARN ou family:revision do worker para restaurar'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: rollback manual ECS
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PRODUCTION_ROLE_ARN }}
+          aws-region: sa-east-1
+      - name: valida task definitions e restaura servicos
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+          ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+          API_TASK: ${{ inputs.api_task_definition }}
+          WORKER_TASK: ${{ inputs.worker_task_definition }}
+        run: |
+          set -euo pipefail
+          aws ecs describe-task-definition --task-definition "$API_TASK" >/dev/null
+          aws ecs describe-task-definition --task-definition "$WORKER_TASK" >/dev/null
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_API_SERVICE" --task-definition "$API_TASK" >/dev/null
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --task-definition "$WORKER_TASK" >/dev/null
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE" "$ECS_WORKER_SERVICE"
+      - name: smoke depois do rollback
+        env:
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --max-time 10 "$PRODUCTION_API_URL/health"

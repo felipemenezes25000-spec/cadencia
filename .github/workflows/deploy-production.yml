@@ -1,0 +1,165 @@
+name: deploy-production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: sa-east-1
+
+jobs:
+  deploy:
+    name: promover SHA validado para ECS
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: exige CI, release gate e restore drill recentes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ci=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=1" --jq '.total_count')
+          release=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release-gate.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=1" --jq '.total_count')
+          restore=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/agendado.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].created_at // empty')
+          test "$ci" -ge 1 || { echo "CI verde ausente para $GITHUB_SHA" >&2; exit 1; }
+          test "$release" -ge 1 || { echo "release-gate verde ausente para $GITHUB_SHA" >&2; exit 1; }
+          test -n "$restore" || { echo "nenhum restore drill bem-sucedido" >&2; exit 1; }
+          restore_epoch=$(date -d "$restore" +%s)
+          limite_epoch=$(date -d '35 days ago' +%s)
+          test "$restore_epoch" -ge "$limite_epoch" || { echo "restore drill tem mais de 35 dias: $restore" >&2; exit 1; }
+          echo "gates aprovados: CI + staging/load + restore ($restore)"
+
+      - name: valida configuracao do ambiente production
+        env:
+          AWS_PRODUCTION_ROLE_ARN: ${{ vars.AWS_PRODUCTION_ROLE_ARN }}
+          ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+          ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+          ECS_API_CONTAINER: ${{ vars.ECS_API_CONTAINER }}
+          ECS_WORKER_CONTAINER: ${{ vars.ECS_WORKER_CONTAINER }}
+          ECS_MIGRATION_TASK_DEFINITION: ${{ vars.ECS_MIGRATION_TASK_DEFINITION }}
+          ECS_MIGRATION_CONTAINER: ${{ vars.ECS_MIGRATION_CONTAINER }}
+          ECS_PRIVATE_SUBNETS: ${{ vars.ECS_PRIVATE_SUBNETS }}
+          ECS_SECURITY_GROUPS: ${{ vars.ECS_SECURITY_GROUPS }}
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          set -euo pipefail
+          for nome in AWS_PRODUCTION_ROLE_ARN ECR_REPOSITORY_URI ECS_CLUSTER ECS_API_SERVICE ECS_WORKER_SERVICE ECS_API_CONTAINER ECS_WORKER_CONTAINER ECS_MIGRATION_TASK_DEFINITION ECS_MIGRATION_CONTAINER ECS_PRIVATE_SUBNETS ECS_SECURITY_GROUPS PRODUCTION_API_URL; do
+            test -n "${!nome:-}" || { echo "GitHub Environment production sem $nome" >&2; exit 1; }
+          done
+          case "$PRODUCTION_API_URL" in https://*) ;; *) echo 'PRODUCTION_API_URL deve usar https' >&2; exit 1;; esac
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PRODUCTION_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: login no ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: build e push de imagem imutavel
+        env:
+          ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+        run: |
+          set -euo pipefail
+          IMAGE="$ECR_REPOSITORY_URI:$GITHUB_SHA"
+          docker build --pull --tag "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: prepara revisoes das task definitions
+        id: tasks
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+          ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+          ECS_API_CONTAINER: ${{ vars.ECS_API_CONTAINER }}
+          ECS_WORKER_CONTAINER: ${{ vars.ECS_WORKER_CONTAINER }}
+          ECS_MIGRATION_TASK_DEFINITION: ${{ vars.ECS_MIGRATION_TASK_DEFINITION }}
+          ECS_MIGRATION_CONTAINER: ${{ vars.ECS_MIGRATION_CONTAINER }}
+        run: |
+          set -euo pipefail
+          revision() {
+            local source="$1" container="$2" out="$3"
+            aws ecs describe-task-definition --task-definition "$source" --query taskDefinition > /tmp/original.json
+            jq -e --arg c "$container" '.containerDefinitions | any(.name == $c)' /tmp/original.json >/dev/null || { echo "container $container ausente em $source" >&2; exit 1; }
+            jq --arg image "$IMAGE" --arg c "$container" '
+              del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)
+              | .containerDefinitions |= map(if .name == $c then .image = $image else . end)
+            ' /tmp/original.json > /tmp/register.json
+            aws ecs register-task-definition --cli-input-json file:///tmp/register.json --query 'taskDefinition.taskDefinitionArn' --output text > "$out"
+          }
+
+          PREVIOUS_API_TASK=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE" --query 'services[0].taskDefinition' --output text)
+          PREVIOUS_WORKER_TASK=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE" --query 'services[0].taskDefinition' --output text)
+          test "$PREVIOUS_API_TASK" != None
+          test "$PREVIOUS_WORKER_TASK" != None
+          echo "PREVIOUS_API_TASK=$PREVIOUS_API_TASK" >> "$GITHUB_ENV"
+          echo "PREVIOUS_WORKER_TASK=$PREVIOUS_WORKER_TASK" >> "$GITHUB_ENV"
+
+          revision "$PREVIOUS_API_TASK" "$ECS_API_CONTAINER" /tmp/api-task
+          revision "$PREVIOUS_WORKER_TASK" "$ECS_WORKER_CONTAINER" /tmp/worker-task
+          revision "$ECS_MIGRATION_TASK_DEFINITION" "$ECS_MIGRATION_CONTAINER" /tmp/migration-task
+          echo "API_TASK=$(cat /tmp/api-task)" >> "$GITHUB_ENV"
+          echo "WORKER_TASK=$(cat /tmp/worker-task)" >> "$GITHUB_ENV"
+          echo "MIGRATION_TASK=$(cat /tmp/migration-task)" >> "$GITHUB_ENV"
+
+      - name: migrations one-shot antes da promocao
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_PRIVATE_SUBNETS: ${{ vars.ECS_PRIVATE_SUBNETS }}
+          ECS_SECURITY_GROUPS: ${{ vars.ECS_SECURITY_GROUPS }}
+          ECS_MIGRATION_CONTAINER: ${{ vars.ECS_MIGRATION_CONTAINER }}
+        run: |
+          set -euo pipefail
+          NETWORK="awsvpcConfiguration={subnets=[$ECS_PRIVATE_SUBNETS],securityGroups=[$ECS_SECURITY_GROUPS],assignPublicIp=DISABLED}"
+          TASK=$(aws ecs run-task --cluster "$ECS_CLUSTER" --launch-type FARGATE --task-definition "$MIGRATION_TASK" --network-configuration "$NETWORK" --query 'tasks[0].taskArn' --output text)
+          test "$TASK" != None
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK"
+          EXIT=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK" --query "tasks[0].containers[?name=='$ECS_MIGRATION_CONTAINER'].exitCode | [0]" --output text)
+          if [ "$EXIT" != "0" ]; then
+            aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK" --query 'tasks[0].{stoppedReason:stoppedReason,containers:containers[*].{name:name,reason:reason,exitCode:exitCode}}'
+            exit 1
+          fi
+
+      - name: promove API e worker
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+          ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_API_SERVICE" --task-definition "$API_TASK" >/dev/null
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --task-definition "$WORKER_TASK" >/dev/null
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE" "$ECS_WORKER_SERVICE"
+
+      - name: smoke de producao
+        env:
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --max-time 10 "$PRODUCTION_API_URL/health"
+
+      - name: rollback automatico se a promocao falhar
+        if: failure() && env.PREVIOUS_API_TASK != '' && env.PREVIOUS_WORKER_TASK != ''
+        env:
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+          ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+        run: |
+          set +e
+          echo "rollback para $PREVIOUS_API_TASK e $PREVIOUS_WORKER_TASK"
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_API_SERVICE" --task-definition "$PREVIOUS_API_TASK"
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --task-definition "$PREVIOUS_WORKER_TASK"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE" "$ECS_WORKER_SERVICE"
