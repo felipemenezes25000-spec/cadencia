@@ -53,7 +53,7 @@ describe("PageHeader", () => {
     const acao = screen.getByRole("button", { name: "Ação" });
     expect(acao).toBeInTheDocument();
     expect(acao.parentElement).toHaveClass("min-w-0", "max-w-full", "max-sm:w-full");
-    expect(screen.getByRole("banner")).toHaveClass("min-w-0", "max-w-full");
+    expect(screen.getByRole("banner")).toHaveClass("cadencia-page-header", "min-w-0", "w-full");
   });
 
   it("renderiza breadcrumb por padrão", () => {

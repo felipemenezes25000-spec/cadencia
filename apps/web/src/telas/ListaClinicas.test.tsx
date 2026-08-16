@@ -33,29 +33,28 @@ describe('ListaClinicas', () => {
 
   it('destaca a clínica ativa com badge', () => {
     montar();
-    expect(screen.getByText('ativa')).toBeDefined();
+    expect(screen.getByText('Em uso')).toBeDefined();
   });
 
-  it('mostra traço quando CNES é null', () => {
+  it('mostra estado vazio explícito quando CNES é null', () => {
     montar();
-    const dashes = screen.getAllByText('—');
-    expect(dashes.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Não informado')).toBeDefined();
   });
 
-  it('botão Criar unidade visível para admin', () => {
+  it('botão Nova unidade visível para admin', () => {
     montar({ podeCriar: true });
-    expect(screen.getByRole('button', { name: /criar unidade/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /nova unidade/i })).toBeDefined();
   });
 
-  it('botão Criar unidade oculto para não-admin', () => {
+  it('botão Nova unidade oculto para não-admin', () => {
     montar({ podeCriar: false });
-    expect(screen.queryByRole('button', { name: /criar unidade/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /nova unidade/i })).toBeNull();
   });
 
   it('chama aoCriar ao clicar no botão', async () => {
     const props = montar();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /criar unidade/i }));
+    await user.click(screen.getByRole('button', { name: /nova unidade/i }));
     expect(props.aoCriar).toHaveBeenCalledOnce();
   });
 

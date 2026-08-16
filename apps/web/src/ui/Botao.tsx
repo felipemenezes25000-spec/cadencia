@@ -82,37 +82,39 @@ export function Botao({
   }
 
   return (
-    <button
-      type="button"
-      {...resto}
-      onClick={tratarClique}
-      disabled={desabilitado}
-      aria-busy={carregando}
-      className={cn(
-        'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[11px] font-semibold tracking-[-0.012em]',
-        /* Alvo de toque de 44px so no touch. Os tres tamanhos do botao sao
-           34/38/42px — todos abaixo do minimo, e o `md` (38px), que e o
-           padrao, aparece 202 vezes. No desktop a altura visual continua a
-           mesma; aqui a caixa de acerto e que cresce. */
-        'max-md:min-h-11 max-md:min-w-11',
-        'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.985]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
-        classesVariante[variante],
-        classesTamanho[tamanhoResolvido],
-        fullWidth && 'w-full',
-        carregando && 'pointer-events-none cursor-progress opacity-70',
-        desabilitado && !carregando && 'cursor-not-allowed opacity-50 hover:translate-y-0 active:translate-y-0 active:scale-100',
-        className,
-      )}
-    >
-      {carregando ? (
-        <SpinnerGap size={tamanhoIcone} className="shrink-0 animate-spin" aria-hidden data-testid="spinner-carregando" />
-      ) : (
-        IconeEsq && <IconeEsq size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-esquerda" />
-      )}
-      {children}
-      {IconeDir && <IconeDir size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-direita" />}
+    <>
+      <button
+        type="button"
+        {...resto}
+        onClick={tratarClique}
+        disabled={desabilitado}
+        aria-busy={carregando}
+        className={cn(
+          'cadencia-button inline-flex shrink-0 select-none items-center justify-center rounded-[11px] font-semibold tracking-[-0.012em]',
+          /* Alvo de toque de 44px so no touch. Os tres tamanhos do botao sao
+             34/38/42px — todos abaixo do minimo, e o `md` (38px), que e o
+             padrao, aparece 202 vezes. No desktop a altura visual continua a
+             mesma; aqui a caixa de acerto e que cresce. */
+          'max-md:min-h-11 max-md:min-w-11',
+          'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.985]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+          classesVariante[variante],
+          classesTamanho[tamanhoResolvido],
+          fullWidth && 'w-full',
+          carregando && 'pointer-events-none cursor-progress opacity-70',
+          desabilitado && !carregando && 'cursor-not-allowed opacity-50 hover:translate-y-0 active:translate-y-0 active:scale-100',
+          className,
+        )}
+      >
+        {carregando ? (
+          <SpinnerGap size={tamanhoIcone} className="shrink-0 animate-spin" aria-hidden data-testid="spinner-carregando" />
+        ) : (
+          IconeEsq && <IconeEsq size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-esquerda" />
+        )}
+        {children}
+        {IconeDir && <IconeDir size={tamanhoIcone} className="shrink-0" aria-hidden data-testid="icone-direita" />}
+      </button>
       {carregando && <span role="status" className="sr-only">Carregando</span>}
-    </button>
+    </>
   );
 }
