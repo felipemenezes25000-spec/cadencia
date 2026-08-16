@@ -1,0 +1,106 @@
+name: release-gate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
+jobs:
+  smoke-staging:
+    name: smoke E2E no staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: valida configuracao do staging
+        env:
+          STAGING_WEB_URL: ${{ vars.STAGING_WEB_URL }}
+          STAGING_API_URL: ${{ vars.STAGING_API_URL }}
+          E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          test -n "$STAGING_WEB_URL"
+          test -n "$STAGING_API_URL"
+          test -n "$E2E_EMAIL"
+          test -n "$E2E_PASSWORD"
+          curl --fail --silent --show-error --max-time 10 "$STAGING_API_URL/health" | tee /tmp/health.json
+      - name: instala Chromium
+        run: pnpm --filter @cadencia/web exec playwright install --with-deps chromium
+      - name: smoke Playwright dos fluxos criticos
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_WEB_URL }}
+          E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: pnpm --filter @cadencia/web exec playwright test tests/e2e/release-smoke.spec.ts --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-playwright-report
+          path: |
+            apps/web/.playwright-report
+            apps/web/.playwright-results
+          if-no-files-found: ignore
+          retention-days: 90
+
+  carga:
+    name: capacidade contra PostgreSQL 18
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cadencia
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cadencia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: prepara banco igual ao gate de integracao
+        run: |
+          cat > .env <<'EOF'
+          DATABASE_URL_ADMIN=postgres://postgres:postgres@localhost:5433/cadencia
+          DATABASE_URL=postgres://api:api@localhost:5433/cadencia
+          DATABASE_URL_JOBS=postgres://jobs:jobs@localhost:5433/cadencia
+          EOF
+          psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1 -c "ALTER DATABASE cadencia SET timezone TO 'UTC'"
+          pnpm db:migrate
+          psql "postgres://postgres:postgres@localhost:5433/cadencia" -v ON_ERROR_STOP=1 -c "ALTER ROLE api LOGIN PASSWORD 'api'; ALTER ROLE jobs LOGIN PASSWORD 'jobs'"
+          pnpm authz:seed
+      - name: test:load
+        run: pnpm test:load
+
+  release-gate:
+    name: pronto para producao
+    runs-on: ubuntu-latest
+    needs: [smoke-staging, carga]
+    steps:
+      - run: echo "staging E2E e capacidade verdes para $GITHUB_SHA"
