@@ -9,7 +9,7 @@ import { reconcilePayments } from './jobs/payment-reconciliation';
 import { gerarLinkDePagamento, type GerarLinkInput } from './jobs/gerar-link-de-pagamento';
 import { refundPaymentAtProvider, type RefundPaymentJobInput } from './jobs/refund-payment';
 import { expurgarRetencao } from './jobs/expurgo-retencao';
-import { FsStorageAdapter, InMemoryStorageAdapter } from '@cadencia/storage';
+import { createStorageAdapterFromEnv } from '@cadencia/storage';
 import { materializeDailyRollup } from './jobs/daily-rollup';
 import { scheduleReminders } from './jobs/reminder-scheduler';
 import { selarTrilha, vigiarSelo } from './jobs/audit-seal';
@@ -44,9 +44,7 @@ export async function startWorker(): Promise<PgBoss> {
       `[worker] auto-finalize: ${r.finalizados}/${r.examinados} (falhas: ${r.falhas})\n`);
   });
 
-  const armazenamento = process.env['STORAGE_DRIVER'] === 'memory'
-    ? new InMemoryStorageAdapter()
-    : new FsStorageAdapter(process.env['STORAGE_DIR'] ?? './.armazenamento');
+  const armazenamento = createStorageAdapterFromEnv();
 
   await boss.work(FILA_EXPURGO, async () => {
     const r = await expurgarRetencao({}, armazenamento);
