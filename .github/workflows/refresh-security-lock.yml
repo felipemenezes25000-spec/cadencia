@@ -7,6 +7,7 @@ on:
       - package.json
       - packages/storage/src/s3-adapter.ts
       - infra/terraform/production/**
+      - .gitignore
       - .github/workflows/refresh-security-lock.yml
 
 permissions:
@@ -45,12 +46,19 @@ jobs:
           terraform fmt
           terraform init -backend=false
           terraform validate
-      - name: remove helper one-shot e publica arquivos gerados
+      - name: remove helper one-shot e publica apenas arquivos versionaveis
         run: |
           set -euo pipefail
           rm .github/workflows/refresh-security-lock.yml
+          rm -rf infra/terraform/production/.terraform
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add pnpm-lock.yaml infra/terraform/production .github/workflows/refresh-security-lock.yml
+          git add pnpm-lock.yaml \
+            infra/terraform/production/main.tf \
+            infra/terraform/production/variables.tf \
+            infra/terraform/production/versions.tf \
+            infra/terraform/production/outputs.tf \
+            infra/terraform/production/.terraform.lock.hcl \
+            .github/workflows/refresh-security-lock.yml
           git commit -m 'chore: atualiza lockfile e formata terraform'
           HUSKY=0 git push origin HEAD:chore/production-readiness

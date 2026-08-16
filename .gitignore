@@ -26,4 +26,12 @@ coverage/
 .playwright-results/
 .playwright-report/
 
+# Terraform: cache de providers e state sao locais/sensiveis. O lockfile do
+# provider (.terraform.lock.hcl) e intencionalmente versionado.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
 .vercel
