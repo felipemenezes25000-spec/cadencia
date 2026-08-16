@@ -347,12 +347,12 @@ resource "aws_ecs_task_definition" "api" {
     cpu_architecture        = "X86_64"
   }
   container_definitions = jsonencode([{
-    name      = "api"
-    image     = var.bootstrap_image
-    essential = true
+    name         = "api"
+    image        = var.bootstrap_image
+    essential    = true
     portMappings = [{ containerPort = 3001, hostPort = 3001, protocol = "tcp" }]
-    environment = local.common_environment
-    secrets     = [for name, arn in var.api_secrets : { name = name, valueFrom = arn }]
+    environment  = local.common_environment
+    secrets      = [for name, arn in var.api_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -377,10 +377,10 @@ resource "aws_ecs_task_definition" "worker" {
     cpu_architecture        = "X86_64"
   }
   container_definitions = jsonencode([{
-    name      = "worker"
-    image     = var.bootstrap_image
-    essential = true
-    command   = ["pnpm", "--filter", "@cadencia/worker", "exec", "tsx", "src/worker.ts"]
+    name        = "worker"
+    image       = var.bootstrap_image
+    essential   = true
+    command     = ["pnpm", "--filter", "@cadencia/worker", "exec", "tsx", "src/worker.ts"]
     environment = local.common_environment
     secrets     = [for name, arn in var.worker_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
@@ -403,10 +403,10 @@ resource "aws_ecs_task_definition" "migration" {
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.task.arn
   container_definitions = jsonencode([{
-    name      = "migration"
-    image     = var.bootstrap_image
-    essential = true
-    command   = ["pnpm", "db:migrate"]
+    name        = "migration"
+    image       = var.bootstrap_image
+    essential   = true
+    command     = ["pnpm", "db:migrate"]
     environment = local.common_environment
     secrets     = [for name, arn in var.migration_secrets : { name = name, valueFrom = arn }]
     logConfiguration = {
