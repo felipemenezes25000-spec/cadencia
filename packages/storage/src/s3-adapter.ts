@@ -71,7 +71,7 @@ async function defaultCredentialsProvider(): Promise<AwsCredentials> {
 
   const token = await authorizationToken();
   const response = await fetch(url, {
-    headers: token ? { authorization: token } : undefined,
+    ...(token ? { headers: { authorization: token } } : {}),
     signal: AbortSignal.timeout(5_000),
   });
   if (!response.ok) throw new Error(`falha ao obter credenciais do task role: HTTP ${response.status}`);
@@ -98,9 +98,7 @@ async function defaultCredentialsProvider(): Promise<AwsCredentials> {
 
 /**
  * Adaptador S3 sem dependencia de SDK: usa SigV4 sobre o `fetch` nativo do Node.
- * O objetivo aqui e manter o pacote de storage pequeno sem introduzir uma arvore
- * de dependencias apenas para quatro operacoes de objeto. Em ECS as credenciais
- * vem do IAM Task Role e sao renovadas antes de expirar.
+ * Em ECS as credenciais vem do IAM Task Role e sao renovadas antes de expirar.
  */
 export class S3StorageAdapter implements StorageAdapter {
   private readonly endpoint: string;
