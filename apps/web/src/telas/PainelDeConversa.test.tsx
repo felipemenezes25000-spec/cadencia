@@ -53,8 +53,7 @@ function montar(over: Partial<Parameters<typeof PainelDeConversa>[0]> = {}) {
     carregarMensagens: vi.fn(async () => MENSAGENS),
     carregarContexto: vi.fn(async () => CONTEXTO),
     aoEnviar: vi.fn(async () => ({ messageId: 'm4' })),
-    aoVincularPaciente: vi.fn(),
-    aoSelecionarTemplate: vi.fn(),
+    carregarTemplates: vi.fn().mockResolvedValue([]),
     ...over,
   };
   render(<PainelDeConversa {...props} />);
@@ -121,17 +120,44 @@ describe('painel de conversa', () => {
     expect(screen.queryByText(/prescricao/i)).not.toBeInTheDocument();
   });
 
-  it('conversa com número desconhecido mostra opção de vincular a paciente', async () => {
+  it('conversa com número desconhecido mostra o estado do vínculo', async () => {
     montar({ patientId: null, nomeExibido: '+5511888880002' });
-    await waitFor(() => expect(
-      screen.getByRole('button', { name: /Vincular paciente/ })).toBeVisible());
+    await waitFor(() => expect(screen.getByText('Sem paciente vinculado')).toBeVisible());
   });
 
-  it('botão de template abre seletor', async () => {
-    const { aoSelecionarTemplate } = montar();
+  /* Este teste ja existia com o nome "botão de template abre seletor" e so
+     verificava que o clique chamava o callback — que era uma funcao vazia. Ou
+     seja: passava verde com o botao sem fazer nada. Agora ele cobra o seletor. */
+  it('botão de template abre o seletor e insere o corpo no compositor', async () => {
+    const carregarTemplates = vi.fn().mockResolvedValue([
+      { templateId: 't1', name: 'Confirmação de consulta', category: 'utility',
+        bodyTemplate: 'Olá! Confirmando sua consulta.', status: 'approved' },
+    ]);
+    montar({ carregarTemplates });
     await screen.findAllByTestId(/^msg-/);
-    await userEvent.click(screen.getByRole('button', { name: /Template/ }));
-    expect(aoSelecionarTemplate).toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: /Inserir modelo/ }));
+    await userEvent.click(await screen.findByRole('option', { name: /Confirmação de consulta/ }));
+
+    expect(screen.getByRole('textbox', { name: 'Mensagem' }))
+      .toHaveValue('Olá! Confirmando sua consulta.');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('seletor de template avisa quando não há modelo aprovado', async () => {
+    montar({ carregarTemplates: vi.fn().mockResolvedValue([]) });
+    await screen.findAllByTestId(/^msg-/);
+    await userEvent.click(screen.getByRole('button', { name: /Inserir modelo/ }));
+    expect(await screen.findByText(/Nenhum modelo aprovado/)).toBeVisible();
+  });
+
+  it('abrir ficha do paciente navega, em vez de não fazer nada', async () => {
+    /* O botao existia sem `onClick`: clicar nao produzia efeito nenhum. */
+    const aoAbrirPaciente = vi.fn();
+    montar({ patientId: 'p1', aoAbrirPaciente });
+    await screen.findAllByTestId(/^msg-/);
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir ficha' }));
+    expect(aoAbrirPaciente).toHaveBeenCalledWith('p1');
   });
 
   it('mostra separadores de data entre grupos de mensagens', async () => {
@@ -165,7 +191,7 @@ describe('painel de conversa', () => {
         phoneNumber="+5511999990001" patientId="p1"
         carregarMensagens={async () => MENSAGENS} carregarContexto={async () => CONTEXTO}
         aoEnviar={async () => ({ messageId: 'm4' })}
-        aoVincularPaciente={vi.fn()} aoSelecionarTemplate={vi.fn()} />);
+        carregarTemplates={vi.fn().mockResolvedValue([])} />);
     await waitFor(() => expect(screen.getAllByTestId(/^msg-/).length).toBeGreaterThan(0));
     expect(await axe(container)).toHaveNoViolations();
   });

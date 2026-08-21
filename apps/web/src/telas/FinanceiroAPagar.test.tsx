@@ -52,7 +52,6 @@ function montar() {
   const props = {
     carregarDados: vi.fn(async () => DADOS),
     aoMarcarPago: vi.fn(async () => {}),
-    aoEditar: vi.fn(),
     aoParcelar: vi.fn(async () => {}),
   };
   render(<FinanceiroAPagar {...props} />);
@@ -65,7 +64,6 @@ describe('FinanceiroAPagar', () => {
       <FinanceiroAPagar
         carregarDados={() => new Promise<APagarDados>(() => {})}
         aoMarcarPago={async () => {}}
-        aoEditar={() => {}}
         aoParcelar={async () => {}}
       />,
     );
@@ -165,7 +163,6 @@ describe('FinanceiroAPagar', () => {
       <FinanceiroAPagar
         carregarDados={async () => dadosVazios}
         aoMarcarPago={async () => {}}
-        aoEditar={() => {}}
         aoParcelar={async () => {}}
       />,
     );
@@ -181,7 +178,6 @@ describe('FinanceiroAPagar', () => {
       <FinanceiroAPagar
         carregarDados={async () => DADOS}
         aoMarcarPago={async () => {}}
-        aoEditar={() => {}}
         aoParcelar={async () => {}}
       />,
     );

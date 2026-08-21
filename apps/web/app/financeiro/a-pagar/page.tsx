@@ -67,7 +67,6 @@ export default function PaginaAPagar() {
         await apiFetch(`/v1/payables/${id}/pagar`, {
           method: 'POST', clinicId, csrfToken });
       }}
-      aoEditar={() => { /* edição de despesa entra com a tela de lançamento */ }}
       aoParcelar={async () => { /* parcelamento usa fin.installment_plan */ }}
     />
   );

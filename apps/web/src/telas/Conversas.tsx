@@ -14,7 +14,12 @@ import { Botao } from '../ui/Botao';
 import { Campo } from '../ui/Campo';
 import { Skeleton } from '../ui/Skeleton';
 import type { ConversaResumo, FiltroConversas } from './CaixaDeConversas';
-import { PainelDeConversa, type ContextoConversa, type Mensagem } from './PainelDeConversa';
+import {
+  PainelDeConversa,
+  type ContextoConversa,
+  type Mensagem,
+  type TemplateDeMensagem,
+} from './PainelDeConversa';
 
 export interface ConversasProps {
   readonly filtro: FiltroConversas;
@@ -25,8 +30,8 @@ export interface ConversasProps {
   readonly aoMudarFiltro: (filtro: FiltroConversas) => void;
   readonly aoAbrirConversa: (conversationId: string) => void;
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
-  readonly aoVincularPaciente: () => void;
-  readonly aoSelecionarTemplate: () => void;
+  readonly carregarTemplates: () => Promise<readonly TemplateDeMensagem[]>;
+  readonly aoAbrirPaciente?: (patientId: string) => void;
   readonly aoVoltar?: () => void;
   readonly aoNova?: () => void;
 }
@@ -222,8 +227,8 @@ export function Conversas(p: ConversasProps) {
             carregarMensagens={p.carregarMensagens}
             carregarContexto={p.carregarContexto}
             aoEnviar={p.aoEnviar}
-            aoVincularPaciente={p.aoVincularPaciente}
-            aoSelecionarTemplate={p.aoSelecionarTemplate}
+            carregarTemplates={p.carregarTemplates}
+            {...(p.aoAbrirPaciente ? { aoAbrirPaciente: p.aoAbrirPaciente } : {})}
             {...(p.aoVoltar ? { aoVoltar: p.aoVoltar } : {})}
           />
         ) : <ConversaVazia />}

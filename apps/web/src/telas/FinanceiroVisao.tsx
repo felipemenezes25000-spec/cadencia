@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQueryState } from 'nuqs';
 import { Group } from '@visx/group';
 import { Bar } from '@visx/shape';
 import { scaleBand, scaleLinear } from '@visx/scale';
@@ -155,109 +154,219 @@ function CardResumo({
   );
 }
 
-// -- SeletorPeriodo ---------------------------------------------------------
+// -- Graficos (visx) --------------------------------------------------------
 
-type Periodo = 'dia' | 'semana' | 'mes';
+/**
+ * CORES DAS DUAS SERIES, e por que NAO sao as dos cards de resumo.
+ *
+ * Os cards acima ja pintam Receita de verde (`--success`) e Despesa de vermelho
+ * (`--danger`), e o reflexo seria repetir isso no grafico. Passei o par pelo
+ * validador de paleta: `#28734e` contra `#a04249` da ΔE 2,6 sob DEUTERANOPIA —
+ * ou seja, para cerca de 8% dos homens as duas barras sao a mesma cor. Num
+ * grafico de receita contra despesa isso nao e detalhe estetico: a leitura
+ * inteira depende de separar as duas series.
+ *
+ * O par abaixo (azul de marca contra o mesmo vermelho) da ΔE 16,9 em
+ * deuteranopia e 23,9 em visao normal, e passa em todos os cinco checks. O
+ * verde some do grafico e fica so nos cards, onde a cor acompanha um rotulo
+ * escrito e nao carrega sozinha a distincao.
+ *
+ * Mesmo passando, a identidade nunca depende so da cor: ha legenda, e as barras
+ * de cada mes ficam lado a lado com 2px de respiro entre elas.
+ */
+const COR_RECEITA = 'var(--brand)';
+const COR_DESPESA = 'var(--danger)';
 
-const ROTULOS_PERIODO: Record<Periodo, string> = {
-  dia: 'Diário',
-  semana: 'Semanal',
-  mes: 'Mensal',
-};
+const MARGEM = { top: 10, right: 12, bottom: 30, left: 64 };
 
-function SeletorPeriodo({
-  periodo,
-  onChange,
-}: {
-  readonly periodo: Periodo;
-  readonly onChange: (p: Periodo) => void;
+/** 'R$ 1,2 mil' — o eixo nao comporta o valor cheio e ninguem le centavo em eixo. */
+function reaisCurto(centavos: number): string {
+  const reais = centavos / 100;
+  if (Math.abs(reais) >= 1000) return `R$${(reais / 1000).toFixed(1)}k`;
+  return `R$${reais.toFixed(0)}`;
+}
+
+function Legenda({ itens }: {
+  readonly itens: readonly { cor: string; rotulo: string }[];
 }) {
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Seletor de período">
-      {(['dia', 'semana', 'mes'] as const).map((p) => (
-        <button
-          key={p}
-          type="button"
-          onClick={() => onChange(p)}
-          aria-pressed={periodo === p}
-          className={cn(
-            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors-fast',
-            periodo === p
-              ? 'bg-accent text-accent-on'
-              : 'text-text-muted hover:bg-surface-raised hover:text-text',
-          )}
-        >
-          {ROTULOS_PERIODO[p]}
-        </button>
+    <ul className="flex flex-wrap items-center gap-4">
+      {itens.map((i) => (
+        <li key={i.rotulo} className="flex items-center gap-2 text-xs font-medium text-text-muted">
+          <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: i.cor }} />
+          {i.rotulo}
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
-// -- GraficoReceita (visx) --------------------------------------------------
-
-function GraficoReceita({
-  dados,
-  periodo,
-}: {
-  readonly dados: readonly DadosReceita[];
-  readonly periodo: string;
+/**
+ * Receita CONTRA despesa, e nao receita sozinha.
+ *
+ * A rota `/v1/financeiro/visao` sempre devolveu os dois valores por mes, e a
+ * tela plotava so `item.receita`, descartando `item.despesa` no `.map()`. Um
+ * painel financeiro que tem os dois numeros e desenha um deles mostra
+ * faturamento crescendo sem dizer que o custo cresceu mais — que e exatamente a
+ * pergunta que a gestora abre esta tela para responder.
+ *
+ * UM eixo so, porque as duas series sao a mesma grandeza (centavos). Dois eixos
+ * y permitiriam escalar as barras independentemente e fabricar qualquer
+ * narrativa visual.
+ */
+function GraficoReceitaDespesa({ dados }: {
+  readonly dados: readonly ReceitaVsDespesaItem[];
 }) {
   if (dados.length === 0) return null;
 
+  const maximo = Math.max(...dados.flatMap((d) => [d.receita, d.despesa]), 1);
+
   return (
-    <div className="rounded-xl border border-line bg-surface shadow-elev-1 p-4">
-      <h3 className="mb-4 text-sm font-semibold text-text">Receita por {periodo}</h3>
+    <div className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-text">Receita e despesa por mês</h3>
+        <Legenda itens={[
+          { cor: COR_RECEITA, rotulo: 'Receita' },
+          { cor: COR_DESPESA, rotulo: 'Despesa' },
+        ]} />
+      </div>
       <div className="h-64" data-testid="grafico-receita">
         <ParentSize>
           {({ width, height }) => {
             if (width <= 0 || height <= 0) return null;
-
-            const margin = { top: 10, right: 10, bottom: 30, left: 60 };
-            const innerWidth = width - margin.left - margin.right;
-            const innerHeight = height - margin.top - margin.bottom;
-
+            const innerWidth = width - MARGEM.left - MARGEM.right;
+            const innerHeight = height - MARGEM.top - MARGEM.bottom;
             if (innerWidth <= 0 || innerHeight <= 0) return null;
 
-            const xScale = scaleBand({
-              range: [0, innerWidth],
-              domain: dados.map((d) => d.label),
-              padding: 0.3,
+            const xMes = scaleBand({
+              range: [0, innerWidth], domain: dados.map((d) => d.mes), padding: 0.28,
             });
-
-            const yScale = scaleLinear({
-              range: [innerHeight, 0],
-              domain: [0, Math.max(...dados.map((d) => d.valor))],
-              nice: true,
+            /* Escala aninhada: as duas barras do mes dividem a faixa dele. O
+               `padding` interno e o respiro de 2px entre fills que impede as
+               duas cores de encostarem e formarem uma barra so. */
+            const xSerie = scaleBand({
+              range: [0, xMes.bandwidth()], domain: ['receita', 'despesa'], padding: 0.12,
             });
+            const y = scaleLinear({ range: [innerHeight, 0], domain: [0, maximo], nice: true });
 
             return (
-              <svg width={width} height={height} role="img" aria-label="Gráfico de receita">
-                <Group left={margin.left} top={margin.top}>
+              <svg width={width} height={height} role="img"
+                aria-label="Receita e despesa por mês, últimos seis meses">
+                <Group left={MARGEM.left} top={MARGEM.top}>
                   {dados.map((d) => (
-                    <Bar
-                      key={d.label}
-                      x={xScale(d.label) ?? 0}
-                      y={yScale(d.valor)}
-                      width={xScale.bandwidth()}
-                      height={innerHeight - yScale(d.valor)}
-                      fill="var(--accent)"
-                      rx={3}
-                    />
+                    <Group key={d.mes} left={xMes(d.mes) ?? 0}>
+                      <Bar
+                        x={xSerie('receita') ?? 0} y={y(d.receita)}
+                        width={xSerie.bandwidth()} height={innerHeight - y(d.receita)}
+                        fill={COR_RECEITA} rx={3}
+                      />
+                      <Bar
+                        x={xSerie('despesa') ?? 0} y={y(d.despesa)}
+                        width={xSerie.bandwidth()} height={innerHeight - y(d.despesa)}
+                        fill={COR_DESPESA} rx={3}
+                      />
+                    </Group>
                   ))}
                   <AxisBottom
-                    top={innerHeight}
-                    scale={xScale}
+                    top={innerHeight} scale={xMes}
+                    tickFormat={(v) => String(v).slice(5)}
                     tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                    stroke="var(--line)"
-                    tickStroke="var(--line)"
+                    stroke="var(--line)" tickStroke="var(--line)"
                   />
                   <AxisLeft
-                    scale={yScale}
-                    tickFormat={(v) => `R$${((v as number) / 100).toFixed(0)}`}
+                    scale={y} numTicks={5}
+                    tickFormat={(v) => reaisCurto(v as number)}
                     tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                    stroke="var(--line)"
-                    tickStroke="var(--line)"
+                    stroke="var(--line)" tickStroke="var(--line)"
+                  />
+                </Group>
+              </svg>
+            );
+          }}
+        </ParentSize>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Saldo diario dos ultimos 30 dias.
+ *
+ * `saldoProjetado` vinha da API desde sempre, estava declarado em `VisaoDados` e
+ * NUNCA foi renderizado: trinta pontos de saldo por dia chegavam no navegador e
+ * eram descartados. E o dado que responde "em que dia do mes o caixa aperta",
+ * que nenhum total mensal mostra.
+ *
+ * Serie unica, entao sem legenda — o titulo nomeia. Barra e nao linha porque o
+ * saldo diario CRUZA O ZERO, e barra ancorada na linha de base torna o dia
+ * negativo imediatamente legivel; uma linha faria o zero virar mais um valor
+ * qualquer no eixo.
+ */
+function GraficoSaldoDiario({ dados }: {
+  readonly dados: readonly SaldoProjetadoItem[];
+}) {
+  if (dados.length === 0) return null;
+
+  const valores = dados.map((d) => d.saldo);
+  const maximo = Math.max(...valores, 0);
+  const minimo = Math.min(...valores, 0);
+
+  return (
+    <div className="rounded-xl border border-line bg-surface p-4 shadow-elev-1">
+      <h3 className="mb-1 text-sm font-semibold text-text">Saldo por dia</h3>
+      <p className="mb-3 text-xs text-text-muted">
+        Últimos 30 dias · entradas menos saídas de cada dia
+      </p>
+      <div className="h-56" data-testid="grafico-saldo-diario">
+        <ParentSize>
+          {({ width, height }) => {
+            if (width <= 0 || height <= 0) return null;
+            const innerWidth = width - MARGEM.left - MARGEM.right;
+            const innerHeight = height - MARGEM.top - MARGEM.bottom;
+            if (innerWidth <= 0 || innerHeight <= 0) return null;
+
+            const x = scaleBand({
+              range: [0, innerWidth], domain: dados.map((d) => d.dia), padding: 0.25,
+            });
+            const y = scaleLinear({
+              range: [innerHeight, 0], domain: [minimo, maximo], nice: true,
+            });
+            const zero = y(0);
+
+            return (
+              <svg width={width} height={height} role="img"
+                aria-label="Saldo diário dos últimos 30 dias">
+                <Group left={MARGEM.left} top={MARGEM.top}>
+                  {dados.map((d) => {
+                    const negativo = d.saldo < 0;
+                    const topo = negativo ? zero : y(d.saldo);
+                    return (
+                      <Bar
+                        key={d.dia}
+                        x={x(d.dia) ?? 0} y={topo}
+                        width={x.bandwidth()}
+                        height={Math.abs(y(d.saldo) - zero)}
+                        /* Aqui o vermelho E status: o dia fechou negativo. Nao e
+                           identidade de serie, e o proprio valor mudando de sinal. */
+                        fill={negativo ? COR_DESPESA : COR_RECEITA}
+                        rx={2}
+                      />
+                    );
+                  })}
+                  <line x1={0} x2={innerWidth} y1={zero} y2={zero} stroke="var(--line-strong)" />
+                  <AxisBottom
+                    top={innerHeight} scale={x}
+                    /* Trinta rotulos de data nao cabem: mostra um a cada cinco. */
+                    tickValues={dados.filter((_, i) => i % 5 === 0).map((d) => d.dia)}
+                    tickFormat={(v) => String(v).slice(8)}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)" tickStroke="var(--line)"
+                  />
+                  <AxisLeft
+                    scale={y} numTicks={4}
+                    tickFormat={(v) => reaisCurto(v as number)}
+                    tickLabelProps={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                    stroke="var(--line)" tickStroke="var(--line)"
                   />
                 </Group>
               </svg>
@@ -345,11 +454,14 @@ function SecaoCategorias({ categorias }: { readonly categorias: readonly Categor
 
 export function FinanceiroVisao(p: FinanceiroVisaoProps) {
   const [dados, setDados] = useState<VisaoDados | null>(null);
-  const [periodo, setPeriodo] = useQueryState('periodo', {
-    defaultValue: 'mes',
-    parse: (v) => v as Periodo,
-  });
 
+  /* Havia aqui um `SeletorPeriodo` com Semana/Mês/Trimestre/Ano gravando em
+     `?periodo=`. Ele nao filtrava NADA: `carregarDados()` nao recebe argumento,
+     o efeito abaixo nao depende do periodo, e `/v1/financeiro/visao` nao aceita
+     recorte — a serie e sempre de seis meses. A unica coisa que o clique mudava
+     era o titulo do grafico, que passava a mentir ("Receita por semana" sobre
+     dados mensais). Removido junto com o resto dos controles decorativos; volta
+     quando a rota aceitar o parametro. */
   useEffect(() => {
     void p.carregarDados().then(setDados);
   }, [p.carregarDados]);
@@ -357,12 +469,6 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
   if (dados === null) return <FinanceiroVisaoSkeleton />;
 
   const resumo = dados.resumoMes;
-
-  // Derivar dados do gráfico de receita a partir do receitaVsDespesa
-  const dadosGrafico: DadosReceita[] = dados.receitaVsDespesa.map((item) => ({
-    label: item.mes.slice(5), // e.g. "06", "07", "08"
-    valor: item.receita,
-  }));
 
   return (
     <div className="grid gap-[var(--s-8)]">
@@ -411,17 +517,23 @@ export function FinanceiroVisao(p: FinanceiroVisaoProps) {
         </section>
       ) : null}
 
-      <details className="rounded-2xl border border-line bg-surface">
-        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-text marker:text-text-faint">
-          Análise do período
-          <span className="ml-2 font-normal text-text-muted">Receita e categorias</span>
-        </summary>
-        <div className="grid gap-5 border-t border-line p-5">
-          <SeletorPeriodo periodo={periodo as Periodo} onChange={(next) => void setPeriodo(next)} />
-          <GraficoReceita dados={dadosGrafico} periodo={ROTULOS_PERIODO[periodo as Periodo] ?? periodo} />
-          <SecaoCategorias categorias={dados.topCategorias} />
+      {/* Os graficos estavam dentro de um `<details>` FECHADO por padrao,
+          rotulado "Análise do período". Quem abria o Financeiro via quatro
+          cartoes, os alertas e a lista de a receber, e concluia — sem estar
+          errado — que a tela nao tinha grafico nenhum. Analise de receita
+          contra despesa nao e conteudo secundario num painel financeiro: e o
+          motivo de a tela existir. Sai de tras da gaveta. */}
+      <section aria-label="Análise financeira" className="grid gap-5">
+        <div>
+          <p className="cadencia-eyebrow">Análise</p>
+          <h2 className="mt-1 text-lg font-bold tracking-[-0.025em] text-text">Para onde o dinheiro está indo</h2>
         </div>
-      </details>
+        <div className="grid gap-5 xl:grid-cols-2">
+          <GraficoReceitaDespesa dados={dados.receitaVsDespesa} />
+          <GraficoSaldoDiario dados={dados.saldoProjetado} />
+        </div>
+        <SecaoCategorias categorias={dados.topCategorias} />
+      </section>
     </div>
   );
 }

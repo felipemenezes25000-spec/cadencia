@@ -86,7 +86,6 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
         prontuarioAcessivel
         existeMasSemAcesso={false}
         carregarProntuario={() => nuncaResolve()}
-        aoSolicitarAcesso={() => {}}
         aoQuebrarVidro={async () => {}}
         carregarConversas={() => nuncaResolve()}
         carregarFinanceiro={() => nuncaResolve()}
@@ -111,8 +110,7 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
         aoMudarFiltro={() => {}}
         aoAbrirConversa={() => {}}
         aoEnviar={async () => ({ messageId: 'm1' })}
-        aoVincularPaciente={() => {}}
-        aoSelecionarTemplate={() => {}}
+        carregarTemplates={() => Promise.resolve([])}
       />,
     );
     expect(container.querySelector('[role="status"]')).toBeInTheDocument();
@@ -181,7 +179,6 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
       <FinanceiroAPagar
         carregarDados={() => nuncaResolve()}
         aoMarcarPago={async () => {}}
-        aoEditar={() => {}}
         aoParcelar={async () => {}}
       />,
     );

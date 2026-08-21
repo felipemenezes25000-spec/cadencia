@@ -321,7 +321,6 @@ export default function PaginaFichaDoPaciente(
           toast({ tipo: 'erro', mensagem: 'Não foi possível abrir o documento.' });
         }
       }}
-      aoSolicitarAcesso={() => { /* pedido de compartilhamento entra depois */ }}
       aoQuebrarVidro={async (justificativa, horas) => {
         // Quebra-vidro é caminho legítimo e AUDITADO: a função do banco registra
         // quem, quando, por que e por quanto tempo, e a clínica é notificada.

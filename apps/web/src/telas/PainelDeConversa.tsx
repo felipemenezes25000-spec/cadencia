@@ -113,6 +113,15 @@ function BolhaDeMensagem({ mensagem }: { mensagem: Mensagem }) {
   );
 }
 
+/** Modelo de mensagem aprovado, como `/v1/messaging/templates` devolve. */
+export interface TemplateDeMensagem {
+  readonly templateId: string;
+  readonly name: string;
+  readonly category: string;
+  readonly bodyTemplate: string;
+  readonly status: string;
+}
+
 export interface PainelDeConversaProps {
   readonly conversationId: string;
   readonly nomeExibido: string;
@@ -121,8 +130,11 @@ export interface PainelDeConversaProps {
   readonly carregarMensagens: (conversationId: string) => Promise<Mensagem[]>;
   readonly carregarContexto: (conversationId: string) => Promise<ContextoConversa>;
   readonly aoEnviar: (body: string) => Promise<{ messageId: string }>;
-  readonly aoVincularPaciente: () => void;
-  readonly aoSelecionarTemplate: () => void;
+  /* Era `aoSelecionarTemplate: () => void` e a pagina passava uma funcao vazia:
+     o botao "T" do compositor existia, tinha hover, e nao fazia nada. O endpoint
+     de templates ja existia — faltava a tela pedir. */
+  readonly carregarTemplates: () => Promise<readonly TemplateDeMensagem[]>;
+  readonly aoAbrirPaciente?: (patientId: string) => void;
   readonly aoVoltar?: () => void;
 }
 
@@ -131,6 +143,9 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
   const [contexto, setContexto] = useState<ContextoConversa | null>(null);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [templates, setTemplates] = useState<readonly TemplateDeMensagem[] | null>(null);
+  const [templatesAbertos, setTemplatesAbertos] = useState(false);
+  const [erroTemplates, setErroTemplates] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -169,6 +184,25 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
     }
   }
 
+  /** Carrega uma vez por montagem; reabrir o seletor nao repete a requisicao. */
+  async function abrirTemplates(): Promise<void> {
+    setTemplatesAbertos(true);
+    if (templates !== null) return;
+    setErroTemplates(false);
+    try {
+      setTemplates(await p.carregarTemplates());
+    } catch {
+      setErroTemplates(true);
+    }
+  }
+
+  /* O corpo do template entra no compositor em vez de ser enviado direto: ele
+     tem variaveis ({{nome}}) e quase sempre precisa de ajuste antes de sair. */
+  function usarTemplate(t: TemplateDeMensagem): void {
+    setTexto((atual) => (atual.trim() === '' ? t.bodyTemplate : `${atual}\n${t.bodyTemplate}`));
+    setTemplatesAbertos(false);
+  }
+
   function aoTeclarInput(e: KeyboardEvent<HTMLTextAreaElement>): void {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -193,12 +227,25 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
           <p className="mt-0.5 truncate text-xs text-text-faint">{p.phoneNumber} · conversa ativa</p>
         </div>
 
+        {/* Antes havia aqui um botao "Vincular paciente" ligado a uma funcao
+            vazia. Nao existe rota que associe conversa a paciente — `messaging.ts`
+            so expoe GET de conversa/mensagens/contexto e POST de mensagem — entao
+            o botao nunca teve como funcionar. No lugar dele, o estado real: esta
+            conversa nao esta vinculada. O botao volta quando a rota existir.
+
+            O irmao dele, "Abrir ficha", tinha o problema oposto: destino existia
+            e faltava o `onClick`. Clicar nao fazia nada. */}
         {p.patientId === null ? (
-          <button type="button" onClick={p.aoVincularPaciente} className="ml-auto rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-accent shadow-elev-1 hover:border-line-strong hover:bg-surface-subtle">
-            Vincular paciente
-          </button>
+          <span className="ml-auto shrink-0 rounded-lg border border-dashed border-line px-3 py-2 text-xs font-medium text-text-faint">
+            Sem paciente vinculado
+          </span>
         ) : (
-          <button type="button" className="ml-auto grid size-9 place-items-center rounded-lg border border-line bg-surface text-text-muted shadow-elev-1 hover:text-accent" aria-label="Abrir ficha">
+          <button
+            type="button"
+            onClick={() => p.aoAbrirPaciente?.(p.patientId as string)}
+            className="ml-auto grid size-9 place-items-center rounded-lg border border-line bg-surface text-text-muted shadow-elev-1 hover:text-accent"
+            aria-label="Abrir ficha"
+          >
             <Icone icon={UserCircle} size="md" />
           </button>
         )}
@@ -269,9 +316,54 @@ export function PainelDeConversa(p: PainelDeConversaProps) {
 
       <div className="col-start-1 border-t border-line bg-surface p-3 sm:p-4">
         <div className="mx-auto flex max-w-3xl items-end gap-2">
-          <button type="button" aria-label="Template" onClick={p.aoSelecionarTemplate} className="grid size-10 shrink-0 place-items-center rounded-[10px] border border-line bg-surface text-xs font-bold text-text-muted shadow-elev-1 hover:bg-surface-subtle hover:text-accent">
-            T
-          </button>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              aria-label="Inserir modelo de mensagem"
+              aria-expanded={templatesAbertos}
+              aria-haspopup="listbox"
+              onClick={() => {
+                if (templatesAbertos) setTemplatesAbertos(false);
+                else void abrirTemplates();
+              }}
+              className="grid size-10 place-items-center rounded-[10px] border border-line bg-surface text-xs font-bold text-text-muted shadow-elev-1 hover:bg-surface-subtle hover:text-accent"
+            >
+              T
+            </button>
+
+            {templatesAbertos ? (
+              <div
+                role="listbox"
+                aria-label="Modelos de mensagem"
+                className="absolute bottom-12 left-0 z-30 max-h-[320px] w-[min(340px,calc(100vw-32px))] overflow-y-auto rounded-xl border border-line bg-surface p-1.5 shadow-elev-3 scrollbar-thin"
+              >
+                {templates === null && !erroTemplates ? (
+                  <p className="px-3 py-4 text-sm text-text-muted">Carregando modelos…</p>
+                ) : null}
+                {erroTemplates ? (
+                  <p className="px-3 py-4 text-sm text-text-muted">Não foi possível carregar os modelos.</p>
+                ) : null}
+                {templates !== null && templates.length === 0 ? (
+                  <p className="px-3 py-4 text-sm text-text-muted">
+                    Nenhum modelo aprovado. Cadastre em Conversas → Templates.
+                  </p>
+                ) : null}
+                {(templates ?? []).map((t) => (
+                  <button
+                    key={t.templateId}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => usarTemplate(t)}
+                    className="block w-full rounded-lg px-3 py-2.5 text-left transition-colors-fast hover:bg-surface-subtle"
+                  >
+                    <span className="block text-sm font-semibold text-text">{t.name}</span>
+                    <span className="mt-0.5 block truncate text-xs text-text-faint">{t.bodyTemplate}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <textarea
             aria-label="Mensagem"
             role="textbox"
