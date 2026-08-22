@@ -1,143 +1,43 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useQueryState } from 'nuqs';
-import { Desempenho } from '../../src/telas/desempenho/Desempenho';
-import type {
-  DataFreshness, DrillDownResult, Period, SuggestedAction,
-  VariationIndicator, WaterfallFactor,
-} from '../../src/telas/desempenho/types';
-import { apiFetch, ApiError } from '../../src/api';
-import { useSessao, rotulo } from '../../src/sessao';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '../../src/api';
+import { useSessao } from '../../src/sessao';
 
-interface FatorDaApi {
-  factor: string;
-  label?: string;
-  delta_cents?: number;
-  deltaCents?: number;
+interface Metric {
+  key: string; label: string; value: number;
+  unit: 'numero' | 'percentual'; previous: number | null;
 }
+interface Resposta { mes: string; metrics: Metric[]; freshness: { refreshedAt: string } }
 
-function mesAtual(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-/** 'AAAA-MM' do mês imediatamente anterior, virando o ano quando preciso. */
-function mesAnterior(mes: string): string {
-  const [ano, m] = mes.split('-').map(Number) as [number, number];
-  return m === 1
-    ? `${ano - 1}-12`
-    : `${ano}-${String(m - 1).padStart(2, '0')}`;
-}
-
-/** Primeiro e último dia do mês, no formato que /v1/reports/variation espera. */
-function limites(mes: string): { inicio: string; fim: string } {
-  const [ano, m] = mes.split('-').map(Number) as [number, number];
-  const ultimoDia = new Date(Date.UTC(ano, m, 0)).getUTCDate();
-  return { inicio: `${mes}-01`, fim: `${mes}-${String(ultimoDia).padStart(2, '0')}` };
-}
-
-const ROTULO_FATOR: Record<string, string> = {
-  volume: 'Volume de atendimentos',
-  mix_procedimento: 'Mix de procedimentos',
-  mix_convenio: 'Mix de convênios',
-  ticket: 'Ticket médio',
-  faltas: 'Faltas',
-  glosas: 'Glosas',
-};
-
-function DesempenhoInner() {
-  const { clinicId, csrfToken, vinculoAtivo } = useSessao();
-  const [mes, setMes] = useQueryState('mes', { defaultValue: mesAtual() });
-
-  const periodo: Period = { current: mes, previous: mesAnterior(mes) };
-
-  // A recepção não tem `report.variation.read`, e isso é correto — variação de
-  // receita é informação de gestão. O que não pode é a tela ficar em branco:
-  // 403 sem explicação parece defeito, e quem vê chama o suporte.
-  const podeVer = vinculoAtivo.role === 'admin_clinico'
-    || vinculoAtivo.role === 'diretor_tecnico'
-    || vinculoAtivo.role === 'financeiro';
-
-  if (!podeVer) {
-    return (
-      <div className="grid min-h-[60vh] place-items-center">
-        <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold">Acesso restrito à gestão</h1>
-          <p className="mt-2 text-sm text-text-muted">
-            {/* `replace('_',' ')` mostrava o slug cru do banco — "admin clinico",
-                "diretor tecnico", sem acento. `rotulo` e o mapa que o resto do
-                app ja usa. */}
-            Seu perfil ({rotulo(vinculoAtivo.role)}) não tem acesso aos
-            indicadores de receita. Peça a quem administra a clínica se precisar.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const fatoresDoPeriodo = async (): Promise<FatorDaApi[]> => {
-    const a = limites(periodo.previous);
-    const b = limites(periodo.current);
-    const q = new URLSearchParams({
-      clinic_id: clinicId,
-      period_a_start: a.inicio, period_a_end: a.fim,
-      period_b_start: b.inicio, period_b_end: b.fim,
-    });
-    const r = await apiFetch<{ factors: FatorDaApi[] }>(
-      `/v1/reports/variation/factors?${q.toString()}`, { clinicId, csrfToken });
-    return r.factors;
-  };
-
-  return (
-    <Desempenho
-      period={periodo}
-      aoMudarPeriodo={(p) => { void setMes(p.current); }}
-      carregarIndicadores={() => apiFetch<{
-        indicators: VariationIndicator[]; freshness: DataFreshness }>(
-        `/v1/desempenho/indicadores?mes=${periodo.current}`, { clinicId, csrfToken })}
-      carregarWaterfall={async () => {
-        const fatores = await fatoresDoPeriodo();
-        const w: WaterfallFactor[] = fatores.map((f) => ({
-          factorId: f.factor,
-          label: f.label ?? ROTULO_FATOR[f.factor] ?? f.factor,
-          valueCents: f.delta_cents ?? f.deltaCents ?? 0,
-        }));
-        return w;
-      }}
-      carregarDrillDown={async (_metric, factorId) => {
-        const a = limites(periodo.previous);
-        const b = limites(periodo.current);
-        const q = new URLSearchParams({
-          clinic_id: clinicId, factor: factorId,
-          period_a_start: a.inicio, period_a_end: a.fim,
-          period_b_start: b.inicio, period_b_end: b.fim,
-        });
-        const result = await apiFetch<DrillDownResult>(
-          `/v1/reports/variation/drill-down?${q.toString()}`, { clinicId, csrfToken })
-          .catch((e: unknown) => {
-            if (e instanceof ApiError && e.status === 422) {
-              return { dimension: 'profissional' as const, groups: [], totalCount: 0 };
-            }
-            throw e;
-          });
-
-        // A ação sugerida aponta para a tela que RESOLVE o fator: falta leva à
-        // automação de confirmação, glosa leva ao recurso. Sugestão sem link é
-        // conselho, e conselho não muda número.
-        const actions: SuggestedAction[] = factorId === 'faltas'
-          ? [{ actionId: 'confirmacao', label: 'Rever automação de confirmação',
-               href: '/conversas' }]
-          : factorId === 'glosas'
-            ? [{ actionId: 'recurso', label: 'Abrir glosas pendentes',
-                 href: '/convenios/glosas' }]
-            : [];
-
-        return { result, actions };
-      }}
-    />
-  );
-}
+function mesAtual(): string { return new Date().toISOString().slice(0, 7); }
 
 export default function PaginaDesempenho() {
-  return <Suspense><DesempenhoInner /></Suspense>;
+  const { clinicId, csrfToken } = useSessao();
+  const [mes, setMes] = useState(mesAtual());
+  const [dados, setDados] = useState<Resposta | null>(null);
+  const [erro, setErro] = useState(false);
+
+  useEffect(() => {
+    let vivo = true; setErro(false);
+    void apiFetch<Resposta>(`/v1/desempenho/indicadores?mes=${mes}`, { clinicId, csrfToken })
+      .then((r) => { if (vivo) setDados(r); })
+      .catch(() => { if (vivo) setErro(true); });
+    return () => { vivo = false; };
+  }, [clinicId, csrfToken, mes]);
+
+  return <div className="cadencia-page space-y-5">
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="cadencia-kicker">Gestão pública</p><h1 className="text-2xl font-bold text-text">Indicadores assistenciais</h1><p className="mt-1 text-sm text-text-muted">Produção, absenteísmo, cidadãos e fila de regulação da unidade.</p></div>
+      <label className="grid gap-1 text-xs font-semibold text-text-muted">Competência<input type="month" value={mes} onChange={(e)=>setMes(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text" /></label>
+    </header>
+    {erro ? <p role="alert" className="rounded-xl bg-danger/10 p-4 text-sm text-danger">Não foi possível carregar os indicadores.</p> : null}
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {(dados?.metrics ?? []).map((m) => {
+        const delta = m.previous === null ? null : m.value - m.previous;
+        return <article key={m.key} className="rounded-xl border border-line bg-surface p-5"><p className="text-sm font-medium text-text-muted">{m.label}</p><strong className="mt-2 block text-3xl font-bold tracking-tight text-text">{m.unit === 'percentual' ? `${m.value.toLocaleString('pt-BR')}%` : m.value.toLocaleString('pt-BR')}</strong>{delta !== null ? <p className="mt-2 text-xs text-text-muted">Mês anterior: {m.previous?.toLocaleString('pt-BR')}{m.unit === 'percentual' ? '%' : ''} · variação {delta > 0 ? '+' : ''}{delta.toLocaleString('pt-BR')}{m.unit === 'percentual' ? ' p.p.' : ''}</p> : <p className="mt-2 text-xs text-text-faint">Situação atual</p>}</article>;
+      })}
+    </section>
+    {dados ? <p className="text-xs text-text-faint">Atualizado em {new Date(dados.freshness.refreshedAt).toLocaleString('pt-BR')}.</p> : null}
+  </div>;
 }

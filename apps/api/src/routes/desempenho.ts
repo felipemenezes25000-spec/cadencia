@@ -3,163 +3,82 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { rota } from '../guard';
 
-/**
- * Os três indicadores do topo da tela de Desempenho.
- *
- * Cada um compara um MÊS com o mês anterior — e a tela mostra "Agosto vs Julho".
- * Mês de calendário é o que a gestora fecha com o contador, e é nesse recorte
- * que ela já pensa; janela móvel daria um número mais estável e sem interlocutor.
- *
- * O corte usa app.local_date com o fuso da CLÍNICA (§10 item 10): um pagamento
- * das 22h do dia 31 em Manaus pertence a agosto, não a setembro.
- */
-
-/**
- * Variação percentual que nunca devolve Infinity nem NaN.
- *
- * Dividir por zero produz Infinity, que o JSON serializa como `null` e a tela
- * renderiza como buraco. Zero contra zero é variação ZERO; algo contra zero é
- * 100% de crescimento — não infinito.
- */
-function variacao(atual: number, anterior: number): number {
-  if (anterior === 0) return atual === 0 ? 0 : 100;
-  return Math.round(((atual - anterior) / anterior) * 1000) / 10;
-}
+const MetricKey = z.enum([
+  'atendimentos', 'faltas', 'absenteismo', 'regulacao_aberta',
+  'regulacao_urgente', 'cidadaos_ativos',
+]);
 
 export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
 
   r.get('/v1/desempenho/indicadores', {
     schema: {
-      querystring: z.object({
-        // AAAA-MM. Ausente = mês corrente.
-        mes: z.string().regex(/^\d{4}-\d{2}$/).optional(),
-      }),
-      response: {
-        200: z.object({
-          indicators: z.array(z.object({
-            metric: z.enum(['receita', 'ticket_medio', 'ocupacao']),
-            deltaAbsolute: z.number().int(),
-            deltaPercent: z.number(),
-          })),
-          freshness: z.object({
-            source: z.enum(['live', 'matview']),
-            refreshedAt: z.string().nullable(),
-          }),
-        }),
-      },
+      querystring: z.object({ mes: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+      response: { 200: z.object({
+        mes: z.string(),
+        metrics: z.array(z.object({
+          key: MetricKey,
+          label: z.string(),
+          value: z.number(),
+          unit: z.enum(['numero', 'percentual']),
+          previous: z.number().nullable(),
+        })),
+        freshness: z.object({ source: z.literal('live'), refreshedAt: z.string() }),
+      }) },
     },
   }, rota('report.variation.read', async (tx, ctx, req) => {
     const q = req.query as { mes?: string };
+    const mes = q.mes ?? new Date().toISOString().slice(0, 7);
+    const data = `${mes}-01`;
 
     const { rows } = await tx.query<{
-      receita_atual: string; receita_anterior: string;
       atendimentos_atual: string; atendimentos_anterior: string;
-      agendados_atual: string; comparecidos_atual: string;
-      agendados_anterior: string; comparecidos_anterior: string;
+      faltas_atual: string; faltas_anterior: string;
+      agenda_atual: string; agenda_anterior: string;
+      regulacao_aberta: string; regulacao_urgente: string; cidadaos_ativos: string;
     }>(
-      // Uma consulta só, com FILTER por janela: duas consultas separadas leriam
-      // a tabela duas vezes e poderiam cair em lados diferentes de um commit.
-      `WITH cl AS (
-         SELECT timezone FROM app.clinic WHERE id = $1
-       ), janela AS (
-         SELECT
-           date_trunc('month',
-             coalesce($2::date,
-                      app.local_date(clock_timestamp(), (SELECT timezone FROM cl))))::date
-             AS ini_atual,
-           (date_trunc('month',
-             coalesce($2::date,
-                      app.local_date(clock_timestamp(), (SELECT timezone FROM cl))))
-            + interval '1 month')::date AS fim_atual,
-           (date_trunc('month',
-             coalesce($2::date,
-                      app.local_date(clock_timestamp(), (SELECT timezone FROM cl))))
-            - interval '1 month')::date AS ini_anterior
-       ), fin AS (
-         SELECT
-           coalesce(sum(e.amount_cents) FILTER (
-             WHERE app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   >= (SELECT ini_atual FROM janela)), 0) AS receita_atual,
-           coalesce(sum(e.amount_cents) FILTER (
-             WHERE app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   <  (SELECT ini_atual FROM janela)
-               AND app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   >= (SELECT ini_anterior FROM janela)), 0) AS receita_anterior,
-           count(*) FILTER (
-             WHERE app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   >= (SELECT ini_atual FROM janela)) AS atendimentos_atual,
-           count(*) FILTER (
-             WHERE app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   <  (SELECT ini_atual FROM janela)
-               AND app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                   >= (SELECT ini_anterior FROM janela)) AS atendimentos_anterior
-           FROM fin.entry e
-          WHERE e.clinic_id = $1 AND e.kind = 'receita'
-            AND e.status = 'pago' AND e.paid_at IS NOT NULL
-            AND app.local_date(e.paid_at, (SELECT timezone FROM cl))
-                < (SELECT fim_atual FROM janela)
+      `WITH janela AS (
+         SELECT $2::date AS ini_atual,
+                ($2::date + interval '1 month')::date AS fim_atual,
+                ($2::date - interval '1 month')::date AS ini_anterior
        ), ag AS (
          SELECT
-           count(*) FILTER (WHERE a.appointment_date >= (SELECT ini_atual FROM janela))
-             AS agendados_atual,
-           count(*) FILTER (WHERE a.appointment_date >= (SELECT ini_atual FROM janela)
-                              AND a.status = 'atendido') AS comparecidos_atual,
-           count(*) FILTER (WHERE a.appointment_date <  (SELECT ini_atual FROM janela)
-                              AND a.appointment_date >= (SELECT ini_anterior FROM janela))
-             AS agendados_anterior,
-           count(*) FILTER (WHERE a.appointment_date <  (SELECT ini_atual FROM janela)
-                              AND a.appointment_date >= (SELECT ini_anterior FROM janela)
-                              AND a.status = 'atendido') AS comparecidos_anterior
-           FROM sched.appointment a
-          WHERE a.clinic_id = $1 AND a.status <> 'cancelado'
-            AND a.appointment_date < (SELECT fim_atual FROM janela)
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_atual AND a.appointment_date < j.fim_atual AND a.status='atendido') AS atendimentos_atual,
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_anterior AND a.appointment_date < j.ini_atual AND a.status='atendido') AS atendimentos_anterior,
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_atual AND a.appointment_date < j.fim_atual AND a.status='faltou') AS faltas_atual,
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_anterior AND a.appointment_date < j.ini_atual AND a.status='faltou') AS faltas_anterior,
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_atual AND a.appointment_date < j.fim_atual AND a.status <> 'cancelado') AS agenda_atual,
+           count(*) FILTER (WHERE a.appointment_date >= j.ini_anterior AND a.appointment_date < j.ini_atual AND a.status <> 'cancelado') AS agenda_anterior
+         FROM sched.appointment a CROSS JOIN janela j WHERE a.clinic_id=$1
+       ), rg AS (
+         SELECT count(*) FILTER (WHERE status IN ('solicitado','em_regulacao')) AS regulacao_aberta,
+                count(*) FILTER (WHERE status IN ('solicitado','em_regulacao') AND prioridade='urgente') AS regulacao_urgente
+           FROM app.referral
+       ), cid AS (
+         SELECT count(*) AS cidadaos_ativos FROM clin.patient
+          WHERE inactivated_at IS NULL AND deceased_at IS NULL AND merged_into_id IS NULL
        )
-       SELECT fin.*, ag.* FROM fin, ag`,
-      [ctx.actor.clinicId, q.mes === undefined ? null : `${q.mes}-01`]);
+       SELECT ag.*, rg.*, cid.* FROM ag, rg, cid`,
+      [ctx.actor.clinicId, data]);
 
-    const l = rows[0];
-    const receitaAtual = Number(l?.receita_atual ?? 0);
-    const receitaAnterior = Number(l?.receita_anterior ?? 0);
-    const nAtual = Number(l?.atendimentos_atual ?? 0);
-    const nAnterior = Number(l?.atendimentos_anterior ?? 0);
-
-    const ticketAtual = nAtual === 0 ? 0 : Math.round(receitaAtual / nAtual);
-    const ticketAnterior = nAnterior === 0 ? 0 : Math.round(receitaAnterior / nAnterior);
-
-    const agAtual = Number(l?.agendados_atual ?? 0);
-    const compAtual = Number(l?.comparecidos_atual ?? 0);
-    const agAnterior = Number(l?.agendados_anterior ?? 0);
-    const compAnterior = Number(l?.comparecidos_anterior ?? 0);
-
-    // Ocupação é PONTO PERCENTUAL, não centavo: 62% contra 55% é +7 pontos.
-    // Chamar isso de "+12,7%" seria tecnicamente verdadeiro e praticamente
-    // enganoso — ninguém gerencia agenda em variação relativa de taxa.
-    const ocupAtual = agAtual === 0 ? 0 : Math.round((compAtual / agAtual) * 100);
-    const ocupAnterior = agAnterior === 0 ? 0 : Math.round((compAnterior / agAnterior) * 100);
+    const x = rows[0];
+    const n = (v: string | undefined) => Number(v ?? 0);
+    const agendaAtual = n(x?.agenda_atual), agendaAnterior = n(x?.agenda_anterior);
+    const faltasAtual = n(x?.faltas_atual), faltasAnterior = n(x?.faltas_anterior);
+    const absAtual = agendaAtual === 0 ? 0 : Math.round((faltasAtual / agendaAtual) * 1000) / 10;
+    const absAnterior = agendaAnterior === 0 ? 0 : Math.round((faltasAnterior / agendaAnterior) * 1000) / 10;
 
     return {
-      indicators: [
-        {
-          metric: 'receita' as const,
-          deltaAbsolute: receitaAtual - receitaAnterior,
-          deltaPercent: variacao(receitaAtual, receitaAnterior),
-        },
-        {
-          metric: 'ticket_medio' as const,
-          deltaAbsolute: ticketAtual - ticketAnterior,
-          deltaPercent: variacao(ticketAtual, ticketAnterior),
-        },
-        {
-          metric: 'ocupacao' as const,
-          deltaAbsolute: ocupAtual - ocupAnterior,
-          deltaPercent: variacao(ocupAtual, ocupAnterior),
-        },
+      mes,
+      metrics: [
+        { key: 'atendimentos' as const, label: 'Atendimentos realizados', value: n(x?.atendimentos_atual), unit: 'numero' as const, previous: n(x?.atendimentos_anterior) },
+        { key: 'faltas' as const, label: 'Faltas', value: faltasAtual, unit: 'numero' as const, previous: faltasAnterior },
+        { key: 'absenteismo' as const, label: 'Taxa de absenteísmo', value: absAtual, unit: 'percentual' as const, previous: absAnterior },
+        { key: 'regulacao_aberta' as const, label: 'Na fila de regulação', value: n(x?.regulacao_aberta), unit: 'numero' as const, previous: null },
+        { key: 'regulacao_urgente' as const, label: 'Encaminhamentos urgentes', value: n(x?.regulacao_urgente), unit: 'numero' as const, previous: null },
+        { key: 'cidadaos_ativos' as const, label: 'Cidadãos ativos', value: n(x?.cidadaos_ativos), unit: 'numero' as const, previous: null },
       ],
-      // 'live' porque a conta acabou de ser feita na transação da requisição.
-      // Quando a matview de relatório servir esta tela, o carimbo passa a ser o
-      // do último refresh — e a tela já publica isso para quem lê o número.
-      freshness: { source: 'live' as const, refreshedAt: null },
+      freshness: { source: 'live' as const, refreshedAt: new Date().toISOString() },
     };
   }));
 }

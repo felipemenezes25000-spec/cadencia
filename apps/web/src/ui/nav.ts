@@ -1,6 +1,6 @@
 import {
   House, Calendar, ChatCircle, Users, ChartBar, Table, GearSix,
-  Stethoscope, UserCircleGear, Pill, Package,
+  Stethoscope, UserCircleGear, Pill, Package, ListChecks,
 } from '@phosphor-icons/react';
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 
@@ -14,40 +14,36 @@ export interface ItemNav {
 export const ITENS_NAV: readonly ItemNav[] = [
   { id: 'hoje', rotulo: 'Hoje', href: '/hoje', icone: House, atalho: '1', grupo: 'workspace', disponivelNaFase: 1 },
   { id: 'agenda', rotulo: 'Agenda', href: '/agenda', icone: Calendar, atalho: '2', grupo: 'workspace', disponivelNaFase: 1, filhos: [
-    { id: 'agenda-dia', rotulo: 'Agenda', href: '/agenda' },
-    { id: 'agenda-lista-espera', rotulo: 'Lista de espera', href: '/agenda/lista-espera' },
+    { id: 'agenda-dia', rotulo: 'Agenda', href: '/agenda' }, { id: 'agenda-lista-espera', rotulo: 'Lista de espera', href: '/agenda/lista-espera' },
   ] },
-  { id: 'conversas', rotulo: 'Conversas', href: '/conversas', icone: ChatCircle, atalho: '3', grupo: 'workspace', disponivelNaFase: 2, filhos: [
-    { id: 'conversas-caixa', rotulo: 'Caixa', href: '/conversas' },
-    { id: 'conversas-automacoes', rotulo: 'Automações', href: '/conversas/automacoes' },
-    { id: 'conversas-templates', rotulo: 'Templates', href: '/conversas/templates' },
-  ] },
-  { id: 'pacientes', rotulo: 'Pacientes', href: '/pacientes', icone: Users, atalho: '4', grupo: 'workspace', disponivelNaFase: 1 },
+  { id: 'regulacao', rotulo: 'Regulação', href: '/regulacao', icone: ListChecks, atalho: '3', grupo: 'workspace', disponivelNaFase: 1 },
+  { id: 'conversas', rotulo: 'Conversas', href: '/conversas', icone: ChatCircle, grupo: 'workspace', disponivelNaFase: 2 },
+  { id: 'pacientes', rotulo: 'Cidadãos', href: '/pacientes', icone: Users, atalho: '4', grupo: 'workspace', disponivelNaFase: 1 },
   { id: 'estoque', rotulo: 'Estoque', href: '/estoque', icone: Package, atalho: '5', grupo: 'gestao', disponivelNaFase: 2 },
-  { id: 'desempenho', rotulo: 'Desempenho', href: '/desempenho', icone: ChartBar, atalho: '6', grupo: 'gestao', disponivelNaFase: 3, filhos: [
-    { id: 'desemp-indicadores', rotulo: 'Indicadores', href: '/desempenho' },
-    { id: 'desemp-nps', rotulo: 'NPS', href: '/desempenho/nps' },
-  ] },
+  { id: 'desempenho', rotulo: 'Indicadores', href: '/desempenho', icone: ChartBar, atalho: '6', grupo: 'gestao', disponivelNaFase: 3 },
   { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar', icone: Table, atalho: '7', grupo: 'gestao', disponivelNaFase: 3 },
 ];
 
 export const CONFIG_NAV = {
   id: 'configuracoes', rotulo: 'Configurações', href: '/configuracoes', icone: GearSix,
   filhos: [
-    { id: 'cfg-clinica', rotulo: 'Unidade', href: '/configuracoes', descricao: 'Dados da unidade e equipe' },
-    { id: 'cfg-permissoes', rotulo: 'Permissões', href: '/configuracoes/permissoes', descricao: 'Matriz papel × ação' },
-    { id: 'cfg-procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos', descricao: 'Procedimentos cadastrados na unidade' },
-    { id: 'cfg-prontuario', rotulo: 'Prontuário', href: '/configuracoes/prontuario', descricao: 'Seções e campos do prontuário' },
+    { id: 'cfg-unidade', rotulo: 'Unidade de saúde', href: '/configuracoes', descricao: 'Dados da unidade e equipe' },
+    { id: 'cfg-sus', rotulo: 'Identificação SUS', href: '/configuracoes/sus', descricao: 'Município, CNES e estabelecimento' },
+    { id: 'cfg-permissoes', rotulo: 'Permissões', href: '/configuracoes/permissoes', descricao: 'Perfis e ações' },
+    { id: 'cfg-procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos', descricao: 'Procedimentos da unidade' },
+    { id: 'cfg-prontuario', rotulo: 'Prontuário', href: '/configuracoes/prontuario', descricao: 'Seções e campos do PEC' },
     { id: 'cfg-canais', rotulo: 'Canais', href: '/configuracoes/canais', descricao: 'WhatsApp, SMS e e-mail da unidade' },
-    { id: 'cfg-auditoria', rotulo: 'Auditoria', href: '/configuracoes/auditoria', descricao: 'Trilha de auditoria da organização' },
-    { id: 'cfg-catalogos', rotulo: 'Catálogos', href: '/catalogos', descricao: 'CID-10 e CID-11' },
+    { id: 'cfg-auditoria', rotulo: 'Auditoria', href: '/configuracoes/auditoria', descricao: 'Trilha de auditoria do ente' },
+    { id: 'cfg-catalogos', rotulo: 'Terminologias', href: '/catalogos', descricao: 'CID, CIAP-2 e SIGTAP' },
     { id: 'cfg-perfil', rotulo: 'Meu perfil', href: '/configuracoes/perfil', descricao: 'Seus dados e troca de unidade' },
   ],
 } as const satisfies { readonly id: string; readonly rotulo: string; readonly href: string; readonly icone: PhosphorIcon; readonly filhos: readonly SubItemNav[]; };
 
 const ROTAS_DE_CATALOGO: readonly SubItemNav[] = [
-  { id: 'catalogo-cid10', rotulo: 'Catálogo CID-10', href: '/catalogos/cid10', descricao: 'Pesquisar diagnósticos na CID-10' },
-  { id: 'catalogo-cid11', rotulo: 'Catálogo CID-11', href: '/catalogos/cid11', descricao: 'Pesquisar diagnósticos na CID-11' },
+  { id: 'catalogo-cid10', rotulo: 'CID-10', href: '/catalogos/cid10' },
+  { id: 'catalogo-cid11', rotulo: 'CID-11', href: '/catalogos/cid11' },
+  { id: 'catalogo-ciap2', rotulo: 'CIAP-2', href: '/catalogos/ciap2' },
+  { id: 'catalogo-sigtap', rotulo: 'SIGTAP', href: '/catalogos/sigtap' },
 ] as const;
 
 export const FASE_ATUAL = 6 as const;
@@ -56,8 +52,9 @@ export const NAVEGACAO_SHELL: readonly { readonly rotulo: 'Principal' | 'Gestão
   { rotulo: 'Principal', itens: [
     { id: 'hoje', rotulo: 'Hoje', href: '/hoje', icone: House },
     { id: 'agenda', rotulo: 'Agenda', href: '/agenda', icone: Calendar },
+    { id: 'regulacao', rotulo: 'Regulação', href: '/regulacao', icone: ListChecks, prefixoAtivo: '/regulacao' },
     { id: 'atendimentos', rotulo: 'Atendimentos', href: '/hoje#fluxo-de-hoje', icone: Stethoscope, prefixoAtivo: '/atendimento' },
-    { id: 'pacientes', rotulo: 'Pacientes', href: '/pacientes', icone: Users, prefixoAtivo: '/pacientes' },
+    { id: 'pacientes', rotulo: 'Cidadãos', href: '/pacientes', icone: Users, prefixoAtivo: '/pacientes' },
     { id: 'mensagens', rotulo: 'Mensagens', href: '/conversas', icone: ChatCircle, prefixoAtivo: '/conversas' },
     { id: 'bulario', rotulo: 'Bulário', href: '/bulas', icone: Pill, prefixoAtivo: '/bulas' },
   ] },

@@ -41,6 +41,7 @@ import { documentTemplateRoutes } from './routes/documento-templates';
 import { teleconsultaRoutes } from './routes/teleconsultas';
 import { calendarRoutes } from './routes/calendar';
 import { lgpdRoutes } from './routes/lgpd';
+import { susRoutes } from './routes/sus';
 
 const NIVEL_DE_LOG = process.env['LOG_LEVEL']
   ?? (process.env['NODE_ENV'] === 'test' ? 'silent' : 'info');
@@ -54,10 +55,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
-
   await app.register(cookie);
   await app.register(swagger, {
-    openapi: { info: { title: 'Cadência API', version: '1.0.0' } },
+    openapi: { info: { title: 'Cadência PEC Público API', version: '1.0.0' } },
     transform: jsonSchemaTransform,
   });
   app.get('/openapi.json', async () => app.swagger());
@@ -74,10 +74,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     if (hasZodFastifySchemaValidationErrors(erro)) {
       return reply.code(400).send({
         erro: 'validacao',
-        campos: erro.validation.map((v) => ({
-          path: (v.instancePath ?? '').replace(/^\//, ''),
-          mensagem: v.message ?? '',
-        })),
+        campos: erro.validation.map((v) => ({ path: (v.instancePath ?? '').replace(/^\//, ''), mensagem: v.message ?? '' })),
       });
     }
     const status = typeof (erro as { statusCode?: number }).statusCode === 'number'
@@ -88,19 +85,14 @@ export async function buildApp(): Promise<FastifyInstance> {
       return reply.code(status).send({ erro: dominio, ...extra });
     }
     if (status >= 500) req.log.error({ err: erro }, 'erro_nao_tratado');
-    return reply.code(status).send({
-      erro: status === 500 ? 'interno' : 'requisicao_invalida',
-      requestId: req.id,
-    });
+    return reply.code(status).send({ erro: status === 500 ? 'interno' : 'requisicao_invalida', requestId: req.id });
   });
 
   app.setNotFoundHandler((_req, reply) => reply.code(404).send({ erro: 'nao_encontrado' }));
   app.get('/health', async () => ({ status: 'ok' }));
-
   app.get('/v1/whoami', async (req, reply) => {
     const r = await comTransacao(req, reply, async (_tx, ctx) => ({
-      kind: ctx.actor.kind, tenantId: ctx.actor.tenantId,
-      userId: ctx.actor.userId, clinicId: ctx.actor.clinicId,
+      kind: ctx.actor.kind, tenantId: ctx.actor.tenantId, userId: ctx.actor.userId, clinicId: ctx.actor.clinicId,
     }));
     if (r === undefined) return reply;
     return r;
@@ -140,13 +132,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(teleconsultaRoutes);
   await app.register(calendarRoutes);
   await app.register(lgpdRoutes);
+  await app.register(susRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
-    schema: {
-      querystring: z.object({ n: z.coerce.number().int() }),
-      response: { 200: z.object({ n: z.number() }) },
-    },
+    schema: { querystring: z.object({ n: z.coerce.number().int() }), response: { 200: z.object({ n: z.number() }) } },
   }, async (req) => ({ n: req.query.n }));
-
   return app;
 }

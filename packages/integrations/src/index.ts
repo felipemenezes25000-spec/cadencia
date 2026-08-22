@@ -8,19 +8,13 @@ export {
   type CertificateInfo, type SignDocumentInput, type SignatureProvider,
   type SignaturePolicy, type SignedDocument, type VerifyResult,
 } from './contracts/signature';
-export {
-  createFakeSignatureProvider, type FakeSignatureOptions, type ModoFake,
-} from './fakes/signature-fake';
+export { createFakeSignatureProvider, type FakeSignatureOptions, type ModoFake } from './fakes/signature-fake';
 export {
   type PrescriberRef, type PrescriberSession, type PrescriptionDocument,
   type PrescriptionItem, type PrescriptionProvider, type PrescriptionRecord,
 } from './contracts/prescription';
-export {
-  createMemedProvider, type MemedConfig, type MemedDeps,
-} from './adapters/memed';
-export {
-  createFakePrescriptionProvider, type FakePrescriptionOptions,
-} from './fakes/prescription-fake';
+export { createMemedProvider, type MemedConfig, type MemedDeps } from './adapters/memed';
+export { createFakePrescriptionProvider, type FakePrescriptionOptions } from './fakes/prescription-fake';
 export {
   assertNoDuplicateOnTimeout, assertSafetyDeclared,
   type TimeoutOutcome, type TimeoutScenario,
@@ -30,27 +24,12 @@ export {
   type InboundMessage, type InboundMessageBody, type StatusUpdate,
   type WebhookVerificationContext,
 } from './contracts/messaging';
-export {
-  createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord,
-} from './fakes/messaging-fake';
-export {
-  createFakeSmsProvider, type FakeSmsOptions,
-} from './fakes/sms-fake';
-export {
-  PAYMENT_STATUSES, isPaymentStatus,
-  type PaymentLinkInput, type PaymentLinkResult, type PaymentProvider,
-  type PaymentSnapshot, type PaymentStatus, type Settlement,
-} from './contracts/payment';
+export { createFakeMessagingProvider, type FakeMessagingOptions, type ModoFakeMsg, type SentRecord } from './fakes/messaging-fake';
+export { createFakeSmsProvider, type FakeSmsOptions } from './fakes/sms-fake';
 export { createUncontractedSignatureProvider } from './adapters/assinatura-nao-contratada';
-export {
-  createFakePaymentProvider, type FakePaymentOptions,
-} from './fakes/payment-fake';
-export type {
-  TranscriptionProvider, TranscricaoBruta, SugestaoClinica, FalaTranscrita,
-} from './contracts/transcription';
+export type { TranscriptionProvider, TranscricaoBruta, SugestaoClinica, FalaTranscrita } from './contracts/transcription';
 export { createFakeTranscriptionProvider } from './fakes/transcription-fake';
-export { createOpenAiTranscriptionProvider,
-  type OpenAiTranscricaoConfig } from './adapters/openai-transcricao';
+export { createOpenAiTranscriptionProvider, type OpenAiTranscricaoConfig } from './adapters/openai-transcricao';
 export type { EmailProvider, EmailEnvelope } from './contracts/email';
 export { createFakeEmailProvider, type FakeEmailOptions, type SentEmail } from './fakes/email-fake';
 export { createSmtpEmailProvider, type SmtpEmailConfig } from './adapters/smtp-email';
@@ -61,15 +40,10 @@ export { createFakeTeleconsultProvider, type FakeTeleconsultOptions, type Create
 export { createJitsiTeleconsultProvider } from './adapters/jitsi-teleconsult';
 export type { CalendarProvider, CalendarEvent, CalendarInfo } from './contracts/calendar';
 export { createFakeCalendarProvider, type FakeCalendarOptions, type CreatedCalendarEvent } from './fakes/calendar-fake';
-export { createAsaasPaymentProvider, type AsaasConfig } from './adapters/asaas-payment';
 export { createWhatsAppCloudProvider, type WhatsAppCloudConfig } from './adapters/whatsapp-messaging';
 export { createTwilioSmsProvider, type TwilioSmsConfig } from './adapters/twilio-sms';
 export { createGoogleCalendarProvider, calendarEventIdFromIdempotencyKey } from './adapters/google-calendar';
-export type {
-  TissTransportProvider, TissGuiaConsulta, TissGuiaSadt, TissLote,
-  TissSubmissaoResult,
-} from './contracts/tiss-transport';
-export { createTissSoapTransportProvider } from './adapters/tiss-soap-transport';
-export { serializeLoteXml, wrapInSoapEnvelope } from './adapters/tiss-xml';
 export { createBirdIdSignatureProvider, type BirdIdConfig } from './adapters/birdid-signature';
-export { createFakeTissTransportProvider } from './fakes/tiss-transport-fake';
+export type { RndsBundleInput, RndsSubmission, RndsGateway } from './contracts/rnds';
+export type { EsusApsRecordKind, EsusApsRecordInput, EsusApsExportResult, EsusApsGateway } from './contracts/esus-aps';
+export { createUnconfiguredRndsGateway, createUnconfiguredEsusApsGateway } from './adapters/public-health-unconfigured';
