@@ -10,8 +10,6 @@ import { comTransacao } from './context';
 import { sessaoRoutes } from './routes/sessao';
 import { catalogoRoutes } from './routes/catalogos';
 import { listaDeEsperaRoutes } from './routes/lista-espera';
-import { reciboRoutes } from './routes/recibos';
-import { financeiroPainelRoutes } from './routes/financeiro-painel';
 import { desempenhoRoutes } from './routes/desempenho';
 import { auditoriaRoutes } from './routes/auditoria';
 import { configuracaoRoutes } from './routes/configuracoes';
@@ -33,22 +31,8 @@ import { publicoRoutes } from './routes/publico';
 import { clinicalArtifactRoutes } from './routes/clinical-artifacts';
 import { messagingRoutes } from './routes/messaging';
 import { messagingWebhookRoutes } from './routes/messaging-webhook';
-import { paymentRoutes } from './routes/payments';
-import { paymentWebhookRoutes } from './routes/payments-webhook';
-import { repasseRoutes } from './routes/repasse';
-import { financeSettingsRoutes } from './routes/finance-settings';
-import { financeOperationsRoutes } from './routes/finance-operations';
 import { inventoryRoutes } from './routes/inventory';
 import { reportRoutes } from './routes/reports';
-import { operadoraRoutes } from './routes/tiss/operadoras';
-import { guiaRoutes } from './routes/tiss/guias';
-import { guiaSadtRoutes } from './routes/tiss/guias-sadt';
-import { loteRoutes } from './routes/tiss/lotes';
-import { convenioPacienteRoutes } from './routes/tiss/convenios-paciente';
-import { demonstrativoRoutes } from './routes/tiss/demonstrativos';
-import { glosaRoutes } from './routes/tiss/glosas';
-import { recursoRoutes } from './routes/tiss/recursos';
-import { billingRoutes } from './routes/billing';
 import { tenancyRoutes } from './routes/tenancy';
 import { notificationRoutes } from './routes/notifications';
 import { channelRoutes } from './routes/channels';
@@ -58,12 +42,6 @@ import { teleconsultaRoutes } from './routes/teleconsultas';
 import { calendarRoutes } from './routes/calendar';
 import { lgpdRoutes } from './routes/lgpd';
 
-/**
- * Nível de log. Estava `false` fixo, o que significa API muda em produção: um
- * 500 devolve requestId ao usuário e não deixa nenhuma linha para procurar por
- * esse id. Teste continua silencioso por padrão — barulho em suíte verde faz
- * ninguém ler a saída quando ela fica vermelha.
- */
 const NIVEL_DE_LOG = process.env['LOG_LEVEL']
   ?? (process.env['NODE_ENV'] === 'test' ? 'silent' : 'info');
 
@@ -109,10 +87,6 @@ export async function buildApp(): Promise<FastifyInstance> {
       const extra = (erro as { extra?: Record<string, unknown> }).extra ?? {};
       return reply.code(status).send({ erro: dominio, ...extra });
     }
-    // Erro sem domínio é erro que ninguém previu. O corpo continua opaco — a
-    // mensagem do Postgres não vai para o cliente —, mas ele PRECISA existir no
-    // log do servidor: 500 silencioso vira "quebrou terça-feira" sem nada para
-    // olhar, e o requestId devolvido ao usuário não encontra par nenhum.
     if (status >= 500) req.log.error({ err: erro }, 'erro_nao_tratado');
     return reply.code(status).send({
       erro: status === 500 ? 'interno' : 'requisicao_invalida',
@@ -121,7 +95,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   app.setNotFoundHandler((_req, reply) => reply.code(404).send({ erro: 'nao_encontrado' }));
-
   app.get('/health', async () => ({ status: 'ok' }));
 
   app.get('/v1/whoami', async (req, reply) => {
@@ -136,8 +109,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(sessaoRoutes);
   await app.register(catalogoRoutes);
   await app.register(listaDeEsperaRoutes);
-  await app.register(reciboRoutes);
-  await app.register(financeiroPainelRoutes);
   await app.register(desempenhoRoutes);
   await app.register(auditoriaRoutes);
   await app.register(configuracaoRoutes);
@@ -159,22 +130,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(clinicalArtifactRoutes);
   await app.register(messagingRoutes);
   await app.register(messagingWebhookRoutes);
-  await app.register(paymentRoutes);
-  await app.register(paymentWebhookRoutes);
-  await app.register(repasseRoutes);
-  await app.register(financeSettingsRoutes);
-  await app.register(financeOperationsRoutes);
   await app.register(inventoryRoutes);
   await app.register(reportRoutes);
-  await app.register(operadoraRoutes);
-  await app.register(guiaRoutes);
-  await app.register(guiaSadtRoutes);
-  await app.register(loteRoutes);
-  await app.register(convenioPacienteRoutes);
-  await app.register(demonstrativoRoutes);
-  await app.register(glosaRoutes);
-  await app.register(recursoRoutes);
-  await app.register(billingRoutes);
   await app.register(tenancyRoutes);
   await app.register(notificationRoutes);
   await app.register(channelRoutes);

@@ -3,23 +3,19 @@ import {
   createFakeTranscriptionProvider, createOpenAiTranscriptionProvider,
   type TranscriptionProvider,
   createFakePrescriptionProvider, createFakeSignatureProvider,
-  createFakeMessagingProvider, createFakePaymentProvider,
+  createFakeMessagingProvider,
   createFakeEmailProvider, createSmtpEmailProvider,
   createFakeTeleconsultProvider, createJitsiTeleconsultProvider,
   createFakeCalendarProvider,
   createMemedProvider,
   createFakeSmsProvider,
-  createFakeTissTransportProvider,
-  createAsaasPaymentProvider,
   createWhatsAppCloudProvider,
   createTwilioSmsProvider,
   createGoogleCalendarProvider,
   createBirdIdSignatureProvider,
-  createTissSoapTransportProvider,
   type PrescriptionProvider, type SignatureProvider,
-  type MessagingProvider, type PaymentProvider,
+  type MessagingProvider,
   type EmailProvider, type TeleconsultProvider, type CalendarProvider,
-  type TissTransportProvider,
 } from '@cadencia/integrations';
 
 export interface Providers {
@@ -27,54 +23,26 @@ export interface Providers {
   readonly prescription: PrescriptionProvider;
   readonly messaging: MessagingProvider;
   readonly sms: MessagingProvider;
-  readonly payment: PaymentProvider;
   readonly transcription: TranscriptionProvider;
   readonly email: EmailProvider;
   readonly teleconsult: TeleconsultProvider;
   readonly calendar: CalendarProvider;
-  readonly tissTransport: TissTransportProvider;
 }
 
 let cache: Providers | null = null;
 
 function exigir(nome: string): string {
   const v = process.env[nome];
-  if (v === undefined || v === '') {
-    throw new Error(`${nome} ausente — obrigatoria com CADENCIA_PROVIDERS=real`);
-  }
+  if (v === undefined || v === '') throw new Error(`${nome} ausente — obrigatoria com CADENCIA_PROVIDERS=real`);
   return v;
 }
 
-/**
- * A troca fake→real é por variável de ambiente e vale para o processo inteiro.
- *
- * Não existe modo misto por engano: `real` exige TODOS os adaptadores reais
- * disponíveis e falha alto no boot se faltar credencial. Um sistema que sobe
- * com prescrição real e assinatura fake emite receita que não vale nada — e o
- * médico só descobre quando a farmácia recusa.
- */
-/**
- * OpenAI quando há chave; fake quando não há.
- *
- * Não lança sem a chave, ao contrário dos outros: transcrição é ASSISTÊNCIA. A
- * clínica que não contratou continua atendendo — só não ganha o rascunho pronto.
- * Derrubar o boot por causa disso trocaria uma comodidade ausente por um sistema
- * fora do ar.
- */
 function transcricaoConfigurada(): TranscriptionProvider {
   const chave = process.env['OPENAI_API_KEY'];
   if (chave === undefined || chave === '') return createFakeTranscriptionProvider();
   return createOpenAiTranscriptionProvider({ apiKey: chave });
 }
 
-/**
- * SMTP quando ha host configurado; fake quando nao ha.
- *
- * Mesmo raciocinio da transcricao: email e ASSISTENCIA. A clinica que nao
- * configurou SMTP continua operando — so nao envia email transacional.
- * Derrubar o boot porque falta credencial de email trocaria uma notificacao
- * ausente por um sistema fora do ar.
- */
 function emailConfigurado(): EmailProvider {
   const host = process.env['SMTP_HOST'];
   if (host === undefined || host === '') return createFakeEmailProvider();
@@ -89,42 +57,21 @@ function emailConfigurado(): EmailProvider {
 
 export function providers(): Providers {
   if (cache !== null) return cache;
-
   const modo = process.env['CADENCIA_PROVIDERS'];
 
-  /**
-   * Modo intermediário: Memed real, o resto fake.
-   *
-   * `real` é tudo-ou-nada e trava no boot enquanto não existir adaptador
-   * ICP-Brasil — o que significa que a Memed nunca poderia ser ligada. A trava
-   * estava protegendo o documento errado: para RECEITA, a própria Memed é a
-   * camada de assinatura qualificada; o adaptador ICP-Brasil que falta é para
-   * ATESTADO e demais documentos.
-   *
-   * A assinatura NÃO vira fake: vira o provedor que RECUSA. O fake assina com
-   * sucesso e reporta `valida`, o que gravaria atestado com estado `assinado` e
-   * sem valor legal — indistinguível de ICP-Brasil real no banco. Recusando, o
-   * documento é emitido e fica explicitamente PENDENTE de assinatura.
-   */
   if (modo === 'memed') {
-    process.stderr.write(
-      '[providers] MEMED REAL, assinatura FAKE. Receita vale; atestado NAO.\n');
     const soMemed: Providers = {
       prescription: createMemedProvider({
-        baseUrl: exigir('MEMED_BASE_URL'),
-        scriptUrl: exigir('MEMED_SCRIPT_URL'),
-        apiKey: exigir('MEMED_API_KEY'),
-        secretKey: exigir('MEMED_SECRET_KEY'),
+        baseUrl: exigir('MEMED_BASE_URL'), scriptUrl: exigir('MEMED_SCRIPT_URL'),
+        apiKey: exigir('MEMED_API_KEY'), secretKey: exigir('MEMED_SECRET_KEY'),
       }),
       signature: createUncontractedSignatureProvider(),
       messaging: createFakeMessagingProvider({ appSecret: exigir('WHATSAPP_APP_SECRET') }),
       sms: createFakeSmsProvider(),
-      payment: createFakePaymentProvider({ webhookSecret: exigir('PSP_WEBHOOK_SECRET') }),
       transcription: transcricaoConfigurada(),
       email: emailConfigurado(),
       teleconsult: createJitsiTeleconsultProvider(),
       calendar: createFakeCalendarProvider(),
-      tissTransport: createFakeTissTransportProvider(),
     };
     cache = soMemed;
     return soMemed;
@@ -136,12 +83,10 @@ export function providers(): Providers {
       prescription: createFakePrescriptionProvider(),
       messaging: createFakeMessagingProvider(),
       sms: createFakeSmsProvider(),
-      payment: createFakePaymentProvider(),
       transcription: createFakeTranscriptionProvider(),
       email: createFakeEmailProvider(),
       teleconsult: createFakeTeleconsultProvider(),
       calendar: createFakeCalendarProvider(),
-      tissTransport: createFakeTissTransportProvider(),
     };
     cache = comFakes;
     return comFakes;
@@ -149,34 +94,21 @@ export function providers(): Providers {
 
   const reais: Providers = {
     prescription: createMemedProvider({
-      baseUrl: exigir('MEMED_BASE_URL'),
-      scriptUrl: exigir('MEMED_SCRIPT_URL'),
-      apiKey: exigir('MEMED_API_KEY'),
-      secretKey: exigir('MEMED_SECRET_KEY'),
+      baseUrl: exigir('MEMED_BASE_URL'), scriptUrl: exigir('MEMED_SCRIPT_URL'),
+      apiKey: exigir('MEMED_API_KEY'), secretKey: exigir('MEMED_SECRET_KEY'),
     }),
-    signature: createBirdIdSignatureProvider({
-      clientId: exigir('BIRDID_CLIENT_ID'),
-      clientSecret: exigir('BIRDID_CLIENT_SECRET'),
-    }),
+    signature: createBirdIdSignatureProvider({ clientId: exigir('BIRDID_CLIENT_ID'), clientSecret: exigir('BIRDID_CLIENT_SECRET') }),
     messaging: createWhatsAppCloudProvider({
-      accessToken: exigir('WHATSAPP_ACCESS_TOKEN'),
-      phoneNumberId: exigir('WHATSAPP_PHONE_NUMBER_ID'),
+      accessToken: exigir('WHATSAPP_ACCESS_TOKEN'), phoneNumberId: exigir('WHATSAPP_PHONE_NUMBER_ID'),
       appSecret: exigir('WHATSAPP_APP_SECRET'),
     }),
     sms: createTwilioSmsProvider({
-      accountSid: exigir('TWILIO_ACCOUNT_SID'),
-      authToken: exigir('TWILIO_AUTH_TOKEN'),
-      fromNumber: exigir('TWILIO_FROM_NUMBER'),
-    }),
-    payment: createAsaasPaymentProvider({
-      apiKey: exigir('ASAAS_API_KEY'),
-      webhookToken: exigir('ASAAS_WEBHOOK_TOKEN'),
+      accountSid: exigir('TWILIO_ACCOUNT_SID'), authToken: exigir('TWILIO_AUTH_TOKEN'), fromNumber: exigir('TWILIO_FROM_NUMBER'),
     }),
     transcription: transcricaoConfigurada(),
     email: emailConfigurado(),
     teleconsult: createJitsiTeleconsultProvider(),
     calendar: createGoogleCalendarProvider(),
-    tissTransport: createTissSoapTransportProvider(),
   };
   cache = reais;
   return reais;
