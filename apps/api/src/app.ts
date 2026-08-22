@@ -42,6 +42,7 @@ import { teleconsultaRoutes } from './routes/teleconsultas';
 import { calendarRoutes } from './routes/calendar';
 import { lgpdRoutes } from './routes/lgpd';
 import { susRoutes } from './routes/sus';
+import { implantacaoPublicaRoutes } from './routes/implantacao-publica';
 
 const NIVEL_DE_LOG = process.env['LOG_LEVEL']
   ?? (process.env['NODE_ENV'] === 'test' ? 'silent' : 'info');
@@ -133,6 +134,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(calendarRoutes);
   await app.register(lgpdRoutes);
   await app.register(susRoutes);
+  await app.register(implantacaoPublicaRoutes);
 
   app.withTypeProvider<ZodTypeProvider>().get('/v1/echo', {
     schema: { querystring: z.object({ n: z.coerce.number().int() }), response: { 200: z.object({ n: z.number() }) } },

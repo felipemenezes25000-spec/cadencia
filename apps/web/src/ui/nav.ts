@@ -29,6 +29,7 @@ export const CONFIG_NAV = {
   filhos: [
     { id: 'cfg-unidade', rotulo: 'Unidade de saúde', href: '/configuracoes', descricao: 'Dados da unidade e equipe' },
     { id: 'cfg-sus', rotulo: 'Identificação SUS', href: '/configuracoes/sus', descricao: 'Município, CNES e estabelecimento' },
+    { id: 'cfg-implantacao', rotulo: 'Implantação pública', href: '/implantacao', descricao: 'Migração, interoperabilidade, SLA e evidências' },
     { id: 'cfg-permissoes', rotulo: 'Permissões', href: '/configuracoes/permissoes', descricao: 'Perfis e ações' },
     { id: 'cfg-procedimentos', rotulo: 'Procedimentos', href: '/configuracoes/procedimentos', descricao: 'Procedimentos da unidade' },
     { id: 'cfg-prontuario', rotulo: 'Prontuário', href: '/configuracoes/prontuario', descricao: 'Seções e campos do PEC' },
@@ -64,6 +65,7 @@ export const NAVEGACAO_SHELL: readonly { readonly rotulo: 'Principal' | 'Gestão
     { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar', icone: Table, prefixoAtivo: '/explorar' },
   ] },
   { rotulo: 'Administração', itens: [
+    { id: 'implantacao', rotulo: 'Implantação', href: '/implantacao', icone: ListChecks, prefixoAtivo: '/implantacao' },
     { id: 'equipe', rotulo: 'Equipe', href: '/configuracoes/equipe', icone: UserCircleGear },
     { id: 'configuracoes', rotulo: 'Configurações', href: '/configuracoes', icone: GearSix, prefixoAtivo: '/configuracoes' },
   ] },
