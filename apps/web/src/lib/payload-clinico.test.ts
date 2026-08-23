@@ -42,6 +42,16 @@ const SECOES: SecaoDaFicha[] = [
         refSource: null, observationCode: 'PESO', componentes: [],
       },
       {
+        fieldId: 'f-altura', code: 'altura', label: 'Altura', kind: 'numerico',
+        generation: 1, required: false, unit: 'cm', options: null,
+        refSource: null, observationCode: 'ALTURA', componentes: [],
+      },
+      {
+        fieldId: 'f-imc', code: 'imc', label: 'IMC', kind: 'imc',
+        generation: 1, required: false, unit: 'kg/m2', options: null,
+        refSource: null, observationCode: 'IMC', componentes: [],
+      },
+      {
         fieldId: 'f-pa', code: 'pa', label: 'Pressao arterial', kind: 'composto',
         generation: 1, required: false, unit: null, options: null,
         refSource: null, observationCode: null,
@@ -99,16 +109,37 @@ describe('montagem do payload clínico', () => {
     })).toThrow('campo_obrigatorio:alergias');
   });
 
-  it('numérico vira campo E observação — é a observação que faz gráfico existir', () => {
+  it('numérico vira campo E observação e aceita vírgula decimal brasileira', () => {
     const p = montarPayloadClinico({
-      secoes: SECOES, valores: { 'f-peso': '72.4' }, evolucao: 'x',
+      secoes: SECOES, valores: { 'f-peso': '72,40' }, evolucao: 'x',
       competenciaCid: '202501',
     });
     expect(p.fields.find((f) => f.fieldId === 'f-peso')?.value)
-      .toEqual({ slot: 'value_num', num: '72.4' });
+      .toEqual({ slot: 'value_num', num: '72.40' });
     expect(p.observations).toContainEqual({
       fieldId: 'f-peso',
-      observationCode: 'PESO', valueNum: '72.4', unit: 'kg', componentOrdinal: 1,
+      observationCode: 'PESO', valueNum: '72.40', unit: 'kg', componentOrdinal: 1,
+    });
+  });
+
+  it('recusa número inválido antes de chegar ao cast numeric do PostgreSQL', () => {
+    expect(() => montarPayloadClinico({
+      secoes: SECOES, valores: { 'f-peso': 'setenta' }, evolucao: 'x',
+      competenciaCid: '202501',
+    })).toThrow('campo_numerico_invalido:peso');
+  });
+
+  it('IMC é derivado de peso/altura e ignora valor adulterado do cliente', () => {
+    const p = montarPayloadClinico({
+      secoes: SECOES,
+      valores: { 'f-peso': '72,4', 'f-altura': '170', 'f-imc': '999' },
+      evolucao: 'x', competenciaCid: '202501',
+    });
+    expect(p.fields.find((f) => f.fieldId === 'f-imc')?.value)
+      .toEqual({ slot: 'value_num', num: '25.05' });
+    expect(p.observations).toContainEqual({
+      fieldId: 'f-imc', observationCode: 'IMC', valueNum: '25.05',
+      unit: 'kg/m2', componentOrdinal: 1,
     });
   });
 

@@ -1,4 +1,4 @@
-import type { SecaoDaFicha } from './ficha-tipos';
+import type { CampoDaFicha, SecaoDaFicha } from './ficha-tipos';
 
 /**
  * Transforma o que o médico preencheu no PAYLOAD CLÍNICO que finaliza o
@@ -94,11 +94,59 @@ function jsonClinico(bruto: string, code: string): unknown {
   }
 }
 
+/**
+ * PostgreSQL `numeric` usa ponto. A UI brasileira naturalmente recebe vírgula,
+ * então normalizamos apenas o separador decimal — sem remover milhares nem
+ * arredondar. "70,50" vira "70.50" e continua diferente de "70.5" no hash.
+ */
+function normalizarNumero(bruto: string, code: string): string {
+  const v = bruto.trim();
+  if (!/^-?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(v)) {
+    throw new Error(`campo_numerico_invalido:${code}`);
+  }
+  return v.replace(',', '.');
+}
+
+function todosCampos(secoes: readonly SecaoDaFicha[]): readonly CampoDaFicha[] {
+  return secoes.flatMap((s) => s.campos);
+}
+
+function valorDoCampoPorCodigo(
+  campos: readonly CampoDaFicha[],
+  valores: Readonly<Record<string, string>>,
+  code: string,
+): { campo: CampoDaFicha; valor: string } | null {
+  const campo = campos.find((c) => c.code === code);
+  if (campo === undefined) return null;
+  return { campo, valor: (valores[campo.fieldId] ?? '').trim() };
+}
+
+/** IMC é derivado: nunca confia no valor de `f-imc` recebido do navegador. */
+function calcularImc(
+  campos: readonly CampoDaFicha[],
+  valores: Readonly<Record<string, string>>,
+): string | null {
+  const pesoRef = valorDoCampoPorCodigo(campos, valores, 'peso');
+  const alturaRef = valorDoCampoPorCodigo(campos, valores, 'altura');
+  if (pesoRef === null || alturaRef === null || pesoRef.valor === '' || alturaRef.valor === '') {
+    return null;
+  }
+
+  const peso = Number(normalizarNumero(pesoRef.valor, 'peso'));
+  const alturaNumero = Number(normalizarNumero(alturaRef.valor, 'altura'));
+  const alturaMetros = alturaRef.campo.unit === 'm' ? alturaNumero : alturaNumero / 100;
+  if (!Number.isFinite(peso) || !Number.isFinite(alturaMetros) || peso <= 0 || alturaMetros <= 0) {
+    throw new Error('campo_numerico_invalido:imc');
+  }
+  return (peso / (alturaMetros * alturaMetros)).toFixed(2);
+}
+
 export function montarPayloadClinico(i: EntradaDoPayload): PayloadClinico {
   const fields: CampoSelado[] = [];
   const observations: ObservacaoSelada[] = [];
   const diagnoses: DiagnosticoSelado[] = [];
   const findings: AchadoSelado[] = [];
+  const campos = todosCampos(i.secoes);
 
   let achouEvolucao = false;
 
@@ -111,8 +159,6 @@ export function montarPayloadClinico(i: EntradaDoPayload): PayloadClinico {
         sectionInstance: 1,
       };
 
-      // A evolução narrativa vem do EDITOR, não da ficha. Duas caixas para a
-      // mesma coisa fariam uma sobrescrever a outra durante a selagem.
       if (campo.code === 'evolucao') {
         achouEvolucao = true;
         const evolucao = i.evolucao.trim();
@@ -133,8 +179,9 @@ export function montarPayloadClinico(i: EntradaDoPayload): PayloadClinico {
       if (campo.kind === 'composto') {
         let preenchidos = 0;
         for (const k of campo.componentes) {
-          const v = (i.valores[`${campo.fieldId}:${k.observationCode}`] ?? '').trim();
-          if (v === '') continue;
+          const original = (i.valores[`${campo.fieldId}:${k.observationCode}`] ?? '').trim();
+          if (original === '') continue;
+          const v = normalizarNumero(original, `${campo.code}:${k.observationCode}`);
           preenchidos += 1;
           observations.push({
             fieldId: campo.fieldId,
@@ -150,7 +197,12 @@ export function montarPayloadClinico(i: EntradaDoPayload): PayloadClinico {
         continue;
       }
 
-      const bruto = (i.valores[campo.fieldId] ?? '').trim();
+      // Derivado significa derivado mesmo: um cliente adulterado pode mandar
+      // `imc=1`, mas a versão selada sempre recalcula com peso e altura.
+      let bruto = campo.kind === 'imc'
+        ? (calcularImc(campos, i.valores) ?? '')
+        : (i.valores[campo.fieldId] ?? '').trim();
+
       if (bruto === '') {
         if (campo.required) erroObrigatorio(campo.code);
         continue;
@@ -230,6 +282,7 @@ export function montarPayloadClinico(i: EntradaDoPayload): PayloadClinico {
       }
 
       if (campo.kind === 'numerico' || campo.kind === 'imc' || campo.kind === 'dpp_ig') {
+        bruto = normalizarNumero(bruto, campo.code);
         fields.push({
           ...base,
           ordinal,
