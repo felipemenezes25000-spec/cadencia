@@ -81,8 +81,6 @@ function propsBase(over: Record<string, unknown> = {}) {
   return {
     encounterId: "e1",
     buscarCodigo: vi.fn(async () => [{ code: "I10", display: "Hipertensao essencial" }]),
-    buscarModelo: vi.fn(async () => [{ code: "retorno", texto: "Retorno em 30 dias." }]),
-    buscarValorAnterior: vi.fn(async () => ({ valor: "72,4 kg", em: "12/05/2026" })),
     aoPrescrever: vi.fn(),
     aoPedirExame: vi.fn(),
     aoEmitirDocumento: vi.fn(),
@@ -104,7 +102,6 @@ describe("EditorClinico", () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
 
-    // TipTap cria um elemento com role tiptap ou um div contenteditable
     await waitFor(() => {
       const editor = document.querySelector(".tiptap, .ProseMirror, [contenteditable]");
       expect(editor).toBeTruthy();
@@ -119,7 +116,6 @@ describe("EditorClinico", () => {
       expect(screen.getByRole("toolbar")).toBeInTheDocument();
     });
 
-    // Botões de formatação
     expect(screen.getByLabelText("Negrito")).toBeInTheDocument();
     expect(screen.getByLabelText("Itálico")).toBeInTheDocument();
     expect(screen.getByLabelText("Título")).toBeInTheDocument();
@@ -141,9 +137,6 @@ describe("EditorClinico", () => {
     await act(async () => {
       fireEvent.click(btnNegrito);
     });
-
-    // O botão deve ter aria-pressed após clique
-    // (pode estar true ou false dependendo do estado do TipTap)
     expect(btnNegrito).toHaveAttribute("aria-pressed");
   });
 
@@ -188,9 +181,7 @@ describe("EditorClinico", () => {
       expect(editorEl).toBeTruthy();
     });
 
-    // O Placeholder extension adiciona um data-placeholder ou classe is-empty
     const editorEl = document.querySelector(".tiptap, .ProseMirror");
-    // O placeholder é visível via CSS :before — verificamos que o nodo existe
     expect(editorEl).toBeTruthy();
   });
 
@@ -230,10 +221,7 @@ describe("EditorClinico", () => {
       expect(editorEl).toBeTruthy();
     });
 
-    // Toolbar não aparece em modo readOnly
     expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
-
-    // Editor não é editável
     const editorEl = document.querySelector(".tiptap, .ProseMirror, [contenteditable]");
     expect(editorEl?.getAttribute("contenteditable")).toBe("false");
   });
@@ -241,14 +229,12 @@ describe("EditorClinico", () => {
   it("o cronômetro do atendimento aparece visível", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
-
     expect(screen.getByText(/Duração/)).toBeVisible();
   });
 
   it("Ctrl+R chama aoPrescrever", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
-
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "r", ctrlKey: true });
     expect(props.aoPrescrever).toHaveBeenCalledTimes(1);
@@ -257,7 +243,6 @@ describe("EditorClinico", () => {
   it("Ctrl+E chama aoPedirExame", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
-
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "e", ctrlKey: true });
     expect(props.aoPedirExame).toHaveBeenCalledTimes(1);
@@ -266,7 +251,6 @@ describe("EditorClinico", () => {
   it("Ctrl+D chama aoEmitirDocumento", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
-
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "d", ctrlKey: true });
     expect(props.aoEmitirDocumento).toHaveBeenCalledTimes(1);
@@ -275,7 +259,6 @@ describe("EditorClinico", () => {
   it("Ctrl+Enter chama aoFinalizar", async () => {
     const props = propsBase();
     renderComProvider(<EditorClinico {...props} />);
-
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "Enter", ctrlKey: true });
     await waitFor(() => expect(props.aoFinalizar).toHaveBeenCalledTimes(1));
@@ -291,10 +274,6 @@ describe("EditorClinico", () => {
     const container = screen.getByRole("article").closest("div")!.parentElement!;
     fireEvent.keyDown(container, { key: "Enter", ctrlKey: true });
 
-    // O autosave tem debounce de 2s. Quem digita e aperta Ctrl+Enter em seguida
-    // não pode perder a última frase — e a frase final costuma ser a conduta.
-    // Finalizar tem que descarregar o que está na tela ANTES de selar a versão,
-    // porque depois de selada a versão é imutável: o texto perdido não volta.
     await waitFor(() => expect(onSalvar).toHaveBeenCalled());
     await waitFor(() => expect(aoFinalizar).toHaveBeenCalled());
     expect(ordem).toEqual(["salvou", "finalizou"]);
@@ -315,8 +294,6 @@ describe("EditorClinico", () => {
       <EditorClinico
         encounterId="e1"
         buscarCodigo={async () => []}
-        buscarModelo={async () => []}
-        buscarValorAnterior={async () => null}
         aoPrescrever={vi.fn()}
         aoPedirExame={vi.fn()}
         aoEmitirDocumento={vi.fn()}
