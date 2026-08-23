@@ -43,7 +43,7 @@ export interface BreadcrumbProps {
 
 /**
  * Gera breadcrumbs a partir do pathname.
- * Ex: "/financeiro/caixa" -> [{ rotulo: "Financeiro", href: "/financeiro" }, { rotulo: "Caixa" }]
+ * Ex: "/catalogos/cid10" -> [{ rotulo: "Catálogos", href: "/catalogos" }, { rotulo: "CID-10" }]
  */
 function gerarItensDoPathname(pathname: string): BreadcrumbItem[] {
   const segmentos = pathname.split("/").filter(Boolean);

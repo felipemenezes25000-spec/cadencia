@@ -168,7 +168,9 @@ describe('CompositorInline', () => {
         expect.objectContaining({
           patientId: 'abc',
           procedureId: 'p1',
-          operadoraNome: 'Particular',
+          // Vestigio: a operacao publica nao tem convenio, entao o compositor
+          // sempre manda vazio. Assercao explicita para o dia em que voltar.
+          operadoraNome: '',
           encaixe: false,
         }),
       );

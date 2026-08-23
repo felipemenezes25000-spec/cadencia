@@ -188,6 +188,77 @@
       ]
     }
   },
+  "app.professional_sus_link": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.public_interop_delivery": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.public_membership_profile": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.public_migration_job": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.public_operation_evidence": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT"
+      ]
+    }
+  },
+  "app.public_operation_profile": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.referral": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
+  "app.sus_team": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
+      ]
+    }
+  },
   "app.tenant": {
     "table": {
       "app_rw": [
@@ -509,6 +580,15 @@
       ],
       "clin_writer": [
         "SELECT"
+      ]
+    }
+  },
+  "clin.patient_sus_profile": {
+    "table": {
+      "app_rw": [
+        "INSERT",
+        "SELECT",
+        "UPDATE"
       ]
     }
   },
@@ -1070,6 +1150,13 @@
       ]
     }
   },
+  "ref.ciap2_term": {
+    "table": {
+      "app_rw": [
+        "SELECT"
+      ]
+    }
+  },
   "ref.cid10_term": {
     "table": {
       "app_rw": [
@@ -1110,6 +1197,13 @@
         "SELECT"
       ],
       "clin_writer": [
+        "SELECT"
+      ]
+    }
+  },
+  "ref.sigtap_procedure": {
+    "table": {
+      "app_rw": [
         "SELECT"
       ]
     }

@@ -18,8 +18,8 @@ vi.mock('next/navigation', () => ({
 /**
  * O dock e a unica navegacao estrutural no celular — a Sidebar e `hidden
  * md:flex`. Ele ja teve cinco destinos fixos com "Mais" apontando direto para
- * /configuracoes, o que deixava Financeiro, Convenios, Desempenho, Catalogos,
- * Bulario e Relatorios sem nenhuma entrada no telefone. Estes testes existem
+ * /configuracoes, o que deixava Estoque, Indicadores, Terminologias, Bulario e
+ * Relatorios sem nenhuma entrada no telefone. Estes testes existem
  * para que isso nao volte silenciosamente: o que a Sidebar mostra tem de estar
  * alcancavel no celular.
  */
@@ -55,7 +55,7 @@ describe('MobileNavigation', () => {
     }
   });
 
-  it('leva a Financeiro, Convênios, Relatórios e Catálogos — inalcançáveis antes', async () => {
+  it('leva a Indicadores, Relatórios, Terminologias e Bulário — inalcançáveis antes', async () => {
     pathname.atual = '/hoje';
     const user = userEvent.setup();
     render(<MobileNavigation />);
@@ -63,15 +63,14 @@ describe('MobileNavigation', () => {
     await user.click(screen.getByRole('button', { name: 'Mais' }));
     const painel = await screen.findByRole('dialog');
 
-    expect(within(painel).getByRole('link', { name: 'Financeiro' })).toHaveAttribute('href', '/financeiro');
-    expect(within(painel).getByRole('link', { name: 'Convênios' })).toHaveAttribute('href', '/convenios');
+    expect(within(painel).getByRole('link', { name: 'Indicadores' })).toHaveAttribute('href', '/desempenho');
     expect(within(painel).getByRole('link', { name: 'Relatórios' })).toHaveAttribute('href', '/explorar');
-    expect(within(painel).getByRole('link', { name: 'Catálogos' })).toHaveAttribute('href', '/catalogos');
+    expect(within(painel).getByRole('link', { name: 'Terminologias' })).toHaveAttribute('href', '/catalogos');
     expect(within(painel).getByRole('link', { name: 'Bulário' })).toHaveAttribute('href', '/bulas');
   });
 
   it('marca "Mais" como ativo quando a rota atual não está no dock', () => {
-    pathname.atual = '/financeiro/caixa';
+    pathname.atual = '/catalogos/cid10';
     render(<MobileNavigation />);
 
     const dock = screen.getByRole('navigation', { name: 'Navegação móvel' });
@@ -87,7 +86,7 @@ describe('MobileNavigation', () => {
 
     await user.click(screen.getByRole('button', { name: 'Mais' }));
     const painel = await screen.findByRole('dialog');
-    await user.click(within(painel).getByRole('link', { name: 'Financeiro' }));
+    await user.click(within(painel).getByRole('link', { name: 'Relatórios' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });

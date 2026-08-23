@@ -134,7 +134,8 @@ describe("navegação Desempenho", () => {
   });
 
   it("item Desempenho está disponível na fase 3", () => {
-    const item = ITENS_NAV.find((i) => i.rotulo === "Desempenho");
+    // Busca pelo id: o rotulo ja mudou para "Indicadores" e volta a mudar.
+    const item = ITENS_NAV.find((i) => i.id === "desempenho");
     expect(item).toBeDefined();
     expect(item!.disponivelNaFase).toBeLessThanOrEqual(FASE_ATUAL);
   });

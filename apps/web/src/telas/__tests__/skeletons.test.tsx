@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { Hoje } from '../Hoje';
 
 /**
@@ -118,36 +117,6 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
     expect(container.querySelector('[role="status"]')).toBeInTheDocument();
   });
 
-  it('FinanceiroVisao renderiza skeleton enquanto carrega', async () => {
-    const { FinanceiroVisao } = await import('../FinanceiroVisao');
-    const { container } = render(
-      <NuqsTestingAdapter searchParams={{ periodo: 'mes' }}>
-        <FinanceiroVisao carregarDados={() => nuncaResolve()} />
-      </NuqsTestingAdapter>,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('FinanceiroCaixa renderiza skeleton enquanto carrega', async () => {
-    const { FinanceiroCaixa } = await import('../FinanceiroCaixa');
-    const { container } = render(
-      <FinanceiroCaixa carregarDados={() => nuncaResolve()} />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosAFaturar renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosAFaturar } = await import('../ConveniosAFaturar');
-    const { container } = render(
-      <ConveniosAFaturar
-        carregarDados={() => nuncaResolve()}
-        aoCriarLote={async () => {}}
-        aoAbrirGuia={() => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
   it('Recibos renderiza skeleton enquanto carrega', async () => {
     const { Recibos } = await import('../Recibos');
     const { container } = render(
@@ -175,33 +144,6 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
      importou — a rota /financeiro sempre renderizou FinanceiroVisao, que tem
      outro contrato de dados. O skeleton que vale e o de FinanceiroVisao. */
 
-  it('FinanceiroAPagar renderiza skeleton enquanto carrega', async () => {
-    const { FinanceiroAPagar } = await import('../FinanceiroAPagar');
-    const { container } = render(
-      <FinanceiroAPagar
-        carregarDados={() => nuncaResolve()}
-        aoMarcarPago={async () => {}}
-        aoEditar={() => {}}
-        aoParcelar={async () => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('FinanceiroAReceber renderiza skeleton enquanto carrega', async () => {
-    const { FinanceiroAReceber } = await import('../FinanceiroAReceber');
-    const { container } = render(
-      <FinanceiroAReceber
-        carregarDados={() => nuncaResolve()}
-        aoCobrar={async () => {}}
-        aoMarcarPago={async () => {}}
-        aoEnviarLink={async () => {}}
-        hoje="2026-01-01"
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
   it('FinanceiroEstoque renderiza skeleton enquanto carrega', async () => {
     const { FinanceiroEstoque } = await import('../FinanceiroEstoque');
     const { container } = render(
@@ -213,75 +155,4 @@ describe('Skeletons de carregamento', { timeout: 30_000 }, () => {
     expect(container.querySelector('[role="status"]')).toBeInTheDocument();
   });
 
-  it('FinanceiroRepasse renderiza skeleton enquanto carrega', async () => {
-    const { FinanceiroRepasse } = await import('../FinanceiroRepasse');
-    const { container } = render(
-      <FinanceiroRepasse
-        carregarDados={() => nuncaResolve()}
-        papelAtual="admin_clinico"
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosGlosas renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosGlosas } = await import('../ConveniosGlosas');
-    const { container } = render(
-      <ConveniosGlosas
-        carregarDados={() => nuncaResolve()}
-        aoCriarRecurso={() => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosLotes renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosLotes } = await import('../ConveniosLotes');
-    const { container } = render(
-      <ConveniosLotes
-        carregarDados={() => nuncaResolve()}
-        aoEnviar={async () => {}}
-        aoCancelar={async () => {}}
-        aoBaixarXml={async () => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosOperadoras renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosOperadoras } = await import('../ConveniosOperadoras');
-    const { container } = render(
-      <ConveniosOperadoras
-        carregarDados={() => nuncaResolve()}
-        aoSalvar={async () => {}}
-        aoDesativar={async () => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosRecursos renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosRecursos } = await import('../ConveniosRecursos');
-    const { container } = render(
-      <ConveniosRecursos
-        carregarDados={() => nuncaResolve()}
-        aoEditar={() => {}}
-        aoEnviar={async () => {}}
-        aoVerResultado={() => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
-
-  it('ConveniosRetornos renderiza skeleton enquanto carrega', async () => {
-    const { ConveniosRetornos } = await import('../ConveniosRetornos');
-    const { container } = render(
-      <ConveniosRetornos
-        carregarDados={() => nuncaResolve()}
-        aoImportarXml={async () => {}}
-        aoAbrirDemonstrativo={() => {}}
-      />,
-    );
-    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-  });
 });

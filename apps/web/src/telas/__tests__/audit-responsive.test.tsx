@@ -14,7 +14,7 @@
 
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeAll } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 
@@ -67,8 +67,6 @@ beforeAll(() => {
 
 import { Hoje, type LinhaDaFila, type PrecisaDeVoce } from '../Hoje';
 import { Conversas } from '../Conversas';
-import { FinanceiroLayout } from '../FinanceiroLayout';
-import { ConveniosLayout, type ContadoresConvenios } from '../ConveniosLayout';
 import { Recibos } from '../Recibos';
 
 /* ── Wrapper com TooltipProvider ───────────────────────────────────── */
@@ -95,11 +93,6 @@ const FILA: LinhaDaFila[] = [{
 const PRECISA: PrecisaDeVoce = {
   confirmacoesSemResposta: 2, prescricoesNaoAssinadas: 0,
   resultadosChegados: 1, rascunhosDeOntem: 0, guiasAFaturar: 3,
-};
-
-const CONTADORES: ContadoresConvenios = {
-  guiasAFaturar: 5, lotesRascunho: 1, lotesEnviados: 2,
-  pendencias: 1, glosasPendentes: 3, recursosRascunho: 0,
 };
 
 const RECIBOS = [{
@@ -235,23 +228,6 @@ describe('Auditoria responsiva', () => {
       expect(verificarPaddingResponsivo(container)).toBe(true);
     });
 
-    it('FinanceiroLayout usa padding responsivo', () => {
-      const { container } = render(
-        <FinanceiroLayout>
-          <div>Conteudo</div>
-        </FinanceiroLayout>,
-      );
-      expect(verificarPaddingResponsivo(container)).toBe(true);
-    });
-
-    it('ConveniosLayout usa padding responsivo', () => {
-      const { container } = render(
-        <ConveniosLayout contadores={CONTADORES} aoFiltrar={vi.fn()}>
-          <div>Conteudo</div>
-        </ConveniosLayout>,
-      );
-      expect(verificarPaddingResponsivo(container)).toBe(true);
-    });
   });
 
   describe('layout Conversas adapta para mobile', () => {
@@ -325,46 +301,6 @@ describe('Auditoria responsiva', () => {
       // O container do botao deve ter md:hidden para esconder no desktop
       const voltarContainer = botaoVoltar.closest('[class*="md:hidden"]');
       expect(voltarContainer).toBeTruthy();
-    });
-  });
-
-  describe('tabs horizontalmente scrollaveis', () => {
-    it('FinanceiroLayout: abas scrollam horizontalmente', () => {
-      const { container } = render(
-        <FinanceiroLayout>
-          <div>Conteudo</div>
-        </FinanceiroLayout>,
-      );
-      // As abas devem estar envolvidas em overflow-x-auto
-      const tabsContainer = container.querySelector('.overflow-x-auto');
-      expect(tabsContainer).toBeTruthy();
-    });
-
-    it('ConveniosLayout: abas scrollam horizontalmente', () => {
-      const { container } = render(
-        <ConveniosLayout contadores={CONTADORES} aoFiltrar={vi.fn()}>
-          <div>Conteudo</div>
-        </ConveniosLayout>,
-      );
-      const tabsContainer = container.querySelector('.overflow-x-auto');
-      expect(tabsContainer).toBeTruthy();
-    });
-  });
-
-  describe('contadores tem touch target minimo', () => {
-    it('ConveniosLayout: botoes de contadores tem min-h >= 44px', () => {
-      render(
-        <ConveniosLayout contadores={CONTADORES} aoFiltrar={vi.fn()}>
-          <div>Conteudo</div>
-        </ConveniosLayout>,
-      );
-      const grupo = screen.getByRole('group', { name: /Contadores de convênios/i });
-      const botoes = within(grupo).getAllByRole('button');
-      botoes.forEach((botao) => {
-        const match = botao.className.match(/min-h-\[(\d+)px\]/);
-        expect(match).toBeTruthy();
-        expect(Number(match![1])).toBeGreaterThanOrEqual(44);
-      });
     });
   });
 

@@ -3,9 +3,6 @@ import { jobsPool } from '@cadencia/db';
 import PgBoss from 'pg-boss';
 import {
   FILA_ENVIO_MSG,
-  FILA_LINK_PAGAMENTO,
-  FILA_ESTORNO_PAGAMENTO,
-  FILA_REPROJECAO_TISS,
   FILA_CALENDAR_SYNC,
 } from '../queues';
 
@@ -115,10 +112,7 @@ export async function dispatchOutbox(boss: PgBoss): Promise<DispatchResult> {
  */
 function resolveQueue(eventType: string): string {
   if (eventType === 'send_message') return FILA_ENVIO_MSG;
-  if (eventType === 'create_payment_link') return FILA_LINK_PAGAMENTO;
-  if (eventType === 'refund_payment') return FILA_ESTORNO_PAGAMENTO;
   if (eventType === 'calendar_sync_requested') return FILA_CALENDAR_SYNC;
-  if (eventType === 'ENCOUNTER_AMENDED') return FILA_REPROJECAO_TISS;
 
   throw new Error(`event_type_sem_consumidor:${eventType}`);
 }

@@ -43,6 +43,26 @@ async function semearPendencias(t: SementeSessao): Promise<{ despesa: string; re
   return { despesa, receita };
 }
 
+/**
+ * Le o lancamento direto do banco.
+ *
+ * As listagens GET /v1/payables e /v1/financeiro/a-receber sairam junto com os
+ * fluxos privados, mas as acoes POST continuam — e o efeito delas e no banco,
+ * que e onde a assercao tem de olhar.
+ */
+async function lerLancamento(id: string): Promise<{ status: string; paid_at: Date | null }> {
+  const a = new Pool({ connectionString: process.env['DATABASE_URL_ADMIN'], max: 1 });
+  try {
+    const { rows } = await a.query<{ status: string; paid_at: Date | null }>(
+      `SELECT status::text AS status, paid_at FROM fin.entry WHERE id = $1`, [id]);
+    const linha = rows[0];
+    if (linha === undefined) throw new Error(`lancamento ${id} nao encontrado`);
+    return linha;
+  } finally {
+    await a.end();
+  }
+}
+
 beforeAll(async () => { s = await semearSessao({ role: 'admin_clinico' }); });
 afterAll(async () => { await closePools(); });
 
@@ -56,14 +76,11 @@ describe('acoes que as telas ja oferecem', () => {
     expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({ payableId: despesa, status: 'pago' });
 
-    const lista = await app.inject({ method: 'GET', url: '/v1/payables', ...auth(s) });
-    const item = (lista.json() as {
-      itens: { payableId: string; status: string; paidAt: string | null }[] })
-      .itens.find((x) => x.payableId === despesa);
-    expect(item?.status).toBe('confirmed');
+    const item = await lerLancamento(despesa);
+    expect(item.status).toBe('pago');
     // O carimbo vem do banco, não do cliente: é ele que decide em que dia a
     // despesa entra no caixa.
-    expect(item?.paidAt).not.toBeNull();
+    expect(item.paid_at).not.toBeNull();
 
     await app.close();
   });
@@ -94,11 +111,9 @@ describe('acoes que as telas ja oferecem', () => {
       method: 'POST', url: `/v1/payments/${receita}/confirmar`, ...auth(s), payload: {} });
     expect(r.statusCode).toBe(200);
 
-    const aReceber = await app.inject({
-      method: 'GET', url: '/v1/financeiro/a-receber', ...auth(s) });
-    const ainda = (aReceber.json() as { entradas: { id: string }[] })
-      .entradas.find((x) => x.id === receita);
-    expect(ainda).toBeUndefined();
+    const item = await lerLancamento(receita);
+    expect(item.status).not.toBe('pendente');
+    expect(item.paid_at).not.toBeNull();
 
     await app.close();
   });

@@ -98,6 +98,9 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
     // nelas tanto quanto no atendimento de onde saíram.
     // clin.ai_assistance entrou com a migration 0036 pelo mesmo motivo: o apoio
     // por IA é parte do prontuário, não um log paralelo.
+    // clin.patient_sus_profile entrou com a 0200 e ficou sem policy até a 0202:
+    // vulnerabilidade, território e acamado descrevem a pessoa tanto quanto o
+    // prontuário, então o compartilhamento tem que valer nela também.
     expect(await clinicalScopeRelations(catalogPool())).toEqual([
       'clin.ai_assistance',
       'clin.attachment',
@@ -108,6 +111,7 @@ describe('invariante 5 — sem policy RESTRICTIVE o compartilhamento e contornav
       'clin.encounter_finding',
       'clin.observation',
       'clin.patient_identifier',
+      'clin.patient_sus_profile',
       'clin.prescription',
       'clin.procedure',
       'clin.record_export',

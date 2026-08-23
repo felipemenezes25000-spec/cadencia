@@ -1,12 +1,11 @@
 'use client';
 import Link from 'next/link';
-import { Heartbeat, Barcode, Pill } from '@phosphor-icons/react';
+import { Heartbeat, Pill } from '@phosphor-icons/react';
 import { PageHeader } from '../../src/ui/PageHeader';
 
 const CATALOGOS = [
   { href: '/catalogos/cid10', icone: Heartbeat, titulo: 'CID-10', descricao: 'Classificação Internacional de Doenças, 10ª revisão' },
   { href: '/catalogos/cid11', icone: Heartbeat, titulo: 'CID-11', descricao: 'Classificação Internacional de Doenças, 11ª revisão (OMS)' },
-  { href: '/catalogos/tuss', icone: Barcode, titulo: 'TUSS', descricao: 'Terminologia Unificada da Saúde Suplementar (ANS)' },
   { href: '/bulas', icone: Pill, titulo: 'Bulas', descricao: 'Consulte medicamentos, apresentações e bulas oficiais' },
 ] as const;
 

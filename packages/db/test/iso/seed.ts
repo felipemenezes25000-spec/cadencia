@@ -1578,4 +1578,107 @@ export async function seedDoisTenants(admin: Client): Promise<void> {
      F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
      F.USER_A_ANA, F.USER_B_DIEGO],
   );
+
+  // ---------------------------------------------------------------------------
+  // Operacao publica (migrations 0200 e 0201).
+  //
+  // Nove tabelas multi-tenant nasceram sem linha do tenant B. O teste meta de
+  // T1 reprova por isso — e com razao: sem linha do B, "o tenant A nao le nada
+  // do B" passaria por vacuo, afirmando isolamento sobre tabela vazia.
+  // ---------------------------------------------------------------------------
+  await admin.query(
+    `INSERT INTO app.sus_team
+       (tenant_id, id, clinic_id, nome, ine, tipo) VALUES
+       ($1, $3, $5, 'Equipe Seed A', '0000000001', 'eSF'),
+       ($2, $4, $6, 'Equipe Seed B', '0000000002', 'eSF')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.SUS_TEAM_A, F.SUS_TEAM_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.professional_sus_link
+       (tenant_id, clinic_id, professional_id, cns, cbo, team_id) VALUES
+       ($1, $3, $5, '700000000000001', '225125', $7),
+       ($2, $4, $6, '700000000000002', '225125', $8)`,
+    [F.TENANT_A, F.TENANT_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.PROF_A_ANA, F.PROF_B_DIEGO,
+     F.SUS_TEAM_A, F.SUS_TEAM_B],
+  );
+
+  await admin.query(
+    `INSERT INTO clin.patient_sus_profile
+       (tenant_id, patient_id, clinic_id, team_id, microarea, vulnerabilidade) VALUES
+       ($1, $3, $5, $7, '01', 'baixa'),
+       ($2, $4, $6, $8, '02', 'media')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.SUS_TEAM_A, F.SUS_TEAM_B],
+  );
+
+  await admin.query(
+    `INSERT INTO app.public_membership_profile
+       (tenant_id, clinic_id, user_id, public_role) VALUES
+       ($1, $3, $5, 'medico'),
+       ($2, $4, $6, 'enfermagem')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.public_operation_profile (tenant_id, clinic_id) VALUES
+       ($1, $3),
+       ($2, $4)`,
+    [F.TENANT_A, F.TENANT_B, F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.referral
+       (tenant_id, id, patient_id, origin_clinic_id, requested_by_user_id,
+        especialidade, motivo) VALUES
+       ($1, $3, $5, $7, $9,  'Cardiologia', 'seed A'),
+       ($2, $4, $6, $8, $10, 'Cardiologia', 'seed B')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.REFERRAL_A, F.REFERRAL_B,
+     F.PATIENT_A_JOANA, F.PATIENT_B_MARCOS,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.public_interop_delivery
+       (tenant_id, id, clinic_id, target, record_kind, source_ref,
+        idempotency_key, payload_sha256) VALUES
+       ($1, $3, $5, 'rnds',     'atendimento', 'seed-a', 'seed-idem-a-0001', repeat('a', 64)),
+       ($2, $4, $6, 'esus_aps', 'atendimento', 'seed-b', 'seed-idem-b-0001', repeat('b', 64))`,
+    [F.TENANT_A, F.TENANT_B,
+     F.INTEROP_DELIVERY_A, F.INTEROP_DELIVERY_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.public_migration_job
+       (tenant_id, id, clinic_id, created_by_user_id, source_kind, source_system) VALUES
+       ($1, $3, $5, $7, 'csv', 'Sistema legado A'),
+       ($2, $4, $6, $8, 'csv', 'Sistema legado B')`,
+    [F.TENANT_A, F.TENANT_B,
+     F.MIGRATION_JOB_A, F.MIGRATION_JOB_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
+
+  await admin.query(
+    `INSERT INTO app.public_operation_evidence
+       (tenant_id, id, clinic_id, created_by_user_id, evidence_type, status,
+        summary, happened_at) VALUES
+       ($1, $3, $5, $7, 'backup_restore', 'ok', 'Teste de restore seed A', clock_timestamp()),
+       ($2, $4, $6, $8, 'backup_restore', 'ok', 'Teste de restore seed B', clock_timestamp())`,
+    [F.TENANT_A, F.TENANT_B,
+     F.OPERATION_EVIDENCE_A, F.OPERATION_EVIDENCE_B,
+     F.CLINIC_A_SP, F.CLINIC_B_RIO_BRANCO,
+     F.USER_A_ANA, F.USER_B_DIEGO],
+  );
 }

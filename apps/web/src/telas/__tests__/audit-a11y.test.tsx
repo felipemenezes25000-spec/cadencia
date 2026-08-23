@@ -75,8 +75,6 @@ beforeAll(() => {
 import { Hoje, type LinhaDaFila, type PrecisaDeVoce } from '../Hoje';
 import { Pacientes } from '../Pacientes';
 import { Conversas } from '../Conversas';
-import { FinanceiroLayout } from '../FinanceiroLayout';
-import { ConveniosLayout, type ContadoresConvenios } from '../ConveniosLayout';
 import { Recibos } from '../Recibos';
 import { ListaDeEspera, type ItemDeEspera } from '../ListaDeEspera';
 import { AutomacoesDeConversa, type Automacao } from '../AutomacoesDeConversa';
@@ -105,11 +103,6 @@ const FILA: LinhaDaFila[] = [{
 const PRECISA: PrecisaDeVoce = {
   confirmacoesSemResposta: 2, prescricoesNaoAssinadas: 0,
   resultadosChegados: 1, rascunhosDeOntem: 0, guiasAFaturar: 3,
-};
-
-const CONTADORES_CONVENIOS: ContadoresConvenios = {
-  guiasAFaturar: 5, lotesRascunho: 1, lotesEnviados: 2,
-  pendencias: 1, glosasPendentes: 3, recursosRascunho: 0,
 };
 
 const ITENS_ESPERA: ItemDeEspera[] = [{
@@ -209,26 +202,6 @@ describe('Auditoria de acessibilidade', () => {
     await waitFor(() =>
       expect(screen.getByText('Maria Souza Lima')).toBeVisible(),
     );
-    expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
-  });
-
-  it('FinanceiroLayout nao tem violacoes de acessibilidade', async () => {
-    const { container } = render(
-      <FinanceiroLayout>
-        <div>Conteudo da aba</div>
-      </FinanceiroLayout>,
-    );
-    expect(screen.getByRole('heading', { level: 1, name: /Financeiro/ })).toBeVisible();
-    expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
-  });
-
-  it('ConveniosLayout nao tem violacoes de acessibilidade', async () => {
-    const { container } = render(
-      <ConveniosLayout contadores={CONTADORES_CONVENIOS} aoFiltrar={vi.fn()}>
-        <div>Conteudo da sub-aba</div>
-      </ConveniosLayout>,
-    );
-    expect(screen.getByRole('heading', { level: 1, name: /Convênio/ })).toBeVisible();
     expect(await axe(container, AXE_OPTS)).toHaveNoViolations();
   });
 

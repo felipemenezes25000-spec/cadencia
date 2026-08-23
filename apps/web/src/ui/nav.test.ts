@@ -20,7 +20,8 @@ describe('nav', () => {
     const atalhos = ITENS_NAV
       .filter((i): i is ItemNav & { atalho: string } => i.atalho !== undefined)
       .map((i) => i.atalho);
-    expect(atalhos).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+    expect(atalhos.length).toBeGreaterThan(0);
+    expect(atalhos).toEqual(atalhos.map((_, i) => String(i + 1)));
   });
 
   it('nenhum href duplicado entre itens de topo', () => {
@@ -49,12 +50,6 @@ describe('nav', () => {
     const indice = indiceDeNavegacao();
     const ids = indice.map((i) => i.id);
     expect(ids.length).toBe(new Set(ids).size);
-  });
-
-  it('convenios tem disponivelNaFase 4', () => {
-    const conv = ITENS_NAV.find((i) => i.id === 'convenios');
-    expect(conv).toBeDefined();
-    expect(conv!.disponivelNaFase).toBe(4);
   });
 
   it('relatorios aponta para /explorar', () => {

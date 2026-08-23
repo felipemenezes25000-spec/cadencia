@@ -79,23 +79,11 @@ vi.mock('../ui/PainelLateral', () => ({
     aberto ? <div data-testid="painel-lateral" aria-label={titulo}>{children}</div> : null,
 }));
 
-/* ── mock do PainelDeCobranca ─────────────────────────────────────────── */
-
-vi.mock('../ui/PainelDeCobranca', () => ({
-  PainelDeCobranca: ({ aberto }: { aberto: boolean }) =>
-    aberto ? <div data-testid="painel-cobranca">Cobranca</div> : null,
-}));
-
 /* ── mock do PainelDeDocumentos ───────────────────────────────────────── */
 
 vi.mock('../ui/PainelDeDocumentos', () => ({
   PainelDeDocumentos: ({ aberto }: { aberto: boolean }) =>
     aberto ? <div data-testid="painel-documentos">Documentos</div> : null,
-}));
-
-vi.mock('../ui/PainelDeSadt', () => ({
-  PainelDeSadt: ({ aberto }: { aberto: boolean }) =>
-    aberto ? <div data-testid="painel-sadt">Exames SADT</div> : null,
 }));
 
 /* ── mock do PainelDePrescricao ───────────────────────────────────────── */
@@ -116,7 +104,6 @@ function criarProps(overrides: Partial<TelaDeAtendimentoProps> = {}): TelaDeAten
     encounterId: 'enc-123',
     pacienteNome: 'Maria Silva',
     procedimentoNome: 'Consulta de rotina',
-    valorSugeridoCentavos: 15000,
     abrirSessaoDoPrescritor: vi.fn().mockResolvedValue({ mode: 'embed' }),
     buscarCodigo: vi.fn().mockResolvedValue([]),
     buscarModelo: vi.fn().mockResolvedValue([]),
@@ -128,7 +115,6 @@ function criarProps(overrides: Partial<TelaDeAtendimentoProps> = {}): TelaDeAten
       nome: 'Maria Silva',
       nascimento: '1985-03-15',
       sexo: 'Feminino',
-      convenio: 'Unimed',
       alergias: ['Dipirona', 'Penicilina'],
       medicamentos: ['Losartana 50mg'],
       ultimosAtendimentos: [
@@ -178,7 +164,7 @@ describe('TelaDeAtendimento', () => {
 
   it('renderiza timer de duração', () => {
     renderTela({ inicio: new Date(Date.now() - 125_000) });
-    const timer = screen.getByTestId('duracao-timer');
+    const timer = screen.getByRole('timer');
     expect(timer).toBeInTheDocument();
     // O timer deve mostrar um formato de duração (m:ss ou h:mm:ss)
     expect(timer.textContent).toMatch(/\d+:\d{2}/);
@@ -191,9 +177,8 @@ describe('TelaDeAtendimento', () => {
 
   it('renderiza sidebar com dados do paciente', () => {
     renderTela();
-    expect(screen.getByText('Dados do paciente')).toBeInTheDocument();
+    expect(screen.getByText('Dados do cidadão')).toBeInTheDocument();
     expect(screen.getByText('Feminino')).toBeInTheDocument();
-    expect(screen.getByText('Unimed')).toBeInTheDocument();
   });
 
   it('renderiza alergias destacadas', () => {
@@ -239,11 +224,7 @@ describe('TelaDeAtendimento', () => {
   it('renderiza apenas as ações clínicas disponíveis', () => {
     // Com o gancho de emissão: a barra completa. Sem ele o botão de documento
     // some, e isso é coberto pelo teste 'sem gancho de emissão'.
-    renderTela({
-      aoEmitirDocumento: vi.fn(),
-      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
-      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
-    });
+    renderTela({ aoEmitirDocumento: vi.fn() });
     // Verifica a barra de ações via aria-label
     const barraAcoes = screen.getByRole('navigation', { name: /Ações do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
@@ -257,23 +238,19 @@ describe('TelaDeAtendimento', () => {
     expect(screen.getByRole('button', { name: 'Finalizar atendimento' })).toBeVisible();
   });
 
-  it('Pedir exame abre o painel SADT quando a integração está disponível', async () => {
-    renderTela({
-      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
-      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
-      aoEmitirDocumento: vi.fn(),
-    });
-    expect(screen.queryByTestId('painel-sadt')).not.toBeInTheDocument();
+  it('Pedir exame abre o painel de documentos', async () => {
+    renderTela({ aoEmitirDocumento: vi.fn() });
+    expect(screen.queryByTestId('painel-documentos')).not.toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Pedir exame' }));
     });
 
-    expect(screen.getByTestId('painel-sadt')).toBeInTheDocument();
+    expect(screen.getByTestId('painel-documentos')).toBeInTheDocument();
   });
 
-  it('não oferece pedido de exame sem a integração SADT completa', () => {
-    renderTela({ buscarProcedimentoTuss: vi.fn().mockResolvedValue([]) });
+  it('não oferece pedido de exame sem o gancho de emissão', () => {
+    renderTela();
     expect(screen.queryByRole('button', { name: 'Pedir exame' })).not.toBeInTheDocument();
   });
 
@@ -443,11 +420,7 @@ describe('TelaDeAtendimento', () => {
   });
 
   it('renderiza atalhos de teclado na barra de ações', () => {
-    renderTela({
-      buscarProcedimentoTuss: vi.fn().mockResolvedValue([]),
-      aoEmitirGuiaSadt: vi.fn().mockResolvedValue({ guideId: 'g-1' }),
-      aoEmitirDocumento: vi.fn(),
-    });
+    renderTela({ aoEmitirDocumento: vi.fn() });
     expect(screen.getByText('Ctrl+P')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+E')).toBeInTheDocument();
     expect(screen.getByText('Ctrl+D')).toBeInTheDocument();

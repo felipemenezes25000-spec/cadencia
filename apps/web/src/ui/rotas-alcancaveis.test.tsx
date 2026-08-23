@@ -2,7 +2,6 @@ import { readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ITENS_NAV } from './nav';
-import { ABAS_FINANCEIRO } from '../telas/FinanceiroLayout';
 
 /**
  * Todo destino declarado tem que ser uma pagina que existe.
@@ -59,16 +58,11 @@ function existe(href: string): boolean {
 describe('todo destino declarado leva a uma pagina que existe', () => {
   it('o disco realmente tem paginas (o teste nao pode passar por ler vazio)', () => {
     expect(ROTAS.size).toBeGreaterThan(20);
-    expect(ROTAS.has('/convenios')).toBe(true);
+    expect(ROTAS.has('/agenda')).toBe(true);
   });
 
   it.each(ITENS_NAV.map((i) => [i.rotulo, i.href] as const))(
     'item de navegacao %s -> %s', (_rotulo, href) => {
-      expect(existe(href)).toBe(true);
-    });
-
-  it.each(ABAS_FINANCEIRO.map((a) => [a.rotulo, a.href] as const))(
-    'aba do Financeiro %s -> %s', (_rotulo, href) => {
       expect(existe(href)).toBe(true);
     });
 });

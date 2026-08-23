@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   CaretRight,
   ChatCircle,
-  CreditCard,
   GearSix,
   MagnifyingGlass,
   NotePencil,
@@ -64,11 +63,10 @@ const GRUPOS: readonly GrupoConfiguracao[] = [
   },
   {
     rotulo: 'Dados & conta',
-    descricao: 'Portabilidade e assinatura',
+    descricao: 'Portabilidade e conta',
     itens: [
       { value: 'exportar', rotulo: 'Exportar dados', descricao: 'Portabilidade e segurança', href: '/configuracoes/exportar', icone: Table },
-      { value: 'catalogos', rotulo: 'Catálogos', descricao: 'CID, TUSS e referências', href: '/catalogos', icone: Table },
-      { value: 'plano', rotulo: 'Plano', descricao: 'Assinatura e faturamento', href: '/configuracoes/plano', icone: CreditCard },
+      { value: 'catalogos', rotulo: 'Catálogos', descricao: 'CID e referências', href: '/catalogos', icone: Table },
       { value: 'perfil', rotulo: 'Meu perfil', descricao: 'Conta e preferências', href: '/configuracoes/perfil', icone: UserCircleGear },
     ],
   },

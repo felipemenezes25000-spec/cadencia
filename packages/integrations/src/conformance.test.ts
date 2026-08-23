@@ -3,7 +3,6 @@ import { assertNoDuplicateOnTimeout, assertSafetyDeclared } from './conformance'
 import { createFakePrescriptionProvider } from './fakes/prescription-fake';
 import { createFakeSignatureProvider } from './fakes/signature-fake';
 import { createFakeMessagingProvider } from './fakes/messaging-fake';
-import { createFakePaymentProvider } from './fakes/payment-fake';
 import { asE164, type ProviderCtx } from './contracts/common';
 
 const msgCtx: ProviderCtx = {
@@ -20,8 +19,6 @@ describe('conformidade obrigatoria por adaptador', () => {
     expect(assertSafetyDeclared(createFakeMessagingProvider(),
       ['registerChannelIdentity', 'send', 'findByIdempotencyKey',
        'verifyWebhook', 'parseInbound', 'fetchMedia'])).toBe(true);
-    expect(assertSafetyDeclared(createFakePaymentProvider(),
-      ['createPaymentLink', 'getPayment', 'refund', 'fetchSettlements'])).toBe(true);
   });
 
   it('reprova provedor que esqueceu de declarar a safety de um metodo', () => {

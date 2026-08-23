@@ -5,8 +5,10 @@ import { parse as parseYaml } from 'yaml';
 // §2.2 — o grafo de módulos. Uma pasta por módulo, nome @cadencia/<modulo>.
 const L0 = ['kernel', 'db', 'audit', 'authn', 'authz', 'storage', 'jobs', 'outbox', 'integrations', 'events'];
 const L1 = ['identity', 'tenancy', 'people', 'patients', 'catalogs'];
-const L2 = ['scheduling', 'emr', 'documents', 'prescriptions', 'billing', 'payments',
-            'tiss', 'messaging', 'inventory', 'reports', 'export', 'retention'];
+// billing, payments e tiss sairam com os fluxos privados: a operacao publica
+// nao cobra nem fatura convenio, entao o modulo deixou de existir no grafo.
+const L2 = ['scheduling', 'emr', 'documents', 'prescriptions',
+            'messaging', 'inventory', 'reports', 'export', 'retention'];
 const L3 = ['web', 'api', 'worker'];
 
 function readJson(path: string): Record<string, unknown> {

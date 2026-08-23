@@ -28,19 +28,20 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
     },
   }, rota('report.variation.read', async (tx, ctx, req) => {
     const q = req.query as { mes?: string };
-    const mes = q.mes ?? new Date().toISOString().slice(0, 7);
-    const data = `${mes}-01`;
+    const data = q.mes === undefined ? null : `${q.mes}-01`;
 
     const { rows } = await tx.query<{
       atendimentos_atual: string; atendimentos_anterior: string;
       faltas_atual: string; faltas_anterior: string;
       agenda_atual: string; agenda_anterior: string;
       regulacao_aberta: string; regulacao_urgente: string; cidadaos_ativos: string;
+      mes: string; refreshed_at: string;
     }>(
       `WITH janela AS (
-         SELECT $2::date AS ini_atual,
-                ($2::date + interval '1 month')::date AS fim_atual,
-                ($2::date - interval '1 month')::date AS ini_anterior
+         SELECT b.ini_atual,
+                (b.ini_atual + interval '1 month')::date AS fim_atual,
+                (b.ini_atual - interval '1 month')::date AS ini_anterior
+           FROM (SELECT COALESCE($2::date, date_trunc('month', clock_timestamp())::date) AS ini_atual) b
        ), ag AS (
          SELECT
            count(*) FILTER (WHERE a.appointment_date >= j.ini_atual AND a.appointment_date < j.fim_atual AND a.status='atendido') AS atendimentos_atual,
@@ -58,10 +59,14 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
          SELECT count(*) AS cidadaos_ativos FROM clin.patient
           WHERE inactivated_at IS NULL AND deceased_at IS NULL AND merged_into_id IS NULL
        )
-       SELECT ag.*, rg.*, cid.* FROM ag, rg, cid`,
+       SELECT ag.*, rg.*, cid.*,
+              to_char(j.ini_atual, 'YYYY-MM') AS mes,
+              to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS refreshed_at
+         FROM ag, rg, cid, janela j`,
       [ctx.actor.clinicId, data]);
 
     const x = rows[0];
+    if (x === undefined) throw new Error('desempenho: consulta agregada nao retornou linha');
     const n = (v: string | undefined) => Number(v ?? 0);
     const agendaAtual = n(x?.agenda_atual), agendaAnterior = n(x?.agenda_anterior);
     const faltasAtual = n(x?.faltas_atual), faltasAnterior = n(x?.faltas_anterior);
@@ -69,7 +74,7 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
     const absAnterior = agendaAnterior === 0 ? 0 : Math.round((faltasAnterior / agendaAnterior) * 1000) / 10;
 
     return {
-      mes,
+      mes: x.mes,
       metrics: [
         { key: 'atendimentos' as const, label: 'Atendimentos realizados', value: n(x?.atendimentos_atual), unit: 'numero' as const, previous: n(x?.atendimentos_anterior) },
         { key: 'faltas' as const, label: 'Faltas', value: faltasAtual, unit: 'numero' as const, previous: faltasAnterior },
@@ -78,7 +83,7 @@ export async function desempenhoRoutes(app: FastifyInstance): Promise<void> {
         { key: 'regulacao_urgente' as const, label: 'Encaminhamentos urgentes', value: n(x?.regulacao_urgente), unit: 'numero' as const, previous: null },
         { key: 'cidadaos_ativos' as const, label: 'Cidadãos ativos', value: n(x?.cidadaos_ativos), unit: 'numero' as const, previous: null },
       ],
-      freshness: { source: 'live' as const, refreshedAt: new Date().toISOString() },
+      freshness: { source: 'live' as const, refreshedAt: x.refreshed_at },
     };
   }));
 }

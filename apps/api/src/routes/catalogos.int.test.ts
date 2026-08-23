@@ -28,11 +28,6 @@ beforeAll(async () => {
              'Termo sintetico de teste da CID-11', '01',
              daterange('2027-01-01','infinity'), '202701')
      ON CONFLICT DO NOTHING`);
-  await j.query(
-    `INSERT INTO ref.tuss_term (tabela, codigo, termo, vigencia, competencia, acao)
-     VALUES (98, '90000001', 'Consulta de teste em consultorio',
-             daterange('2024-01-01','infinity'), '202401', 'inclusao')
-     ON CONFLICT DO NOTHING`);
 });
 afterAll(async () => { await closePools(); });
 
@@ -111,28 +106,6 @@ describe('catalogos de referencia', () => {
     await app.close();
   });
 
-  it('GET /v1/catalogos/tuss busca por tabela e termo na data', async () => {
-    const app = await buildApp();
-    const r = await app.inject({
-      method: 'GET',
-      url: '/v1/catalogos/tuss?tabela=98&termo=consulta%20de%20teste&data=2026-06-01',
-      ...auth(s) });
-    expect(r.statusCode).toBe(200);
-    const itens = (r.json() as { itens: { codigo: string; termo: string }[] }).itens;
-    expect(itens.find((x) => x.codigo === '90000001')).toBeDefined();
-    await app.close();
-  });
-
-  it('GET /v1/catalogos/tuss fora da vigencia devolve vazio, nao o termo errado', async () => {
-    const app = await buildApp();
-    const r = await app.inject({
-      method: 'GET',
-      url: '/v1/catalogos/tuss?tabela=98&termo=consulta%20de%20teste&data=2023-06-01',
-      ...auth(s) });
-    expect(r.statusCode).toBe(200);
-    expect((r.json() as { itens: unknown[] }).itens).toHaveLength(0);
-    await app.close();
-  });
 });
 
 describe('versao da terminologia', () => {

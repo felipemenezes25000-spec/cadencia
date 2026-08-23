@@ -6,7 +6,6 @@ function ambienteMemed(): void {
   process.env['MEMED_SCRIPT_URL'] ??= 'https://memed.test/s.js';
   process.env['MEMED_API_KEY'] ??= 'k';
   process.env['MEMED_SECRET_KEY'] ??= 's';
-  process.env['PSP_WEBHOOK_SECRET'] ??= 'segredo-de-teste-psp';
   process.env['WHATSAPP_APP_SECRET'] ??= 'segredo-de-teste-whatsapp';
 }
 
@@ -19,8 +18,6 @@ function ambienteReal(): void {
   process.env['TWILIO_ACCOUNT_SID'] ??= 'AC-test';
   process.env['TWILIO_AUTH_TOKEN'] ??= 'tw-tok';
   process.env['TWILIO_FROM_NUMBER'] ??= '+5511999999999';
-  process.env['ASAAS_API_KEY'] ??= 'asaas-k';
-  process.env['ASAAS_WEBHOOK_TOKEN'] ??= 'asaas-wh';
 }
 
 async function recarregarProviders(): Promise<() => Providers> {
@@ -29,24 +26,21 @@ async function recarregarProviders(): Promise<() => Providers> {
 }
 
 describe('registry de providers (fake)', () => {
-  it('inclui signature, prescription, messaging e payment', () => {
+  it('inclui signature, prescription e messaging', () => {
     const p: Providers = providers();
     expect(p.signature.id).toBe('signature-fake');
     expect(p.prescription.id).toBe('prescription-fake');
     expect(p.messaging.id).toBe('messaging-whatsapp-fake');
-    expect(p.payment.id).toBe('payment-fake');
   });
 
   it('todos declaram safety para seus metodos', () => {
     const p = providers();
     expect(Object.keys(p.messaging.safety).length).toBeGreaterThan(0);
-    expect(Object.keys(p.payment.safety).length).toBeGreaterThan(0);
   });
 
   it('todos declaram capabilities', () => {
     const p = providers();
     expect(p.messaging.capabilities.size).toBeGreaterThan(0);
-    expect(p.payment.capabilities.size).toBeGreaterThan(0);
   });
 });
 
@@ -104,9 +98,7 @@ describe('assinatura fora de desenvolvimento', () => {
 
 describe('segredo de webhook fora de desenvolvimento', () => {
   for (const [modo, variavel, ambienteFn] of [
-    ['real', 'ASAAS_WEBHOOK_TOKEN', ambienteReal],
     ['real', 'WHATSAPP_APP_SECRET', ambienteReal],
-    ['memed', 'PSP_WEBHOOK_SECRET', ambienteMemed],
     ['memed', 'WHATSAPP_APP_SECRET', ambienteMemed],
   ] as const) {
     it(`modo ${modo} nao sobe sem ${variavel}`, async () => {

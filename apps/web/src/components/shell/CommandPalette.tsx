@@ -5,18 +5,14 @@ import { useRouter } from 'next/navigation';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   CalendarBlank,
-  CreditCard,
   MagnifyingGlass,
-  Money,
   Pill,
   Plus,
-  Receipt,
   SpinnerGap,
   Stethoscope,
   Table,
   User,
   Users,
-  Wallet,
   X,
 } from '@phosphor-icons/react';
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
@@ -39,14 +35,9 @@ interface CommandItem {
 
 const ACOES: readonly CommandItem[] = [
   { id: 'novo-atendimento', label: 'Novo atendimento', meta: 'Agendar ou iniciar um atendimento', href: '/agenda?novo=1', icon: Plus, atalho: 'n', categoria: 'acao' },
-  { id: 'registrar-pagamento', label: 'Registrar pagamento', meta: 'Lançar recebimento no caixa', href: '/financeiro/recebimentos', icon: CreditCard, atalho: 'p', categoria: 'acao' },
-  { id: 'lancar-despesa', label: 'A pagar', meta: 'Abrir despesas e compromissos', href: '/financeiro/a-pagar', icon: Money, atalho: 'd', categoria: 'acao' },
   { id: 'abrir-agenda', label: 'Abrir agenda', meta: 'Visualizar horários da unidade', href: '/agenda', icon: CalendarBlank, atalho: 'g a', categoria: 'acao' },
   { id: 'hoje', label: 'Ir para Hoje', meta: 'Painel operacional do dia', href: '/hoje', icon: Stethoscope, atalho: 'g h', categoria: 'acao' },
-  { id: 'caixa', label: 'Caixa do dia', meta: 'Visualizar entradas e saídas', href: '/financeiro/caixa', icon: Wallet, atalho: 'g f c', categoria: 'acao' },
-  { id: 'a-receber', label: 'A receber', meta: 'Lista de recebíveis', href: '/financeiro/a-receber', icon: Receipt, atalho: 'g f r', categoria: 'acao' },
   { id: 'lista-pacientes', label: 'Lista de pacientes', meta: 'Buscar e gerenciar pacientes', href: '/pacientes', icon: Users, atalho: 'g p', categoria: 'acao' },
-  { id: 'convenios', label: 'Convênios', meta: 'Operadoras, guias e lotes', href: '/convenios', icon: Stethoscope, atalho: 'g o', categoria: 'acao' },
   { id: 'config-equipe', label: 'Equipe', meta: 'Gerenciar usuários e papéis', href: '/configuracoes/equipe', icon: Users, atalho: 'g c e', categoria: 'acao' },
   { id: 'explorar', label: 'Explorar dados', meta: 'Consultas livres e relatórios', href: '/explorar', icon: MagnifyingGlass, atalho: 'g e', categoria: 'acao' },
 ];
