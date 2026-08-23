@@ -74,10 +74,10 @@ describe('PainelDeAnexos', () => {
 
   it('resultado com pedido pendente exige escolher a solicitação antes do arquivo', () => {
     montar({ pedidosExamePendentes: PEDIDOS });
+    const seletor = screen.getByLabelText(/pedido de exame correspondente/i);
+    expect(seletor).toHaveTextContent('Hemograma completo · 10/08/26');
     expect(screen.getByLabelText(/escolher arquivo/i)).toBeDisabled();
-    fireEvent.change(screen.getByLabelText(/pedido de exame correspondente/i), {
-      target: { value: 'p1' },
-    });
+    fireEvent.change(seletor, { target: { value: 'p1' } });
     expect(screen.getByLabelText(/escolher arquivo/i)).not.toBeDisabled();
   });
 
