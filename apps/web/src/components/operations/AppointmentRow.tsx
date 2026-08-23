@@ -22,11 +22,20 @@ interface AppointmentRowProps {
   readonly onCharge?: () => void;
 }
 
-function Sinal({ children, tone = 'neutral' }: { readonly children: string; readonly tone?: 'neutral' | 'warning' | 'info' }) {
-  return <span className={cn(
-    'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-4',
-    tone === 'warning' ? 'border-warn/15 bg-warn-soft/60 text-warn' : tone === 'info' ? 'border-accent/15 bg-accent-soft/55 text-accent' : 'border-line bg-surface-subtle text-text-faint',
-  )}>{children}</span>;
+function Sinal({ children, descricao, tone = 'neutral' }: {
+  readonly children: string;
+  readonly descricao: string;
+  readonly tone?: 'neutral' | 'warning' | 'info';
+}) {
+  return <span
+    data-clinical-signal
+    title={descricao}
+    aria-label={`${children}. ${descricao}`}
+    className={cn(
+      'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-4',
+      tone === 'warning' ? 'border-warn/15 bg-warn-soft/60 text-warn' : tone === 'info' ? 'border-accent/15 bg-accent-soft/55 text-accent' : 'border-line bg-surface-subtle text-text-faint',
+    )}
+  >{children}</span>;
 }
 
 export function AppointmentRow({ appointment, horario, selected = false, loading = false, onPatientClick, onPrimaryAction, onMessage, onOpenPatient }: AppointmentRowProps) {
@@ -50,7 +59,12 @@ export function AppointmentRow({ appointment, horario, selected = false, loading
         </span>
       </div>
 
-      <button type="button" onClick={onPatientClick} className="group/patient col-start-2 row-start-1 flex min-w-0 items-center gap-3 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-4 md:col-start-auto md:row-start-auto">
+      <button
+        type="button"
+        onClick={onPatientClick}
+        title="Abrir resumo rápido do cidadão"
+        className="group/patient col-start-2 row-start-1 flex min-w-0 items-center gap-3 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-4 md:col-start-auto md:row-start-auto"
+      >
         <Avatar nome={appointment.displayName} tamanho="md" />
         <span className="min-w-0">
           <span className="block truncate text-[13px] font-bold tracking-[-0.018em] text-text transition-colors group-hover/patient:text-accent sm:text-sm">{appointment.displayName}</span>
@@ -58,9 +72,9 @@ export function AppointmentRow({ appointment, horario, selected = false, loading
             {[appointment.procedureNome ?? (appointment.teleconsulta ? 'Teleconsulta' : 'Atendimento'), appointment.professionalNome ?? appointment.professionalId].filter(Boolean).join(' · ')}
           </span>
           <span className="mt-1.5 flex max-w-full flex-wrap gap-1">
-            {appointment.encaixe ? <Sinal tone="warning">Encaixe</Sinal> : null}
-            {appointment.primeiraVez ? <Sinal tone="info">Primeira vez</Sinal> : null}
-            {appointment.cadastroPreliminar ? <Sinal tone="warning">Cadastro preliminar</Sinal> : null}
+            {appointment.encaixe ? <Sinal tone="warning" descricao="Atendimento inserido fora da agenda regular.">Encaixe</Sinal> : null}
+            {appointment.primeiraVez ? <Sinal tone="info" descricao="Primeiro atendimento deste cidadão na unidade.">Primeira vez</Sinal> : null}
+            {appointment.cadastroPreliminar ? <Sinal tone="warning" descricao="Cadastro ainda precisa ser completado ou validado antes de alguns fluxos.">Cadastro preliminar</Sinal> : null}
           </span>
         </span>
       </button>
@@ -71,17 +85,18 @@ export function AppointmentRow({ appointment, horario, selected = false, loading
       </span>
 
       <div className="col-start-2 row-start-2 mt-2 md:col-start-auto md:row-start-auto md:mt-0"><ChipDeStatus status={appointment.status} /></div>
-      <Botao variante={action.intent === 'clinical' ? 'primario' : 'secundario'} tamanho="sm" carregando={loading} onClick={onPrimaryAction} aria-label={`${action.label} para ${appointment.displayName}`} className="col-start-3 row-start-1 min-w-[108px] md:col-start-auto md:row-start-auto md:w-[132px]">{action.label}</Botao>
+      <Botao variante={action.intent === 'clinical' ? 'primario' : 'secundario'} tamanho="sm" carregando={loading} onClick={onPrimaryAction} aria-label={`${action.label} para ${appointment.displayName}`} title={`${action.label}: próxima ação recomendada para este atendimento`} className="col-start-3 row-start-1 min-w-[108px] md:col-start-auto md:row-start-auto md:w-[132px]">{action.label}</Botao>
 
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button type="button" aria-label={`Mais ações para ${appointment.displayName}`} className="col-start-3 row-start-2 mt-1 grid size-9 justify-self-end place-items-center rounded-xl border border-transparent text-text-faint outline-none transition-all duration-150 hover:border-line hover:bg-surface hover:text-text hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-accent/50 md:col-start-auto md:row-start-auto md:mt-0 md:justify-self-center">
+          <button type="button" aria-label={`Mais ações para ${appointment.displayName}`} title="Mais ações" className="col-start-3 row-start-2 mt-1 grid size-9 justify-self-end place-items-center rounded-xl border border-transparent text-text-faint outline-none transition-all duration-150 hover:border-line hover:bg-surface hover:text-text hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-accent/50 md:col-start-auto md:row-start-auto md:mt-0 md:justify-self-center">
             <DotsThree size={18} weight="bold" aria-hidden />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content align="end" sideOffset={8} className="z-[60] min-w-[214px] rounded-2xl border border-line bg-surface/98 p-1.5 shadow-elev-3 backdrop-blur-xl">
-            <MenuItem icon={User} label="Abrir paciente" onSelect={onOpenPatient} />
+            <DropdownMenu.Label className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-text-faint">Ações do cidadão</DropdownMenu.Label>
+            <MenuItem icon={User} label="Abrir prontuário do cidadão" onSelect={onOpenPatient} />
             <MenuItem icon={ChatCircle} label={appointment.mensagensNaoLidas > 0 ? `Mensagem (${appointment.mensagensNaoLidas})` : 'Enviar mensagem'} onSelect={onMessage} />
           </DropdownMenu.Content>
         </DropdownMenu.Portal>

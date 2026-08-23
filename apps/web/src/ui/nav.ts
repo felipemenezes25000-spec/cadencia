@@ -48,26 +48,34 @@ const ROTAS_DE_CATALOGO: readonly SubItemNav[] = [
 ] as const;
 
 export const FASE_ATUAL = 6 as const;
-export interface ItemDoShell { readonly id: string; readonly rotulo: string; readonly href: string; readonly icone: PhosphorIcon; readonly prefixoAtivo?: string; readonly badge?: number; }
+export interface ItemDoShell {
+  readonly id: string;
+  readonly rotulo: string;
+  readonly href: string;
+  readonly icone: PhosphorIcon;
+  readonly prefixoAtivo?: string;
+  readonly badge?: number;
+  readonly descricao?: string;
+}
 export const NAVEGACAO_SHELL: readonly { readonly rotulo: 'Principal' | 'Gestão' | 'Administração'; readonly itens: readonly ItemDoShell[]; }[] = [
   { rotulo: 'Principal', itens: [
-    { id: 'hoje', rotulo: 'Hoje', href: '/hoje', icone: House },
-    { id: 'agenda', rotulo: 'Agenda', href: '/agenda', icone: Calendar },
-    { id: 'regulacao', rotulo: 'Regulação', href: '/regulacao', icone: ListChecks, prefixoAtivo: '/regulacao' },
-    { id: 'atendimentos', rotulo: 'Atendimentos', href: '/hoje#fluxo-de-hoje', icone: Stethoscope, prefixoAtivo: '/atendimento' },
-    { id: 'pacientes', rotulo: 'Cidadãos', href: '/pacientes', icone: Users, prefixoAtivo: '/pacientes' },
-    { id: 'mensagens', rotulo: 'Mensagens', href: '/conversas', icone: ChatCircle, prefixoAtivo: '/conversas' },
-    { id: 'bulario', rotulo: 'Bulário', href: '/bulas', icone: Pill, prefixoAtivo: '/bulas' },
+    { id: 'hoje', rotulo: 'Hoje', href: '/hoje', icone: House, descricao: 'Prioridades, fila e operação do dia' },
+    { id: 'agenda', rotulo: 'Agenda', href: '/agenda', icone: Calendar, descricao: 'Horários, confirmações e lista de espera' },
+    { id: 'regulacao', rotulo: 'Regulação', href: '/regulacao', icone: ListChecks, prefixoAtivo: '/regulacao', descricao: 'Encaminhamentos, solicitações e filas reguladas' },
+    { id: 'atendimentos', rotulo: 'Atendimentos', href: '/hoje#fluxo-de-hoje', icone: Stethoscope, prefixoAtivo: '/atendimento', descricao: 'Consultas em curso e acesso ao prontuário' },
+    { id: 'pacientes', rotulo: 'Cidadãos', href: '/pacientes', icone: Users, prefixoAtivo: '/pacientes', descricao: 'Cadastro, histórico e prontuário longitudinal' },
+    { id: 'mensagens', rotulo: 'Mensagens', href: '/conversas', icone: ChatCircle, prefixoAtivo: '/conversas', descricao: 'Comunicação e retornos com cidadãos' },
+    { id: 'bulario', rotulo: 'Bulário', href: '/bulas', icone: Pill, prefixoAtivo: '/bulas', descricao: 'Consulta rápida de medicamentos e bulas' },
   ] },
   { rotulo: 'Gestão', itens: [
-    { id: 'estoque', rotulo: 'Estoque', href: '/estoque', icone: Package, prefixoAtivo: '/estoque' },
-    { id: 'indicadores', rotulo: 'Indicadores', href: '/desempenho', icone: ChartBar, prefixoAtivo: '/desempenho' },
-    { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar', icone: Table, prefixoAtivo: '/explorar' },
+    { id: 'estoque', rotulo: 'Estoque', href: '/estoque', icone: Package, prefixoAtivo: '/estoque', descricao: 'Entradas, saídas, lotes e alertas' },
+    { id: 'indicadores', rotulo: 'Indicadores', href: '/desempenho', icone: ChartBar, prefixoAtivo: '/desempenho', descricao: 'Produção, acesso e desempenho da rede' },
+    { id: 'relatorios', rotulo: 'Relatórios', href: '/explorar', icone: Table, prefixoAtivo: '/explorar', descricao: 'Consultas, filtros e exportações operacionais' },
   ] },
   { rotulo: 'Administração', itens: [
-    { id: 'implantacao', rotulo: 'Implantação', href: '/implantacao', icone: ListChecks, prefixoAtivo: '/implantacao' },
-    { id: 'equipe', rotulo: 'Equipe', href: '/configuracoes/equipe', icone: UserCircleGear },
-    { id: 'configuracoes', rotulo: 'Configurações', href: '/configuracoes', icone: GearSix, prefixoAtivo: '/configuracoes' },
+    { id: 'implantacao', rotulo: 'Implantação', href: '/implantacao', icone: ListChecks, prefixoAtivo: '/implantacao', descricao: 'Migração, integrações, SLA e evidências' },
+    { id: 'equipe', rotulo: 'Equipe', href: '/configuracoes/equipe', icone: UserCircleGear, descricao: 'Profissionais, vínculos, perfis e acesso' },
+    { id: 'configuracoes', rotulo: 'Configurações', href: '/configuracoes', icone: GearSix, prefixoAtivo: '/configuracoes', descricao: 'Unidade, SUS, prontuário e permissões' },
   ] },
 ] as const;
 

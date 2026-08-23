@@ -53,29 +53,16 @@ function AuthenticatedAppShell({ children }: { readonly children: ReactNode }) {
   );
 }
 
-/**
- * O dock e a UNICA navegacao estrutural no celular: a Sidebar e `hidden md:flex`.
- * Ele tinha cinco destinos fixos e o quinto, "Mais", era um link direto para
- * /configuracoes — ou seja, Financeiro, Convenios, Desempenho, Catalogos,
- * Bulario e Relatorios nao tinham nenhuma entrada no telefone. O produto tem 59
- * destinos; o celular alcancava 5. Chegar no resto dependia de adivinhar a URL
- * ou de saber que a lupa da TopBar indexa telas.
- *
- * Agora "Mais" abre a mesma arvore que a Sidebar desenha (`NAVEGACAO_SHELL` +
- * `CONFIG_NAV`), reaproveitada e nao duplicada: nav novo na Sidebar aparece no
- * celular sem ninguem lembrar de editar dois arquivos.
- */
+/** O dock mantém as ações do dia à mão; "Mais" abre todos os demais módulos. */
 export function MobileNavigation() {
   const pathname = usePathname();
   const [maisAberto, setMaisAberto] = useState(false);
 
-  /* Os quatro do dock sao o fluxo do dia (recepcao e consultorio). O resto e
-     gestao, que no celular e consulta pontual e cabe atras do "Mais". */
   const items = [
-    { label: 'Hoje', href: '/hoje', icon: House },
-    { label: 'Agenda', href: '/agenda', icon: CalendarBlank },
-    { label: 'Pacientes', href: '/pacientes', icon: Users, activePrefix: '/pacientes' },
-    { label: 'Mensagens', href: '/conversas', icon: ChatCircle, activePrefix: '/conversas' },
+    { label: 'Hoje', href: '/hoje', icon: House, descricao: 'Fila e prioridades' },
+    { label: 'Agenda', href: '/agenda', icon: CalendarBlank, descricao: 'Horários e confirmações' },
+    { label: 'Pacientes', href: '/pacientes', icon: Users, activePrefix: '/pacientes', descricao: 'Cadastro e prontuário' },
+    { label: 'Mensagens', href: '/conversas', icon: ChatCircle, activePrefix: '/conversas', descricao: 'Comunicação com cidadãos' },
   ] as const;
 
   const emMais = !items.some((item) => pathname === item.href
@@ -94,6 +81,8 @@ export function MobileNavigation() {
               key={item.label}
               href={item.href}
               aria-current={active ? 'page' : undefined}
+              aria-label={`${item.label}. ${item.descricao}`}
+              title={item.descricao}
               className={cn(
                 'flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors-fast',
                 active ? 'text-accent' : 'text-text-faint',
@@ -112,6 +101,8 @@ export function MobileNavigation() {
           onClick={() => setMaisAberto(true)}
           aria-haspopup="dialog"
           aria-expanded={maisAberto}
+          aria-label="Mais módulos. Abre a navegação completa"
+          title="Abrir todos os módulos"
           className={cn(
             'flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors-fast',
             emMais ? 'text-accent' : 'text-text-faint',
@@ -129,8 +120,6 @@ export function MobileNavigation() {
   );
 }
 
-/** Folha inferior com a navegação completa. Fecha sozinha ao navegar — sem isso
- *  ela cobriria a tela recém-aberta, que no celular parece travamento. */
 function PainelMais({ aberto, aoFechar, pathname }: {
   readonly aberto: boolean;
   readonly aoFechar: () => void;
@@ -139,9 +128,9 @@ function PainelMais({ aberto, aoFechar, pathname }: {
   const secoes = [
     ...NAVEGACAO_SHELL.map((grupo) => ({
       rotulo: grupo.rotulo as string,
-      itens: grupo.itens.map((i) => ({ id: i.id, rotulo: i.rotulo, href: i.href })),
+      itens: grupo.itens.map((i) => ({ id: i.id, rotulo: i.rotulo, href: i.href, descricao: i.descricao })),
     })),
-    { rotulo: 'Configurações', itens: CONFIG_NAV.filhos.map((f) => ({ id: f.id, rotulo: f.rotulo, href: f.href })) },
+    { rotulo: 'Configurações', itens: CONFIG_NAV.filhos.map((f) => ({ id: f.id, rotulo: f.rotulo, href: f.href, descricao: f.descricao })) },
   ];
 
   return (
@@ -149,11 +138,15 @@ function PainelMais({ aberto, aoFechar, pathname }: {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[89] bg-[#07191f]/45 backdrop-blur-[6px] data-[state=open]:animate-[fadeIn_160ms_ease-out] md:hidden" />
         <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed inset-x-0 bottom-0 z-[90] flex max-h-[82vh] flex-col rounded-t-[22px] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-elev-3 data-[state=open]:animate-[slideUp_200ms_var(--ease-out)] md:hidden"
+          className="fixed inset-x-0 bottom-0 z-[90] flex max-h-[84vh] flex-col rounded-t-[22px] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-elev-3 data-[state=open]:animate-[slideUp_200ms_var(--ease-out)] md:hidden"
         >
-          <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-            <Dialog.Title className="text-base font-bold tracking-[-0.02em] text-text">Navegar</Dialog.Title>
+          <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+            <div>
+              <Dialog.Title className="text-base font-bold tracking-[-0.02em] text-text">Todos os módulos</Dialog.Title>
+              <Dialog.Description className="mt-1 text-xs leading-relaxed text-text-muted">
+                Escolha pelo que você precisa fazer. Cada módulo explica sua função antes de abrir.
+              </Dialog.Description>
+            </div>
             <Dialog.Close className="grid size-9 shrink-0 place-items-center rounded-lg text-text-muted transition-colors-fast hover:bg-surface-hover hover:text-text" aria-label="Fechar navegação">
               <X size={18} aria-hidden />
             </Dialog.Close>
@@ -163,7 +156,7 @@ function PainelMais({ aberto, aoFechar, pathname }: {
             {secoes.map((secao) => (
               <div key={secao.rotulo} className="mb-5 last:mb-0">
                 <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-text-faint">{secao.rotulo}</p>
-                <div className="grid gap-1">
+                <div className="grid gap-1.5">
                   {secao.itens.map((item) => {
                     const ativo = pathname === item.href;
                     return (
@@ -173,13 +166,12 @@ function PainelMais({ aberto, aoFechar, pathname }: {
                         onClick={aoFechar}
                         aria-current={ativo ? 'page' : undefined}
                         className={cn(
-                          /* 48px: acima do minimo de 44px da WCAG 2.2 para alvo
-                             de toque, com folga para dedo em movimento. */
-                          'flex min-h-[48px] items-center rounded-xl px-3 text-sm font-semibold transition-colors-fast',
+                          'flex min-h-[56px] flex-col justify-center rounded-xl px-3 py-2 text-left transition-colors-fast',
                           ativo ? 'bg-accent-soft text-accent' : 'text-text-secondary hover:bg-surface-subtle hover:text-text',
                         )}
                       >
-                        {item.rotulo}
+                        <span className="text-sm font-semibold">{item.rotulo}</span>
+                        {item.descricao ? <span className={cn('mt-0.5 text-[11px] leading-snug', ativo ? 'text-accent/80' : 'text-text-muted')}>{item.descricao}</span> : null}
                       </Link>
                     );
                   })}

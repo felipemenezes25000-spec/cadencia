@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/cn';
+import { InfoTip } from './ClinicalHelp';
 
 export interface CampoProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'size'> {
@@ -35,8 +36,6 @@ const wrapperBase = [
 
 const wrapperFocus = 'focus-within:border-accent focus-within:bg-surface focus-within:ring-4 focus-within:ring-accent/10 focus-within:shadow-elev-1';
 const wrapperError = 'border-danger focus-within:border-danger focus-within:ring-danger/12';
-/* Campo usa --line-field, não --line: o contorno é o que diz "aqui se digita",
-   então precisa dos 3:1 do WCAG 1.4.11. Separador decorativo segue leve. */
 const wrapperNormal = 'border-line-field';
 const inputBase = 'min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text placeholder:text-text-faint outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -102,7 +101,13 @@ const Campo = forwardRef<HTMLInputElement | HTMLTextAreaElement, CampoProps>(
 
     return (
       <div className={cn('cadencia-field-group flex flex-col gap-1.5', className)}>
-        {rotulo && <label htmlFor={id} className="text-[13px] font-semibold text-text-secondary">{rotulo}</label>}
+        {rotulo ? (
+          <div className="flex min-w-0 items-center gap-2">
+            <label htmlFor={id} className="min-w-0 text-[13px] font-semibold text-text-secondary">{rotulo}</label>
+            {resto.required === true ? <span aria-hidden="true" className="cadencia-required-badge">Obrigatório</span> : null}
+            {textoAjuda ? <InfoTip conteudo={textoAjuda} rotulo={`Ajuda sobre ${rotulo}`} className="ml-auto" /> : null}
+          </div>
+        ) : null}
 
         <div className={wrapperClasses}>
           {prefixo && <span className="shrink-0 text-text-tertiary" data-testid="campo-prefixo">{prefixo}</span>}

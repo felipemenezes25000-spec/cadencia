@@ -32,6 +32,7 @@ function ItemDeNavegacao({ item, collapsed }: {
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
+      aria-label={item.descricao ? `${item.rotulo}. ${item.descricao}` : item.rotulo}
       className={cn(
         'group relative flex min-h-10 items-center overflow-hidden rounded-xl text-[13px] font-semibold tracking-[-0.012em] outline-none transition-all duration-150',
         collapsed ? 'justify-center px-2' : 'gap-3 px-3',
@@ -61,17 +62,17 @@ function ItemDeNavegacao({ item, collapsed }: {
     </Link>
   );
 
-  if (!collapsed) return link;
   return (
-    <RadixTooltip.Root>
+    <RadixTooltip.Root delayDuration={collapsed ? 120 : 420}>
       <RadixTooltip.Trigger asChild>{link}</RadixTooltip.Trigger>
       <RadixTooltip.Portal>
         <RadixTooltip.Content
           side="right"
           sideOffset={10}
-          className="z-[60] rounded-xl border border-line bg-surface px-3 py-2 text-xs font-semibold text-text shadow-elev-2"
+          className="cadencia-nav-help z-[70] rounded-xl border border-line bg-surface px-3 py-2.5 shadow-elev-2"
         >
-          {item.rotulo}
+          <span className="cadencia-nav-help-title">{item.rotulo}</span>
+          {item.descricao ? <span className="cadencia-nav-help-description">{item.descricao}</span> : null}
           <RadixTooltip.Arrow className="fill-surface" />
         </RadixTooltip.Content>
       </RadixTooltip.Portal>
@@ -90,6 +91,7 @@ function SeletorDeUnidade({ sessao, collapsed }: {
         <button
           type="button"
           aria-label={`Trocar unidade. Atual: ${ativa.clinicNome}`}
+          title="Trocar unidade ou contexto de trabalho"
           className={cn(
             'group flex min-h-[52px] w-full items-center rounded-[14px] border border-line bg-surface-subtle text-left shadow-[inset_0_1px_0_rgb(255_255_255_/_0.045)] outline-none transition-all duration-150 hover:border-line-strong hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-accent/70',
             collapsed ? 'justify-center px-2' : 'gap-2.5 px-3',
@@ -120,6 +122,9 @@ function SeletorDeUnidade({ sessao, collapsed }: {
           <DropdownMenu.Label className="px-3 pb-2 pt-1.5 text-[10px] font-bold uppercase tracking-[.11em] text-text-faint">
             Unidade de trabalho
           </DropdownMenu.Label>
+          <p className="px-3 pb-2 text-[11px] leading-relaxed text-text-muted">
+            Trocar a unidade muda o contexto de agenda, cidadãos e registros exibidos.
+          </p>
           {sessao.usuario.vinculos.map((vinculo) => {
             const selecionada = vinculo.clinicId === ativa.clinicId;
             return (
@@ -209,7 +214,7 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
                   type="button"
                   onClick={() => sessao.sair()}
                   aria-label="Sair"
-                  title="Sair"
+                  title="Encerrar sessão"
                   className="grid size-8 place-items-center rounded-lg text-text-faint transition-colors hover:bg-surface-sunken hover:text-text"
                 >
                   <SignOut size={16} aria-hidden />
@@ -221,6 +226,7 @@ export function Sidebar({ collapsed, onToggle, sessao }: {
             type="button"
             onClick={onToggle}
             aria-label={collapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
+            title={collapsed ? 'Mostrar nomes dos módulos' : 'Deixar a navegação compacta'}
             className="mt-1.5 flex h-9 w-full items-center justify-center rounded-xl text-[11px] font-semibold text-text-faint transition-colors-fast hover:bg-surface-subtle hover:text-text-muted"
           >
             <CaretLeft size={15} className={cn('transition-transform-fast', collapsed && 'rotate-180')} aria-hidden />
