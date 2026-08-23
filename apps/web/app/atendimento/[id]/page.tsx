@@ -7,7 +7,7 @@ import { apiFetch, apiFetchBlobUrl, ApiError } from '../../../src/api';
 import { useSessao } from '../../../src/sessao';
 import type { SecaoDaFicha } from '../../../src/ui/FichaClinica';
 import { montarPayloadClinico } from '../../../src/lib/payload-clinico';
-import type { Anexo } from '../../../src/ui/PainelDeAnexos';
+import type { Anexo, PedidoExamePendente } from '../../../src/ui/PainelDeAnexos';
 import type { SugestaoDaIA } from '../../../src/ui/PainelDeTranscricao';
 
 interface Contexto {
@@ -119,6 +119,7 @@ export default function PaginaAtendimento() {
   const [erro, setErro] = useState<string | null>(null);
   const [secoes, setSecoes] = useState<readonly SecaoDaFicha[]>([]);
   const [anexos, setAnexos] = useState<readonly Anexo[]>([]);
+  const [pedidosExamePendentes, setPedidosExamePendentes] = useState<readonly PedidoExamePendente[]>([]);
   const [valoresDaFicha, setValoresDaFicha] = useState<Record<string, string>>({});
 
   const rev = useRef(1);
@@ -135,6 +136,14 @@ export default function PaginaAtendimento() {
       `/v1/pacientes/${patientId}/anexos`, { clinicId, csrfToken },
     ).catch(() => ({ itens: [] as Anexo[] }));
     setAnexos(r.itens);
+  }, [clinicId, csrfToken]);
+
+  const recarregarPedidosExame = useCallback(async (patientId: string) => {
+    const r = await apiFetch<{ itens: PedidoExamePendente[] }>(
+      `/v1/pacientes/${patientId}/pedidos-exame?pendentes=true`,
+      { clinicId, csrfToken },
+    ).catch(() => ({ itens: [] as PedidoExamePendente[] }));
+    setPedidosExamePendentes(r.itens);
   }, [clinicId, csrfToken]);
 
   /**
@@ -210,13 +219,16 @@ export default function PaginaAtendimento() {
         setSecoes(config.secoes);
         setCtx(contexto);
         rascunhoCarregado.current = true;
-        void recarregarAnexos(contexto.paciente.patientId);
+        void Promise.all([
+          recarregarAnexos(contexto.paciente.patientId),
+          recarregarPedidosExame(contexto.paciente.patientId),
+        ]);
       } catch (e) {
         if (vivo) setErro(e instanceof ApiError ? e.codigo : 'falha_ao_carregar');
       }
     })();
     return () => { vivo = false; };
-  }, [id, clinicId, csrfToken, recarregarAnexos]);
+  }, [id, clinicId, csrfToken, recarregarAnexos, recarregarPedidosExame]);
 
   const salvarEditor = useCallback(async (conteudo: Record<string, unknown>) => {
     ultimoDoc.current = conteudo;
@@ -348,6 +360,9 @@ export default function PaginaAtendimento() {
           clinicId,
           csrfToken,
         });
+        if (kind === 'pedido_exame') {
+          await recarregarPedidosExame(ctx.paciente.patientId);
+        }
         return {
           documentId: r.documentId,
           assinado: r.assinatura.estado === 'assinado',
@@ -356,7 +371,8 @@ export default function PaginaAtendimento() {
         };
       }}
       anexos={anexos}
-      aoEnviarAnexo={async ({ arquivo, kind }) => {
+      pedidosExamePendentes={pedidosExamePendentes}
+      aoEnviarAnexo={async ({ arquivo, kind, requestDocumentId }) => {
         const bytes = new Uint8Array(await arquivo.arrayBuffer());
         let bin = '';
         for (const b of bytes) bin += String.fromCharCode(b);
@@ -365,6 +381,7 @@ export default function PaginaAtendimento() {
           body: {
             patientId: ctx.paciente.patientId,
             encounterId: id,
+            ...(requestDocumentId === undefined ? {} : { requestDocumentId }),
             kind,
             originalName: arquivo.name,
             contentType: arquivo.type || 'application/octet-stream',
@@ -373,7 +390,10 @@ export default function PaginaAtendimento() {
           clinicId,
           csrfToken,
         });
-        await recarregarAnexos(ctx.paciente.patientId);
+        await Promise.all([
+          recarregarAnexos(ctx.paciente.patientId),
+          recarregarPedidosExame(ctx.paciente.patientId),
+        ]);
       }}
       aoAbrirAnexo={async (attachmentId) => {
         const url = await apiFetchBlobUrl(

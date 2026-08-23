@@ -17,7 +17,11 @@ import { EditorClinico, type CodigoHit } from './EditorClinico';
 import { PainelDeDocumentos, type TipoDeDocumento } from '../ui/PainelDeDocumentos';
 import { PainelDePrescricao, type SessaoDoPrescritor } from '../ui/PainelDePrescricao';
 import { FichaClinica, type SecaoDaFicha } from '../ui/FichaClinica';
-import { PainelDeAnexos, type Anexo } from '../ui/PainelDeAnexos';
+import {
+  PainelDeAnexos,
+  type Anexo,
+  type PedidoExamePendente,
+} from '../ui/PainelDeAnexos';
 import { PainelDeTranscricao, type SugestaoDaIA } from '../ui/PainelDeTranscricao';
 import { Botao } from '../ui/Botao';
 import { BotaoIcone } from '../ui/BotaoIcone';
@@ -65,7 +69,12 @@ export interface TelaDeAtendimentoProps {
   readonly valoresDaFicha?: Readonly<Record<string, string>>;
   readonly aoMudarFicha?: (chave: string, valor: string) => void;
   readonly anexos?: readonly Anexo[];
-  readonly aoEnviarAnexo?: (dados: { arquivo: File; kind: string }) => Promise<void>;
+  readonly pedidosExamePendentes?: readonly PedidoExamePendente[];
+  readonly aoEnviarAnexo?: (dados: {
+    arquivo: File;
+    kind: string;
+    requestDocumentId?: string;
+  }) => Promise<void>;
   readonly aoAbrirAnexo?: (attachmentId: string) => Promise<void>;
   readonly aoTranscrever?: (audio: Blob) => Promise<SugestaoDaIA>;
   readonly aoAceitarSugestao?: (s: SugestaoDaIA, campos: ReadonlySet<string>) => void;
@@ -391,7 +400,14 @@ export function TelaDeAtendimento(p: TelaDeAtendimentoProps) {
       ) : null}
 
       {p.aoEnviarAnexo && p.aoAbrirAnexo ? (
-        <PainelDeAnexos aberto={anexosAberto} anexos={p.anexos ?? []} aoEnviar={p.aoEnviarAnexo} aoAbrir={p.aoAbrirAnexo} aoFechar={() => setAnexosAberto(false)} />
+        <PainelDeAnexos
+          aberto={anexosAberto}
+          anexos={p.anexos ?? []}
+          pedidosExamePendentes={p.pedidosExamePendentes ?? []}
+          aoEnviar={p.aoEnviarAnexo}
+          aoAbrir={p.aoAbrirAnexo}
+          aoFechar={() => setAnexosAberto(false)}
+        />
       ) : null}
 
       {p.aoTranscrever && p.aoAceitarSugestao ? (
