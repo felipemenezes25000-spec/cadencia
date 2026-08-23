@@ -66,6 +66,11 @@ function tamanho(bytes: number): string {
 }
 
 function dataCurta(iso: string): string {
+  const dataSemHora = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (dataSemHora !== null) {
+    const [, ano = '', mes = '', dia = ''] = dataSemHora;
+    return `${dia}/${mes}/${ano.slice(-2)}`;
+  }
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
