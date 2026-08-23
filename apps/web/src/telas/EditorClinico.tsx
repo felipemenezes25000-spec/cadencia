@@ -26,19 +26,11 @@ import { Skeleton } from "../ui/Skeleton";
 import { ATALHOS_DO_ATENDIMENTO } from "./atalhos";
 import { SlashCommandExtension } from "./EditorSlashCommands";
 
-/* ── tipos exportados (backward-compat) ──────────────────────────────── */
+/* ── tipos exportados ────────────────────────────────────────────────── */
 
 export interface CodigoHit {
   readonly code: string;
   readonly display: string;
-}
-export interface ModeloHit {
-  readonly code: string;
-  readonly texto: string;
-}
-export interface ValorAnterior {
-  readonly valor: string;
-  readonly em: string;
 }
 
 /* ── props ────────────────────────────────────────────────────────────── */
@@ -46,8 +38,6 @@ export interface ValorAnterior {
 export interface EditorClinicoProps {
   readonly encounterId: string;
   readonly buscarCodigo: (termo: string) => Promise<CodigoHit[]>;
-  readonly buscarModelo: (termo: string) => Promise<ModeloHit[]>;
-  readonly buscarValorAnterior: (campo: string) => Promise<ValorAnterior | null>;
   readonly aoPrescrever: () => void;
   readonly aoPedirExame: () => void;
   readonly aoEmitirDocumento: () => void;
