@@ -46,6 +46,30 @@ const TEXTO: Record<string, string> = {
   sem_vinculo_na_unidade: 'Você não tem acesso a esta unidade.',
 };
 
+const SEM_SERVIDOR = 'Sem conexão com o servidor. Tente de novo em instantes.';
+
+/**
+ * Emite o cookie `__Host-cadencia_csrf`, que o POST de login exige.
+ *
+ * O GET responde 401 para quem ainda nao entrou — e isso e normal, o cookie vem
+ * junto. Por isso o que decide nao e o status, e se o cookie chegou: quando o
+ * rewrite de `/v1/*` nao alcanca a API (indisponibilidade, ou um redirect de
+ * protecao do host, que o navegador recusa como erro de CORS) nao ha resposta
+ * nenhuma e o cookie nao existe.
+ *
+ * Antes disto a falha era engolida em silencio, o login seguia sem token, a API
+ * respondia `csrf_invalido` e a tela dizia "sua sessao expirou. Recarregue a
+ * pagina." — diagnostico errado, e um conselho que nao resolve.
+ */
+async function prepararCsrf(): Promise<boolean> {
+  try {
+    await apiFetch('/v1/sessao', { clinicId: '', csrfToken: '' });
+  } catch {
+    // 401 de visitante cai aqui tambem, e nesse caso o cookie veio.
+  }
+  return lerCsrf() !== '';
+}
+
 function mensagem(e: unknown): string {
   if (e instanceof ApiError) return TEXTO[e.codigo] ?? 'Não foi possível continuar.';
   return 'Sem conexão com o servidor.';
@@ -79,7 +103,11 @@ export default function PaginaEntrar() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   useEffect(() => {
-    void apiFetch('/v1/sessao', { clinicId: '', csrfToken: '' }).catch(() => undefined);
+    let vivo = true;
+    void prepararCsrf().then((pronto) => {
+      if (vivo && !pronto) setErro(SEM_SERVIDOR);
+    });
+    return () => { vivo = false; };
   }, []);
 
   async function seguirCom(vinculos: Vinculo[]) {
@@ -101,6 +129,12 @@ export default function PaginaEntrar() {
     setErro(null);
     setEnviando(true);
     try {
+      // O botao continua ativo de proposito: uma queda passageira se resolve
+      // aqui, sem exigir que a pessoa recarregue a pagina.
+      if (lerCsrf() === '' && !(await prepararCsrf())) {
+        setErro(SEM_SERVIDOR);
+        return;
+      }
       const r = await apiFetch<RespostaLogin>('/v1/sessao', {
         method: 'POST',
         body: { email, senha },
