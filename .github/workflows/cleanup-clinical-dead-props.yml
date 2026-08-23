@@ -1,0 +1,109 @@
+name: cleanup clinical dead props
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_VERSION: '24'
+      PNPM_VERSION: '10'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove contratos mortos do editor clínico
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          editor = Path('apps/web/src/telas/EditorClinico.tsx')
+          s = editor.read_text()
+          s = re.sub(
+              r"export interface ModeloHit \{\n  readonly code: string;\n  readonly texto: string;\n\}\n"
+              r"export interface ValorAnterior \{\n  readonly valor: string;\n  readonly em: string;\n\}\n",
+              '', s,
+          )
+          s = re.sub(
+              r"  readonly buscarModelo: \(termo: string\) => Promise<ModeloHit\[]>;\n"
+              r"  readonly buscarValorAnterior: \(campo: string\) => Promise<ValorAnterior \| null>;\n",
+              '', s,
+          )
+          editor.write_text(s)
+
+          tela = Path('apps/web/src/telas/TelaDeAtendimento.tsx')
+          s = tela.read_text()
+          s = s.replace(
+              "import { EditorClinico, type CodigoHit, type ModeloHit, type ValorAnterior } from './EditorClinico';",
+              "import { EditorClinico, type CodigoHit } from './EditorClinico';",
+          )
+          s = re.sub(
+              r"  readonly buscarModelo: \(termo: string\) => Promise<ModeloHit\[]>;\n"
+              r"  readonly buscarValorAnterior: \(campo: string\) => Promise<ValorAnterior \| null>;\n",
+              '', s,
+          )
+          s = s.replace(
+              ' buscarModelo={p.buscarModelo} buscarValorAnterior={p.buscarValorAnterior}',
+              '',
+          )
+          tela.write_text(s)
+
+          pagina = Path('apps/web/app/atendimento/[id]/page.tsx')
+          s = pagina.read_text()
+          s = re.sub(r"^\s*buscarModelo=\{async \(\) => \[\]\}\n", '', s, flags=re.M)
+          s = re.sub(r"^\s*buscarValorAnterior=\{async \(\) => null\}\n", '', s, flags=re.M)
+          pagina.write_text(s)
+
+          for nome in [
+              'apps/web/src/telas/EditorClinico.test.tsx',
+              'apps/web/src/telas/TelaDeAtendimento.test.tsx',
+          ]:
+              p = Path(nome)
+              s = p.read_text()
+              s = re.sub(r"^\s*buscarModelo:\s*.*\n", '', s, flags=re.M)
+              s = re.sub(r"^\s*buscarValorAnterior:\s*.*\n", '', s, flags=re.M)
+              p.write_text(s)
+
+          # O workflow é descartável: não deixa ferramenta de manutenção no produto.
+          Path('.github/workflows/cleanup-clinical-dead-props.yml').unlink()
+
+          restos = []
+          for p in Path('apps/web').rglob('*'):
+              if p.suffix not in {'.ts', '.tsx'}:
+                  continue
+              texto = p.read_text(errors='ignore')
+              if 'buscarModelo' in texto or 'buscarValorAnterior' in texto or 'ModeloHit' in texto or 'ValorAnterior' in texto:
+                  restos.append(str(p))
+          if restos:
+              raise SystemExit('contratos mortos ainda presentes: ' + ', '.join(restos))
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test:web
+      - run: pnpm build:web
+
+      - name: Commit e push direto na main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "refactor(web): remove contratos clínicos mortos"
+          git push origin HEAD:main
