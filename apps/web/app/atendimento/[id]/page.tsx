@@ -321,8 +321,6 @@ export default function PaginaAtendimento() {
         }
         return r.itens.map((x) => ({ code: x.codigo, display: x.descricao }));
       }}
-      buscarModelo={async () => []}
-      buscarValorAnterior={async () => null}
       aoConfirmarPrescricao={async ({ providerPrescriptionId }) => apiFetch<{ prescriptionId: string }>(
         '/v1/prescricoes', {
           method: 'POST',
