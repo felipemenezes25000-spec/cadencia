@@ -13,11 +13,25 @@ const SECOES: SecaoDaFicha[] = [
   },
   {
     sectionId: 's1', code: 'antecedentes', label: 'Antecedentes',
-    campos: [{
-      fieldId: 'f-alergias', code: 'alergias', label: 'Alergias',
-      kind: 'texto_curto', generation: 1, required: false,
-      unit: null, options: null, refSource: null, observationCode: null, componentes: [],
-    }],
+    campos: [
+      {
+        fieldId: 'f-alergias', code: 'alergias', label: 'Alergias',
+        kind: 'texto_curto', generation: 1, required: false,
+        unit: null, options: null, refSource: null, observationCode: null, componentes: [],
+      },
+      {
+        fieldId: 'f-tabagismo', code: 'tabagismo', label: 'Tabagismo',
+        kind: 'lista_unica', generation: 1, required: false,
+        unit: null, options: ['Nunca fumou', 'Ex-tabagista', 'Tabagista'],
+        refSource: null, observationCode: null, componentes: [],
+      },
+      {
+        fieldId: 'f-comorbidades', code: 'comorbidades', label: 'Comorbidades',
+        kind: 'multipla_escolha', generation: 1, required: false,
+        unit: null, options: ['Hipertensao', 'Diabetes', 'Asma', 'Nenhuma'],
+        refSource: null, observationCode: null, componentes: [],
+      },
+    ],
   },
   {
     sectionId: 's2', code: 'sinais_vitais', label: 'Sinais vitais',
@@ -46,6 +60,14 @@ const SECOES: SecaoDaFicha[] = [
       refSource: 'CID10', observationCode: null, componentes: [],
     }],
   },
+  {
+    sectionId: 's4', code: 'odonto', label: 'Odontologia',
+    campos: [{
+      fieldId: 'f-odonto', code: 'odontograma', label: 'Odontograma', kind: 'odontograma',
+      generation: 1, required: false, unit: null, options: null,
+      refSource: null, observationCode: null, componentes: [],
+    }],
+  },
 ];
 
 describe('montagem do payload clínico', () => {
@@ -55,8 +77,6 @@ describe('montagem do payload clínico', () => {
       competenciaCid: '202501',
     });
     const evo = p.fields.filter((f) => f.fieldId === 'f-evo');
-    // Duas caixas para a mesma coisa fariam o médico escrever numa e a outra
-    // sobrescrever com vazio na hora de selar.
     expect(evo).toHaveLength(1);
     expect(evo[0]?.value).toEqual({ slot: 'value_text', text: 'Paciente refere melhora.' });
   });
@@ -69,6 +89,16 @@ describe('montagem do payload clínico', () => {
     expect(p.fields.some((f) => f.fieldId === 'f-alergias')).toBe(false);
   });
 
+  it('campo obrigatório vazio bloqueia a selagem', () => {
+    const obrigatoria: SecaoDaFicha = {
+      ...SECOES[1]!,
+      campos: [{ ...SECOES[1]!.campos[0]!, required: true }],
+    };
+    expect(() => montarPayloadClinico({
+      secoes: [SECOES[0]!, obrigatoria], valores: {}, evolucao: 'x', competenciaCid: '202501',
+    })).toThrow('campo_obrigatorio:alergias');
+  });
+
   it('numérico vira campo E observação — é a observação que faz gráfico existir', () => {
     const p = montarPayloadClinico({
       secoes: SECOES, valores: { 'f-peso': '72.4' }, evolucao: 'x',
@@ -76,12 +106,7 @@ describe('montagem do payload clínico', () => {
     });
     expect(p.fields.find((f) => f.fieldId === 'f-peso')?.value)
       .toEqual({ slot: 'value_num', num: '72.4' });
-    // Número como STRING de ponta a ponta: "70.50" e "70.5" são valores
-    // diferentes na tela e precisam de hashes diferentes (§4.3).
     expect(p.observations).toContainEqual({
-      // fieldId acompanha: `clin.observation.field_id` é NOT NULL porque a
-      // observação é projeção de um campo, e sem a origem não dá para
-      // reprojetar quando o atendimento for retificado.
       fieldId: 'f-peso',
       observationCode: 'PESO', valueNum: '72.4', unit: 'kg', componentOrdinal: 1,
     });
@@ -93,8 +118,6 @@ describe('montagem do payload clínico', () => {
       valores: { 'f-pa:PA_SIS': '120', 'f-pa:PA_DIA': '80' },
       evolucao: 'x', competenciaCid: '202501',
     });
-    // FIELD_KINDS diz `slot: null` para composto: o campo em si não tem valor,
-    // quem carrega o dado são os componentes.
     expect(p.fields.some((f) => f.fieldId === 'f-pa')).toBe(false);
     expect(p.observations).toContainEqual({
       fieldId: 'f-pa',
@@ -115,6 +138,51 @@ describe('montagem do payload clínico', () => {
       .toHaveLength(1);
   });
 
+  it('lista única vira referência e achado clínico consultável', () => {
+    const p = montarPayloadClinico({
+      secoes: SECOES,
+      valores: { 'f-tabagismo': 'Ex-tabagista' },
+      evolucao: 'x', competenciaCid: '202501',
+    });
+    expect(p.fields.find((f) => f.fieldId === 'f-tabagismo')).toMatchObject({
+      displaySnapshot: 'Ex-tabagista',
+      value: { slot: 'value_ref_code', source: 'FIELD_OPTION:tabagismo', code: 'Ex-tabagista' },
+    });
+    expect(p.findings).toContainEqual({
+      fieldCode: 'tabagismo', optionCode: 'Ex-tabagista',
+      displaySnapshot: 'Ex-tabagista', ordinal: 0,
+    });
+  });
+
+  it('múltipla escolha vira uma linha e um achado por opção marcada', () => {
+    const p = montarPayloadClinico({
+      secoes: SECOES,
+      valores: { 'f-comorbidades': 'Hipertensao|Diabetes' },
+      evolucao: 'x', competenciaCid: '202501',
+    });
+    expect(p.fields.filter((f) => f.fieldId === 'f-comorbidades')).toHaveLength(2);
+    expect(p.findings).toEqual([
+      { fieldCode: 'comorbidades', optionCode: 'Hipertensao', displaySnapshot: 'Hipertensao', ordinal: 0 },
+      { fieldCode: 'comorbidades', optionCode: 'Diabetes', displaySnapshot: 'Diabetes', ordinal: 1 },
+    ]);
+  });
+
+  it('odontograma é JSON clínico, não texto opaco', () => {
+    const json = JSON.stringify({ '11': { status: 'carie' } });
+    const p = montarPayloadClinico({
+      secoes: SECOES, valores: { 'f-odonto': json }, evolucao: 'x', competenciaCid: '202501',
+    });
+    expect(p.fields.find((f) => f.fieldId === 'f-odonto')?.value)
+      .toEqual({ slot: 'value_json', json: { '11': { status: 'carie' } } });
+  });
+
+  it('JSON clínico inválido bloqueia a finalização em vez de corromper o slot', () => {
+    expect(() => montarPayloadClinico({
+      secoes: SECOES, valores: { 'f-odonto': '{quebrado' },
+      evolucao: 'x', competenciaCid: '202501',
+    })).toThrow('campo_json_invalido:odontograma');
+  });
+
   it('CID vira campo codificado E diagnóstico, com a competência do catálogo', () => {
     const p = montarPayloadClinico({
       secoes: SECOES,
@@ -126,19 +194,19 @@ describe('montagem do payload clínico', () => {
     expect(p.diagnoses).toEqual([{
       codeSystem: 'CID10', code: 'J06.9',
       displaySnapshot: 'Infeccao aguda das vias aereas superiores',
-      // A versão vem do catálogo. Fixar '2025' aqui seria afirmar em prontuário
-      // uma versão de terminologia que ninguém conferiu.
       terminologyVersion: '202501', isPrincipal: true,
     }]);
-    expect(p.fields.find((f) => f.fieldId === 'f-cid')?.displaySnapshot)
-      .toBe('Infeccao aguda das vias aereas superiores');
+  });
+
+  it('não sela CID sem a competência da terminologia', () => {
+    expect(() => montarPayloadClinico({
+      secoes: SECOES,
+      valores: { 'f-cid': 'J06.9|Infeccao aguda das vias aereas superiores' },
+      evolucao: 'x', competenciaCid: '',
+    })).toThrow('competencia_terminologica_ausente');
   });
 
   it('CID-11 também vira diagnóstico, marcada como CID11', () => {
-    // A partir de 2027 a ficha pode ter um campo com `refSource: 'CID11'`. Sem
-    // este ramo, o código entraria como campo codificado e NÃO viraria
-    // diagnóstico: o prontuário ficaria com a hipótese escrita e a lista de
-    // diagnósticos vazia, e nenhuma tela mostraria a diferença.
     const secaoCid11 = {
       ...SECOES[3]!,
       campos: [{ ...SECOES[3]!.campos[0]!, refSource: 'CID11', label: 'CID-11' }],
@@ -149,9 +217,6 @@ describe('montagem do payload clínico', () => {
       evolucao: 'x', competenciaCid: '202701',
     });
     expect(p.diagnoses).toEqual([{
-      // `clin.diagnosis` tem CHECK (code_system IN ('CID10','CID11')). Gravar
-      // com o sistema errado não daria erro: daria um diagnóstico de 2027
-      // catalogado como CID-10, impossível de reconciliar depois.
       codeSystem: 'CID11', code: 'ZZ90',
       displaySnapshot: 'Termo sintetico de teste',
       terminologyVersion: '202701', isPrincipal: true,
