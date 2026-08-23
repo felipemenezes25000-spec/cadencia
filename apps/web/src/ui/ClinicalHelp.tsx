@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 import {
   CheckCircle,
   Clock,
@@ -65,7 +66,7 @@ export function InfoTip({
 
 export function StatusLegend({ compact = false }: { readonly compact?: boolean }) {
   return (
-    <div className={cn('grid gap-2', compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2')}>
+    <div className="grid gap-2 sm:grid-cols-2">
       {STATUS.map((item) => (
         <div key={item.status} className="flex min-w-0 items-start gap-2.5 rounded-xl border border-line bg-surface-subtle/70 p-2.5">
           <ChipDeStatus status={item.status} className="mt-0.5 shrink-0" />
@@ -77,7 +78,7 @@ export function StatusLegend({ compact = false }: { readonly compact?: boolean }
 }
 
 function BlocoAjuda({ icon: Icon, titulo, children }: {
-  readonly icon: typeof Info;
+  readonly icon: PhosphorIcon;
   readonly titulo: string;
   readonly children: ReactNode;
 }) {
