@@ -59,18 +59,29 @@ function ajudaDoCampo(campo: CampoDaFicha): string {
   return 'Registro estruturado desta seção do prontuário.';
 }
 
-function RotuloCampo({ campo, htmlFor }: { readonly campo: CampoDaFicha; readonly htmlFor?: string }) {
-  const conteudo = (
+function MetadadosDoRotulo({ campo }: { readonly campo: CampoDaFicha }) {
+  return (
     <>
-      <span>{campo.label}</span>
       {campo.required ? <span aria-hidden="true" className="cadencia-required-badge">Obrigatório</span> : null}
       <InfoTip conteudo={ajudaDoCampo(campo)} rotulo={`Ajuda sobre ${campo.label}`} />
     </>
   );
-  return htmlFor ? (
-    <label htmlFor={htmlFor} className="flex min-w-0 items-center gap-2 text-sm font-semibold text-text">{conteudo}</label>
-  ) : (
-    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-text">{conteudo}</span>
+}
+
+function RotuloCampo({ campo, htmlFor }: { readonly campo: CampoDaFicha; readonly htmlFor?: string }) {
+  if (htmlFor) {
+    return (
+      <div className="flex min-w-0 items-center gap-2">
+        <label htmlFor={htmlFor} className="min-w-0 text-sm font-semibold text-text">{campo.label}</label>
+        <MetadadosDoRotulo campo={campo} />
+      </div>
+    );
+  }
+  return (
+    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-text">
+      <span>{campo.label}</span>
+      <MetadadosDoRotulo campo={campo} />
+    </span>
   );
 }
 
@@ -163,7 +174,7 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
   }
 
   if (campo.kind === 'booleano') {
-    return <div className="grid gap-2"><RotuloCampo campo={campo} /><label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm text-text"><input type="checkbox" checked={valor === 'true'} onChange={(e) => aoMudar(campo.fieldId, e.target.checked ? 'true' : 'false')} className="accent-[var(--accent)]" /><span>Sim, esta condição se aplica</span></label></div>;
+    return <div className="grid gap-2"><RotuloCampo campo={campo} /><label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm text-text"><input type="checkbox" required={campo.required} checked={valor === 'true'} onChange={(e) => aoMudar(campo.fieldId, e.target.checked ? 'true' : 'false')} className="accent-[var(--accent)]" /><span>Sim, esta condição se aplica</span></label></div>;
   }
 
   if (campo.kind === 'multipla_escolha' && campo.options !== null) {
