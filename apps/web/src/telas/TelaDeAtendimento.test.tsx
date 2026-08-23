@@ -106,8 +106,6 @@ function criarProps(overrides: Partial<TelaDeAtendimentoProps> = {}): TelaDeAten
     procedimentoNome: 'Consulta de rotina',
     abrirSessaoDoPrescritor: vi.fn().mockResolvedValue({ mode: 'embed' }),
     buscarCodigo: vi.fn().mockResolvedValue([]),
-    buscarModelo: vi.fn().mockResolvedValue([]),
-    buscarValorAnterior: vi.fn().mockResolvedValue(null),
     aoConfirmarPrescricao: vi.fn().mockResolvedValue({ prescriptionId: 'rx-1' }),
     aoFinalizar: vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 }),
     inicio: new Date(),
@@ -166,7 +164,6 @@ describe('TelaDeAtendimento', () => {
     renderTela({ inicio: new Date(Date.now() - 125_000) });
     const timer = screen.getByRole('timer');
     expect(timer).toBeInTheDocument();
-    // O timer deve mostrar um formato de duração (m:ss ou h:mm:ss)
     expect(timer.textContent).toMatch(/\d+:\d{2}/);
   });
 
@@ -185,7 +182,6 @@ describe('TelaDeAtendimento', () => {
     renderTela();
     expect(screen.getByText('Dipirona')).toBeInTheDocument();
     expect(screen.getByText('Penicilina')).toBeInTheDocument();
-    // Alergias devem ter classe de cor danger
     const dipirona = screen.getByText('Dipirona');
     expect(dipirona.className).toContain('danger');
   });
@@ -197,16 +193,12 @@ describe('TelaDeAtendimento', () => {
   });
 
   it('mostra mensagem quando não há alergias', () => {
-    renderTela({
-      paciente: { nome: 'Joao', alergias: [] },
-    });
-    // Seção de alergias já inicia aberta
+    renderTela({ paciente: { nome: 'Joao', alergias: [] } });
     expect(screen.getByText('Nenhuma alergia registrada')).toBeInTheDocument();
   });
 
   it('renderiza medicamentos em uso', () => {
     renderTela();
-    // Expandir seção de medicamentos
     const medBtn = screen.getByRole('button', { name: /medicamentos/i });
     fireEvent.click(medBtn);
     expect(screen.getByText('Losartana 50mg')).toBeInTheDocument();
@@ -214,7 +206,6 @@ describe('TelaDeAtendimento', () => {
 
   it('renderiza últimos atendimentos', () => {
     renderTela();
-    // Expandir seção de últimos atendimentos
     const ateBtn = screen.getByRole('button', { name: /últimos atendimentos/i });
     fireEvent.click(ateBtn);
     expect(screen.getByText('Retorno')).toBeInTheDocument();
@@ -222,13 +213,9 @@ describe('TelaDeAtendimento', () => {
   });
 
   it('renderiza apenas as ações clínicas disponíveis', () => {
-    // Com o gancho de emissão: a barra completa. Sem ele o botão de documento
-    // some, e isso é coberto pelo teste 'sem gancho de emissão'.
     renderTela({ aoEmitirDocumento: vi.fn() });
-    // Verifica a barra de ações via aria-label
     const barraAcoes = screen.getByRole('navigation', { name: /Ações do atendimento/i });
     expect(barraAcoes).toBeInTheDocument();
-    // Verifica os botões dentro da barra de ações (using within)
     const botoes = barraAcoes.querySelectorAll('button');
     expect(botoes.length).toBe(3);
     const textos = Array.from(botoes).map((b) => b.textContent?.trim());
@@ -241,11 +228,9 @@ describe('TelaDeAtendimento', () => {
   it('Pedir exame abre o painel de documentos', async () => {
     renderTela({ aoEmitirDocumento: vi.fn() });
     expect(screen.queryByTestId('painel-documentos')).not.toBeInTheDocument();
-
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Pedir exame' }));
     });
-
     expect(screen.getByTestId('painel-documentos')).toBeInTheDocument();
   });
 
@@ -257,14 +242,9 @@ describe('TelaDeAtendimento', () => {
   it('botão Finalizar chama callback', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
-
-    // A finalizacao e a unica CTA primaria e vive no cabecalho do workspace.
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
-    await act(async () => {
-      fireEvent.click(botaoFinalizar);
-    });
-
+    await act(async () => { fireEvent.click(botaoFinalizar); });
     expect(aoFinalizar).toHaveBeenCalledTimes(1);
   });
 
@@ -276,14 +256,9 @@ describe('TelaDeAtendimento', () => {
       return { versionId: 'v-1', versionNo: 1 };
     });
     renderTela({ aoFinalizar });
-
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => { fireEvent.click(botaoFinalizar); });
-
-    // O botão do cabeçalho não passa pelo editor. Sem descarga explícita, o que
-    // foi digitado nos últimos 2s do debounce nunca chega ao servidor — e a
-    // versão selada é imutável.
     expect(ordem).toEqual(['descarregou', 'finalizou']);
   });
 
@@ -291,17 +266,12 @@ describe('TelaDeAtendimento', () => {
     descargaEspia.mockImplementation(async () => true);
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
-
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
     await act(async () => {
       fireEvent.click(botaoFinalizar);
       fireEvent.click(botaoFinalizar);
     });
-
-    // Finalizar duas vezes não é clique duplo distraído apenas: Ctrl+Enter é
-    // ouvido pelo editor E pela tela. A segunda chamada acha o atendimento fora
-    // de rascunho e devolve erro ao médico que fez tudo certo.
     expect(aoFinalizar).toHaveBeenCalledTimes(1);
   });
 
@@ -311,14 +281,9 @@ describe('TelaDeAtendimento', () => {
       patientPayload: { nome: 'Maria Silva' },
     });
     renderTela({ abrirSessaoDoPrescritor });
-
-    // Buscar o token só quando o médico clica em Prescrever custa a ida à Memed
-    // com o paciente esperando. A sessão é aberta ao montar a tela.
     await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalledTimes(1));
-
     const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
     await act(async () => { fireEvent.click(botao); });
-
     const painel = screen.getByTestId('painel-prescricao');
     expect(painel.dataset['sessao']).toBe('sim');
   });
@@ -327,13 +292,8 @@ describe('TelaDeAtendimento', () => {
     const abrirSessaoDoPrescritor = vi.fn().mockResolvedValue({ mode: 'indisponivel' });
     renderTela({ abrirSessaoDoPrescritor });
     await waitFor(() => expect(abrirSessaoDoPrescritor).toHaveBeenCalled());
-
     const botao = screen.getAllByRole('button', { name: /prescrever/i })[0]!;
     await act(async () => { fireEvent.click(botao); });
-
-    // O painel abre dizendo que não dá; a consulta continua. Travar a tela
-    // inteira porque um parceiro caiu é transformar indisponibilidade deles em
-    // indisponibilidade nossa.
     expect(screen.getByTestId('painel-prescricao').dataset['sessao']).toBe('nao');
     expect(screen.getByTestId('editor-clinico')).toBeInTheDocument();
   });
@@ -357,7 +317,6 @@ describe('TelaDeAtendimento', () => {
 
   it('sem campos configurados a ficha não ocupa espaço', () => {
     renderTela({ secoesDaFicha: [], aoMudarFicha: vi.fn() });
-    // Clínica que usa só evolução narrativa não vê caixa vazia pedindo atenção.
     expect(screen.queryByRole('region', { name: /ficha do atendimento/i }))
       .not.toBeInTheDocument();
   });
@@ -365,13 +324,8 @@ describe('TelaDeAtendimento', () => {
   it('Emitir documento abre o painel de documentos', async () => {
     renderTela({ aoEmitirDocumento: vi.fn() });
     expect(screen.queryByTestId('painel-documentos')).not.toBeInTheDocument();
-
     const botao = screen.getAllByRole('button', { name: /emitir documento/i })[0]!;
     await act(async () => { fireEvent.click(botao); });
-
-    // O botão existia e não fazia nada — placeholder que parece funcionalidade
-    // é pior que botão ausente, porque o médico conta com ele na frente do
-    // paciente e descobre no pior momento que não emite nada.
     expect(screen.getByTestId('painel-documentos')).toBeInTheDocument();
   });
 
@@ -384,26 +338,17 @@ describe('TelaDeAtendimento', () => {
   it('mostra status finalizado após clicar Finalizar', async () => {
     const aoFinalizar = vi.fn().mockResolvedValue({ versionId: 'v-1', versionNo: 1 });
     renderTela({ aoFinalizar });
-
-    // Seleciona a CTA de finalizacao do cabecalho (nao o mock do editor)
     const botoes = screen.getAllByRole('button', { name: /finalizar/i });
     const botaoFinalizar = botoes.find((b) => b.textContent?.trim() === 'Finalizar atendimento')!;
-    await act(async () => {
-      fireEvent.click(botaoFinalizar);
-    });
-
+    await act(async () => { fireEvent.click(botaoFinalizar); });
     expect(screen.getByRole('status')).toHaveTextContent('Atendimento finalizado');
   });
 
   it('atalho Ctrl+P abre prescrição', async () => {
     renderTela();
-
     await act(async () => {
       fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
     });
-
-    // Agora a prescrição tem painel próprio (Memed embarcada), e não mais o
-    // PainelLateral genérico com um parágrafo de placeholder dentro.
     expect(screen.getByTestId('painel-prescricao')).toBeInTheDocument();
   });
 
@@ -415,7 +360,6 @@ describe('TelaDeAtendimento', () => {
 
   it('não renderiza botão Voltar quando aoVoltar não fornecido', () => {
     renderTela();
-    // Default props não incluem aoVoltar, então o botão não deve aparecer
     expect(screen.queryByRole('button', { name: /^voltar$/i })).not.toBeInTheDocument();
   });
 
