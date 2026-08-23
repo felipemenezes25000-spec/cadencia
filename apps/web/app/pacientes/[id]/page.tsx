@@ -34,9 +34,41 @@ interface PacienteDaApi extends PacienteHit {
 interface EncontroDaApi {
   encounterId: string;
   occurredDate: string;
-  status: string;
+  status: 'rascunho' | 'finalizado' | 'anulado';
   profissionalNome: string;
+  procedimentoNome: string | null;
   versionCount: number;
+  resumoClinico: string | null;
+  diagnosticos: string[];
+  sinaisVitais: string[];
+  achados: string[];
+  prescricoes: number;
+  documentos: number;
+  examesSolicitados: number;
+  resultadosExames: number;
+}
+
+function resumoDoAtendimento(x: EncontroDaApi): string {
+  if (x.status === 'rascunho') return 'Rascunho em andamento — conteúdo ainda não selado.';
+  if (x.status === 'anulado') return 'Atendimento anulado; as versões e a trilha permanecem preservadas.';
+
+  const partes: string[] = [];
+  const narrativa = x.resumoClinico?.replace(/\s+/g, ' ').trim();
+  if (narrativa) partes.push(narrativa);
+  if (x.diagnosticos.length > 0) partes.push(`Diagnósticos: ${x.diagnosticos.slice(0, 3).join('; ')}`);
+  if (x.sinaisVitais.length > 0) partes.push(`Sinais vitais: ${x.sinaisVitais.slice(0, 4).join(' · ')}`);
+  if (x.achados.length > 0) partes.push(`Achados: ${x.achados.slice(0, 4).join(', ')}`);
+
+  const artefatos: string[] = [];
+  if (x.prescricoes > 0) artefatos.push(`${x.prescricoes} prescriç${x.prescricoes === 1 ? 'ão' : 'ões'}`);
+  if (x.examesSolicitados > 0) artefatos.push(`${x.examesSolicitados} pedido${x.examesSolicitados === 1 ? '' : 's'} de exame`);
+  if (x.resultadosExames > 0) artefatos.push(`${x.resultadosExames} resultado${x.resultadosExames === 1 ? '' : 's'} de exame`);
+  const outrosDocumentos = Math.max(0, x.documentos - x.examesSolicitados);
+  if (outrosDocumentos > 0) artefatos.push(`${outrosDocumentos} outro${outrosDocumentos === 1 ? '' : 's'} documento${outrosDocumentos === 1 ? '' : 's'}`);
+  if (artefatos.length > 0) partes.push(artefatos.join(' · '));
+  if (x.versionCount > 1) partes.push(`${x.versionCount} versões preservadas`);
+
+  return partes.join(' · ') || 'Registro clínico finalizado.';
 }
 
 /**
@@ -78,8 +110,6 @@ export default function PaginaFichaDoPaciente(
   const [profissionais, setProfissionais] = useState<
     readonly { professionalId: string; nome: string }[]>([]);
 
-  // `record.share` é permissão de quem RESPONDE pelo prontuário. A recepção vê
-  // o cadastro e não pode abrir o registro clínico para terceiros.
   const podeCompartilhar = vinculoAtivo.role === 'profissional'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'admin_clinico';
@@ -91,10 +121,6 @@ export default function PaginaFichaDoPaciente(
     setCompartilhamentos(r.itens);
   }, [id, clinicId, csrfToken]);
 
-  // Prontuário é o único dado da tela com policy RESTRICTIVE própria (§10.18):
-  // ver o cadastro não implica ver o registro clínico. A tela pergunta as duas
-  // coisas separadamente, que é o que permite mostrar "existe, mas você não tem
-  // acesso" em vez de fingir que o paciente não existe.
   const podeVerProntuario = vinculoAtivo.role === 'profissional'
     || vinculoAtivo.role === 'diretor_tecnico'
     || vinculoAtivo.role === 'admin_clinico';
@@ -109,7 +135,7 @@ export default function PaginaFichaDoPaciente(
             `/v1/pacientes/${id}/pendencias`, { clinicId, csrfToken })
             .catch(() => ({ pendentes: [] as string[] })),
           apiFetch<{ itens: EncontroDaApi[] }>(
-            `/v1/pacientes/${id}/prontuario`, { clinicId, csrfToken })
+            `/v1/pacientes/${id}/prontuario-longitudinal`, { clinicId, csrfToken })
             .catch((e: unknown) => {
               if (e instanceof ApiError && e.status === 403 && vivo) setSemAcesso(true);
               return { itens: [] as EncontroDaApi[] };
@@ -119,13 +145,14 @@ export default function PaginaFichaDoPaciente(
         setPaciente(p);
         setPendentes(pend.pendentes);
         setAtendimentos(hist.itens.map((x) => ({
-            id: x.encounterId,
-            tipo: x.status === 'finalizado' ? 'Atendimento' : 'Rascunho',
-            data: x.occurredDate,
-            resumo: x.versionCount > 1
-              ? `${x.versionCount} versões` : 'Registro finalizado',
-            profissional: x.profissionalNome,
-          })));
+          id: x.encounterId,
+          tipo: x.status === 'finalizado'
+            ? (x.procedimentoNome ?? 'Atendimento')
+            : x.status === 'anulado' ? 'Atendimento anulado' : 'Rascunho',
+          data: x.occurredDate,
+          resumo: resumoDoAtendimento(x),
+          profissional: x.profissionalNome,
+        })));
       } finally {
         if (vivo) setCarregando(false);
       }
@@ -143,17 +170,6 @@ export default function PaginaFichaDoPaciente(
     );
   }
 
-  /**
-   * Exporta o prontuário completo em PDF.
-   *
-   * Direito do titular (LGPD art. 18, V). A rota existia desde a Fase 3 e não
-   * tinha botão: na prática o paciente pedia, e alguém precisava chamar a API
-   * na mão — ou o pedido morria.
-   *
-   * `requesterKind: 'titular'` porque quem clica aqui está atendendo um pedido
-   * do próprio paciente. Representante e ordem judicial têm tratamento
-   * diferente na rota e merecem tela própria quando aparecerem.
-   */
   async function exportarProntuario(): Promise<void> {
     setExportando(true);
     try {
@@ -163,14 +179,10 @@ export default function PaginaFichaDoPaciente(
           body: { requesterKind: 'titular' },
           clinicId, csrfToken,
         });
-      // Blob e não `<a href>`: a navegação do navegador não carrega o cabeçalho
-      // `x-clinic-id` e a API responderia 400.
       const url = await apiFetchBlobUrl(
         `/v1/exportacoes/${r.exportId}/pdf`, { clinicId, csrfToken });
       window.open(url, '_blank', 'noopener');
     } catch {
-      // Falhar em silêncio num pedido de LGPD é o pior desfecho: o paciente
-      // fica esperando um documento que ninguém sabe que não saiu.
       toast({ tipo: 'erro', mensagem: 'Não foi possível gerar a exportação. Tente de novo.' });
     } finally {
       setExportando(false);
@@ -194,8 +206,6 @@ export default function PaginaFichaDoPaciente(
 
   async function abrirCompartilhamento(): Promise<void> {
     setCompartilhando(true);
-    // Carga preguiçosa: as duas listas só interessam a quem abriu o painel, e
-    // pagar dois round trips em toda visita à ficha atrasaria o caso comum.
     const prof = await apiFetch<{ itens: { professionalId: string; nome: string }[] }>(
       '/v1/profissionais', { clinicId, csrfToken })
       .catch(() => ({ itens: [] as { professionalId: string; nome: string }[] }));
@@ -261,7 +271,7 @@ export default function PaginaFichaDoPaciente(
       podeVerFinanceiro={vinculoAtivo.role !== 'recepcao'}
       carregarProntuario={async () => {
         const r = await apiFetch<{ itens: EncontroDaApi[] }>(
-          `/v1/pacientes/${id}/prontuario`, { clinicId, csrfToken });
+          `/v1/pacientes/${id}/prontuario-longitudinal`, { clinicId, csrfToken });
         return r.itens;
       }}
       carregarConversas={async () => {
@@ -285,8 +295,6 @@ export default function PaginaFichaDoPaciente(
         const r = await apiFetch<{
           entradas: { id: string; description: string; amountCents: number;
                       dueDate: string; daysPastDue: number }[] }>(
-          // DESTE paciente. Sem o filtro, a aba Financeiro da ficha listava os
-          // recebíveis da clínica inteira sob o nome de quem estava aberto.
           `/v1/financeiro/a-receber?patientId=${id}`, { clinicId, csrfToken });
         const itens: LancamentoResumo[] = r.entradas.map((e) => ({
           entryId: e.id,
@@ -323,8 +331,6 @@ export default function PaginaFichaDoPaciente(
       }}
       aoSolicitarAcesso={() => { /* pedido de compartilhamento entra depois */ }}
       aoQuebrarVidro={async (justificativa, horas) => {
-        // Quebra-vidro é caminho legítimo e AUDITADO: a função do banco registra
-        // quem, quando, por que e por quanto tempo, e a clínica é notificada.
         await apiFetch(`/v1/pacientes/${id}/quebra-vidro`, {
           method: 'POST', body: { justificativa, horas }, clinicId, csrfToken });
         setSemAcesso(false);
@@ -333,8 +339,6 @@ export default function PaginaFichaDoPaciente(
 
     <PainelDeRecorrencia
       aberto={repetindo}
-      // A série começa AMANHÃ por padrão: marcar a primeira sessão para hoje,
-      // com o paciente já atendido, é o engano mais fácil de cometer aqui.
       dia={amanhaNaClinica(vinculoAtivo.timezone)}
       pacienteNome={paciente.displayName}
       procedimentos={procedimentos}
@@ -343,10 +347,6 @@ export default function PaginaFichaDoPaciente(
           method: 'POST',
           body: {
             patientId: id,
-            // Sem seletor de profissional nesta tela: cai no primeiro que
-            // atende na unidade, como o compositor da agenda já faz. Clínica
-            // com dois médicos precisa escolher — e isso é campo a acrescentar,
-            // não um palpite que a tela deva esconder.
             professionalId: profissionais[0]?.professionalId ?? '',
             procedureId: r.procedureId,
             primeiraData: r.primeiraData,
@@ -367,13 +367,9 @@ export default function PaginaFichaDoPaciente(
       timezone={vinculoAtivo.timezone}
       itens={compartilhamentos}
       profissionais={profissionais.filter(
-        // Compartilhar com quem já atende o paciente é ruído: o acesso dele
-        // vem pela primeira porta da policy, não por esta.
         (x) => !compartilhamentos.some((c) => c.granteeProfessionalId === x.professionalId),
       )}
       aoCompartilhar={async (c) => {
-        // O painel entrega PRAZO EM DIAS; virar instante é responsabilidade de
-        // quem tem o relógio. Mantém o painel puro e testável sem fingir tempo.
         const expira = c.diasDeValidade === null
           ? {}
           : { expiraEm: new Date(Date.now() + c.diasDeValidade * 86_400_000).toISOString() };

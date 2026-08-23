@@ -17,6 +17,7 @@ import { acoesPendentesRoutes } from './routes/acoes-pendentes';
 import { painelRoutes } from './routes/painel';
 import { procedimentoRoutes } from './routes/procedimentos';
 import { patientRoutes } from './routes/patients';
+import { prontuarioLongitudinalRoutes } from './routes/prontuario-longitudinal';
 import { scheduleRoutes } from './routes/schedule';
 import { encounterRoutes } from './routes/encounters';
 import { prontuarioConfigRoutes } from './routes/prontuario-config';
@@ -109,6 +110,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(painelRoutes);
   await app.register(procedimentoRoutes);
   await app.register(patientRoutes);
+  await app.register(prontuarioLongitudinalRoutes);
   await app.register(scheduleRoutes);
   await app.register(encounterRoutes);
   await app.register(prontuarioConfigRoutes);
