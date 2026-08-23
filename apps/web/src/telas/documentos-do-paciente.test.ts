@@ -15,6 +15,26 @@ describe('carregarDocumentosDoPaciente', () => {
     })]);
   });
 
+  it('mostra qual pedido originou um resultado de exame vinculado', async () => {
+    const itens = await carregarDocumentosDoPaciente(
+      async () => ({ itens: [{
+        documentId: 'pedido-1', kind: 'pedido_exame', titulo: 'Hemograma completo',
+        issuedDate: '2026-08-10', createdAt: '2026-08-10T10:00:00Z', assinado: true,
+      }] }),
+      async () => ({ itens: [{
+        attachmentId: 'resultado-1', kind: 'resultado_exame', originalName: 'lab.pdf',
+        sizeBytes: 1200, criadoEm: '2026-08-12T10:00:00Z',
+        requestDocumentId: 'pedido-1', pedidoTitulo: 'Hemograma completo',
+      }] }),
+    );
+
+    expect(itens[0]).toMatchObject({
+      id: 'resultado-1',
+      titulo: 'Resultado — Hemograma completo',
+      categoria: 'Resultado de exame vinculado',
+    });
+  });
+
   it('propaga falha dos documentos emitidos, que são a permissão mínima da aba', async () => {
     await expect(carregarDocumentosDoPaciente(
       async () => { throw new Error('403 document.read'); },

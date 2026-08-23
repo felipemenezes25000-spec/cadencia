@@ -23,6 +23,8 @@ export interface AnexoDaApi {
   readonly originalName: string;
   readonly sizeBytes: number;
   readonly criadoEm: string;
+  readonly requestDocumentId?: string | null;
+  readonly pedidoTitulo?: string | null;
 }
 
 const ROTULOS_DOCUMENTO: Readonly<Record<string, string>> = {
@@ -44,6 +46,10 @@ const ROTULOS_ANEXO: Readonly<Record<string, string>> = {
  * Documento emitido e anexo têm permissões diferentes. Uma recepcionista pode
  * reimprimir o primeiro sem poder abrir o segundo, então falha de anexo não
  * apaga a coleção de documentos legitimamente acessível.
+ *
+ * Resultado vinculado a um pedido mantém a relação visível na ficha 360: não é
+ * mais necessário inferir pela data ou pelo nome do arquivo qual solicitação o
+ * laboratório respondeu.
  */
 export async function carregarDocumentosDoPaciente(
   carregarEmitidos: () => Promise<{ itens: DocumentoEmitidoDaApi[] }>,
@@ -62,15 +68,20 @@ export async function carregarDocumentosDoPaciente(
       tamanhoBytes: null,
       assinado: item.assinado,
     })),
-    ...(anexos.status === 'fulfilled' ? anexos.value.itens.map((item) => ({
-      id: item.attachmentId,
-      origem: 'anexo' as const,
-      titulo: item.originalName,
-      categoria: ROTULOS_ANEXO[item.kind] ?? 'Arquivo clínico',
-      criadoEm: item.criadoEm,
-      tamanhoBytes: item.sizeBytes,
-      assinado: false,
-    })) : []),
+    ...(anexos.status === 'fulfilled' ? anexos.value.itens.map((item) => {
+      const vinculado = item.kind === 'resultado_exame'
+        && item.requestDocumentId != null
+        && item.pedidoTitulo != null;
+      return {
+        id: item.attachmentId,
+        origem: 'anexo' as const,
+        titulo: vinculado ? `Resultado — ${item.pedidoTitulo}` : item.originalName,
+        categoria: vinculado ? 'Resultado de exame vinculado' : (ROTULOS_ANEXO[item.kind] ?? 'Arquivo clínico'),
+        criadoEm: item.criadoEm,
+        tamanhoBytes: item.sizeBytes,
+        assinado: false,
+      };
+    }) : []),
   ];
   return itens.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
 }

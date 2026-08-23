@@ -26,6 +26,7 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
       body: z.object({
         patientId: z.string().uuid(),
         encounterId: z.string().uuid().optional(),
+        requestDocumentId: z.string().uuid().optional(),
         kind: z.enum(TIPOS),
         originalName: z.string().min(1).max(255),
         contentType: z.string().min(1).max(120),
@@ -36,13 +37,31 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
           attachmentId: z.string().uuid(),
           sha256: z.string(),
           sizeBytes: z.number().int(),
+          requestDocumentId: z.string().uuid().nullable(),
         }),
       },
     },
   }, rota('attachment.write', async (tx, ctx, req, reply) => {
     const b = req.body as {
-      patientId: string; encounterId?: string; kind: typeof TIPOS[number];
-      originalName: string; contentType: string; conteudoBase64: string };
+      patientId: string; encounterId?: string; requestDocumentId?: string;
+      kind: typeof TIPOS[number]; originalName: string; contentType: string;
+      conteudoBase64: string };
+
+    let encounterId = b.encounterId ?? null;
+    if (b.requestDocumentId !== undefined) {
+      if (b.kind !== 'resultado_exame') erroDominio('pedido_so_pode_vincular_resultado_exame', 422);
+      const pedido = await tx.query<{ encounter_id: string | null }>(
+        `SELECT encounter_id
+           FROM clin.document
+          WHERE id = $1 AND patient_id = $2 AND kind = 'pedido_exame'`,
+        [b.requestDocumentId, b.patientId]);
+      const p = pedido.rows[0];
+      if (p === undefined) erroDominio('pedido_exame_nao_encontrado', 422);
+      if (encounterId !== null && p.encounter_id !== null && encounterId !== p.encounter_id) {
+        erroDominio('resultado_exame_atendimento_divergente', 422);
+      }
+      encounterId = p.encounter_id ?? encounterId;
+    }
 
     const bytes = Buffer.from(b.conteudoBase64, 'base64');
     if (bytes.length === 0) erroDominio('anexo_vazio', 400);
@@ -52,23 +71,82 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
     const storageKey = uuidv7();
     const sha256 = createHash('sha256').update(bytes).digest();
     const dekRef = process.env['STORAGE_KMS_KEY_ID'] ?? 'sem-kms';
+    const objectKey = `anexos/${storageKey}`;
 
-    await armazenamento().put(`anexos/${storageKey}`, bytes, b.contentType);
-
-    await tx.query(
-      `INSERT INTO clin.attachment
-         (id, patient_id, encounter_id, kind, storage_key, original_name,
-          content_type, size_bytes, sha256, dek_ref, occurred_date, created_by)
-       VALUES ($1,$2,$3,$4::clin.attachment_kind,$5,$6,$7,$8,$9,$10,
-               app.local_date(clock_timestamp(),
-                 (SELECT c.timezone FROM app.clinic c WHERE c.id = $11)),
-               app.current_user_id())`,
-      [attachmentId, b.patientId, b.encounterId ?? null, b.kind, storageKey,
-       b.originalName, b.contentType, bytes.length, sha256, dekRef, ctx.actor.clinicId]);
+    await armazenamento().put(objectKey, bytes, b.contentType);
+    try {
+      await tx.query(
+        `INSERT INTO clin.attachment
+           (id, patient_id, encounter_id, request_document_id, kind, storage_key, original_name,
+            content_type, size_bytes, sha256, dek_ref, occurred_date, created_by)
+         VALUES ($1,$2,$3,$4,$5::clin.attachment_kind,$6,$7,$8,$9,$10,$11,
+                 app.local_date(clock_timestamp(),
+                   (SELECT c.timezone FROM app.clinic c WHERE c.id = $12)),
+                 app.current_user_id())`,
+        [attachmentId, b.patientId, encounterId, b.requestDocumentId ?? null, b.kind, storageKey,
+         b.originalName, b.contentType, bytes.length, sha256, dekRef, ctx.actor.clinicId]);
+    } catch (e) {
+      // A linha é a fonte de verdade. Se ela não entrar, não deixa um objeto
+      // clínico órfão sem RLS nem referência auditável no armazenamento.
+      await armazenamento().delete(objectKey).catch(() => undefined);
+      throw e;
+    }
 
     void reply.code(201);
     return {
       attachmentId, sha256: sha256.toString('hex'), sizeBytes: bytes.length,
+      requestDocumentId: b.requestDocumentId ?? null,
+    };
+  }));
+
+  r.get('/v1/pacientes/:id/pedidos-exame', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      querystring: z.object({ pendentes: z.coerce.boolean().optional() }),
+      response: {
+        200: z.object({
+          itens: z.array(z.object({
+            documentId: z.string().uuid(),
+            titulo: z.string(),
+            issuedDate: z.string(),
+            encounterId: z.string().uuid().nullable(),
+            resultados: z.number().int(),
+          })),
+        }),
+      },
+    },
+  }, rota('document.read', async (tx, _ctx, req) => {
+    const p = req.params as { id: string };
+    const q = req.query as { pendentes?: boolean };
+    const { rows } = await tx.query<{
+      id: string; titulo: string; issued_date: string; encounter_id: string | null;
+      resultados: number;
+    }>(
+      `SELECT d.id,
+              coalesce(nullif(d.payload->>'titulo', ''), 'Solicitação de exames') AS titulo,
+              d.issued_date::text AS issued_date,
+              d.encounter_id,
+              count(a.id)::int AS resultados
+         FROM clin.document d
+         LEFT JOIN clin.attachment a
+           ON (a.tenant_id, a.request_document_id) = (d.tenant_id, d.id)
+          AND a.kind = 'resultado_exame' AND a.purged_at IS NULL
+        WHERE d.patient_id = $1
+          AND d.kind = 'pedido_exame'
+        GROUP BY d.tenant_id, d.id, d.payload, d.issued_date, d.encounter_id, d.created_at
+       HAVING (NOT $2::boolean OR count(a.id) = 0)
+        ORDER BY d.issued_date DESC, d.created_at DESC`,
+      [p.id, q.pendentes ?? false]);
+
+    await tx.query(`SELECT audit.log_read('exam_request_list', $1)`, [p.id]);
+    return {
+      itens: rows.map((x) => ({
+        documentId: x.id,
+        titulo: x.titulo,
+        issuedDate: x.issued_date,
+        encounterId: x.encounter_id,
+        resultados: x.resultados,
+      })),
     };
   }));
 
@@ -85,6 +163,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
             sizeBytes: z.number().int(),
             sha256: z.string(),
             encounterId: z.string().uuid().nullable(),
+            requestDocumentId: z.string().uuid().nullable(),
+            pedidoTitulo: z.string().nullable(),
             criadoEm: z.string(),
           })),
         }),
@@ -95,12 +175,17 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
     const { rows } = await tx.query<{
       id: string; kind: string; original_name: string; content_type: string;
       size_bytes: string; sha256: Buffer; encounter_id: string | null;
-      criado_em: string;
+      request_document_id: string | null; pedido_titulo: string | null; criado_em: string;
     }>(
       `SELECT a.id, a.kind::text AS kind, a.original_name, a.content_type,
-              a.size_bytes::text, a.sha256, a.encounter_id,
+              a.size_bytes::text, a.sha256, a.encounter_id, a.request_document_id,
+              CASE WHEN d.id IS NULL THEN NULL
+                   ELSE coalesce(nullif(d.payload->>'titulo', ''), 'Solicitação de exames') END
+                AS pedido_titulo,
               to_char(a.created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF:00') AS criado_em
          FROM clin.attachment a
+         LEFT JOIN clin.document d
+           ON (d.tenant_id, d.id) = (a.tenant_id, a.request_document_id)
         WHERE a.patient_id = $1
           AND a.purged_at IS NULL
         ORDER BY a.created_at DESC`,
@@ -115,6 +200,8 @@ export async function anexoRoutes(app: FastifyInstance): Promise<void> {
         sizeBytes: Number(x.size_bytes),
         sha256: x.sha256.toString('hex'),
         encounterId: x.encounter_id,
+        requestDocumentId: x.request_document_id,
+        pedidoTitulo: x.pedido_titulo,
         criadoEm: x.criado_em,
       })),
     };

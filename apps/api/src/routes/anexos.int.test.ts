@@ -4,8 +4,26 @@ import { buildApp } from '../app';
 import { auth, semearSessao, type SementeSessao } from '../test-support';
 
 let s: SementeSessao;
+let pedidoId: string;
 
-beforeAll(async () => { s = await semearSessao({ role: 'profissional' }); });
+beforeAll(async () => {
+  s = await semearSessao({ role: 'profissional' });
+  const app = await buildApp();
+  const pedido = await app.inject({
+    method: 'POST',
+    url: '/v1/documentos',
+    payload: {
+      kind: 'pedido_exame',
+      patientId: s.patientId,
+      encounterId: s.encounterId,
+      payload: { titulo: 'Hemograma completo', corpo: 'Solicito hemograma completo.' },
+    },
+    ...auth(s),
+  });
+  expect(pedido.statusCode).toBe(201);
+  pedidoId = (pedido.json() as { documentId: string }).documentId;
+  await app.close();
+});
 afterAll(async () => { await closePools(); });
 
 const PDF = Buffer.from('%PDF-1.4\nexame de sangue simulado\n%%EOF');
@@ -23,35 +41,76 @@ function corpo(over: Record<string, unknown> = {}) {
 }
 
 describe('anexos do prontuario', () => {
-  it('recebe o arquivo, guarda e devolve o hash conferivel', async () => {
+  it('lista pedido de exame pendente antes de o resultado chegar', async () => {
     const app = await buildApp();
     const r = await app.inject({
-      method: 'POST', url: '/v1/anexos', payload: corpo(), ...auth(s) });
-
-    expect(r.statusCode).toBe(201);
-    const a = r.json() as {
-      attachmentId: string; sha256: string; sizeBytes: number };
-    expect(a.sizeBytes).toBe(PDF.length);
-    // O hash é calculado no SERVIDOR, sobre os bytes que chegaram. Aceitar um
-    // hash enviado pelo cliente seria aceitar a afirmação de quem envia sobre o
-    // próprio arquivo — e o anexo é prova clínica.
-    expect(a.sha256).toMatch(/^[0-9a-f]{64}$/);
-
+      method: 'GET',
+      url: `/v1/pacientes/${s.patientId}/pedidos-exame?pendentes=true`,
+      ...auth(s),
+    });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as { itens: { documentId: string }[] }).itens)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ documentId: pedidoId })]));
     await app.close();
   });
 
-  it('lista os anexos do paciente com nome, tipo e tamanho', async () => {
+  it('recebe resultado, vincula ao pedido e devolve o hash conferivel', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/anexos',
+      payload: corpo({ requestDocumentId: pedidoId }), ...auth(s) });
+
+    expect(r.statusCode).toBe(201);
+    const a = r.json() as {
+      attachmentId: string; sha256: string; sizeBytes: number;
+      requestDocumentId: string | null };
+    expect(a.sizeBytes).toBe(PDF.length);
+    expect(a.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(a.requestDocumentId).toBe(pedidoId);
+    await app.close();
+  });
+
+  it('pedido deixa de ser pendente depois do resultado vinculado', async () => {
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'GET',
+      url: `/v1/pacientes/${s.patientId}/pedidos-exame?pendentes=true`,
+      ...auth(s),
+    });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as { itens: { documentId: string }[] }).itens
+      .some((x) => x.documentId === pedidoId)).toBe(false);
+    await app.close();
+  });
+
+  it('recusa vincular resultado a pedido de outro paciente', async () => {
+    const outro = await semearSessao({ role: 'profissional' });
+    const app = await buildApp();
+    const r = await app.inject({
+      method: 'POST', url: '/v1/anexos',
+      payload: {
+        ...corpo({ patientId: outro.patientId, encounterId: outro.encounterId }),
+        requestDocumentId: pedidoId,
+      },
+      ...auth(outro),
+    });
+    expect(r.statusCode).toBe(422);
+    await app.close();
+  });
+
+  it('lista os anexos com o pedido que originou o resultado', async () => {
     const app = await buildApp();
     const r = await app.inject({
       method: 'GET', url: `/v1/pacientes/${s.patientId}/anexos`, ...auth(s) });
 
     expect(r.statusCode).toBe(200);
     const itens = (r.json() as { itens: {
-      attachmentId: string; originalName: string; kind: string;
-      sizeBytes: number; contentType: string }[] }).itens;
-    expect(itens.length).toBeGreaterThan(0);
-    expect(itens[0]?.originalName).toBe('hemograma.pdf');
-    expect(itens[0]?.sizeBytes).toBe(PDF.length);
+      attachmentId: string; originalName: string; kind: string; sizeBytes: number;
+      contentType: string; requestDocumentId: string | null; pedidoTitulo: string | null }[] }).itens;
+    const hemograma = itens.find((x) => x.originalName === 'hemograma.pdf');
+    expect(hemograma?.sizeBytes).toBe(PDF.length);
+    expect(hemograma?.requestDocumentId).toBe(pedidoId);
+    expect(hemograma?.pedidoTitulo).toBe('Hemograma completo');
 
     await app.close();
   });
@@ -60,16 +119,14 @@ describe('anexos do prontuario', () => {
     const app = await buildApp();
     const lista = await app.inject({
       method: 'GET', url: `/v1/pacientes/${s.patientId}/anexos`, ...auth(s) });
-    const id = (lista.json() as { itens: { attachmentId: string }[] })
-      .itens[0]?.attachmentId;
+    const id = (lista.json() as { itens: { attachmentId: string; originalName: string }[] })
+      .itens.find((x) => x.originalName === 'hemograma.pdf')?.attachmentId;
 
     const r = await app.inject({
       method: 'GET', url: `/v1/anexos/${id}/conteudo`, ...auth(s) });
 
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('application/pdf');
-    // Byte a byte igual ao que subiu: anexo que volta diferente do que entrou
-    // não serve como prova de nada.
     expect(Buffer.from(r.rawPayload).equals(PDF)).toBe(true);
 
     await app.close();
@@ -80,8 +137,6 @@ describe('anexos do prontuario', () => {
     const r = await app.inject({
       method: 'POST', url: '/v1/anexos',
       payload: corpo({ conteudoBase64: '' }), ...auth(s) });
-    // CHECK (size_bytes > 0) no banco. Recusar aqui devolve erro de validação
-    // em vez de 500 vindo do Postgres.
     expect(r.statusCode).toBe(400);
     await app.close();
   });
@@ -100,14 +155,17 @@ describe('anexos do prontuario', () => {
     await app.close();
   });
 
-  it('recepcao NAO le anexo clinico', async () => {
+  it('recepcao NAO le anexo clinico nem pedidos de exame', async () => {
     const app = await buildApp();
     const recepcao = await semearSessao({ role: 'recepcao' });
-    const r = await app.inject({
-      method: 'GET', url: `/v1/pacientes/${recepcao.patientId}/anexos`,
-      ...auth(recepcao) });
-    // Resultado de exame é dado clínico. Quem agenda não precisa dele.
-    expect(r.statusCode).toBe(403);
+    const [anexos, pedidos] = await Promise.all([
+      app.inject({
+        method: 'GET', url: `/v1/pacientes/${recepcao.patientId}/anexos`, ...auth(recepcao) }),
+      app.inject({
+        method: 'GET', url: `/v1/pacientes/${recepcao.patientId}/pedidos-exame`, ...auth(recepcao) }),
+    ]);
+    expect(anexos.statusCode).toBe(403);
+    expect(pedidos.statusCode).toBe(403);
     await app.close();
   });
 });
