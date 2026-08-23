@@ -36,6 +36,42 @@ const CLASSE_ENTRADA = cn(
   'text-text focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
 );
 
+function numeroDecimal(bruto: string): number | null {
+  const normalizado = bruto.trim().replace(',', '.');
+  if (!/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalizado)) return null;
+  const n = Number(normalizado);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * O IMC mostrado na ficha usa a mesma fonte de verdade da selagem: peso e altura.
+ * Nunca reaproveita `valores[f-imc]`, porque esse valor pode ter vindo de um
+ * rascunho antigo ou de um cliente adulterado.
+ */
+function comDerivados(
+  secoes: readonly SecaoDaFicha[],
+  valores: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  const campos = secoes.flatMap((s) => s.campos);
+  const peso = campos.find((c) => c.code === 'peso');
+  const altura = campos.find((c) => c.code === 'altura');
+  const imc = campos.find((c) => c.kind === 'imc');
+  if (peso === undefined || altura === undefined || imc === undefined) return valores;
+
+  const pesoNumero = numeroDecimal(valores[peso.fieldId] ?? '');
+  const alturaNumero = numeroDecimal(valores[altura.fieldId] ?? '');
+  if (pesoNumero === null || alturaNumero === null || pesoNumero <= 0 || alturaNumero <= 0) {
+    return { ...valores, [imc.fieldId]: '' };
+  }
+
+  const alturaMetros = altura.unit === 'm' ? alturaNumero : alturaNumero / 100;
+  if (alturaMetros <= 0) return { ...valores, [imc.fieldId]: '' };
+  return {
+    ...valores,
+    [imc.fieldId]: (pesoNumero / (alturaMetros * alturaMetros)).toFixed(2),
+  };
+}
+
 /* ── busca em tabela de referência (CID-10, TUSS) ─────────────────────── */
 
 function BuscaEmTabela({ campo, valor, aoMudar, buscarCodigo }: {
@@ -163,7 +199,29 @@ function Campo({ campo, valores, aoMudar, buscarCodigo }: {
     );
   }
 
-  if (campo.kind === 'numerico' || campo.kind === 'imc') {
+  if (campo.kind === 'imc') {
+    return (
+      <label className="grid gap-1.5" htmlFor={campo.fieldId}>
+        <span className="text-sm font-medium text-text">{campo.label}</span>
+        <span className="flex items-center gap-1.5">
+          <input
+            id={campo.fieldId}
+            value={valor}
+            readOnly
+            aria-readonly="true"
+            title="Calculado automaticamente a partir de peso e altura"
+            className={cn(CLASSE_ENTRADA, 'cursor-not-allowed bg-surface-raised text-text-muted')}
+          />
+          {campo.unit !== null && (
+            <span className="shrink-0 text-xs text-text-muted">{campo.unit}</span>
+          )}
+        </span>
+        <span className="text-xs text-text-muted">Calculado automaticamente por peso e altura.</span>
+      </label>
+    );
+  }
+
+  if (campo.kind === 'numerico') {
     return (
       <label className="grid gap-1.5" htmlFor={campo.fieldId}>
         <span className="text-sm font-medium text-text">{campo.label}</span>
@@ -314,6 +372,7 @@ export function FichaClinica(p: FichaClinicaProps) {
   // duas caixas para a mesma coisa e o médico escreveria em uma das duas.
   const secoes = p.secoes.filter((s) => s.code !== 'evolucao');
   if (secoes.length === 0) return null;
+  const valores = comDerivados(p.secoes, p.valores);
 
   return (
     <div className="grid gap-5">
@@ -323,7 +382,7 @@ export function FichaClinica(p: FichaClinicaProps) {
             {s.label}
           </legend>
           {s.campos.map((c) => (
-            <Campo key={c.fieldId} campo={c} valores={p.valores}
+            <Campo key={c.fieldId} campo={c} valores={valores}
               aoMudar={p.aoMudar} buscarCodigo={p.buscarCodigo} />
           ))}
         </fieldset>
