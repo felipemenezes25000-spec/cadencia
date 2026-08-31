@@ -41,7 +41,7 @@
     "cid11:load": "tsx --env-file=.env scripts/carregar-cid11.ts"
   },
   "devDependencies": {
-    "next": "^15.5.22",
+    "next": "^16.3.3",
     "@aws-sdk/client-rds": "^3.1102.0",
     "@testcontainers/postgresql": "^12.0.4",
     "@types/node": "^24.13.3",
