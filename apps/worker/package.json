@@ -10,6 +10,6 @@
     "@cadencia/integrations": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "@cadencia/storage": "workspace:*",
-    "pg-boss": "^10.3.1"
+    "pg-boss": "^12.28.0"
   }
 }
