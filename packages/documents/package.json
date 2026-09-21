@@ -12,6 +12,6 @@
     "@cadencia/integrations": "workspace:*",
     "@cadencia/kernel": "workspace:*",
     "pdf-lib": "^1.17.1",
-    "playwright": "^1.62.1"
+    "playwright": "^1.63.0"
   }
 }
