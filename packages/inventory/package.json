@@ -10,7 +10,7 @@
     "@cadencia/db": "workspace:*"
   },
   "devDependencies": {
-    "pg": "^8.16.0",
+    "pg": "^8.23.1",
     "vitest": "^3.2.1"
   }
 }
